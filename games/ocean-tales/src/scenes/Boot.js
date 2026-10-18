@@ -40,6 +40,7 @@ export class BootScene extends Phaser.Scene {
     // AAC 오디오. 호스팅에 따라 .m4a 대신 .mp4 확장자로 올릴 수 있어 manifest.audioExt 로 지정
     // 효과음과 타이틀 곡만 먼저 받고, 나머지 배경음은 처음 틀 때 받는다 (첫 로딩 시간 단축)
     audio.urlFor = k => asset(`assets/audio/${k}.${m.audioExt || 'm4a'}`);
+    audio.audioList = m.audio;
     for (const k of m.audio) if (!k.startsWith('bgm_') || k === 'bgm_title') this.load.audio(k, [{ type: 'm4a', url: audio.urlFor(k) }]);
     this.registry.set('sheets', m.sheets);
 

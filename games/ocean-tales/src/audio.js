@@ -73,7 +73,8 @@ class AudioManager {
       this.current.play();
     } catch { this.current = null; }
   }
-  hasHi(key) { return /^bgm_game_\d+$/.test(key); }
+  // 긴장 레이어(_hi)는 파일이 있을 때만 (외부 음원 곡에는 없음)
+  hasHi(key) { return /^bgm_game_\d+$/.test(key) && !!(this.audioList && this.audioList.includes(`${key}_hi`)); }
   // 0 ~ 1: 남은 이동이 적을 때 긴장 레이어를 서서히 올린다
   intensity(v) {
     if (!this.layer || !this.game) return;

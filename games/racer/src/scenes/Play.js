@@ -113,6 +113,8 @@ export class PlayScene extends Phaser.Scene {
     this.hComboSub = txt(this, W / 2, 520, '', 38, '#FFFFFF').setDepth(D).setAlpha(0);
     // 스트레스 차차차 글자판: 칼치기를 이을 때마다 한 글자씩 켜짐 → 다 켜지면 피버
     this.chantBg = this.add.rectangle(W / 2, 312, 760, 100, 0x101830, 0.55).setStrokeStyle(4, 0xFFFFFF, 0.35).setDepth(D - 1);
+    // 콤보 남은 시간 (이 줄이 다 줄면 글자가 처음부터)
+    this.chantTime = this.add.rectangle(W / 2 - 370, 356, 740, 10, 0xFFE14D).setOrigin(0, 0.5).setDepth(D);
     this.chant = CHANT.map((ch, i) => txt(this, W / 2 - 320 + i * 96 + (i >= 4 ? 28 : 0), 312, ch, 64, '#5A6488', { stroke: '#101830', thick: 10 }).setDepth(D));
     // 점프 버튼
     this.jumpBtn = this.add.container(W - 130, H - 170).setDepth(D);
@@ -229,6 +231,8 @@ export class PlayScene extends Phaser.Scene {
     this.feverBar.height = 412 * (s.feverT > 0 ? s.feverT / FEVER_TIME : s.fever / FEVER_FULL);
     this.feverBar.fillColor = s.feverT > 0 ? (Math.floor(t * 10) % 2 ? 0xFFE14D : 0xFF8A1F) : 0xFF8A1F;
     this.hCombo.setAlpha(s.combo > 1 ? Math.min(1, s.comboT * 1.5) : 0);
+    const ct = s.fever > 0 && s.feverT <= 0 ? s.comboT / this.race.d.combo : 0;
+    this.chantTime.width = 740 * ct; this.chantTime.fillColor = ct < 0.3 ? (Math.floor(s.t * 8) % 2 ? 0xFF5A5A : 0xFFB0B0) : 0xFFE14D;
     this.hComboSub.setAlpha(this.hCombo.alpha);
     this.jumpRing.clear().lineStyle(12, p.jump >= 1 ? 0xFFE14D : 0x8A93B0).beginPath().arc(0, 0, 88, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p.jump).strokePath();
     this.jumpBtn.setAlpha(p.jump >= 1 ? 1 : 0.65).setScale(p.jump >= 1 ? 1 + Math.sin(t * 6) * 0.03 : 1);

@@ -127,35 +127,35 @@ export const TUNING = {
   ]
  },
  "11": {
-  "moves": 20,
+  "moves": 22,
   "stars": [
-   6500,
-   20500,
-   25000
+   6000,
+   14500,
+   17500
   ]
  },
  "12": {
-  "moves": 26,
+  "moves": 28,
   "stars": [
-   10000,
-   29500,
-   37000
+   8500,
+   22000,
+   27500
   ]
  },
  "13": {
-  "moves": 19,
+  "moves": 20,
   "stars": [
-   6000,
-   17000,
-   23000
+   5000,
+   12500,
+   16500
   ]
  },
  "14": {
-  "moves": 22,
+  "moves": 25,
   "stars": [
-   8000,
-   21000,
-   28500
+   6500,
+   18000,
+   23000
   ],
   "goals": [
    {
@@ -173,19 +173,19 @@ export const TUNING = {
   ]
  },
  "16": {
-  "moves": 22,
+  "moves": 20,
   "stars": [
-   7500,
-   22000,
-   32500
+   7000,
+   18000,
+   24000
   ]
  },
  "17": {
-  "moves": 29,
+  "moves": 27,
   "stars": [
-   8500,
-   29500,
-   45000
+   7000,
+   20500,
+   30000
   ]
  },
  "18": {
@@ -203,33 +203,33 @@ export const TUNING = {
   ]
  },
  "19": {
-  "moves": 23,
+  "moves": 27,
   "stars": [
-   10500,
-   34500,
-   46000
+   11000,
+   30500,
+   41500
   ]
  },
  "20": {
   "moves": 18,
   "stars": [
-   12500,
-   29000,
-   42000
+   9000,
+   19500,
+   26500
   ]
  },
  "21": {
   "moves": 22,
   "stars": [
-   9000,
-   23500,
-   29500
+   6500,
+   18000,
+   23000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 32
+    "count": 26
    }
   ]
  },
@@ -244,20 +244,20 @@ export const TUNING = {
  "23": {
   "moves": 25,
   "stars": [
-   4500,
-   15500,
-   22000
+   5000,
+   14500,
+   19000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 19
+    "count": 17
    },
    {
     "type": "collect",
     "color": "purple",
-    "count": 19
+    "count": 17
    }
   ]
  },
@@ -272,9 +272,9 @@ export const TUNING = {
  "25": {
   "moves": 28,
   "stars": [
-   11500,
-   34500,
-   44000
+   13000,
+   30500,
+   35000
   ],
   "goals": [
    {
@@ -290,17 +290,17 @@ export const TUNING = {
  "26": {
   "moves": 15,
   "stars": [
-   6500,
-   16000,
-   21500
+   4500,
+   11500,
+   14500
   ]
  },
  "27": {
   "moves": 25,
   "stars": [
-   15000,
-   40000,
-   46500
+   11000,
+   28500,
+   35000
   ],
   "goals": [
    {
@@ -309,16 +309,16 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "red",
-    "count": 56
+    "count": 46
    }
   ]
  },
  "28": {
-  "moves": 20,
+  "moves": 18,
   "stars": [
-   11500,
-   28000,
-   42000
+   7000,
+   24000,
+   30000
   ]
  },
  "29": {
@@ -340,11 +340,11 @@ export const TUNING = {
   ]
  },
  "30": {
-  "moves": 22,
+  "moves": 29,
   "stars": [
-   19000,
-   41500,
-   48500
+   14000,
+   33000,
+   38500
   ],
   "goals": [
    {
@@ -359,20 +359,20 @@ export const TUNING = {
  "31": {
   "moves": 22,
   "stars": [
-   7000,
-   24000,
-   33000
+   8000,
+   20000,
+   24000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 28
+    "count": 27
    },
    {
     "type": "collect",
     "color": "green",
-    "count": 28
+    "count": 27
    }
   ]
  },
@@ -404,15 +404,15 @@ export const TUNING = {
  "34": {
   "moves": 25,
   "stars": [
-   11000,
-   34000,
-   41500
+   10500,
+   26500,
+   33000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 47
+    "count": 43
    },
    {
     "type": "cover"
@@ -430,9 +430,9 @@ export const TUNING = {
  "36": {
   "moves": 22,
   "stars": [
-   6500,
-   20000,
-   28000
+   6000,
+   16500,
+   21500
   ],
   "goals": [
    {
@@ -442,11 +442,11 @@ export const TUNING = {
   ]
  },
  "37": {
-  "moves": 26,
+  "moves": 31,
   "stars": [
    13000,
-   38000,
-   46500
+   36000,
+   40500
   ]
  },
  "38": {
@@ -458,11 +458,11 @@ export const TUNING = {
   ]
  },
  "39": {
-  "moves": 26,
+  "moves": 28,
   "stars": [
-   12000,
-   39000,
-   47000
+   10000,
+   27500,
+   36500
   ],
   "goals": [
    {
@@ -475,11 +475,11 @@ export const TUNING = {
   ]
  },
  "40": {
-  "moves": 28,
+  "moves": 25,
   "stars": [
-   18000,
-   46500,
-   55000
+   10000,
+   28500,
+   34000
   ],
   "goals": [
    {
@@ -487,7 +487,7 @@ export const TUNING = {
    },
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    },
    {
     "type": "cover"
@@ -497,17 +497,17 @@ export const TUNING = {
  "41": {
   "moves": 16,
   "stars": [
-   5500,
-   16000,
-   21000
+   5000,
+   13500,
+   19500
   ]
  },
  "42": {
   "moves": 25,
   "stars": [
-   13500,
-   39500,
-   48500
+   10500,
+   29000,
+   36000
   ],
   "goals": [
    {
@@ -517,16 +517,16 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 54
+    "count": 42
    }
   ]
  },
  "43": {
-  "moves": 28,
+  "moves": 26,
   "stars": [
-   11000,
-   38000,
-   46000
+   10000,
+   26000,
+   35500
   ],
   "goals": [
    {
@@ -558,35 +558,35 @@ export const TUNING = {
   ]
  },
  "45": {
-  "moves": 24,
+  "moves": 25,
   "stars": [
-   10500,
-   38000,
-   47000
+   8500,
+   27000,
+   33000
   ]
  },
  "46": {
-  "moves": 18,
+  "moves": 20,
   "stars": [
-   7000,
-   18500,
-   25000
+   5500,
+   16000,
+   19500
   ]
  },
  "47": {
-  "moves": 24,
+  "moves": 29,
   "stars": [
-   9000,
-   29000,
-   43500
+   10500,
+   29500,
+   37500
   ]
  },
  "48": {
-  "moves": 15,
+  "moves": 17,
   "stars": [
    6500,
-   20000,
-   30500
+   18000,
+   26000
   ],
   "goals": [
    {
@@ -596,19 +596,19 @@ export const TUNING = {
   ]
  },
  "49": {
-  "moves": 23,
+  "moves": 27,
   "stars": [
    11500,
-   30000,
-   39000
+   37000,
+   48000
   ]
  },
  "50": {
   "moves": 32,
   "stars": [
-   18500,
-   45000,
-   60000
+   15000,
+   35000,
+   42500
   ],
   "goals": [
    {
@@ -625,11 +625,11 @@ export const TUNING = {
   ]
  },
  "51": {
-  "moves": 29,
+  "moves": 30,
   "stars": [
-   9500,
-   25000,
-   34500
+   8000,
+   20500,
+   26000
   ]
  },
  "52": {
@@ -641,11 +641,11 @@ export const TUNING = {
   ]
  },
  "53": {
-  "moves": 25,
+  "moves": 26,
   "stars": [
-   8500,
-   34000,
-   44000
+   7000,
+   20000,
+   28500
   ],
   "goals": [
    {
@@ -654,24 +654,24 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 37
+    "count": 4
    }
   ]
  },
  "54": {
-  "moves": 23,
+  "moves": 20,
   "stars": [
-   10000,
-   30000,
-   43000
+   9000,
+   29500,
+   36000
   ]
  },
  "55": {
-  "moves": 23,
+  "moves": 29,
   "stars": [
-   11500,
-   29500,
-   51000
+   9000,
+   24500,
+   36000
   ],
   "goals": [
    {
@@ -684,17 +684,17 @@ export const TUNING = {
   ]
  },
  "56": {
-  "moves": 22,
+  "moves": 30,
   "stars": [
-   7000,
-   20000,
-   27500
+   6500,
+   16500,
+   21500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 7
+    "count": 5
    },
    {
     "type": "cover"
@@ -702,11 +702,11 @@ export const TUNING = {
   ]
  },
  "57": {
-  "moves": 30,
+  "moves": 29,
   "stars": [
-   15000,
-   38500,
-   54000
+   8500,
+   30000,
+   39500
   ]
  },
  "58": {
@@ -718,11 +718,11 @@ export const TUNING = {
   ]
  },
  "59": {
-  "moves": 22,
+  "moves": 26,
   "stars": [
-   11000,
-   32000,
-   43500
+   9000,
+   25500,
+   37500
   ]
  },
  "60": {
@@ -734,11 +734,11 @@ export const TUNING = {
   ]
  },
  "61": {
-  "moves": 30,
+  "moves": 31,
   "stars": [
-   12000,
-   32000,
-   39500
+   10000,
+   26000,
+   32000
   ]
  },
  "62": {
@@ -752,9 +752,9 @@ export const TUNING = {
  "63": {
   "moves": 15,
   "stars": [
-   6500,
-   24500,
-   31500
+   6000,
+   16000,
+   20500
   ]
  },
  "64": {
@@ -778,11 +778,11 @@ export const TUNING = {
   ]
  },
  "65": {
-  "moves": 27,
+  "moves": 29,
   "stars": [
-   15000,
-   39000,
-   53500
+   11500,
+   31500,
+   37500
   ]
  },
  "66": {
@@ -800,11 +800,11 @@ export const TUNING = {
   ]
  },
  "67": {
-  "moves": 18,
+  "moves": 16,
   "stars": [
-   9500,
-   28000,
-   38500
+   9000,
+   24000,
+   31500
   ]
  },
  "68": {
@@ -818,9 +818,9 @@ export const TUNING = {
  "69": {
   "moves": 20,
   "stars": [
-   9000,
-   28000,
-   37000
+   8000,
+   24500,
+   30500
   ],
   "goals": [
    {
@@ -844,76 +844,76 @@ export const TUNING = {
  "71": {
   "moves": 22,
   "stars": [
-   8500,
-   24500,
-   30500
+   7000,
+   19000,
+   25000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 35
+    "count": 28
    }
   ]
  },
  "72": {
-  "moves": 30,
+  "moves": 27,
   "stars": [
-   9000,
-   28500,
-   45500
+   7500,
+   19500,
+   28500
   ]
  },
  "73": {
-  "moves": 15,
+  "moves": 19,
   "stars": [
-   7000,
-   26000,
-   36500
+   8500,
+   24500,
+   31000
   ]
  },
  "74": {
-  "moves": 30,
+  "moves": 26,
   "stars": [
-   13000,
-   38000,
-   51000
+   7500,
+   25000,
+   32000
   ]
  },
  "75": {
-  "moves": 20,
+  "moves": 24,
   "stars": [
-   9000,
-   29500,
-   36500
+   6500,
+   20000,
+   25500
   ]
  },
  "76": {
   "moves": 22,
   "stars": [
-   9000,
-   21500,
-   30000
+   7500,
+   21000,
+   27500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 27
+    "count": 29
    },
    {
     "type": "collect",
     "color": "orange",
-    "count": 27
+    "count": 29
    }
   ]
  },
  "77": {
   "moves": 25,
   "stars": [
-   8500,
-   28500,
-   37500
+   8000,
+   23000,
+   32000
   ],
   "goals": [
    {
@@ -935,19 +935,19 @@ export const TUNING = {
   ]
  },
  "79": {
-  "moves": 30,
+  "moves": 24,
   "stars": [
-   10500,
-   38500,
-   47500
+   9500,
+   28500,
+   36500
   ]
  },
  "80": {
-  "moves": 28,
+  "moves": 24,
   "stars": [
-   16000,
-   45000,
-   58000
+   8500,
+   25000,
+   33500
   ],
   "goals": [
    {
@@ -959,16 +959,16 @@ export const TUNING = {
    },
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
  "81": {
   "moves": 15,
   "stars": [
-   6000,
-   16000,
-   20500
+   4000,
+   10500,
+   15000
   ]
  },
  "82": {
@@ -992,9 +992,9 @@ export const TUNING = {
  "83": {
   "moves": 17,
   "stars": [
-   9000,
-   26500,
-   36000
+   6500,
+   19500,
+   26000
   ]
  },
  "84": {
@@ -1017,53 +1017,53 @@ export const TUNING = {
  "85": {
   "moves": 17,
   "stars": [
-   9000,
-   25000,
-   36000
+   7500,
+   19500,
+   29000
   ]
  },
  "86": {
   "moves": 22,
   "stars": [
-   5500,
-   14000,
-   18000
+   4500,
+   11000,
+   14000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "purple",
-    "count": 15
+    "count": 12
    },
    {
     "type": "collect",
     "color": "yellow",
-    "count": 15
+    "count": 12
    }
   ]
  },
  "87": {
-  "moves": 31,
+  "moves": 26,
   "stars": [
-   15500,
-   40500,
-   51500
+   10000,
+   27500,
+   36000
   ]
  },
  "88": {
-  "moves": 26,
+  "moves": 31,
   "stars": [
-   12000,
-   39500,
-   51000
+   10500,
+   30000,
+   40500
   ]
  },
  "89": {
-  "moves": 21,
+  "moves": 15,
   "stars": [
-   10500,
-   29000,
-   39000
+   6500,
+   18000,
+   26000
   ]
  },
  "90": {
@@ -1084,11 +1084,11 @@ export const TUNING = {
   ]
  },
  "91": {
-  "moves": 24,
+  "moves": 27,
   "stars": [
-   8500,
-   23500,
-   32000
+   8000,
+   21000,
+   27000
   ],
   "goals": [
    {
@@ -1102,11 +1102,11 @@ export const TUNING = {
   ]
  },
  "92": {
-  "moves": 21,
+  "moves": 20,
   "stars": [
-   10000,
-   27500,
-   39500
+   6000,
+   21000,
+   26000
   ]
  },
  "93": {
@@ -1118,11 +1118,11 @@ export const TUNING = {
   ]
  },
  "94": {
-  "moves": 20,
+  "moves": 25,
   "stars": [
-   9500,
-   29000,
-   37500
+   9000,
+   26500,
+   36000
   ],
   "goals": [
    {
@@ -1146,29 +1146,29 @@ export const TUNING = {
  "96": {
   "moves": 22,
   "stars": [
-   9000,
-   25000,
-   31000
+   7500,
+   20000,
+   24000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 32
+    "count": 26
    },
    {
     "type": "collect",
     "color": "blue",
-    "count": 32
+    "count": 26
    }
   ]
  },
  "97": {
-  "moves": 27,
+  "moves": 28,
   "stars": [
    11500,
-   32000,
-   45500
+   29500,
+   37500
   ]
  },
  "98": {
@@ -1189,11 +1189,11 @@ export const TUNING = {
   ]
  },
  "99": {
-  "moves": 31,
+  "moves": 29,
   "stars": [
-   12500,
-   38000,
-   54000
+   11500,
+   31500,
+   42000
   ]
  },
  "100": {
@@ -1221,27 +1221,27 @@ export const TUNING = {
   ]
  },
  "101": {
-  "moves": 17,
+  "moves": 16,
   "stars": [
-   9000,
-   25500,
-   35000
+   7500,
+   22500,
+   30000
   ]
  },
  "102": {
-  "moves": 28,
+  "moves": 29,
   "stars": [
-   12500,
-   37500,
-   51000
+   11000,
+   33000,
+   47500
   ]
  },
  "103": {
   "moves": 29,
   "stars": [
-   11000,
-   29000,
-   38500
+   7500,
+   25000,
+   32000
   ],
   "goals": [
    {
@@ -1275,15 +1275,15 @@ export const TUNING = {
  "105": {
   "moves": 28,
   "stars": [
-   15000,
-   39500,
-   48000
+   9000,
+   27000,
+   31500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 64
+    "count": 43
    },
    {
     "type": "jelly"
@@ -1307,15 +1307,15 @@ export const TUNING = {
  "107": {
   "moves": 25,
   "stars": [
-   16000,
-   41500,
-   51500
+   9500,
+   23500,
+   28500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 66
+    "count": 40
    }
   ]
  },
@@ -1340,9 +1340,9 @@ export const TUNING = {
  "109": {
   "moves": 25,
   "stars": [
-   14500,
-   38000,
-   50500
+   11000,
+   27000,
+   34500
   ],
   "goals": [
    {
@@ -1350,7 +1350,7 @@ export const TUNING = {
    },
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
@@ -1373,11 +1373,11 @@ export const TUNING = {
   ]
  },
  "111": {
-  "moves": 22,
+  "moves": 28,
   "stars": [
-   9000,
-   23000,
-   31500
+   7000,
+   19000,
+   26500
   ],
   "goals": [
    {
@@ -1387,16 +1387,16 @@ export const TUNING = {
   ]
  },
  "112": {
-  "moves": 25,
+  "moves": 23,
   "stars": [
-   11500,
-   32000,
-   46000
+   7500,
+   19500,
+   24000
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
@@ -1419,19 +1419,19 @@ export const TUNING = {
   ]
  },
  "114": {
-  "moves": 16,
+  "moves": 18,
   "stars": [
-   7500,
-   18500,
-   25500
+   6000,
+   18000,
+   25000
   ]
  },
  "115": {
-  "moves": 19,
+  "moves": 18,
   "stars": [
-   10500,
-   25000,
-   36500
+   7500,
+   24500,
+   31500
   ]
  },
  "116": {
@@ -1450,16 +1450,16 @@ export const TUNING = {
   ]
  },
  "117": {
-  "moves": 25,
+  "moves": 19,
   "stars": [
-   12500,
-   34000,
-   42000
+   9500,
+   23500,
+   28500
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    },
    {
     "type": "star",
@@ -1470,9 +1470,9 @@ export const TUNING = {
  "118": {
   "moves": 25,
   "stars": [
-   11500,
-   29500,
-   37000
+   8000,
+   22000,
+   27500
   ],
   "goals": [
    {
@@ -1482,7 +1482,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "yellow",
-    "count": 45
+    "count": 36
    }
   ]
  },
@@ -1507,9 +1507,9 @@ export const TUNING = {
  "120": {
   "moves": 28,
   "stars": [
-   14000,
-   33500,
-   42500
+   11500,
+   28000,
+   31000
   ],
   "goals": [
    {
@@ -1519,7 +1519,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "yellow",
-    "count": 52
+    "count": 39
    }
   ]
  },
@@ -1556,8 +1556,8 @@ export const TUNING = {
   "moves": 25,
   "stars": [
    11500,
-   35000,
-   43000
+   31000,
+   38500
   ],
   "goals": [
    {
@@ -1579,35 +1579,35 @@ export const TUNING = {
   ]
  },
  "125": {
-  "moves": 21,
+  "moves": 28,
   "stars": [
-   10500,
-   28500,
-   40000
+   8500,
+   26000,
+   32500
   ]
  },
  "126": {
   "moves": 15,
   "stars": [
-   5500,
-   16500,
-   22000
+   5000,
+   14500,
+   20500
   ]
  },
  "127": {
-  "moves": 24,
+  "moves": 27,
   "stars": [
-   10500,
-   32500,
-   48000
+   9500,
+   25500,
+   30000
   ]
  },
  "128": {
-  "moves": 18,
+  "moves": 21,
   "stars": [
-   6000,
+   7000,
    21500,
-   31000
+   27500
   ]
  },
  "129": {
@@ -1626,32 +1626,32 @@ export const TUNING = {
   ]
  },
  "130": {
-  "moves": 17,
+  "moves": 16,
   "stars": [
-   8000,
-   22000,
-   33500
+   4500,
+   14500,
+   19000
   ]
  },
  "131": {
-  "moves": 27,
+  "moves": 29,
   "stars": [
-   12500,
-   34000,
-   51000
+   8500,
+   23000,
+   29500
   ]
  },
  "132": {
-  "moves": 25,
+  "moves": 18,
   "stars": [
-   9000,
-   24500,
-   31000
+   4500,
+   14500,
+   19000
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
@@ -1664,30 +1664,30 @@ export const TUNING = {
   ]
  },
  "134": {
-  "moves": 25,
+  "moves": 19,
   "stars": [
-   14000,
-   39000,
-   47500
+   6500,
+   19000,
+   24500
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    },
    {
     "type": "collect",
     "color": "orange",
-    "count": 30
+    "count": 22
    }
   ]
  },
  "135": {
-  "moves": 21,
+  "moves": 26,
   "stars": [
-   11500,
-   34500,
-   44500
+   11000,
+   33500,
+   43500
   ],
   "goals": [
    {
@@ -1702,7 +1702,7 @@ export const TUNING = {
  "136": {
   "moves": 22,
   "stars": [
-   10000,
+   9500,
    25000,
    31500
   ],
@@ -1710,7 +1710,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 34
+    "count": 38
    }
   ]
  },
@@ -1737,11 +1737,11 @@ export const TUNING = {
   ]
  },
  "139": {
-  "moves": 18,
+  "moves": 20,
   "stars": [
-   7000,
-   22500,
-   34500
+   6000,
+   18000,
+   23000
   ],
   "goals": [
    {
@@ -1751,11 +1751,11 @@ export const TUNING = {
   ]
  },
  "140": {
-  "moves": 25,
+  "moves": 26,
   "stars": [
-   17500,
-   41000,
-   54000
+   14500,
+   40000,
+   55000
   ],
   "goals": [
    {
@@ -1784,11 +1784,11 @@ export const TUNING = {
   ]
  },
  "142": {
-  "moves": 30,
+  "moves": 29,
   "stars": [
-   15500,
-   39500,
-   57500
+   11500,
+   30500,
+   42500
   ],
   "goals": [
    {
@@ -1808,30 +1808,30 @@ export const TUNING = {
  "143": {
   "moves": 25,
   "stars": [
-   14500,
-   40500,
-   49000
+   9500,
+   27000,
+   34000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 57
+    "count": 43
    }
   ]
  },
  "144": {
   "moves": 25,
   "stars": [
-   13500,
-   37000,
-   47500
+   8500,
+   26500,
+   32000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 56
+    "count": 43
    },
    {
     "type": "clear",
@@ -1842,9 +1842,9 @@ export const TUNING = {
  "145": {
   "moves": 28,
   "stars": [
-   13000,
-   33500,
-   47000
+   11500,
+   32000,
+   38500
   ],
   "goals": [
    {
@@ -1905,16 +1905,16 @@ export const TUNING = {
   ]
  },
  "150": {
-  "moves": 22,
+  "moves": 16,
   "stars": [
-   11500,
-   29500,
-   41000
+   6500,
+   20000,
+   23000
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    },
    {
     "type": "clear",
@@ -1927,11 +1927,11 @@ export const TUNING = {
   ]
  },
  "151": {
-  "moves": 16,
+  "moves": 15,
   "stars": [
-   8000,
-   20500,
-   26000
+   6500,
+   15500,
+   20000
   ]
  },
  "152": {
@@ -1971,15 +1971,15 @@ export const TUNING = {
  "155": {
   "moves": 28,
   "stars": [
-   14500,
-   40000,
-   50500
+   12000,
+   30000,
+   39500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 72
+    "count": 54
    },
    {
     "type": "cover"
@@ -1989,38 +1989,38 @@ export const TUNING = {
  "156": {
   "moves": 22,
   "stars": [
-   12500,
-   30500,
-   41000
+   11000,
+   28500,
+   38000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 39
+    "count": 41
    }
   ]
  },
  "157": {
-  "moves": 30,
+  "moves": 24,
   "stars": [
-   14000,
-   35000,
-   42500
+   7500,
+   23500,
+   35500
   ]
  },
  "158": {
   "moves": 25,
   "stars": [
-   12500,
-   29000,
-   36000
+   9000,
+   26500,
+   33000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 50
+    "count": 44
    }
   ]
  },
@@ -2186,15 +2186,15 @@ export const TUNING = {
  "171": {
   "moves": 22,
   "stars": [
-   11000,
-   28500,
-   37000
+   7000,
+   17500,
+   23000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 43
+    "count": 26
    }
   ]
  },
@@ -2216,30 +2216,30 @@ export const TUNING = {
  "173": {
   "moves": 25,
   "stars": [
-   10500,
-   28500,
-   38500
+   6500,
+   16500,
+   20500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 47
+    "count": 30
    }
   ]
  },
  "174": {
   "moves": 25,
   "stars": [
-   15000,
-   38500,
-   51500
+   11500,
+   26000,
+   32500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 57
+    "count": 41
    },
    {
     "type": "jelly"
@@ -2249,15 +2249,15 @@ export const TUNING = {
  "175": {
   "moves": 28,
   "stars": [
-   15500,
-   36000,
-   42500
+   8500,
+   22500,
+   27000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 49
+    "count": 25
    },
    {
     "type": "clear",
@@ -2268,15 +2268,15 @@ export const TUNING = {
  "176": {
   "moves": 22,
   "stars": [
+   4500,
    12500,
-   32500,
-   42000
+   16000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 44
+    "count": 18
    }
   ]
  },
@@ -2316,15 +2316,15 @@ export const TUNING = {
  "179": {
   "moves": 25,
   "stars": [
-   14000,
-   36000,
-   45000
+   10500,
+   27000,
+   34000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 51
+    "count": 38
    },
    {
     "type": "clear",
@@ -2333,16 +2333,16 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 51
+    "count": 38
    }
   ]
  },
  "180": {
   "moves": 28,
   "stars": [
-   18500,
-   47000,
-   57500
+   13500,
+   30500,
+   36000
   ],
   "goals": [
    {
@@ -2351,7 +2351,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 73
+    "count": 55
    },
    {
     "type": "clear",
@@ -2360,35 +2360,35 @@ export const TUNING = {
   ]
  },
  "181": {
-  "moves": 17,
+  "moves": 19,
   "stars": [
    3500,
-   11500,
-   15000
+   12500,
+   17000
   ]
  },
  "182": {
   "moves": 17,
   "stars": [
-   7500,
-   21000,
-   31000
+   4500,
+   16000,
+   21000
   ]
  },
  "183": {
-  "moves": 17,
+  "moves": 16,
   "stars": [
-   7000,
-   25500,
-   37500
+   7500,
+   20000,
+   28500
   ]
  },
  "184": {
-  "moves": 31,
+  "moves": 32,
   "stars": [
-   12000,
-   40000,
-   45500
+   10000,
+   31000,
+   42500
   ]
  },
  "185": {
@@ -2510,15 +2510,15 @@ export const TUNING = {
  "193": {
   "moves": 25,
   "stars": [
-   12000,
-   34500,
-   46500
+   11500,
+   34000,
+   42500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 33
+    "count": 29
    },
    {
     "type": "clear",
@@ -2605,9 +2605,9 @@ export const TUNING = {
  "200": {
   "moves": 28,
   "stars": [
-   12000,
-   32000,
-   38000
+   9500,
+   22000,
+   31000
   ],
   "goals": [
    {
@@ -2615,16 +2615,16 @@ export const TUNING = {
    },
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
  "201": {
-  "moves": 28,
+  "moves": 30,
   "stars": [
-   10500,
-   28000,
-   38000
+   8500,
+   25000,
+   32000
   ],
   "goals": [
    {
@@ -2634,11 +2634,11 @@ export const TUNING = {
   ]
  },
  "202": {
-  "moves": 31,
+  "moves": 32,
   "stars": [
-   9000,
-   26000,
-   34000
+   6500,
+   21000,
+   25500
   ]
  },
  "203": {
@@ -2667,9 +2667,9 @@ export const TUNING = {
  "205": {
   "moves": 28,
   "stars": [
-   16000,
-   40000,
-   49000
+   14000,
+   32500,
+   42500
   ],
   "goals": [
    {
@@ -2678,24 +2678,24 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 65
+    "count": 45
    }
   ]
  },
  "206": {
-  "moves": 16,
+  "moves": 22,
   "stars": [
    8500,
-   24000,
-   33500
+   22000,
+   28000
   ]
  },
  "207": {
   "moves": 25,
   "stars": [
-   12000,
-   30000,
-   39000
+   7500,
+   23000,
+   30000
   ],
   "goals": [
    {
@@ -2710,11 +2710,11 @@ export const TUNING = {
   ]
  },
  "208": {
-  "moves": 23,
+  "moves": 25,
   "stars": [
-   10500,
+   13000,
    30000,
-   40000
+   37000
   ],
   "goals": [
    {
@@ -2742,16 +2742,16 @@ export const TUNING = {
   ]
  },
  "210": {
-  "moves": 28,
+  "moves": 32,
   "stars": [
-   16500,
-   41000,
-   50500
+   10500,
+   28000,
+   34500
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    },
    {
     "type": "cover"
@@ -2762,11 +2762,11 @@ export const TUNING = {
   ]
  },
  "211": {
-  "moves": 22,
+  "moves": 27,
   "stars": [
-   7500,
-   20000,
-   26500
+   6500,
+   17500,
+   24500
   ],
   "goals": [
    {
@@ -2796,9 +2796,9 @@ export const TUNING = {
  "213": {
   "moves": 25,
   "stars": [
-   12500,
-   31500,
-   41500
+   7000,
+   20500,
+   25000
   ],
   "goals": [
    {
@@ -2808,16 +2808,16 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "yellow",
-    "count": 49
+    "count": 30
    }
   ]
  },
  "214": {
-  "moves": 25,
+  "moves": 29,
   "stars": [
-   13000,
-   34500,
-   47000
+   8000,
+   27000,
+   34500
   ],
   "goals": [
    {
@@ -2827,7 +2827,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 12
+    "count": 5
    },
    {
     "type": "drop",
@@ -2836,11 +2836,11 @@ export const TUNING = {
   ]
  },
  "215": {
-  "moves": 25,
+  "moves": 28,
   "stars": [
-   8500,
-   28500,
-   39000
+   8000,
+   20000,
+   25000
   ],
   "goals": [
    {
@@ -2854,11 +2854,11 @@ export const TUNING = {
   ]
  },
  "216": {
-  "moves": 22,
+  "moves": 25,
   "stars": [
-   9500,
-   23000,
-   31000
+   6500,
+   17500,
+   23000
   ],
   "goals": [
    {
@@ -2886,11 +2886,11 @@ export const TUNING = {
   ]
  },
  "218": {
-  "moves": 18,
+  "moves": 31,
   "stars": [
    5500,
-   20000,
-   30500
+   17000,
+   26500
   ]
  },
  "219": {
@@ -2908,25 +2908,25 @@ export const TUNING = {
   ]
  },
  "220": {
-  "moves": 17,
+  "moves": 19,
   "stars": [
-   8000,
-   23500,
-   30500
+   8500,
+   22000,
+   26500
   ]
  },
  "221": {
   "moves": 22,
   "stars": [
-   9000,
-   25000,
-   34000
+   6500,
+   16000,
+   20000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 36
+    "count": 24
    }
   ]
  },
@@ -2966,10 +2966,10 @@ export const TUNING = {
   ]
  },
  "224": {
-  "moves": 22,
+  "moves": 28,
   "stars": [
-   11500,
-   34000,
+   13000,
+   32500,
    42500
   ]
  },
@@ -2997,11 +2997,11 @@ export const TUNING = {
   ]
  },
  "227": {
-  "moves": 25,
+  "moves": 30,
   "stars": [
-   10500,
-   30000,
-   36000
+   8000,
+   22000,
+   28500
   ],
   "goals": [
    {
@@ -3010,22 +3010,22 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 37
+    "count": 5
    }
   ]
  },
  "228": {
   "moves": 25,
   "stars": [
-   12500,
-   34000,
-   44000
+   8000,
+   24000,
+   28500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 54
+    "count": 36
    },
    {
     "type": "cover"
@@ -3059,11 +3059,11 @@ export const TUNING = {
   ]
  },
  "231": {
-  "moves": 22,
+  "moves": 23,
   "stars": [
-   9000,
-   23000,
-   31500
+   7000,
+   19500,
+   26500
   ],
   "goals": [
    {
@@ -3073,11 +3073,11 @@ export const TUNING = {
   ]
  },
  "232": {
-  "moves": 25,
+  "moves": 27,
   "stars": [
-   10000,
-   28000,
-   35000
+   6500,
+   19500,
+   22500
   ],
   "goals": [
    {
@@ -3086,7 +3086,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 22
+    "count": 5
    },
    {
     "type": "drop",
@@ -3131,15 +3131,15 @@ export const TUNING = {
  "236": {
   "moves": 22,
   "stars": [
-   8500,
-   21000,
-   33000
+   7000,
+   18500,
+   25000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 35
+    "count": 29
    }
   ]
  },
@@ -3154,15 +3154,15 @@ export const TUNING = {
  "238": {
   "moves": 25,
   "stars": [
-   13000,
-   33000,
-   40500
+   10500,
+   34500,
+   46500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 37
+    "count": 30
    },
    {
     "type": "drop",
@@ -3181,9 +3181,9 @@ export const TUNING = {
  "240": {
   "moves": 28,
   "stars": [
-   21500,
-   53500,
-   65500
+   11500,
+   33000,
+   44000
   ],
   "goals": [
    {
@@ -3198,15 +3198,15 @@ export const TUNING = {
  "241": {
   "moves": 22,
   "stars": [
-   12500,
-   30500,
-   41000
+   8000,
+   22000,
+   27000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 39
+    "count": 30
    }
   ]
  },
@@ -3243,11 +3243,11 @@ export const TUNING = {
   ]
  },
  "244": {
-  "moves": 20,
+  "moves": 22,
   "stars": [
    7500,
-   19500,
-   27000
+   22500,
+   26000
   ],
   "goals": [
    {
@@ -3261,34 +3261,34 @@ export const TUNING = {
   ]
  },
  "245": {
-  "moves": 18,
+  "moves": 21,
   "stars": [
-   8500,
-   26000,
-   36000
+   7500,
+   18000,
+   25000
   ]
  },
  "246": {
   "moves": 22,
   "stars": [
-   10000,
-   26500,
-   36000
+   8500,
+   24500,
+   30500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 40
+    "count": 36
    }
   ]
  },
  "247": {
-  "moves": 25,
+  "moves": 29,
   "stars": [
-   9500,
-   28500,
-   38000
+   9000,
+   24000,
+   29500
   ],
   "goals": [
    {
@@ -3298,7 +3298,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 32
+    "count": 5
    }
   ]
  },
@@ -3311,11 +3311,11 @@ export const TUNING = {
   ]
  },
  "249": {
-  "moves": 25,
+  "moves": 26,
   "stars": [
    9000,
-   25000,
-   33000
+   23000,
+   27500
   ],
   "goals": [
    {
@@ -3329,16 +3329,16 @@ export const TUNING = {
   ]
  },
  "250": {
-  "moves": 28,
+  "moves": 24,
   "stars": [
-   14500,
-   32500,
-   43500
+   10000,
+   25000,
+   32000
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 3
+    "count": 2
    },
    {
     "type": "cover"
@@ -3348,15 +3348,15 @@ export const TUNING = {
  "251": {
   "moves": 22,
   "stars": [
-   12500,
-   31500,
-   40500
+   9000,
+   27000,
+   31500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 44
+    "count": 38
    }
   ]
  },
@@ -3380,19 +3380,19 @@ export const TUNING = {
   ]
  },
  "253": {
-  "moves": 23,
+  "moves": 24,
   "stars": [
    7500,
-   24000,
-   35000
+   18000,
+   25000
   ]
  },
  "254": {
   "moves": 25,
   "stars": [
-   13500,
-   37500,
-   45500
+   8000,
+   22000,
+   26000
   ],
   "goals": [
    {
@@ -3402,24 +3402,24 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "red",
-    "count": 52
+    "count": 27
    }
   ]
  },
  "255": {
-  "moves": 22,
+  "moves": 25,
   "stars": [
-   10000,
-   32500,
-   39000
+   8500,
+   29500,
+   44500
   ]
  },
  "256": {
-  "moves": 18,
+  "moves": 15,
   "stars": [
-   7500,
-   20000,
-   26000
+   4000,
+   12000,
+   18000
   ]
  },
  "257": {
@@ -3463,11 +3463,11 @@ export const TUNING = {
   ]
  },
  "259": {
-  "moves": 26,
+  "moves": 28,
   "stars": [
-   12500,
-   36000,
-   48000
+   11500,
+   31000,
+   38000
   ]
  },
  "260": {
@@ -3620,47 +3620,47 @@ export const TUNING = {
  "271": {
   "moves": 22,
   "stars": [
-   12500,
-   31500,
-   40500
+   8500,
+   21000,
+   29500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 44
+    "count": 34
    }
   ]
  },
  "272": {
   "moves": 25,
   "stars": [
-   11000,
-   29000,
-   36000
+   8000,
+   24000,
+   29000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 44
+    "count": 42
    }
   ]
  },
  "273": {
-  "moves": 21,
+  "moves": 23,
   "stars": [
-   9000,
-   24000,
-   31000
+   7000,
+   21000,
+   27500
   ]
  },
  "274": {
-  "moves": 19,
+  "moves": 15,
   "stars": [
-   8000,
-   23000,
-   32000
+   5000,
+   19000,
+   23500
   ]
  },
  "275": {
@@ -3685,33 +3685,33 @@ export const TUNING = {
  "276": {
   "moves": 15,
   "stars": [
-   6000,
-   17000,
-   23500
+   5000,
+   12500,
+   19000
   ]
  },
  "277": {
-  "moves": 20,
+  "moves": 22,
   "stars": [
-   8000,
-   24500,
-   31500
+   7000,
+   21000,
+   26500
   ]
  },
  "278": {
-  "moves": 20,
+  "moves": 15,
   "stars": [
-   8500,
-   20500,
-   30000
+   5500,
+   14500,
+   18500
   ]
  },
  "279": {
   "moves": 25,
   "stars": [
-   14500,
-   41000,
-   53000
+   17000,
+   41500,
+   50000
   ],
   "goals": [
    {
@@ -3724,16 +3724,16 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 66
+    "count": 64
    }
   ]
  },
  "280": {
   "moves": 28,
   "stars": [
-   16500,
-   41500,
-   47500
+   10000,
+   26500,
+   32500
   ],
   "goals": [
    {
@@ -3746,38 +3746,38 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "orange",
-    "count": 68
+    "count": 48
    }
   ]
  },
  "281": {
-  "moves": 15,
+  "moves": 18,
   "stars": [
-   4000,
-   10500,
-   13000
+   3000,
+   9500,
+   11500
   ]
  },
  "282": {
-  "moves": 25,
+  "moves": 20,
   "stars": [
-   11500,
-   32500,
-   44000
+   5500,
+   19000,
+   23500
   ]
  },
  "283": {
-  "moves": 25,
+  "moves": 26,
   "stars": [
-   11000,
-   32500,
-   45000
+   8500,
+   22000,
+   30500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 36
+    "count": 5
    },
    {
     "type": "cover"
@@ -3793,25 +3793,25 @@ export const TUNING = {
   ]
  },
  "285": {
-  "moves": 17,
+  "moves": 22,
   "stars": [
-   9000,
-   24500,
-   37000
+   8000,
+   22500,
+   31000
   ]
  },
  "286": {
   "moves": 22,
   "stars": [
-   6500,
-   18000,
-   23000
+   4500,
+   13000,
+   16500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "purple",
-    "count": 22
+    "count": 18
    }
   ]
  },
@@ -3826,17 +3826,17 @@ export const TUNING = {
  "288": {
   "moves": 30,
   "stars": [
-   9500,
-   28500,
-   36000
+   6500,
+   22500,
+   28500
   ]
  },
  "289": {
-  "moves": 20,
+  "moves": 30,
   "stars": [
    9000,
-   26000,
-   33500
+   24000,
+   33000
   ]
  },
  "290": {
@@ -3858,25 +3858,25 @@ export const TUNING = {
   ]
  },
  "291": {
-  "moves": 15,
+  "moves": 16,
   "stars": [
-   8000,
-   23000,
-   32500
+   7500,
+   19500,
+   26000
   ]
  },
  "292": {
   "moves": 25,
   "stars": [
-   18500,
-   49000,
-   59000
+   12000,
+   29500,
+   34500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 64
+    "count": 42
    },
    {
     "type": "star",
@@ -3895,30 +3895,30 @@ export const TUNING = {
  "294": {
   "moves": 25,
   "stars": [
-   14500,
-   40500,
-   50000
+   10000,
+   26500,
+   32000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 59
+    "count": 46
    }
   ]
  },
  "295": {
   "moves": 28,
   "stars": [
-   16500,
-   45500,
-   59000
+   11000,
+   36000,
+   44500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 70
+    "count": 59
    },
    {
     "type": "clear",
@@ -3929,9 +3929,9 @@ export const TUNING = {
  "296": {
   "moves": 22,
   "stars": [
-   9500,
-   23000,
-   31000
+   7500,
+   20000,
+   26500
   ],
   "goals": [
    {
@@ -3943,39 +3943,39 @@ export const TUNING = {
  "297": {
   "moves": 25,
   "stars": [
-   11500,
-   28500,
-   37000
+   5500,
+   15500,
+   21000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 48
+    "count": 29
    }
   ]
  },
  "298": {
   "moves": 25,
   "stars": [
-   15000,
-   42500,
-   50500
+   6500,
+   28500,
+   33500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 65
+    "count": 47
    }
   ]
  },
  "299": {
-  "moves": 23,
+  "moves": 25,
   "stars": [
    9500,
-   26500,
-   32000
+   23500,
+   30500
   ],
   "goals": [
    {
@@ -4031,25 +4031,25 @@ export const TUNING = {
   ]
  },
  "302": {
-  "moves": 25,
+  "moves": 15,
   "stars": [
-   11500,
-   32000,
-   46000
+   6500,
+   17500,
+   23000
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
  "303": {
-  "moves": 26,
+  "moves": 32,
   "stars": [
-   12000,
-   34500,
-   45000
+   10500,
+   36000,
+   43500
   ],
   "goals": [
    {
@@ -4063,11 +4063,11 @@ export const TUNING = {
   ]
  },
  "304": {
-  "moves": 21,
+  "moves": 20,
   "stars": [
-   11000,
-   26500,
-   35500
+   10500,
+   25500,
+   33000
   ],
   "goals": [
    {
@@ -4087,15 +4087,15 @@ export const TUNING = {
  "305": {
   "moves": 28,
   "stars": [
-   21500,
-   53500,
-   67000
+   19000,
+   42000,
+   54500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 86
+    "count": 68
    },
    {
     "type": "jelly"
@@ -4105,24 +4105,24 @@ export const TUNING = {
  "306": {
   "moves": 22,
   "stars": [
-   11000,
-   28500,
-   37000
+   9000,
+   24000,
+   29000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 43
+    "count": 35
    }
   ]
  },
  "307": {
-  "moves": 22,
+  "moves": 25,
   "stars": [
-   8500,
-   28500,
-   37000
+   8000,
+   21500,
+   26500
   ],
   "goals": [
    {
@@ -4155,53 +4155,53 @@ export const TUNING = {
   ]
  },
  "309": {
-  "moves": 22,
+  "moves": 24,
   "stars": [
-   8500,
-   25500,
-   34500
+   7500,
+   24500,
+   32500
   ]
  },
  "310": {
   "moves": 28,
   "stars": [
-   19000,
-   47500,
-   62000
+   11000,
+   27000,
+   35000
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 3
+    "count": 2
    },
    {
     "type": "collect",
     "color": "blue",
-    "count": 40
+    "count": 37
    }
   ]
  },
  "311": {
   "moves": 22,
   "stars": [
-   9000,
-   25000,
-   34000
+   6500,
+   14500,
+   19000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 36
+    "count": 22
    }
   ]
  },
  "312": {
   "moves": 25,
   "stars": [
-   13000,
-   33000,
-   40500
+   9000,
+   24500,
+   34000
   ],
   "goals": [
    {
@@ -4211,16 +4211,16 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 45
+    "count": 39
    }
   ]
  },
  "313": {
-  "moves": 18,
+  "moves": 19,
   "stars": [
-   8500,
-   23000,
-   32500
+   8000,
+   21500,
+   25000
   ],
   "goals": [
    {
@@ -4242,40 +4242,40 @@ export const TUNING = {
   ]
  },
  "315": {
-  "moves": 16,
+  "moves": 17,
   "stars": [
-   7500,
-   25000,
-   32500
+   9000,
+   22500,
+   31000
   ]
  },
  "316": {
   "moves": 22,
   "stars": [
-   12500,
-   30500,
-   41000
+   8000,
+   22000,
+   27500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 39
+    "count": 31
    }
   ]
  },
  "317": {
   "moves": 25,
   "stars": [
-   13500,
-   34500,
-   43000
+   11000,
+   28000,
+   34000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 50
+    "count": 44
    },
    {
     "type": "clear",
@@ -4284,11 +4284,11 @@ export const TUNING = {
   ]
  },
  "318": {
-  "moves": 27,
+  "moves": 28,
   "stars": [
-   12000,
-   36500,
-   47000
+   11500,
+   30500,
+   37500
   ]
  },
  "319": {
@@ -4311,11 +4311,11 @@ export const TUNING = {
   ]
  },
  "320": {
-  "moves": 24,
+  "moves": 28,
   "stars": [
-   13500,
-   35500,
-   44000
+   10000,
+   24000,
+   29500
   ],
   "goals": [
    {
@@ -4328,45 +4328,45 @@ export const TUNING = {
    },
    {
     "type": "drop",
-    "count": 3
+    "count": 2
    }
   ]
  },
  "321": {
   "moves": 22,
   "stars": [
-   12500,
-   31500,
-   40500
+   6500,
+   19500,
+   25500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 44
+    "count": 31
    }
   ]
  },
  "322": {
-  "moves": 20,
+  "moves": 22,
   "stars": [
-   7500,
-   23000,
-   29000
+   6000,
+   22500,
+   30000
   ]
  },
  "323": {
   "moves": 25,
   "stars": [
-   13500,
-   37500,
-   46500
+   9000,
+   27000,
+   32000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 55
+    "count": 44
    }
   ]
  },
@@ -4388,15 +4388,15 @@ export const TUNING = {
  "325": {
   "moves": 28,
   "stars": [
-   15000,
-   38000,
-   50000
+   14500,
+   33500,
+   40000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 65
+    "count": 58
    },
    {
     "type": "cover"
@@ -4427,11 +4427,11 @@ export const TUNING = {
   ]
  },
  "328": {
-  "moves": 19,
+  "moves": 25,
   "stars": [
-   7500,
-   19000,
-   28000
+   5500,
+   19500,
+   27500
   ]
  },
  "329": {
@@ -4457,15 +4457,15 @@ export const TUNING = {
  "330": {
   "moves": 28,
   "stars": [
-   20000,
-   48000,
-   61000
+   13500,
+   39000,
+   45000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 77
+    "count": 62
    },
    {
     "type": "jelly"
@@ -4473,11 +4473,11 @@ export const TUNING = {
   ]
  },
  "331": {
-  "moves": 28,
+  "moves": 22,
   "stars": [
-   10500,
-   28000,
-   38000
+   8000,
+   21500,
+   30000
   ],
   "goals": [
    {
@@ -4504,19 +4504,19 @@ export const TUNING = {
   ]
  },
  "333": {
-  "moves": 23,
+  "moves": 26,
   "stars": [
-   10500,
-   32000,
-   44500
+   8000,
+   29000,
+   38500
   ]
  },
  "334": {
-  "moves": 25,
+  "moves": 27,
   "stars": [
-   12000,
-   30500,
-   42000
+   11500,
+   26500,
+   33000
   ],
   "goals": [
    {
@@ -4529,11 +4529,11 @@ export const TUNING = {
   ]
  },
  "335": {
-  "moves": 26,
+  "moves": 28,
   "stars": [
-   11500,
-   30000,
-   41500
+   11000,
+   26500,
+   34500
   ],
   "goals": [
    {
@@ -4560,25 +4560,25 @@ export const TUNING = {
   ]
  },
  "337": {
-  "moves": 28,
+  "moves": 32,
   "stars": [
-   13500,
-   37000,
-   46500
+   11500,
+   29000,
+   36000
   ]
  },
  "338": {
   "moves": 25,
   "stars": [
-   14500,
-   36500,
-   44000
+   8500,
+   26000,
+   33500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 43
+    "count": 25
    },
    {
     "type": "jelly"
@@ -4588,9 +4588,9 @@ export const TUNING = {
  "339": {
   "moves": 25,
   "stars": [
-   15000,
-   39500,
-   48000
+   10000,
+   26500,
+   32500
   ],
   "goals": [
    {
@@ -4599,7 +4599,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 61
+    "count": 43
    }
   ]
  },
@@ -4640,30 +4640,30 @@ export const TUNING = {
   ]
  },
  "342": {
-  "moves": 25,
+  "moves": 23,
   "stars": [
-   11500,
-   33000,
-   44000
+   8500,
+   21000,
+   26500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 30
+    "count": 22
    },
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
  "343": {
-  "moves": 18,
+  "moves": 16,
   "stars": [
-   8000,
-   22000,
-   30000
+   6000,
+   17500,
+   24000
   ],
   "goals": [
    {
@@ -4714,17 +4714,17 @@ export const TUNING = {
   ]
  },
  "347": {
-  "moves": 25,
+  "moves": 28,
   "stars": [
-   12000,
-   34500,
-   42500
+   13000,
+   31000,
+   44000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 7
+    "count": 5
    },
    {
     "type": "clear",
@@ -4765,15 +4765,15 @@ export const TUNING = {
  "350": {
   "moves": 28,
   "stars": [
-   20000,
-   50000,
-   68000
+   19000,
+   43000,
+   51000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 82
+    "count": 77
    },
    {
     "type": "clear",
@@ -4784,17 +4784,17 @@ export const TUNING = {
  "351": {
   "moves": 15,
   "stars": [
-   8500,
-   20000,
-   32500
+   7000,
+   16000,
+   20500
   ]
  },
  "352": {
   "moves": 27,
   "stars": [
-   9500,
-   37500,
-   47500
+   10500,
+   28000,
+   37000
   ]
  },
  "353": {
@@ -4832,11 +4832,11 @@ export const TUNING = {
   ]
  },
  "356": {
-  "moves": 16,
+  "moves": 26,
   "stars": [
-   8000,
-   20500,
-   26000
+   8500,
+   21000,
+   25000
   ]
  },
  "357": {
@@ -4848,27 +4848,27 @@ export const TUNING = {
   ]
  },
  "358": {
-  "moves": 24,
+  "moves": 22,
   "stars": [
-   8500,
-   27500,
-   39500
+   6500,
+   18000,
+   26500
   ]
  },
  "359": {
-  "moves": 24,
+  "moves": 23,
   "stars": [
-   10500,
-   27000,
-   35500
+   7000,
+   24000,
+   32500
   ]
  },
  "360": {
-  "moves": 28,
+  "moves": 29,
   "stars": [
-   21500,
-   51500,
-   69000
+   12000,
+   29000,
+   41000
   ],
   "goals": [
    {
@@ -4881,7 +4881,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 66
+    "count": 5
    }
   ]
  },
@@ -4983,11 +4983,11 @@ export const TUNING = {
   ]
  },
  "371": {
-  "moves": 24,
+  "moves": 28,
   "stars": [
    8500,
-   25500,
-   39500
+   21500,
+   31000
   ]
  },
  "372": {
@@ -5001,15 +5001,15 @@ export const TUNING = {
  "373": {
   "moves": 25,
   "stars": [
-   14500,
-   39000,
-   47500
+   8500,
+   26500,
+   31500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 55
+    "count": 40
    }
   ]
  },
@@ -5033,25 +5033,25 @@ export const TUNING = {
   ]
  },
  "375": {
-  "moves": 17,
+  "moves": 15,
   "stars": [
-   7500,
-   23500,
-   32000
+   5000,
+   17000,
+   22500
   ]
  },
  "376": {
   "moves": 22,
   "stars": [
-   11500,
-   31500,
-   40500
+   8000,
+   22500,
+   27000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 40
+    "count": 32
    }
   ]
  },
@@ -5064,11 +5064,11 @@ export const TUNING = {
   ]
  },
  "378": {
-  "moves": 26,
+  "moves": 30,
   "stars": [
-   6500,
-   24000,
-   30500
+   9000,
+   22000,
+   26500
   ],
   "goals": [
    {
@@ -5083,11 +5083,11 @@ export const TUNING = {
   ]
  },
  "379": {
-  "moves": 18,
+  "moves": 21,
   "stars": [
-   7000,
-   23000,
-   31500
+   7500,
+   21000,
+   28500
   ]
  },
  "380": {
@@ -5111,15 +5111,15 @@ export const TUNING = {
  "381": {
   "moves": 22,
   "stars": [
-   11000,
-   32500,
-   41500
+   4500,
+   13500,
+   16500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 44
+    "count": 20
    }
   ]
  },
@@ -5142,25 +5142,25 @@ export const TUNING = {
   ]
  },
  "383": {
-  "moves": 25,
+  "moves": 27,
   "stars": [
-   11000,
-   25500,
-   37000
+   9500,
+   23000,
+   31000
   ]
  },
  "384": {
   "moves": 25,
   "stars": [
-   14000,
-   35500,
-   41500
+   10000,
+   27500,
+   31500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 51
+    "count": 43
    },
    {
     "type": "cover"
@@ -5170,9 +5170,9 @@ export const TUNING = {
  "385": {
   "moves": 28,
   "stars": [
-   16500,
-   45500,
-   56500
+   12500,
+   33500,
+   41000
   ],
   "goals": [
    {
@@ -5181,24 +5181,24 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "yellow",
-    "count": 73
+    "count": 54
    }
   ]
  },
  "386": {
-  "moves": 19,
+  "moves": 18,
   "stars": [
    5500,
-   16500,
-   20000
+   15000,
+   19500
   ]
  },
  "387": {
-  "moves": 25,
+  "moves": 21,
   "stars": [
-   10000,
-   23000,
-   27000
+   6000,
+   17500,
+   21000
   ]
  },
  "388": {
@@ -5231,19 +5231,19 @@ export const TUNING = {
   ]
  },
  "390": {
-  "moves": 18,
+  "moves": 21,
   "stars": [
-   10000,
-   31500,
-   42000
+   11000,
+   25500,
+   36000
   ]
  },
  "391": {
-  "moves": 28,
+  "moves": 25,
   "stars": [
-   10500,
-   28000,
-   38000
+   7000,
+   19000,
+   24000
   ],
   "goals": [
    {
@@ -5310,9 +5310,9 @@ export const TUNING = {
  "395": {
   "moves": 28,
   "stars": [
-   17000,
-   44500,
-   58000
+   13000,
+   33000,
+   43000
   ],
   "goals": [
    {
@@ -5322,7 +5322,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "yellow",
-    "count": 72
+    "count": 55
    }
   ]
  },
@@ -5404,24 +5404,24 @@ export const TUNING = {
  "401": {
   "moves": 22,
   "stars": [
-   9000,
-   23000,
-   30000
+   6500,
+   16500,
+   21000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 30
+    "count": 24
    }
   ]
  },
  "402": {
-  "moves": 17,
+  "moves": 19,
   "stars": [
-   7500,
-   22000,
-   30000
+   6000,
+   16500,
+   23500
   ]
  },
  "403": {
@@ -5444,16 +5444,16 @@ export const TUNING = {
   ]
  },
  "404": {
-  "moves": 22,
+  "moves": 15,
   "stars": [
-   10000,
-   29000,
-   38500
+   5500,
+   16000,
+   20500
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
@@ -5479,15 +5479,15 @@ export const TUNING = {
  "406": {
   "moves": 22,
   "stars": [
-   8500,
-   22500,
-   30500
+   4000,
+   10000,
+   13000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 38
+    "count": 14
    }
   ]
  },
@@ -5506,19 +5506,19 @@ export const TUNING = {
   ]
  },
  "408": {
-  "moves": 26,
+  "moves": 29,
   "stars": [
-   12500,
-   34000,
-   46500
+   10000,
+   26500,
+   35000
   ]
  },
  "409": {
   "moves": 19,
   "stars": [
-   8500,
-   26500,
-   33500
+   7500,
+   21500,
+   25000
   ],
   "goals": [
    {
@@ -5531,48 +5531,48 @@ export const TUNING = {
   ]
  },
  "410": {
-  "moves": 23,
+  "moves": 26,
   "stars": [
-   16500,
-   37500,
-   51000
+   9000,
+   25500,
+   40000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 37
+    "count": 22
    },
    {
     "type": "cover"
    },
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    }
   ]
  },
  "411": {
   "moves": 22,
   "stars": [
-   12500,
-   32500,
-   42000
+   10000,
+   28000,
+   38500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 44
+    "count": 39
    }
   ]
  },
  "412": {
-  "moves": 19,
+  "moves": 26,
   "stars": [
-   7000,
-   19000,
-   26000
+   6000,
+   17500,
+   23000
   ],
   "goals": [
    {
@@ -5582,11 +5582,11 @@ export const TUNING = {
   ]
  },
  "413": {
-  "moves": 23,
+  "moves": 22,
   "stars": [
-   6500,
-   19500,
-   25000
+   6000,
+   16500,
+   21000
   ]
  },
  "414": {
@@ -5600,9 +5600,9 @@ export const TUNING = {
  "415": {
   "moves": 23,
   "stars": [
-   12500,
-   35500,
-   48500
+   11000,
+   31000,
+   38000
   ],
   "goals": [
    {
@@ -5619,15 +5619,15 @@ export const TUNING = {
  "416": {
   "moves": 22,
   "stars": [
-   10000,
-   26000,
-   31500
+   7500,
+   18500,
+   23000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 37
+    "count": 30
    }
   ]
  },
@@ -5687,15 +5687,15 @@ export const TUNING = {
  "420": {
   "moves": 28,
   "stars": [
-   18000,
-   44500,
-   56500
+   13000,
+   32000,
+   41000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 77
+    "count": 58
    },
    {
     "type": "clear",
@@ -5724,27 +5724,27 @@ export const TUNING = {
   ]
  },
  "423": {
-  "moves": 18,
+  "moves": 20,
   "stars": [
-   7500,
-   29500,
-   37500
+   8500,
+   22500,
+   26000
   ]
  },
  "424": {
-  "moves": 25,
+  "moves": 28,
   "stars": [
    9500,
-   28500,
-   38000
+   24500,
+   30500
   ]
  },
  "425": {
-  "moves": 18,
+  "moves": 17,
   "stars": [
-   5500,
-   20000,
-   28000
+   4500,
+   14000,
+   18500
   ]
  },
  "426": {
@@ -5836,19 +5836,19 @@ export const TUNING = {
   ]
  },
  "432": {
-  "moves": 23,
+  "moves": 25,
   "stars": [
-   8000,
-   28500,
-   36000
+   8500,
+   22000,
+   27000
   ]
  },
  "433": {
-  "moves": 28,
+  "moves": 32,
   "stars": [
-   14000,
-   39500,
-   51500
+   11500,
+   28000,
+   37000
   ]
  },
  "434": {
@@ -5888,38 +5888,38 @@ export const TUNING = {
  "436": {
   "moves": 22,
   "stars": [
-   12500,
-   32500,
-   42000
+   9500,
+   22500,
+   29500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "green",
-    "count": 44
+    "count": 35
    }
   ]
  },
  "437": {
   "moves": 28,
   "stars": [
-   12500,
-   31000,
-   40000
+   10000,
+   24500,
+   28500
   ]
  },
  "438": {
   "moves": 25,
   "stars": [
-   18000,
-   48500,
-   61000
+   10500,
+   28500,
+   34000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 66
+    "count": 44
    },
    {
     "type": "jelly"
@@ -5927,27 +5927,27 @@ export const TUNING = {
   ]
  },
  "439": {
-  "moves": 16,
+  "moves": 25,
   "stars": [
-   8000,
-   23500,
+   9500,
+   27000,
    32500
   ]
  },
  "440": {
-  "moves": 25,
+  "moves": 32,
   "stars": [
-   13000,
-   43500,
-   56000
+   13500,
+   37500,
+   48000
   ]
  },
  "441": {
-  "moves": 28,
+  "moves": 32,
   "stars": [
-   10500,
-   28000,
-   38000
+   7500,
+   20500,
+   30000
   ],
   "goals": [
    {
@@ -5957,11 +5957,11 @@ export const TUNING = {
   ]
  },
  "442": {
-  "moves": 24,
+  "moves": 29,
   "stars": [
-   10000,
-   31000,
-   41500
+   8500,
+   25500,
+   31000
   ]
  },
  "443": {
@@ -5994,17 +5994,17 @@ export const TUNING = {
   ]
  },
  "445": {
-  "moves": 22,
+  "moves": 28,
   "stars": [
-   11500,
-   26500,
-   32000
+   8000,
+   22000,
+   26000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "yellow",
-    "count": 37
+    "count": 32
    },
    {
     "type": "drop",
@@ -6066,34 +6066,34 @@ export const TUNING = {
  "449": {
   "moves": 25,
   "stars": [
-   14500,
-   41000,
-   52000
+   10000,
+   26000,
+   31500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 62
+    "count": 45
    }
   ]
  },
  "450": {
-  "moves": 20,
+  "moves": 19,
   "stars": [
-   12500,
-   33500,
-   40000
+   5500,
+   15000,
+   17500
   ],
   "goals": [
    {
     "type": "drop",
-    "count": 2
+    "count": 1
    },
    {
     "type": "collect",
     "color": "orange",
-    "count": 37
+    "count": 22
    }
   ]
  },
@@ -6113,19 +6113,19 @@ export const TUNING = {
   ]
  },
  "452": {
-  "moves": 27,
+  "moves": 28,
   "stars": [
-   8000,
-   23500,
-   30500
+   9000,
+   24500,
+   31000
   ]
  },
  "453": {
-  "moves": 24,
+  "moves": 26,
   "stars": [
-   10000,
-   31500,
-   43500
+   8500,
+   25500,
+   34000
   ]
  },
  "454": {
@@ -6157,24 +6157,24 @@ export const TUNING = {
  "456": {
   "moves": 22,
   "stars": [
-   8500,
+   8000,
    21000,
-   33000
+   24500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 35
+    "count": 32
    }
   ]
  },
  "457": {
   "moves": 25,
   "stars": [
-   15000,
-   37500,
-   50000
+   9000,
+   27500,
+   32000
   ],
   "goals": [
    {
@@ -6187,7 +6187,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "yellow",
-    "count": 49
+    "count": 36
    }
   ]
  },
@@ -6211,19 +6211,19 @@ export const TUNING = {
   ]
  },
  "459": {
-  "moves": 27,
+  "moves": 31,
   "stars": [
    10500,
-   39000,
-   47500
+   29000,
+   39000
   ]
  },
  "460": {
-  "moves": 17,
+  "moves": 18,
   "stars": [
-   13000,
-   32000,
-   43500
+   10000,
+   26500,
+   34500
   ]
  },
  "461": {
@@ -6366,9 +6366,9 @@ export const TUNING = {
  "472": {
   "moves": 25,
   "stars": [
-   10500,
-   33500,
-   41500
+   11000,
+   27500,
+   32500
   ],
   "goals": [
    {
@@ -6377,7 +6377,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "yellow",
-    "count": 48
+    "count": 36
    }
   ]
  },
@@ -6399,15 +6399,15 @@ export const TUNING = {
  "474": {
   "moves": 25,
   "stars": [
-   12500,
-   29000,
-   36000
+   9000,
+   26000,
+   33500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 50
+    "count": 45
    }
   ]
  },
@@ -6448,15 +6448,15 @@ export const TUNING = {
  "477": {
   "moves": 25,
   "stars": [
-   10500,
-   33000,
-   44000
+   9000,
+   25000,
+   30500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 48
+    "count": 38
    },
    {
     "type": "jelly"
@@ -6464,11 +6464,11 @@ export const TUNING = {
   ]
  },
  "478": {
-  "moves": 27,
+  "moves": 30,
   "stars": [
-   8000,
-   32500,
-   39500
+   9500,
+   25500,
+   31500
   ],
   "goals": [
    {
@@ -6483,27 +6483,27 @@ export const TUNING = {
   ]
  },
  "479": {
-  "moves": 20,
+  "moves": 23,
   "stars": [
-   10500,
-   27500,
-   40000
+   9500,
+   23000,
+   29000
   ]
  },
  "480": {
-  "moves": 18,
+  "moves": 17,
   "stars": [
    7500,
-   21000,
-   28000
+   17500,
+   23000
   ]
  },
  "481": {
   "moves": 15,
   "stars": [
-   7000,
-   21500,
-   28000
+   5500,
+   16000,
+   21000
   ]
  },
  "482": {
@@ -6515,11 +6515,11 @@ export const TUNING = {
   ]
  },
  "483": {
-  "moves": 16,
+  "moves": 17,
   "stars": [
-   7500,
-   24500,
-   37500
+   5500,
+   20000,
+   26500
   ]
  },
  "484": {
@@ -6543,9 +6543,9 @@ export const TUNING = {
  "485": {
   "moves": 28,
   "stars": [
-   9000,
-   22500,
-   27500
+   7500,
+   19000,
+   22500
   ],
   "goals": [
    {
@@ -6557,7 +6557,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "blue",
-    "count": 29
+    "count": 22
    }
   ]
  },
@@ -6572,15 +6572,15 @@ export const TUNING = {
  "487": {
   "moves": 25,
   "stars": [
-   8500,
-   22500,
-   27500
+   5000,
+   17500,
+   21500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "blue",
-    "count": 30
+    "count": 23
    },
    {
     "type": "jelly"
@@ -6590,9 +6590,9 @@ export const TUNING = {
  "488": {
   "moves": 25,
   "stars": [
-   13500,
-   33500,
-   39500
+   9500,
+   24500,
+   29500
   ],
   "goals": [
    {
@@ -6601,7 +6601,7 @@ export const TUNING = {
    {
     "type": "collect",
     "color": "green",
-    "count": 49
+    "count": 37
    },
    {
     "type": "jelly"
@@ -6609,11 +6609,11 @@ export const TUNING = {
   ]
  },
  "489": {
-  "moves": 25,
+  "moves": 28,
   "stars": [
-   9500,
-   24500,
-   32000
+   8000,
+   21000,
+   25500
   ]
  },
  "490": {
@@ -6638,11 +6638,11 @@ export const TUNING = {
   ]
  },
  "491": {
-  "moves": 16,
+  "moves": 17,
   "stars": [
-   8000,
-   23000,
-   29500
+   6500,
+   17500,
+   23500
   ]
  },
  "492": {
@@ -6675,15 +6675,15 @@ export const TUNING = {
  "494": {
   "moves": 25,
   "stars": [
-   16500,
-   39500,
-   48000
+   12500,
+   31000,
+   38000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 62
+    "count": 44
    },
    {
     "type": "clear",
@@ -6718,11 +6718,11 @@ export const TUNING = {
   ]
  },
  "497": {
-  "moves": 26,
+  "moves": 31,
   "stars": [
-   9500,
-   36500,
-   50000
+   8500,
+   23000,
+   29000
   ],
   "goals": [
    {
@@ -6738,30 +6738,30 @@ export const TUNING = {
  "498": {
   "moves": 25,
   "stars": [
-   13000,
-   38500,
-   48000
+   8500,
+   23500,
+   28500
   ],
   "goals": [
    {
     "type": "collect",
     "color": "red",
-    "count": 61
+    "count": 40
    }
   ]
  },
  "499": {
   "moves": 25,
   "stars": [
-   12500,
-   28500,
-   35500
+   9000,
+   24000,
+   29000
   ],
   "goals": [
    {
     "type": "collect",
     "color": "orange",
-    "count": 41
+    "count": 37
    },
    {
     "type": "clear",

@@ -4,6 +4,7 @@ import { load, save } from './save.js';
 export const SFX = [
   'sfx_honk_0', 'sfx_honk_1', 'sfx_honk_2', 'sfx_honk_3', 'sfx_honk_4', 'sfx_crash', 'sfx_smash', 'sfx_boom', 'sfx_jump', 'sfx_land',
   'sfx_coin', 'sfx_gold', 'sfx_item', 'sfx_fuel', 'sfx_checkpoint', 'sfx_fever', 'sfx_slip', 'sfx_skid', 'sfx_lowfuel', 'sfx_end', 'sfx_click',
+  'vo_cha_1', 'vo_cha_2', 'vo_cha_3',
 ];
 export const BGM = ['bgm_race', 'bgm_lobby'];
 
@@ -44,6 +45,8 @@ class AudioManager {
   }
   stopMusic() { if (this.current) { this.current.stop(); this.current.destroy(); this.current = null; } }
   duck(v) { if (this.current) this.current.setVolume(v); }
+  // 콤보가 쌓일수록 배경음을 살짝 빠르게 (긴장감)
+  rate(r) { if (this.current && Math.abs((this.current.rate || 1) - r) > 0.004) try { this.current.setRate(r); } catch { /* */ } }
   toggleSfx() { const d = load(); d.sfx = !d.sfx; save(); return d.sfx; }
   toggleMusic() {
     const d = load(); d.music = !d.music; save();

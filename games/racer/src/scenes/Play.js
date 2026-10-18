@@ -1,7 +1,7 @@
 // 레이스 화면: core/race.js 시뮬레이션을 고정 간격으로 돌리고 상태·사건을 그림·소리로 옮긴다.
 import { W, H } from '../config.js';
-import { Race, LANES, CARS, FEVER_FULL } from '../core/race.js';
-import { decide } from '../core/ai.js';
+import { Race, LANES, CARS, FEVER_FULL, DODGE, laneX } from '../core/race.js';
+import { decide, blockedSide } from '../core/ai.js';
 import { txt, fmt, fit, iconButton, button, popup } from '../ui.js';
 import { audio } from '../audio.js';
 import { load, save } from '../save.js';
@@ -35,6 +35,7 @@ export class PlayScene extends Phaser.Scene {
     this.s = this.race.s;
     this.acc = 0; this.over = false; this.finished = false; this.paused = false; this.zone = 0; this.endT = 0; this.lowFuelT = 0;
     this.bot = new URLSearchParams(location.search).has('bot');
+    this.slowT = 0; this.guide = (d.totals.dodges || 0) < 6 && !this.bot; this.guideN = 0; this.guideCar = null;
     this.botT = 0;
 
     // 도로 (구역이 바뀌면 서서히 전환)
@@ -138,7 +139,12 @@ export class PlayScene extends Phaser.Scene {
 
   update(time, dms) {
     if (this.paused) return;
-    const dt = Math.min(0.05, dms / 1000);
+    const real = Math.min(0.05, dms / 1000);
+    // 슬로모션: 차차차! 순간(짧게) · 첫 칼치기 안내(길게)
+    let k = 1;
+    if (this.slowT > 0) { this.slowT -= real; k = 0.3; }
+    if (this.guideOn) k = Math.min(k, 0.35);
+    const dt = real * k;
     this.acc += dt;
     let n = 0;
     while (this.acc >= DT && n < 5) {
@@ -151,6 +157,9 @@ export class PlayScene extends Phaser.Scene {
     if (this.acc > DT * 5) this.acc = 0;
     if (this.over) { this.endT += dt; this.s.speed *= Math.pow(0.25, dt); if (this.endT > 1.6) this.finish(); }
     this.draw(dt);
+    this.updateGuide(real);
+    audio.rate(1 + Math.min(20, this.s.combo) * 0.006);
+    this.speedLines.emitting = this.speedLines.emitting || this.s.combo >= 8;
   }
 
   draw(dt) {
@@ -216,6 +225,40 @@ export class PlayScene extends Phaser.Scene {
     this.jumpBtn.setAlpha(p.jump >= 1 ? 1 : 0.65).setScale(p.jump >= 1 ? 1 + Math.sin(t * 6) * 0.03 : 1);
   }
 
+  // 첫 칼치기 안내: 앞차에 붙으면 비어 있는 옆 차로에 화살표 + 느리게
+  updateGuide(real) {
+    if (!this.guide || this.over) { this.hideGuide(); return; }
+    const s = this.s, p = s.p;
+    if (p.air > 0 || p.moving) { this.hideGuide(); return; }
+    let ahead = null, gap = 1e9;
+    for (const c of s.cars) {
+      if (c.state !== 'drive' || c.lane !== p.lane || c.dodged) continue;
+      const g = (p.y - 90) - (c.y + c.len / 2);
+      if (g > -20 && g < gap) { gap = g; ahead = c; }
+    }
+    // 차차! 거리쯤에서 안내 (너무 일찍 띄우면 점수가 안 나옴)
+    if (!ahead || gap > DODGE[1] + 40 || gap < 0) { if (!ahead || gap > DODGE[0]) this.hideGuide(); return; }
+    const sides = [-1, 1].filter(d => p.lane + d >= 0 && p.lane + d < LANES && !blockedSide(this.race, p.lane + d));
+    if (!sides.length) { this.hideGuide(); return; }
+    const dir = sides.length === 2 ? (p.lane < LANES / 2 ? 1 : -1) : sides[0];
+    if (this.guideCar === ahead && this.guideG) { this.guideG.setX(laneX(p.lane + dir)); return; }
+    this.hideGuide();
+    this.guideCar = ahead; this.guideN++;
+    this.guideOn = this.guideN <= 3;   // 처음 세 번은 느리게
+    const g = this.add.container(laneX(p.lane + dir), p.y - 140).setDepth(96);
+    const arrow = this.add.triangle(0, 0, 0, -80, 0, 80, dir * 120, 0, 0xFFE14D).setStrokeStyle(8, 0x1E2A52);
+    g.add([arrow, txt(this, 0, -110, '지금 옆으로!', 54, '#FFE14D', { stroke: '#1E2A52', thick: 12 })]);
+    this.tweens.add({ targets: arrow, x: dir * 24, duration: 260, yoyo: true, repeat: -1 });
+    this.guideG = g;
+  }
+  hideGuide(ok = false) {
+    this.guideOn = false;
+    if (!this.guideG) return;
+    const g = this.guideG; this.guideG = null;
+    if (!ok) this.guideCar = null;
+    this.tweens.add({ targets: g, alpha: 0, scale: ok ? 1.3 : 1, duration: 180, onComplete: () => g.destroy() });
+  }
+
   onEvent(e) {
     const s = this.s, p = s.p;
     switch (e.type) {
@@ -224,7 +267,14 @@ export class PlayScene extends Phaser.Scene {
         const G = [null, ['차!', '#FFFFFF', 56], ['차차!', '#FFE14D', 68], ['차차차!', '#FF6FB5', 84]][e.grade];
         audio.play(`sfx_honk_${Math.min(4, e.grade - 1 + Math.floor((e.combo - 1) / 6))}`, { volume: 0.6, gap: 60 });
         this.pop(e.x, e.y + 40, G[0], G[1], G[2]);
-        if (e.grade === 3) { this.cameras.main.shake(120, 0.004); this.cameras.main.flash(90, 255, 200, 230, false); }
+        audio.play(`vo_cha_${e.grade}`, { volume: 0.85, gap: e.grade === 3 ? 0 : 350 });
+        if (e.grade === 3) {
+          this.slowT = 0.22;
+          this.cameras.main.shake(120, 0.004); this.cameras.main.flash(90, 255, 200, 230, false);
+          this.cameras.main.zoomTo(1.05, 90, 'Sine.easeOut', true); this.time.delayedCall(260, () => this.cameras.main.zoomTo(1, 220, 'Sine.easeInOut', true));
+          this.burst.setParticleTint(0xFF6FB5); this.burst.emitParticleAt(this.s.p.x, this.s.p.y - 40, 16);
+        }
+        if (this.guide) { const d = load(); d.totals.dodges = (d.totals.dodges || 0) + 1; save(); if (d.totals.dodges >= 6) this.guide = false; this.hideGuide(true); }
         this.hCombo.setText(`차! ×${e.combo}`).setScale(1.35 + e.grade * 0.1);
         this.tweens.add({ targets: this.hCombo, scale: 1, duration: 160, ease: 'Back.easeOut' });
         const mult = 1 + Math.min(9, Math.floor(e.combo / 2)) * 0.5;

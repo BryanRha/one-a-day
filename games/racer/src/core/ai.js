@@ -15,7 +15,7 @@ function laneThreat(race, lane) {
   return ttc;
 }
 // 차로를 바꾸는 순간 옆에 차가 나란히 있는지
-function blockedSide(race, lane) {
+export function blockedSide(race, lane) {
   const s = race.s, p = s.p;
   return s.cars.some(c => c.state === 'drive' && c.lane === lane && Math.abs(c.y - p.y) < (c.len + 180) / 2 + 20);
 }

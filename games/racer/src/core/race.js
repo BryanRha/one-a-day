@@ -75,7 +75,7 @@ export class Race {
   step(dt) {
     const s = this.s, p = s.p;
     if (s.status !== 'play') return;
-    this.events.length = 0;
+    if (this.events.length > 200) this.events.length = 0;   // 화면이 읽고 비움 (입력 사이에 생긴 사건도 남도록) · 봇은 쌓이지 않게만
     s.t += dt;
     // 속도: 목표 속도로 가속 (슬립스트림 +20%, 피버·부스터 +40%)
     const boost = s.feverT > 0 || s.booster > 0;

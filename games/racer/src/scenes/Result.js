@@ -26,20 +26,20 @@ export class ResultScene extends Phaser.Scene {
     // 점수 카드
     const cy = top + 760;
     const card = this.add.graphics();
-    card.fillStyle(0xFFFFFF, 0.96).fillRoundedRect(60, cy - 250, W - 120, 560, 36).lineStyle(6, 0x1E2A52).strokeRoundedRect(60, cy - 250, W - 120, 560, 36);
+    card.fillStyle(0xFFFFFF, 0.96).fillRoundedRect(60, cy - 250, W - 120, 640, 36).lineStyle(6, 0x1E2A52).strokeRoundedRect(60, cy - 250, W - 120, 640, 36);
     txt(this, W / 2, cy - 190, '점수', 40, '#5A6488', { stroke: '#FFFFFF', thick: 4 });
     const sc = txt(this, W / 2, cy - 110, '0', 110, '#FF8A1F', { stroke: '#1E2A52', thick: 14 });
     this.tweens.addCounter({ from: 0, to: r.score, duration: 900, ease: 'Cubic.easeOut', onUpdate: tw => sc.setText(fmt(tw.getValue())) });
-    const rows = [['달린 거리', `${fmt(r.dist)}m`], ['체크포인트', `${r.cp}개`], ['칼치기 · 차차차! · 최고 콤보', `${fmt(r.honks)} · ${r.perfects || 0} · ×${r.combo}`], ['점프샷 · 밀어내기', `${r.jumpshots} · ${r.rams}`]];
+    const rows = [['달린 거리', `${fmt(r.dist)}m`], ['체크포인트', `${r.cp}개`], ['칼치기 · PERFECT', `${fmt(r.honks)} · ${r.perfects || 0}`], ['최고 콤보 · 피버', `×${r.combo} · ${r.fevers || 0}번`], ['점프샷 · 밀어내기', `${r.jumpshots} · ${r.rams}`]];
     rows.forEach(([k, v], i) => {
       const y = cy + 10 + i * 66;
       txt(this, 120, y, k, 38, '#1E2A52', { ox: 0, stroke: '#FFFFFF', thick: 4 });
       txt(this, W - 120, y, v, 40, '#3B5BDB', { ox: 1, stroke: '#FFFFFF', thick: 4 });
     });
-    this.add.image(W / 2 - 90, cy + 290, 'item_coin').setDisplaySize(64, 64);
-    txt(this, W / 2 - 40, cy + 290, `+${fmt(r.coins)}`, 52, '#FFFFFF', { ox: 0, stroke: '#1E2A52', thick: 10 });
+    this.add.image(W / 2 - 90, cy + 340, 'item_coin').setDisplaySize(64, 64);
+    txt(this, W / 2 - 40, cy + 340, `+${fmt(r.coins)}`, 52, '#FFFFFF', { ox: 0, stroke: '#1E2A52', thick: 10 });
 
-    const by = Math.min(H - 150, cy + 470);
+    const by = Math.min(H - 150, cy + 520);
     button(this, W / 2 + 150, by, '다시 달리기', () => this.go('Play'), { key: 'btn_gold', w: 540, h: 160, icon: 'ico_retry' });
     iconButton(this, W / 2 - 300, by, 'ico_home', () => this.go('Lobby'), 160);
     window.__result = r;

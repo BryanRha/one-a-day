@@ -47,7 +47,7 @@ export class Race {
       p: { lane: 2, x: laneX(2), y: H - 520, z: 0, air: 0, jump: 1, hit: 0, slip: 0, slipOn: false, moving: 0 },
       combo: 0, comboT: 0, bestCombo: 0, fever: 0, feverT: 0, booster: 0, magnet: 0,
       cars: [], items: [], oils: [], checkpoints: 0, nextCp: 500, cpY: null,
-      spawnY: 0, nextWave: 0, stats: { honks: 0, perfects: 0, crashes: 0, rams: 0, jumpshots: 0, items: 0 },
+      spawnY: 0, nextWave: 0, stats: { honks: 0, perfects: 0, fevers: 0, crashes: 0, rams: 0, jumpshots: 0, items: 0 },
     };
     this.s.fuel = this.s.fuelMax;
     this.events = [];
@@ -203,7 +203,7 @@ export class Race {
     s.score += pts;
     const chain = s.feverT > 0 ? 0 : ++s.fever;
     this.ev('honk', { x: c.x, y: c.y, combo: s.combo, pts, grade, chain, side: Math.sign(c.x - s.p.x) });
-    if (chain >= FEVER_FULL) { s.fever = 0; s.feverT = FEVER_TIME; this.ev('fever', {}); }
+    if (chain >= FEVER_FULL) { s.fever = 0; s.feverT = FEVER_TIME; s.stats.fevers++; this.ev('fever', {}); }
   }
 
   // 차 날려 보내기 (부스터·옆 들이받기·점프샷)

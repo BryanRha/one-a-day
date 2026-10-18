@@ -1,6 +1,6 @@
 // 레이스 화면: core/race.js 시뮬레이션을 고정 간격으로 돌리고 상태·사건을 그림·소리로 옮긴다.
 import { W, H } from '../config.js';
-import { Race, LANES, CARS } from '../core/race.js';
+import { Race, LANES, CARS, FEVER_FULL } from '../core/race.js';
 import { decide } from '../core/ai.js';
 import { txt, fmt, fit, iconButton, button, popup } from '../ui.js';
 import { audio } from '../audio.js';
@@ -132,7 +132,7 @@ export class PlayScene extends Phaser.Scene {
     const d = load(); d.tips.controls = 1; save();
     const c = this.add.container(W / 2, H * 0.55).setDepth(98);
     const box = this.add.rectangle(0, 0, 900, 260, 0x101830, 0.85).setStrokeStyle(5, 0xFFE14D);
-    c.add([box, txt(this, 0, -60, '👈 화면 왼쪽 / 오른쪽 탭 👉', 50, '#FFFFFF'), txt(this, 0, 10, '차로를 바꿔요 · 위로 밀면 점프!', 44, '#FFE8A8'), txt(this, 0, 80, '옆 차를 아슬아슬하게 지나가면 "빵!" 콤보', 36, '#9AE8FF')]);
+    c.add([box, txt(this, 0, -60, '👈 화면 왼쪽 / 오른쪽 탭 👉', 50, '#FFFFFF'), txt(this, 0, 10, '차로를 바꿔요 · 위로 밀면 점프!', 44, '#FFE8A8'), txt(this, 0, 80, '앞차에 닿기 직전에 옆으로 빠지면 "차!" 콤보', 36, '#9AE8FF')]);
     this.tweens.add({ targets: c, alpha: 0, delay: 4200, duration: 400, onComplete: () => c.destroy() });
   }
 
@@ -208,7 +208,7 @@ export class PlayScene extends Phaser.Scene {
     this.fuelBar.width = 472 * f;
     this.fuelBar.fillColor = f < 0.25 ? (Math.floor(t * 6) % 2 ? 0xFF5A5A : 0xFFB0B0) : f < 0.5 ? 0xFFC93C : 0x6EE7C8;
     if (f < 0.25 && !this.over) { this.lowFuelT -= dt; if (this.lowFuelT <= 0) { this.lowFuelT = 1.2; audio.play('sfx_lowfuel', { volume: 0.45 }); } }
-    this.feverBar.height = 412 * (s.feverT > 0 ? s.feverT / 4 : s.fever / 15);
+    this.feverBar.height = 412 * (s.feverT > 0 ? s.feverT / 4 : s.fever / FEVER_FULL);
     this.feverBar.fillColor = s.feverT > 0 ? (Math.floor(t * 10) % 2 ? 0xFFE14D : 0xFF8A1F) : 0xFF8A1F;
     this.hCombo.setAlpha(s.combo > 1 ? Math.min(1, s.comboT * 1.5) : 0);
     this.hComboSub.setAlpha(this.hCombo.alpha);
@@ -220,11 +220,14 @@ export class PlayScene extends Phaser.Scene {
     const s = this.s, p = s.p;
     switch (e.type) {
       case 'honk': {
-        audio.play(`sfx_honk_${Math.min(4, Math.floor((e.combo - 1) / 4))}`, { volume: 0.55, gap: 60 });
-        this.pop(e.x + e.side * -60, p.y - 120, '빵!', '#FFFFFF', 54);
-        this.hCombo.setText(`빵! ×${e.combo}`).setScale(1.35);
+        // 칼치기 등급: 가까이서 뺄수록 크게
+        const G = [null, ['차!', '#FFFFFF', 56], ['차차!', '#FFE14D', 68], ['차차차!', '#FF6FB5', 84]][e.grade];
+        audio.play(`sfx_honk_${Math.min(4, e.grade - 1 + Math.floor((e.combo - 1) / 6))}`, { volume: 0.6, gap: 60 });
+        this.pop(e.x, e.y + 40, G[0], G[1], G[2]);
+        if (e.grade === 3) { this.cameras.main.shake(120, 0.004); this.cameras.main.flash(90, 255, 200, 230, false); }
+        this.hCombo.setText(`차! ×${e.combo}`).setScale(1.35 + e.grade * 0.1);
         this.tweens.add({ targets: this.hCombo, scale: 1, duration: 160, ease: 'Back.easeOut' });
-        const mult = 1 + Math.min(9, Math.floor(e.combo / 3)) * 0.5;
+        const mult = 1 + Math.min(9, Math.floor(e.combo / 2)) * 0.5;
         this.hComboSub.setText(`점수 ×${mult.toFixed(1)}`);
         this.burst.setParticleTint(0xFFE14D); this.burst.emitParticleAt(e.x, p.y - 60, 6);
         break;

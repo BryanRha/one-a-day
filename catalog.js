@@ -18,8 +18,8 @@ export const GAMES = {
   },
   racer: {
     title: '스트레스 차차차', en: 'Stress Cha-Cha-Cha', genre: '레이싱', color: '#3B5BDB',
-    tagline: '옆 차를 아슬아슬 스치며 빵! 콤보',
-    desc: '동물 친구들의 꽉 막힌 도로 질주! 연료가 바닥나기 전에 체크포인트를 지나고, 옆 차를 스쳐 지나가며 빵! 콤보를 이어 가세요. 점프로 차를 밟고 넘어가면 대박 점수.',
+    tagline: '앞차에 닿기 직전 휙! 칼치기 콤보',
+    desc: '동물 친구들의 꽉 막힌 도로 질주! 연료가 바닥나기 전에 체크포인트를 지나고, 앞차에 닿기 직전 옆으로 빠지는 칼치기로 차! 차차! 차차차! 콤보를 이어 가세요. 점프로 차를 밟고 넘어가면 대박 점수.',
     path: 'games/racer/', cover: 'covers/racer.png', icon: 'covers/racer_icon.png', time: '1~3분',
   },
 };

@@ -1,4 +1,4 @@
-// 결과: 거리 · 점수(최고 기록) · 코인 · 빵! 기록 → 다시 달리기 / 차고
+// 결과: 거리 · 점수(최고 기록) · 코인 · 칼치기 기록 → 다시 달리기 / 차고
 import { W, H } from '../config.js';
 import { txt, fmt, fit, button, iconButton } from '../ui.js';
 import { audio } from '../audio.js';
@@ -30,7 +30,7 @@ export class ResultScene extends Phaser.Scene {
     txt(this, W / 2, cy - 190, '점수', 40, '#5A6488', { stroke: '#FFFFFF', thick: 4 });
     const sc = txt(this, W / 2, cy - 110, '0', 110, '#FF8A1F', { stroke: '#1E2A52', thick: 14 });
     this.tweens.addCounter({ from: 0, to: r.score, duration: 900, ease: 'Cubic.easeOut', onUpdate: tw => sc.setText(fmt(tw.getValue())) });
-    const rows = [['달린 거리', `${fmt(r.dist)}m`], ['체크포인트', `${r.cp}개`], ['빵! 횟수 · 최고 콤보', `${fmt(r.honks)} · ×${r.combo}`], ['점프샷 · 밀어내기', `${r.jumpshots} · ${r.rams}`]];
+    const rows = [['달린 거리', `${fmt(r.dist)}m`], ['체크포인트', `${r.cp}개`], ['칼치기 · 차차차! · 최고 콤보', `${fmt(r.honks)} · ${r.perfects || 0} · ×${r.combo}`], ['점프샷 · 밀어내기', `${r.jumpshots} · ${r.rams}`]];
     rows.forEach(([k, v], i) => {
       const y = cy + 10 + i * 66;
       txt(this, 120, y, k, 38, '#1E2A52', { ox: 0, stroke: '#FFFFFF', thick: 4 });

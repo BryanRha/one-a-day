@@ -3,6 +3,9 @@
 // 다른 차·아이템은 (내 속도 − 그 차 속도) 만큼 아래로 흘러온다.
 export const W = 1080;
 export const LANES = 5;
+// 칼치기 거리 기준 (앞차 뒤범퍼까지 px): 이 안에서 빠지면 GOOD · GREAT · PERFECT
+export const DODGE = [300, 170, 80];
+export const FEVER_FULL = 16;   // 등급 점수 합 (PERFECT=3)
 export const LANE_W = W / LANES;
 export const PX_PER_M = 20;
 export const laneX = l => LANE_W * (l + 0.5);
@@ -19,10 +22,10 @@ export const CARS = {
 export const ITEMS = ['coin', 'gold', 'fuel', 'magnet', 'booster', 'jump'];
 // 드라이버 능력
 export const DRIVERS = {
-  raccoon: { fuel: 1.0, coin: 1.1, combo: 2.5, jump: 1 },   // 코인 +10%
-  penguin: { fuel: 0.9, coin: 1.0, combo: 2.5, jump: 1 },   // 연료 효율 +10%
-  bunny: { fuel: 1.0, coin: 1.0, combo: 3.0, jump: 1 },     // 콤보 유지 3초
-  bear: { fuel: 1.0, coin: 1.0, combo: 2.5, jump: 1.35 },   // 점프 충전 빠름
+  raccoon: { fuel: 1.0, coin: 1.1, combo: 3.0, jump: 1 },   // 코인 +10%
+  penguin: { fuel: 0.9, coin: 1.0, combo: 3.0, jump: 1 },   // 연료 효율 +10%
+  bunny: { fuel: 1.0, coin: 1.0, combo: 3.6, jump: 1 },     // 콤보 유지 +20%
+  bear: { fuel: 1.0, coin: 1.0, combo: 3.0, jump: 1.35 },   // 점프 충전 빠름
 };
 
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -41,7 +44,7 @@ export class Race {
       p: { lane: 2, x: laneX(2), y: H - 520, z: 0, air: 0, jump: 1, hit: 0, slip: 0, slipOn: false, moving: 0 },
       combo: 0, comboT: 0, bestCombo: 0, fever: 0, feverT: 0, booster: 0, magnet: 0,
       cars: [], items: [], oils: [], checkpoints: 0, nextCp: 500, cpY: null,
-      spawnY: 0, nextWave: 0, stats: { honks: 0, crashes: 0, rams: 0, jumpshots: 0, items: 0 },
+      spawnY: 0, nextWave: 0, stats: { honks: 0, perfects: 0, crashes: 0, rams: 0, jumpshots: 0, items: 0 },
     };
     this.s.fuel = this.s.fuelMax;
     this.events = [];
@@ -50,7 +53,21 @@ export class Race {
   id() { return this.s.nextId++; }
 
   // ── 입력 ──
-  move(dir) { const p = this.s.p; if (this.s.status !== 'play') return; const l = Math.max(0, Math.min(LANES - 1, p.lane + dir)); if (l !== p.lane) { p.lane = l; p.moving = dir; this.ev('lane', { dir }); } }
+  move(dir) {
+    const p = this.s.p; if (this.s.status !== 'play') return;
+    const l = Math.max(0, Math.min(LANES - 1, p.lane + dir));
+    if (l === p.lane) return;
+    // 칼치기 판정: 같은 차로 바로 앞차에 닿기 직전에 옆으로 빠지면 "차!" — 가까울수록 높은 등급
+    if (p.air <= 0) for (const c of this.s.cars) {
+      if (c.state !== 'drive' || c.lane !== p.lane || c.dodged) continue;
+      const gap = (p.y - 90) - (c.y + c.len / 2);
+      if (gap < -30 || gap > DODGE[0]) continue;
+      c.dodged = true;
+      this.dodge(c, gap <= DODGE[2] ? 3 : gap <= DODGE[1] ? 2 : 1);
+      break;
+    }
+    p.lane = l; p.moving = dir; this.ev('lane', { dir });
+  }
   jump() { const p = this.s.p; if (this.s.status !== 'play' || p.air > 0 || p.jump < 1) return false; p.jump -= 1; p.air = 0.72; this.ev('jump', {}); return true; }
 
   base() { return 760 + 760 * (1 - Math.exp(-this.s.dist / 6000)); }   // 거리에 따라 빨라짐
@@ -151,12 +168,6 @@ export class Race {
       const dx = Math.abs(c.x - p.x), dyc = c.y - p.y;
       // 슬립스트림: 같은 차로, 앞차 뒤 320px 안
       if (c.lane === p.lane && dyc < 0 && -dyc < (c.len + PL) / 2 + 320 && dx < 60) slip = true;
-      // 빵!: 옆 차로 차를 추월하는 순간 (차가 내 차 아래로 지나감)
-      if (!c.passed && dyc > 0) {
-        c.passed = true;
-        const ld = Math.abs(c.lane - p.lane);
-        if (ld === 1 && dx < LANE_W * 1.35 && p.air <= 0) this.honk(c);
-      }
       if (p.air > 0) continue;   // 공중에선 부딪히지 않음
       const ox = (c.w + PW) / 2 - 18, oy = (c.len + PL) / 2 - 20;
       if (dx < ox && Math.abs(dyc) < oy) {
@@ -178,16 +189,17 @@ export class Race {
     }
   }
 
-  honk(c) {
+  // grade 1 GOOD("차!") · 2 GREAT("차차!") · 3 PERFECT("차차차!")
+  dodge(c, grade) {
     const s = this.s;
     s.combo++; s.bestCombo = Math.max(s.bestCombo, s.combo);
-    s.comboT = this.d.combo;
-    s.stats.honks++;
-    const mult = 1 + Math.min(9, Math.floor(s.combo / 3)) * 0.5;
-    const pts = Math.round(80 * mult * (s.speed / 700));
+    s.comboT = this.d.combo + (grade === 3 ? 0.5 : 0);
+    s.stats.honks++; if (grade === 3) s.stats.perfects++;
+    const mult = 1 + Math.min(9, Math.floor(s.combo / 2)) * 0.5;
+    const pts = Math.round(120 * grade * mult * (s.speed / 700));
     s.score += pts;
-    if (s.feverT <= 0) { s.fever += 1; if (s.fever >= 15) { s.fever = 0; s.feverT = 4; this.ev('fever', {}); } }
-    this.ev('honk', { x: c.x, y: c.y, combo: s.combo, pts, side: Math.sign(c.x - s.p.x) });
+    if (s.feverT <= 0) { s.fever += grade; if (s.fever >= FEVER_FULL) { s.fever = 0; s.feverT = 4; this.ev('fever', {}); } }
+    this.ev('honk', { x: c.x, y: c.y, combo: s.combo, pts, grade, side: Math.sign(c.x - s.p.x) });
   }
 
   // 차 날려 보내기 (부스터·옆 들이받기·점프샷)

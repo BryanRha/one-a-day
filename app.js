@@ -1,10 +1,11 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
 import { PLANNED } from './catalog.js';
 import * as R from './rules.js';
+import * as I from './install.js';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -45,6 +46,7 @@ function renderToday() {
   return `<div>
     ${header()}
     <div class="date">${fmtDate(R.now())} · ${day}일째</div>
+    ${installBanner()}
     <div class="hero">
       <div class="ribbon">오늘의 게임</div>
       <div class="cover" style="background-image:url('${g.cover}')"></div>
@@ -66,6 +68,15 @@ function renderToday() {
     <div class="box" style="color:#DDD5FA">매일 자정, 모든 플레이어에게 <b class="jua" style="color:var(--gold)">같은 게임 하나</b>가 열려요. 플레이한 게임은 라이브러리에 모이고, 다른 날 다시 하려면 광고로 열 수 있어요.</div>
   </div>`;
 }
+// 홈 화면 추가 배너 (설치 전 · 오늘 닫지 않았을 때)
+function installBanner() {
+  if (I.installed() || localStorage.getItem('oad_hide_install') === R.keyOf(R.now())) return '';
+  const msg = I.env.inApp ? `${I.env.kakao ? '카카오톡' : '앱'} 브라우저에서는 홈 화면 추가가 안 돼요` : '홈 화면에 추가하면 매일 한 번에 들어와요';
+  const btn = I.env.inApp ? '브라우저로 열기' : I.canPrompt() ? '설치' : '추가하기';
+  return `<div class="install"><div class="ic">📲</div><div class="tx">${msg}</div><button data-${I.env.inApp ? 'ext' : 'install'}>${btn}</button><button class="x" data-hide-install aria-label="닫기">✕</button></div>`;
+}
+async function doInstall() { const html = await I.install(); if (html) openSheet(html); else setTimeout(() => go(tab), 300); }
+
 function tick() { const el = $('#cd'); if (el) el.textContent = hms(R.msToTomorrow()); if (R.msToTomorrow() < 1000) setTimeout(() => go('today'), 1200); }
 
 function itemCard(id) {
@@ -110,6 +121,7 @@ function renderSettings() {
   return `<div>${header()}
     <h1 style="font-size:28px;margin-bottom:14px">설정</h1>
     <div class="group">
+      <div><span>홈 화면에 추가</span>${I.installed() ? '<span class="badge open">추가됨</span>' : '<button data-install>추가하기</button>'}</div>
       <div><span>이용 방법 다시 보기</span><button data-intro>보기</button></div>
       <div><span>버전</span><span class="badge">v${VERSION}</span></div>
     </div>
@@ -185,6 +197,8 @@ function closeGame() {
   if (frame) { frame.remove(); frame = null; }
   document.body.style.overflow = '';
   go(tab);
+  // 첫 게임을 마치고 돌아오면 한 번만 홈 화면 추가를 권함
+  if (!I.installed() && !localStorage.getItem('oad_nudged')) { localStorage.setItem('oad_nudged', '1'); setTimeout(() => openSheet(I.env.inApp || !I.canPrompt() ? I.guide() : `<div class="intro"><h2>📲 내일도 쉽게 만나요</h2><p style="color:var(--sub)">홈 화면에 추가하면 매일 새 게임을 한 번에 열 수 있어요.</p><div class="stack"><button class="btn" data-install>홈 화면에 추가</button><button class="btn ghost" data-close>나중에</button></div></div>`), 500); }
 }
 $('#pull').onclick = () => openSheet(`<h2 style="text-align:center">홈으로 나갈까요?</h2><p class="note">진행 중인 판은 저장되지 않을 수 있어요</p>
   <div class="stack"><button class="btn alt" data-close>계속 하기</button><button class="btn ghost" data-exit>홈으로</button></div>`);
@@ -194,7 +208,7 @@ addEventListener('message', e => { if (e.data && e.data.type === 'oad:exit' && !
 
 // ── 공통 클릭 처리 ─────────────────────────────────
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-play],[data-open],[data-ad],[data-close],[data-exit],[data-intro],[data-day],[data-reset],[data-tab-go]');
+  const t = e.target.closest('[data-play],[data-open],[data-ad],[data-close],[data-exit],[data-intro],[data-day],[data-reset],[data-tab-go],[data-install],[data-ext],[data-copy],[data-hide-install]');
   if (!t) return;
   const d = t.dataset;
   if (d.play) play(d.play);
@@ -203,12 +217,18 @@ document.addEventListener('click', e => {
   else if ('close' in d) closeSheet();
   else if ('exit' in d) { closeSheet(); history.back(); }
   else if ('intro' in d) intro();
+  else if ('install' in d) { closeSheet(); doInstall(); }
+  else if ('ext' in d) I.openExternal();
+  else if ('copy' in d) I.copyLink().then(ok => toast(ok ? '주소를 복사했어요. 브라우저에 붙여 넣어 주세요' : '주소: ' + location.href));
+  else if ('hideInstall' in d) { localStorage.setItem('oad_hide_install', R.keyOf(R.now())); go(tab); }
   else if (d.tabGo) go(d.tabGo);
   else if (d.day !== undefined) { const s = R.state(); s.dayOffset = d.day === '0' ? 0 : s.dayOffset + Number(d.day); R.save(); go('settings'); toast(`${fmtDate(R.now())}로 이동`); }
   else if ('reset' in d) { if (t.dataset.confirm) { R.resetAll(); go('today'); toast('초기화했어요'); } else { t.dataset.confirm = 1; t.textContent = '한 번 더'; } }
 });
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+document.addEventListener('oad:installable', () => { if (tab === 'today' || tab === 'settings') go(tab); });
+document.addEventListener('oad:installed', () => { toast('홈 화면에 추가됐어요!'); go(tab); });
 go('today');
 if (!R.state().intro) setTimeout(intro, 400);
 window.__oad = { R, go, play };

@@ -131,3 +131,12 @@ h1, h2, h3, .jua { font-family: 'Jua', sans-serif; font-weight: 400; margin: 0; 
 .intro p { margin: 2px 0 0; color: var(--sub); }
 .toast { position: fixed; left: 50%; bottom: calc(100px + var(--safe-b)); transform: translateX(-50%); background: rgba(20,16,46,.95); border: 1px solid rgba(255,201,60,.5); padding: 10px 18px; border-radius: 99px; z-index: 99; font: 15px 'Jua'; animation: fade .2s; }
 .fadein { animation: fade .25s; }
+
+/* 홈 화면 추가 배너 */
+.install { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 10px 10px 10px 14px; border-radius: 18px; background: linear-gradient(135deg, rgba(110,231,200,.16), rgba(122,155,255,.16)); border: 1px solid rgba(110,231,200,.35); }
+.install .ic { font-size: 22px; }
+.install .tx { flex: 1; font-size: 13.5px; color: #E6FFF8; line-height: 1.35; }
+.install button { appearance: none; border: 0; border-radius: 12px; padding: 9px 12px; font: 15px 'Jua'; cursor: pointer; background: var(--mint); color: #0B3A30; white-space: nowrap; }
+.install button.x { background: none; color: var(--sub); padding: 6px; font: 15px sans-serif; }
+.ios-arrow { position: fixed; left: 50%; bottom: 8px; transform: translateX(-50%); font-size: 34px; color: var(--gold); animation: bob 1s ease-in-out infinite; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+@keyframes bob { 50% { transform: translate(-50%, 8px); } }

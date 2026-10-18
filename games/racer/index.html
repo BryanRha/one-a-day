@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1E2A52">
+<title>빵빵 질주 - Honk Rush</title>
+<meta name="description" content="동물 친구들의 아슬아슬 질주! 옆 차를 스쳐 지나가며 빵! 콤보를 이어 가세요">
+<style>
+  @font-face { font-family: 'Jua'; src: url('fonts/Jua-Regular.ttf') format('truetype'); font-display: block; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1E2A52; touch-action: none; -webkit-user-select: none; user-select: none; }
+  #game { position: fixed; top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px); left: 0; right: 0; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<script src="lib/phaser.min.js"></script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

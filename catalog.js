@@ -16,5 +16,11 @@ export const GAMES = {
     desc: '같은 바다 친구 3개를 맞춰 터뜨리는 매치3 퍼즐. 500개 스테이지와 특수 블록 조합, 바다 마을 꾸미기까지.',
     path: 'games/ocean-tales/', cover: 'covers/ocean.png', icon: 'covers/ocean_icon.png', time: '2~4분',
   },
+  racer: {
+    title: '빵빵 질주', en: 'Honk Rush', genre: '레이싱', color: '#3B5BDB',
+    tagline: '옆 차를 아슬아슬 스치며 빵! 콤보',
+    desc: '동물 친구들의 꽉 막힌 도로 질주! 연료가 바닥나기 전에 체크포인트를 지나고, 옆 차를 스쳐 지나가며 빵! 콤보를 이어 가세요. 점프로 차를 밟고 넘어가면 대박 점수.',
+    path: 'games/racer/', cover: 'covers/racer.png', icon: 'covers/racer_icon.png', time: '1~3분',
+  },
 };
-export const ORDER = ['witch', 'ocean'];
+export const ORDER = ['witch', 'ocean', 'racer'];

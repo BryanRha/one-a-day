@@ -5,7 +5,7 @@ export const PLANNED = 30;                   // 첫 출시 목표 게임 수 (�
 
 export const GAMES = {
   witch: {
-    title: '냥냥 마녀', en: 'Witch & Whiskers', genre: '슈팅', color: '#7A4DE0',
+    title: '고양이와 마녀', en: 'Cat & Witch', genre: '슈팅', color: '#7A4DE0',
     tagline: '빗자루 타고 고양이와 밤하늘을 날아요',
     desc: '몬스터 줄의 빈틈을 뚫고 얼마나 멀리 날 수 있을까요? 별똥별을 피하고, 보스를 물리치고, 고양이 친구를 모아 보세요.',
     path: 'games/witch/', cover: 'covers/witch.png', icon: 'covers/witch_icon.png', time: '1~3분',

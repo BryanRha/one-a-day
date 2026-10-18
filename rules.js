@@ -2,6 +2,7 @@
 import { LAUNCH, GAMES, ORDER } from './catalog.js';
 
 export const RULES = {
+  openAll: true,            // 테스트 기간: 모든 게임 자유 플레이 (BM 확정 후 false 로 바꾸면 하루 한 게임 규칙 적용)
   todayFree: true,          // 오늘의 게임은 하루 종일 무료
   adUnlock: 'day',          // 광고로 연 게임: 'day' = 그날 하루 동안 / 'once' = 한 판
   adSeconds: 5,             // 테스트용 가짜 광고 길이
@@ -37,6 +38,7 @@ export function msToTomorrow() { const d = now(); const t = new Date(d.getFullYe
 export function access(id) {
   const s = state();
   if (RULES.todayFree && id === todayId()) return 'today';
+  if (RULES.openAll) return 'free';
   if (s.owned[id]) return 'owned';
   if (s.unlocks[id] === keyOf(now())) return 'unlocked';
   return 'locked';
@@ -64,6 +66,7 @@ export function recordPlay(id) {
 
 // 공개된 게임 = 오늘까지 한 번이라도 '오늘의 게임'이었던 것
 export function released() {
+  if (RULES.openAll) return ORDER.slice();
   const idx = dayIndex(), seen = new Set();
   for (let i = 0; i <= idx && seen.size < ORDER.length; i++) seen.add(gameOn(i));
   return ORDER.filter(id => seen.has(id));

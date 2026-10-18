@@ -391,6 +391,14 @@ export class Engine {
           }
         }
       }
+      // 진주(무지개) 웨이브: 일반 매치처럼 터진 블록 옆의 방해 블록·물방울도 한 번씩 맞음 (버그 수정: 이전엔 반응 없음)
+      const adj = new Map();
+      for (const wv of queue) if (wv.fx === 'rainbow') for (const [r, c] of wv.cells) for (const [y, x] of this.neighbors(r, c)) { const k = `${y},${x}`; if (!seen.has(k)) adj.set(k, [y, x]); }
+      for (const [, [y, x]] of adj) {
+        const cl = this.cell(y, x);
+        if (cl && cl.p && !cl.cover && (BLOCKERS.has(cl.p.k) || cl.p.k === 'timer' || cl.p.k === 'star')) hits.push(this.hitCell(y, x, 'adjacent'));
+        else if (cl && cl.cover && cl.cover.t === 'bubble') hits.push(this.hitCell(y, x, 'adjacent'));
+      }
       // 조합에 쓰인 조각(used) 제거
       this.each((cl, r, c) => { if (cl.p && cl.p.used) { hits.push({ at: [r, c], removed: cl.p.id, kind: 'tile', color: cl.p.c, sp: cl.p.sp }); this.scoreAdd(SCORE.special); this.collectColor(cl.p); cl.p = null; } });
       this.push(steps, { type: 'blast', fx: queue.map(q => ({ fx: q.fx, at: q.at, color: q.color, cells: q.cells })), hits: hits.filter(Boolean) });

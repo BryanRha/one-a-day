@@ -93,11 +93,11 @@ export class GameScene extends Phaser.Scene {
     const e = this.engine;
     const g = this.add.graphics();
     this.cellLayer.add(g);
-    g.fillStyle(0x0B2E78, 0.18);
+    // 캔디크러쉬처럼 어두운 반투명 남색 보드 → 파스텔 블록이 또렷하게 떠 보임
+    g.fillStyle(0x0A2350, 0.62);
     e.each((cl, r, c) => g.fillRect(c * CELL, r * CELL, CELL, CELL));
     e.each((cl, r, c) => {
-      const { x, y } = this.xy(r, c);
-      this.cellLayer.add(this.add.image(x, y, (r + c) % 2 ? 'board_cell_b' : 'board_cell_a').setDisplaySize(CELL, CELL));
+      if ((r + c) % 2) { g.fillStyle(0x2A5CA8, 0.22); g.fillRect(c * CELL, r * CELL, CELL, CELL); }
       if (cl.jelly > 0) this.addJelly(r, c, cl.jelly);
     });
     // 테두리: 구멍/바깥과 맞닿은 변마다 직선, 바깥 모서리에는 코너 조각
@@ -164,6 +164,22 @@ export class GameScene extends Phaser.Scene {
     this.pieceLayer.add(cont);
     this.sprites.set(p.id, cont);
     return cont;
+  }
+
+  // 특수 블록은 가만히 있을 때도 살짝 움직여 눈에 띄게 (줄: 화살표 방향으로 살랑, 폭탄·진주: 두근두근)
+  update(time) {
+    if (!this.sprites) return;
+    const t = time / 1000;
+    for (const sp of this.sprites.values()) {
+      const pc = sp.piece, img = sp.img;
+      if (!pc || !img || pc.k !== 'tile') continue;
+      if (img.baseScale === undefined) img.baseScale = img.scaleX;
+      const b = img.baseScale, ph = t * 5 + (sp.x + sp.y) * 0.01;
+      if (pc.sp === 'lineH') img.setScale(b * (1 + 0.07 * Math.sin(ph)), b * (1 - 0.03 * Math.sin(ph)));
+      else if (pc.sp === 'lineV') img.setScale(b * (1 - 0.03 * Math.sin(ph)), b * (1 + 0.07 * Math.sin(ph)));
+      else if (pc.sp === 'bomb' || pc.sp === 'rainbow') img.setScale(b * (1 + 0.06 * Math.sin(ph * 1.3)));
+      else if (img.scaleX !== b) img.setScale(b);
+    }
   }
 
   setPieceTexture(id, p) {

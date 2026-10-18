@@ -5,7 +5,7 @@ import * as I from './install.js';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -227,7 +227,22 @@ document.addEventListener('click', e => {
   else if ('reset' in d) { if (t.dataset.confirm) { R.resetAll(); go('today'); toast('초기화했어요'); } else { t.dataset.confirm = 1; t.textContent = '한 번 더'; } }
 });
 
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+
+// 새 버전 확인: 앱을 열거나 다시 볼 때마다 서버의 version.json 을 확인 → 바뀌었으면 (게임 중이 아닐 때) 새로고침
+async function checkUpdate() {
+  try {
+    const r = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+    const { version } = await r.json();
+    // 같은 버전으로는 한 번만 새로고침 (캐시 때문에 옛 파일이 오더라도 무한 새로고침 방지)
+    if (version && version !== VERSION && player.hidden && sessionStorage.getItem('oad_reloaded') !== version) {
+      sessionStorage.setItem('oad_reloaded', version);
+      toast('새 버전으로 바꾸는 중…'); setTimeout(() => location.reload(), 600);
+    }
+  } catch { /* 오프라인 */ }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
+setTimeout(checkUpdate, 1500);
 document.addEventListener('oad:installable', () => { if (tab === 'today' || tab === 'settings') go(tab); });
 document.addEventListener('oad:installed', () => { toast('홈 화면에 추가됐어요!'); go(tab); });
 go('today');

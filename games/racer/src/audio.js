@@ -4,9 +4,9 @@ import { load, save } from './save.js';
 export const SFX = [
   'sfx_honk_0', 'sfx_honk_1', 'sfx_honk_2', 'sfx_honk_3', 'sfx_honk_4', 'sfx_crash', 'sfx_smash', 'sfx_boom', 'sfx_jump', 'sfx_land',
   'sfx_coin', 'sfx_gold', 'sfx_item', 'sfx_fuel', 'sfx_checkpoint', 'sfx_fever', 'sfx_slip', 'sfx_skid', 'sfx_lowfuel', 'sfx_end', 'sfx_click',
-  'vo_cha_1', 'vo_cha_2', 'vo_cha_3',
+  'vo_seu', 'vo_teu', 'vo_re', 'vo_cha', 'vo_full',
 ];
-export const BGM = ['bgm_race', 'bgm_lobby'];
+export const BGM = ['bgm_race', 'bgm_lobby', 'bgm_fever'];
 
 class AudioManager {
   constructor() { this.game = null; this.current = null; this.currentKey = null; this.last = {}; this.urlFor = k => `assets/audio/${k}.m4a`; }
@@ -34,7 +34,7 @@ class AudioManager {
       sc.load.start();
       return;
     }
-    try { this.current = this.game.sound.add(key, { loop: true, volume: key === 'bgm_race' ? 0.36 : 0.42 }); this.current.play(); } catch { this.current = null; }
+    try { this.current = this.game.sound.add(key, { loop: true, volume: key === 'bgm_race' ? 0.36 : key === 'bgm_fever' ? 0.5 : 0.42 }); this.current.play(); } catch { this.current = null; }
   }
   // 미리 받아 두기 (타이틀에서 비행·보스 곡을 조용히 받음)
   prefetch(scene, keys) {

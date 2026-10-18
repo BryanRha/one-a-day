@@ -5,7 +5,11 @@ export const W = 1080;
 export const LANES = 5;
 // 칼치기 거리 기준 (앞차 뒤범퍼까지 px): 이 안에서 빠지면 GOOD · GREAT · PERFECT
 export const DODGE = [300, 170, 80];
-export const FEVER_FULL = 16;   // 등급 점수 합 (PERFECT=3)
+// 칼치기를 끊기지 않고 7번 이으면 "스·트·레·스·차·차·차" 완성 → 피버
+export const CHANT = ['스', '트', '레', '스', '차', '차', '차'];
+export const FEVER_FULL = CHANT.length;
+export const FEVER_TIME = 6;
+export const CHAIN_TIME = 6;   // 이 시간 안에 다음 칼치기를 못 하거나 부딪히면 글자가 처음부터
 export const LANE_W = W / LANES;
 export const PX_PER_M = 20;
 export const laneX = l => LANE_W * (l + 0.5);
@@ -22,10 +26,10 @@ export const CARS = {
 export const ITEMS = ['coin', 'gold', 'fuel', 'magnet', 'booster', 'jump'];
 // 드라이버 능력
 export const DRIVERS = {
-  raccoon: { fuel: 1.0, coin: 1.1, combo: 3.0, jump: 1 },   // 코인 +10%
-  penguin: { fuel: 0.9, coin: 1.0, combo: 3.0, jump: 1 },   // 연료 효율 +10%
-  bunny: { fuel: 1.0, coin: 1.0, combo: 3.6, jump: 1 },     // 콤보 유지 +20%
-  bear: { fuel: 1.0, coin: 1.0, combo: 3.0, jump: 1.35 },   // 점프 충전 빠름
+  raccoon: { fuel: 1.0, coin: 1.1, combo: 4.0, jump: 1 },   // 코인 +10%
+  penguin: { fuel: 0.9, coin: 1.0, combo: 4.0, jump: 1 },   // 연료 효율 +10%
+  bunny: { fuel: 1.0, coin: 1.0, combo: 4.8, jump: 1 },     // 콤보 유지 +20%
+  bear: { fuel: 1.0, coin: 1.0, combo: 4.0, jump: 1.35 },   // 점프 충전 빠름
 };
 
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -42,7 +46,7 @@ export class Race {
       engine: 1 + (up.engine || 0) * 0.035,
       jumpRate: (0.11 + (up.jump || 0) * 0.012) * d.jump,
       p: { lane: 2, x: laneX(2), y: H - 520, z: 0, air: 0, jump: 1, hit: 0, slip: 0, slipOn: false, moving: 0 },
-      combo: 0, comboT: 0, bestCombo: 0, fever: 0, feverT: 0, booster: 0, magnet: 0,
+      combo: 0, comboT: 0, bestCombo: 0, fever: 0, feverT: 0, chainT: 0, booster: 0, magnet: 0,
       cars: [], items: [], oils: [], checkpoints: 0, nextCp: 500, cpY: null,
       spawnY: 0, nextWave: 0, stats: { honks: 0, perfects: 0, crashes: 0, rams: 0, jumpshots: 0, items: 0 },
     };
@@ -93,6 +97,7 @@ export class Race {
     if (p.air > 0) { p.air -= dt; p.z = Math.sin(Math.PI * (1 - Math.max(0, p.air) / 0.72)) * 1; if (p.air <= 0) { p.air = 0; p.z = 0; this.land(); } }
     p.jump = Math.min(1, p.jump + s.jumpRate * dt);
     if (p.hit > 0) p.hit -= dt;
+    if (s.chainT > 0) { s.chainT -= dt; if (s.chainT <= 0) this.breakChain(); }
     for (const k of ['feverT', 'booster', 'magnet', 'comboT']) if (s[k] > 0) { s[k] -= dt; if (s[k] <= 0) { s[k] = 0; if (k === 'comboT' && s.combo) { s.combo = 0; this.ev('comboEnd', {}); } if (k === 'feverT' || k === 'booster') this.ev('boostEnd', {}); } }
 
     this.spawn(dy);
@@ -198,8 +203,10 @@ export class Race {
     const mult = 1 + Math.min(9, Math.floor(s.combo / 2)) * 0.5;
     const pts = Math.round(120 * grade * mult * (s.speed / 700));
     s.score += pts;
-    if (s.feverT <= 0) { s.fever += grade; if (s.fever >= FEVER_FULL) { s.fever = 0; s.feverT = 4; this.ev('fever', {}); } }
-    this.ev('honk', { x: c.x, y: c.y, combo: s.combo, pts, grade, side: Math.sign(c.x - s.p.x) });
+    const chain = s.feverT > 0 ? 0 : ++s.fever;
+    s.chainT = CHAIN_TIME;
+    this.ev('honk', { x: c.x, y: c.y, combo: s.combo, pts, grade, chain, side: Math.sign(c.x - s.p.x) });
+    if (chain >= FEVER_FULL) { s.fever = 0; s.feverT = FEVER_TIME; this.ev('fever', {}); }
   }
 
   // 차 날려 보내기 (부스터·옆 들이받기·점프샷)
@@ -217,6 +224,9 @@ export class Race {
     if (CARS[c.kind].boom) { this.ev('boom', { x: c.x, y: c.y }); for (const o of s.cars) if (o.state === 'drive' && Math.hypot(o.x - c.x, o.y - c.y) < 420) this.smash(o, 'boost'); }
   }
 
+  // 글자 잃기: 시간 초과면 처음부터, 부딪히면 두 글자 뒤로
+  breakChain(lose = 99) { if (this.s.fever > 0) { this.s.fever = Math.max(0, this.s.fever - lose); this.ev('chainBreak', { left: this.s.fever }); } }
+
   crash(c) {
     const s = this.s, p = s.p;
     p.hit = 0.6;
@@ -224,6 +234,7 @@ export class Race {
     s.fuel = Math.max(0, s.fuel - 8);
     s.stats.crashes++;
     if (s.combo) { s.combo = 0; s.comboT = 0; this.ev('comboEnd', {}); }
+    this.breakChain(2);
     c.y -= 50; c.v += 160;
     this.ev('crash', { x: p.x, y: p.y - 90 });
   }

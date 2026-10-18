@@ -1,6 +1,10 @@
 // 레이스 화면: core/race.js 시뮬레이션을 고정 간격으로 돌리고 상태·사건을 그림·소리로 옮긴다.
 import { W, H } from '../config.js';
-import { Race, LANES, CARS, FEVER_FULL, DODGE, laneX } from '../core/race.js';
+import { Race, LANES, CARS, FEVER_FULL, FEVER_TIME, CHANT, DODGE, laneX } from '../core/race.js';
+// 스·트·레·스·차·차·차 — 한 글자씩 도레미파솔라도로 올라가며 커짐
+const CHANT_VO = ['vo_seu', 'vo_teu', 'vo_re', 'vo_seu', 'vo_cha', 'vo_cha', 'vo_cha'];
+const CHANT_ST = [0, 2, 4, 5, 7, 9, 12];
+const CHANT_COL = ['#FF6B6B', '#FF9F43', '#FFD23F', '#6EE7A8', '#4DC3FF', '#7A8BFF', '#FF6FB5'];
 import { decide, blockedSide } from '../core/ai.js';
 import { txt, fmt, fit, iconButton, button, popup } from '../ui.js';
 import { audio } from '../audio.js';
@@ -49,6 +53,7 @@ export class PlayScene extends Phaser.Scene {
     this.makeHud();
     this.makeInput();
     audio.music('bgm_race', this);
+    audio.prefetch(this, ['bgm_fever']);
     this.cameras.main.fadeIn(300, 20, 26, 50);
     if (!d.tips.controls && !this.bot) this.tutorial();
     window.__play = this;
@@ -104,8 +109,11 @@ export class PlayScene extends Phaser.Scene {
     this.feverBar = this.add.rectangle(W - 34, H * 0.42 + 206, 22, 4, 0xFF8A1F).setOrigin(0.5, 1).setDepth(D);
     txt(this, W - 34, H * 0.42 - 240, '피버', 30, '#FFB36B').setDepth(D);
     // 콤보
-    this.hCombo = txt(this, W / 2, 330, '', 96, '#FFE14D', { thick: 14 }).setDepth(D).setAlpha(0);
-    this.hComboSub = txt(this, W / 2, 410, '', 38, '#FFFFFF').setDepth(D).setAlpha(0);
+    this.hCombo = txt(this, W / 2, 440, '', 96, '#FFE14D', { thick: 14 }).setDepth(D).setAlpha(0);
+    this.hComboSub = txt(this, W / 2, 520, '', 38, '#FFFFFF').setDepth(D).setAlpha(0);
+    // 스트레스 차차차 글자판: 칼치기를 이을 때마다 한 글자씩 켜짐 → 다 켜지면 피버
+    this.chantBg = this.add.rectangle(W / 2, 312, 760, 100, 0x101830, 0.55).setStrokeStyle(4, 0xFFFFFF, 0.35).setDepth(D - 1);
+    this.chant = CHANT.map((ch, i) => txt(this, W / 2 - 320 + i * 96 + (i >= 4 ? 28 : 0), 312, ch, 64, '#5A6488', { stroke: '#101830', thick: 10 }).setDepth(D));
     // 점프 버튼
     this.jumpBtn = this.add.container(W - 130, H - 170).setDepth(D);
     this.jumpRing = this.add.graphics();
@@ -133,7 +141,7 @@ export class PlayScene extends Phaser.Scene {
     const d = load(); d.tips.controls = 1; save();
     const c = this.add.container(W / 2, H * 0.55).setDepth(98);
     const box = this.add.rectangle(0, 0, 900, 260, 0x101830, 0.85).setStrokeStyle(5, 0xFFE14D);
-    c.add([box, txt(this, 0, -60, '👈 화면 왼쪽 / 오른쪽 탭 👉', 50, '#FFFFFF'), txt(this, 0, 10, '차로를 바꿔요 · 위로 밀면 점프!', 44, '#FFE8A8'), txt(this, 0, 80, '앞차에 닿기 직전에 옆으로 빠지면 "차!" 콤보', 36, '#9AE8FF')]);
+    c.add([box, txt(this, 0, -60, '👈 화면 왼쪽 / 오른쪽 탭 👉', 50, '#FFFFFF'), txt(this, 0, 10, '차로를 바꿔요 · 위로 밀면 점프!', 44, '#FFE8A8'), txt(this, 0, 80, '앞차 직전 칼치기 7연속 → 스트레스 차차차 피버!', 36, '#9AE8FF')]);
     this.tweens.add({ targets: c, alpha: 0, delay: 4200, duration: 400, onComplete: () => c.destroy() });
   }
 
@@ -158,7 +166,8 @@ export class PlayScene extends Phaser.Scene {
     if (this.over) { this.endT += dt; this.s.speed *= Math.pow(0.25, dt); if (this.endT > 1.6) this.finish(); }
     this.draw(dt);
     this.updateGuide(real);
-    audio.rate(1 + Math.min(20, this.s.combo) * 0.006);
+    if (!this.feverOn) audio.rate(1 + Math.min(20, this.s.combo) * 0.006);
+    if (this.feverOn) this.chant.forEach((t, i) => t.setColor(CHANT_COL[(i + Math.floor(this.s.t * 10)) % 7]));
     this.speedLines.emitting = this.speedLines.emitting || this.s.combo >= 8;
   }
 
@@ -217,7 +226,7 @@ export class PlayScene extends Phaser.Scene {
     this.fuelBar.width = 472 * f;
     this.fuelBar.fillColor = f < 0.25 ? (Math.floor(t * 6) % 2 ? 0xFF5A5A : 0xFFB0B0) : f < 0.5 ? 0xFFC93C : 0x6EE7C8;
     if (f < 0.25 && !this.over) { this.lowFuelT -= dt; if (this.lowFuelT <= 0) { this.lowFuelT = 1.2; audio.play('sfx_lowfuel', { volume: 0.45 }); } }
-    this.feverBar.height = 412 * (s.feverT > 0 ? s.feverT / 4 : s.fever / FEVER_FULL);
+    this.feverBar.height = 412 * (s.feverT > 0 ? s.feverT / FEVER_TIME : s.fever / FEVER_FULL);
     this.feverBar.fillColor = s.feverT > 0 ? (Math.floor(t * 10) % 2 ? 0xFFE14D : 0xFF8A1F) : 0xFF8A1F;
     this.hCombo.setAlpha(s.combo > 1 ? Math.min(1, s.comboT * 1.5) : 0);
     this.hComboSub.setAlpha(this.hCombo.alpha);
@@ -264,10 +273,16 @@ export class PlayScene extends Phaser.Scene {
     switch (e.type) {
       case 'honk': {
         // 칼치기 등급: 가까이서 뺄수록 크게
-        const G = [null, ['차!', '#FFFFFF', 56], ['차차!', '#FFE14D', 68], ['차차차!', '#FF6FB5', 84]][e.grade];
+        const G = [null, ['GOOD', '#FFFFFF', 52], ['GREAT!', '#FFE14D', 60], ['PERFECT!', '#FF6FB5', 70]][e.grade];
         audio.play(`sfx_honk_${Math.min(4, e.grade - 1 + Math.floor((e.combo - 1) / 6))}`, { volume: 0.6, gap: 60 });
-        this.pop(e.x, e.y + 40, G[0], G[1], G[2]);
-        audio.play(`vo_cha_${e.grade}`, { volume: 0.85, gap: e.grade === 3 ? 0 : 350 });
+        if (e.chain > 0) {
+          const i = e.chain - 1, ch = this.chant[i];
+          audio.play(CHANT_VO[i], { volume: 0.5 + 0.5 * i / 6, rate: Math.pow(2, CHANT_ST[i] / 12), gap: 0 });
+          this.pop(e.x, e.y + 40, CHANT[i], CHANT_COL[i], 72 + i * 12);
+          ch.setColor(CHANT_COL[i]).setScale(1.8);
+          this.tweens.add({ targets: ch, scale: 1.15, duration: 220, ease: 'Back.easeOut' });
+          if (G && e.grade > 1) this.pop(e.x, e.y - 40, G[0], G[1], 40);
+        } else this.pop(e.x, e.y + 40, G[0], G[1], G[2]);
         if (e.grade === 3) {
           this.slowT = 0.22;
           this.cameras.main.shake(120, 0.004); this.cameras.main.flash(90, 255, 200, 230, false);
@@ -275,7 +290,7 @@ export class PlayScene extends Phaser.Scene {
           this.burst.setParticleTint(0xFF6FB5); this.burst.emitParticleAt(this.s.p.x, this.s.p.y - 40, 16);
         }
         if (this.guide) { const d = load(); d.totals.dodges = (d.totals.dodges || 0) + 1; save(); if (d.totals.dodges >= 6) this.guide = false; this.hideGuide(true); }
-        this.hCombo.setText(`차! ×${e.combo}`).setScale(1.35 + e.grade * 0.1);
+        this.hCombo.setText(`콤보 ×${e.combo}`).setScale(1.35 + e.grade * 0.1);
         this.tweens.add({ targets: this.hCombo, scale: 1, duration: 160, ease: 'Back.easeOut' });
         const mult = 1 + Math.min(9, Math.floor(e.combo / 2)) * 0.5;
         this.hComboSub.setText(`점수 ×${mult.toFixed(1)}`);
@@ -283,6 +298,10 @@ export class PlayScene extends Phaser.Scene {
         break;
       }
       case 'comboEnd': break;
+      case 'chainBreak':
+        this.chant.forEach((t, i) => { if (i < e.left) return; this.tweens.killTweensOf(t); t.setColor('#5A6488').setScale(1); });
+        this.tweens.add({ targets: this.chantBg, x: W / 2 + 12, duration: 50, yoyo: true, repeat: 3, onComplete: () => this.chantBg.setX(W / 2) });
+        break;
       case 'smash': {
         audio.play(e.how === 'jump' ? 'sfx_boom' : 'sfx_smash', { volume: e.how === 'jump' ? 0.7 : 0.55, gap: 50 });
         this.fx('sheet_poof', e.x, e.y, 1.6);
@@ -303,9 +322,20 @@ export class PlayScene extends Phaser.Scene {
         if (z !== this.zone) this.zoneChange(z);
         break;
       }
-      case 'fever': audio.play('sfx_fever', { volume: 0.8 }); this.banner('피버 타임!', '무적 질주 · 부딪히는 차를 날려요', 0xFF6B3D); this.flash(0xFFE14D); break;
+      case 'fever':
+        this.feverOn = true;
+        audio.play('sfx_fever', { volume: 0.8 });
+        this.time.delayedCall(280, () => audio.play('vo_full', { volume: 1, gap: 0 }));
+        audio.music('bgm_fever', this);
+        this.banner('스트레스 차차차!', 'FEVER! 무적 질주 · 차를 날려 버려요', 0xFF4D8D);
+        this.flash(0xFFE14D); this.cameras.main.shake(300, 0.012);
+        this.chant.forEach((t, i) => this.tweens.add({ targets: t, scale: 1.5, y: 296, duration: 160, delay: i * 40, yoyo: true }));
+        break;
       case 'booster': audio.play('sfx_fever', { volume: 0.6 }); break;
-      case 'boostEnd': this.boostAura.stop(); break;
+      case 'boostEnd':
+        this.boostAura.stop();
+        if (this.feverOn && s.feverT <= 0) { this.feverOn = false; audio.music('bgm_race', this); this.chant.forEach(t => t.setColor('#5A6488').setScale(1)); }
+        break;
       case 'slip': audio.play('sfx_slip', { volume: 0.5 }); this.pop(p.x, p.y - 260, '슬립스트림!', '#9AE8FF', 40); break;
       case 'oil': audio.play('sfx_skid', { volume: 0.6 }); this.pop(p.x, p.y - 200, '미끌!', '#D8CCFF', 48); break;
       case 'outOfFuel': this.onEnd(); break;

@@ -585,7 +585,11 @@ export class GameScene extends Phaser.Scene {
       const s = this.sprites.get(c.id);
       if (s) { s.setScale(0.4); this.tweens.add({ targets: s, scale: 1, duration: 260, ease: 'Back.Out' }); this.fx('fx_special_create', s.x, s.y); }
     }
-    if (st.created.length) audio.play('sfx_special_create');
+    if (st.created.length) {
+      audio.play('sfx_special_create');
+      // 바다의 신: 무지개 진주를 만들면 특별히 감탄
+      if (st.created.some(c => c.sp === 'rainbow')) audio.voice('rainbow');
+    }
     this.handleHits(st.hits);
     const gained = st.score - (this.lastScore ?? 0);
     if (gained > 0 && st.groups.length) {
@@ -593,7 +597,7 @@ export class GameScene extends Phaser.Scene {
       const cx = all.reduce((a, [r, c]) => a + this.xy(r, c).x, 0) / all.length, cy = all.reduce((a, [r, c]) => a + this.xy(r, c).y, 0) / all.length;
       this.floatText({ x: cx, y: cy }, `${gained}`);
     }
-    if (st.level >= 2) this.comboText(st.level);
+    if (st.level >= 2) { this.comboText(st.level); if (st.level >= 3) audio.voice(`combo_${Math.min(5, st.level - 2)}`); }
     await wait(this, 220 / this.speed);
   }
 
@@ -754,6 +758,7 @@ export class GameScene extends Phaser.Scene {
   // 진주 대폭발 문구 (다른 콤보 문구와 같은 영문 이미지)
   pearlStorm() {
     if (this.comboImg) this.comboImg.destroy();
+    audio.voice('pearl_storm');
     const img = this.add.image(W / 2, (BOARD_TOP + this.boardBottom) / 2 - 120, 'txt_pearl_storm').setDepth(60).setScale(0).setAngle(-6);
     this.comboImg = img;
     this.tweens.add({ targets: img, scale: 0.75, angle: 0, duration: 380, ease: 'Back.Out' });
@@ -966,10 +971,12 @@ export class GameScene extends Phaser.Scene {
     this.busy = true; this.resetHint();
     const clear = this.bigText('txt_level_clear');
     audio.play('jingle_win');
+    this.time.delayedCall(500, () => audio.voice('clear'));
     await wait(this, 1300);
     this.tweens.add({ targets: clear, alpha: 0, duration: 250, onComplete: () => clear.destroy() });
     if (this.engine.s.moves > 0) {
       const bonus = this.bigText('txt_bonus_time', BOARD_TOP + 60);
+      audio.voice('bonus');
       this.tweens.add({ targets: bonus, alpha: 0, delay: 900, duration: 300, onComplete: () => bonus.destroy() });
       this.speed = 1.8;
       const skip = this.add.text(W / 2, this.boardBottom + 30, t('tapSkip'), { ...TXT.small, fontSize: '32px' }).setOrigin(0.5).setDepth(60);
@@ -1141,6 +1148,7 @@ export class GameScene extends Phaser.Scene {
     this.busy = true; this.resetHint();
     if (this.engine.s.loseReason === 'timer') return this.failPopup(t('timerBoom'));
     const img = this.bigText('txt_out_of_moves');
+    audio.voice('almost');
     this.time.delayedCall(1000, () => { img.destroy(); this.extraMovesPopup(); });
   }
 

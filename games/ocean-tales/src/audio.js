@@ -23,6 +23,22 @@ class AudioManager {
     // pan: -1(왼쪽) ~ 1(오른쪽) — 보드에서 터진 위치에 따라 소리를 좌우로
     try { this.game.sound.play(key, { volume: opts.volume ?? 0.7, rate: opts.rate ?? 1, detune: opts.detune ?? 0, pan: opts.pan ?? 0 }); } catch { /* 디코딩 실패 무시 */ }
   }
+  // 바다의 신 목소리: vo_<이름> (파일이 있을 때만). 말하는 동안 배경음을 살짝 낮춤
+  // 캔디크러쉬처럼 언어와 상관없이 영어 대사 하나로 통일 (짧고 힘 있는 감탄사)
+  voice(name) {
+    if (!this.game || !load().sfx) return;
+    const key = `vo_${name}`;
+    if (!this.game.cache.audio.exists(key)) return;
+    const now = performance.now();
+    if (this.lastVoice && now - this.lastVoice < 1400) return;   // 너무 자주 말하지 않게
+    this.lastVoice = now;
+    try {
+      const snd = this.game.sound.add(key, { volume: 0.95 });
+      if (this.current) this.current.setVolume(0.12);
+      snd.once('complete', () => { if (this.current) this.current.setVolume(this.musicVol ?? 0.3); snd.destroy(); });
+      snd.play();
+    } catch { /* */ }
+  }
   // 진동 (안드로이드 크롬 등 지원 기기만, 효과음이 꺼져 있으면 함께 끔)
   buzz(pattern) {
     if (!load().sfx) return;
@@ -47,7 +63,8 @@ class AudioManager {
       return;
     }
     try {
-      this.current = this.game.sound.add(key, { loop: true, volume: 0.4 });
+      this.musicVol = 0.28;   // 효과음·목소리보다 뒤에 깔리도록 (이전 0.4)
+      this.current = this.game.sound.add(key, { loop: true, volume: this.musicVol });
       // 긴장 레이어(_hi): 같은 길이로 함께 돌다가 intensity() 로 소리를 키운다
       if (this.game.cache.audio.exists(hiKey)) {
         this.layer = this.game.sound.add(hiKey, { loop: true, volume: 0 });

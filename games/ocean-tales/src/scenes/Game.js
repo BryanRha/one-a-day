@@ -52,6 +52,11 @@ export class GameScene extends Phaser.Scene {
 
 
   create() {
+    if (!this.textures.exists('glint')) {
+      const g = this.make.graphics({ add: false });
+      for (let i = 0; i < 12; i++) { g.fillStyle(0xFFFFFF, 0.08 + i * 0.02); g.fillRoundedRect(i * 1.2, 6 + i * 2, 30 - i * 2.4, 138 - i * 4, 10); }
+      g.generateTexture('glint', 30, 150); g.destroy();
+    }
     enableGlow(this);
     const offMission = onMissionDone(def => this.missionToast(def));
     this.events.once('shutdown', offMission);
@@ -177,8 +182,22 @@ export class GameScene extends Phaser.Scene {
       const b = img.baseScale, ph = t * 5 + (sp.x + sp.y) * 0.01;
       if (pc.sp === 'lineH') img.setScale(b * (1 + 0.07 * Math.sin(ph)), b * (1 - 0.03 * Math.sin(ph)));
       else if (pc.sp === 'lineV') img.setScale(b * (1 - 0.03 * Math.sin(ph)), b * (1 + 0.07 * Math.sin(ph)));
-      else if (pc.sp === 'bomb' || pc.sp === 'rainbow') img.setScale(b * (1 + 0.06 * Math.sin(ph * 1.3)));
+      else if (pc.sp === 'bomb') { img.setScale(b * (1 + 0.07 * Math.sin(ph * 1.3))); img.setAngle(6 * Math.sin(ph * 0.65)); }
+      else if (pc.sp === 'rainbow') img.setScale(b * (1 + 0.06 * Math.sin(ph * 1.3)));
       else if (img.scaleX !== b) img.setScale(b);
+      if (pc.sp !== 'bomb' && img.angle) img.setAngle(0);
+      // 줄 블록: 빛줄기가 터지는 방향으로 훑고 지나감 (1.6초마다)
+      const line = pc.sp === 'lineH' || pc.sp === 'lineV';
+      if (line && !sp.glint) { sp.glint = this.add.image(0, 0, 'glint').setBlendMode(Phaser.BlendModes.ADD); sp.add(sp.glint); }
+      if (sp.glint) {
+        sp.glint.setVisible(line);
+        if (line) {
+          const half = img.displayWidth * 0.42, k = ((t + (sp.x * 0.003 + sp.y * 0.002)) % 1.6) / 1.6;
+          const u = k < 0.5 ? k / 0.5 : 1, pos = -half + u * half * 2;
+          sp.glint.setAlpha(k < 0.5 ? Math.sin(u * Math.PI) * 0.75 : 0).setScale(1, img.displayHeight / 150);
+          if (pc.sp === 'lineH') sp.glint.setPosition(pos, 0).setAngle(0); else sp.glint.setPosition(0, pos).setAngle(90).setScale(1, img.displayWidth / 150);
+        }
+      }
     }
   }
 

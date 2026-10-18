@@ -1,6 +1,6 @@
 // 화면·게임 공통 상수
 // 화면 아래에 표시되는 버전 (배포할 때마다 올림)
-export const VERSION = '2.0.0';
+export const VERSION = '2.1.0';
 export const W = 1080;
 export const BASE_H = 1920;
 // 실제 세로 길이 (세로로 긴 폰에서는 1920 보다 커짐). ES 모듈 live binding 이라 import 한 곳에서도 갱신된 값이 보인다.
@@ -16,7 +16,9 @@ export const WORLD_COUNT = 50;
 // 월드 → 그림 테마 (배경·지도색·복원·클리어 연출은 10가지 테마를 돌려 씀)
 export const themeOf = w => ((w - 1) % 10) + 1;
 // 리소스 경로 (단일 파일 배포본은 window.__ASSETS 에 { 경로: data URI } 를 넣어 둔다)
-export const asset = path => (typeof window !== 'undefined' && window.__ASSETS && window.__ASSETS[path]) || path;
+// 큰 AI 원화(배경·마스코트)는 WebP 로 내려보냄 (tools/sync.js 가 변환)
+const WEBP = /^assets\/img\/(bg_game_\d+|bg_title|mascot_\w+)\.png$/;
+export const asset = path => { const p = WEBP.test(path) ? path.replace(/\.png$/, '.webp') : path; return (typeof window !== 'undefined' && window.__ASSETS && window.__ASSETS[p]) || p; };
 // 지도 배경색 (월드별 위·아래·무늬) — 이미지 대신 색으로 그려서 폰 메모리를 아낀다
 export const MAP_THEME = [
   ['#BFF0FF', '#8FDDFB', '#FFE9BF'], ['#BFEFE0', '#8FD8C8', '#D9EFA8'], ['#3A5AB8', '#22357E', '#4A6AC8'],

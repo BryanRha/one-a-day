@@ -15,17 +15,15 @@ export class TitleScene extends Phaser.Scene {
     const logo = this.add.image(W / 2, H * 0.2, 'logo_game').setScale(1.05);
     this.tweens.add({ targets: logo, scale: 1.1, yoyo: true, repeat: -1, duration: 1400, ease: 'Sine.InOut' });
 
-    const mascot = this.add.image(W * 0.78, H * 0.6, 'mascot_happy').setScale(0.55);
-    this.tweens.add({ targets: mascot, y: mascot.y - 24, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.InOut' });
-
-    // 떠다니는 바다 친구
-    const keys = ['tile_red', 'tile_orange', 'tile_yellow', 'tile_green', 'tile_blue', 'tile_purple'];
-    for (let i = 0; i < 9; i++) {
-      const s = this.add.image(Phaser.Math.Between(60, W - 60), Phaser.Math.Between(H * 0.3, H * 0.42), keys[i % 6]).setScale(0.6 + Math.random() * 0.4).setAlpha(0.9);
-      this.tweens.add({ targets: s, y: s.y - Phaser.Math.Between(30, 70), angle: Phaser.Math.Between(-15, 15), yoyo: true, repeat: -1, duration: Phaser.Math.Between(1200, 2200), ease: 'Sine.InOut' });
+    // 메인 일러스트(AI)에 고래와 바다 친구들이 이미 있음 → 천천히 다가오는 연출 + 떠오르는 물방울만
+    const cover = bg.scale;
+    this.tweens.add({ targets: bg, scale: cover * 1.05, yoyo: true, repeat: -1, duration: 12000, ease: 'Sine.InOut' });
+    for (let i = 0; i < 14; i++) {
+      const b = this.add.circle(Phaser.Math.Between(40, W - 40), H + 40, Phaser.Math.Between(6, 18), 0xFFFFFF, 0.35).setStrokeStyle(3, 0xFFFFFF, 0.7);
+      this.tweens.add({ targets: b, y: -40, x: b.x + Phaser.Math.Between(-60, 60), duration: Phaser.Math.Between(5000, 9000), repeat: -1, delay: Phaser.Math.Between(0, 6000) });
     }
 
-    const play = button(this, W / 2, H * 0.5, t('play'), () => this.go(), { width: 600, height: 180, size: 72 });
+    const play = button(this, W / 2, H * 0.36, t('play'), () => this.go(), { width: 600, height: 180, size: 72 });
     this.tweens.add({ targets: play, scale: 1.05, yoyo: true, repeat: -1, duration: 650, ease: 'Sine.InOut' });
     iconButton(this, W - 100, 110, 'ico_settings', () => settingsPopup(this), { size: 130 });
     // 홈 화면에 추가 (이미 앱으로 실행 중이면 숨김)

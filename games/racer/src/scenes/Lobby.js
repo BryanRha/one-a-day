@@ -36,10 +36,10 @@ export class LobbyScene extends Phaser.Scene {
     const artH = art.displayHeight;
     this.add.graphics().fillGradientStyle(0xE8F6FF, 0xE8F6FF, 0xE8F6FF, 0xE8F6FF, 0, 0, 1, 1).fillRect(0, artH - 160, W, 160);
     // 로고 (일러스트 위 빈 하늘)
-    const logo = txt(this, W / 2, 120, '빵빵 질주', 128, '#FFE14D', { stroke: '#1E2A52', thick: 22 });
+    const logo = txt(this, W / 2, 120, '스트레스 차차차', 112, '#FFE14D', { stroke: '#1E2A52', thick: 22 });
     logo.setShadow(0, 10, '#0B1630', 0, true, true);
     this.tweens.add({ targets: logo, scale: 1.05, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    txt(this, W / 2, 210, 'HONK RUSH', 40, '#FFFFFF', { stroke: '#1E2A52', thick: 10 });
+    txt(this, W / 2, 210, 'STRESS CHA-CHA-CHA', 40, '#FFFFFF', { stroke: '#1E2A52', thick: 10 });
     // 코인 · 최고 기록
     const top = artH - 20;
     this.add.rectangle(W - 200, top - 60, 330, 72, 0x1E2A52, 0.85).setStrokeStyle(4, 0xFFE14D);

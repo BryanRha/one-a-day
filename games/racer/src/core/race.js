@@ -9,9 +9,12 @@ export const DODGE = [300, 170, 80];
 export const CHANT = ['스', '트', '레', '스', '차', '차', '차'];
 export const FEVER_FULL = CHANT.length;
 export const FEVER_TIME = 6;
-export const LANE_W = W / LANES;
+// 보스: 체크포인트 3개마다 등장. 칼치기 한 번 = 별 1발(PERFECT 2발)
+export const BOSS_EVERY = 3, BOSS_TIME = 30, BOSS_Y = 620;
+export const ROAD_X = 80;   // 양쪽 길가(풍경) 폭
+export const LANE_W = (W - ROAD_X * 2) / LANES;
 export const PX_PER_M = 20;
-export const laneX = l => LANE_W * (l + 0.5);
+export const laneX = l => ROAD_X + LANE_W * (l + 0.5);
 
 // 차종: 길이·폭(px), 속도 범위(px/s), 점수 배수
 export const CARS = {
@@ -20,6 +23,9 @@ export const CARS = {
   bus: { len: 300, w: 140, v: [200, 300], pts: 2 },
   truck: { len: 400, w: 150, v: [180, 280], pts: 3 },
   tanker: { len: 360, w: 150, v: [190, 290], pts: 4, boom: true },
+  // 보스가 떨어뜨리는 장애물 (도로에 멈춰 있음 → 내 속도로 다가옴)
+  crate: { len: 130, w: 130, v: [0, 0], pts: 2, drop: true },
+  barrel: { len: 120, w: 120, v: [0, 0], pts: 2, drop: true },
   police: { len: 190, w: 120, v: [300, 400], pts: 2, weave: true },
 };
 export const ITEMS = ['coin', 'gold', 'fuel', 'magnet', 'booster', 'jump'];
@@ -45,9 +51,9 @@ export class Race {
       engine: 1 + (up.engine || 0) * 0.035,
       jumpRate: (0.11 + (up.jump || 0) * 0.012) * d.jump,
       p: { lane: 2, x: laneX(2), y: H - 520, z: 0, air: 0, jump: 1, hit: 0, slip: 0, slipOn: false, moving: 0 },
-      combo: 0, comboT: 0, bestCombo: 0, fever: 0, feverT: 0, booster: 0, magnet: 0,
+      combo: 0, comboT: 0, bestCombo: 0, fever: 0, feverT: 0, boss: null, bossN: 0, booster: 0, magnet: 0,
       cars: [], items: [], oils: [], checkpoints: 0, nextCp: 500, cpY: null,
-      spawnY: 0, nextWave: 0, stats: { honks: 0, perfects: 0, fevers: 0, crashes: 0, rams: 0, jumpshots: 0, items: 0 },
+      spawnY: 0, nextWave: 0, stats: { honks: 0, perfects: 0, fevers: 0, bosses: 0, crashes: 0, rams: 0, jumpshots: 0, items: 0 },
     };
     this.s.fuel = this.s.fuelMax;
     this.events = [];
@@ -99,6 +105,7 @@ export class Race {
     for (const k of ['feverT', 'booster', 'magnet', 'comboT']) if (s[k] > 0) { s[k] -= dt; if (s[k] <= 0) { s[k] = 0; if (k === 'comboT' && s.combo) { s.combo = 0; this.breakChain(); this.ev('comboEnd', {}); } if (k === 'feverT' || k === 'booster') this.ev('boostEnd', {}); } }
 
     this.spawn(dy);
+    this.bossStep(dt);
     this.moveAll(dt, dy);
     this.collide();
     this.checkpoint();
@@ -112,6 +119,7 @@ export class Race {
     const gap = Math.max(300, 560 - d / 40);                      // 물결 간격 (뒤로 갈수록 촘촘)
     if (s.spawnY < gap) return;
     s.spawnY = 0;
+    if (s.boss && R() < 0.55) return;   // 보스전에는 교통을 줄임
     // 한 물결에 1~3대, 최소 2개 차로는 비워 둠
     const n = Math.min(3, 1 + Math.floor(R() * (1.4 + d / 2500)));
     const lanes = [0, 1, 2, 3, 4].sort(() => R() - 0.5).slice(0, n);
@@ -201,6 +209,7 @@ export class Race {
     const mult = 1 + Math.min(9, Math.floor(s.combo / 2)) * 0.5;
     const pts = Math.round(120 * grade * mult * (s.speed / 700));
     s.score += pts;
+    if (s.boss && s.boss.phase === 'fight') this.hitBoss(grade === 3 ? 2 : 1);
     const chain = s.feverT > 0 ? 0 : ++s.fever;
     this.ev('honk', { x: c.x, y: c.y, combo: s.combo, pts, grade, chain, side: Math.sign(c.x - s.p.x) });
     if (chain >= FEVER_FULL) { s.fever = 0; s.feverT = FEVER_TIME; s.stats.fevers++; this.ev('fever', {}); }
@@ -255,6 +264,50 @@ export class Race {
   }
 
   // 체크포인트: 500m 마다 연료 충전 (충전량은 점점 줄고 간격은 늘어남)
+  // ── 보스: 위쪽에서 차로를 옮겨 다니며 상자를 떨어뜨림 ──
+  startBoss() {
+    const s = this.s; s.bossN++;
+    const hp = 6 + s.bossN * 2;
+    s.boss = { phase: 'enter', hp, max: hp, lane: 2, x: laneX(2), y: -400, t: 0, moveT: 1.5, dropT: 1.6, warn: null };
+    this.ev('bossStart', { n: s.bossN });
+  }
+  bossStep(dt) {
+    const s = this.s, b = s.boss, R = this.R;
+    if (!b) return;
+    b.t += dt;
+    if (b.phase === 'enter') { b.y += (BOSS_Y - b.y) * Math.min(1, dt * 2.5); if (BOSS_Y - b.y < 6) b.phase = 'fight'; return; }
+    if (b.phase === 'leave') { b.y -= 900 * dt; b.x += (b.dir || 0) * 400 * dt; if (b.y < -600) s.boss = null; return; }
+    b.x += (laneX(b.lane) - b.x) * Math.min(1, dt * 3);
+    if (b.t > BOSS_TIME) { b.phase = 'leave'; this.ev('bossEscape', {}); return; }
+    // 차로 옮기기 (경고 중에는 그 차로에 머묾)
+    if (!b.warn) { b.moveT -= dt; if (b.moveT <= 0) { b.moveT = 1.2 + R() * 1.2; const near = R() < 0.55 ? s.p.lane : Math.floor(R() * LANES); b.lane = Math.max(0, Math.min(LANES - 1, near)); } }
+    // 떨어뜨리기: 경고 0.8초 → 상자/통 (체력이 적을수록 빨라짐)
+    b.dropT -= dt;
+    if (b.dropT <= 0 && !b.warn && Math.abs(b.x - laneX(b.lane)) < 20) { b.warn = { lane: b.lane, t: 0.8 }; this.ev('bossWarn', { lane: b.lane }); }
+    if (b.warn) {
+      b.warn.t -= dt;
+      if (b.warn.t <= 0) {
+        const kind = R() < 0.5 ? 'crate' : 'barrel', C = CARS[kind], l = b.warn.lane;
+        s.cars.push({ id: this.id(), kind, lane: l, x: laneX(l), y: b.y + 330, len: C.len, w: C.w, v: 0, passed: false, state: 'drive', tx: laneX(l), weaveT: 99, color: 0 });
+        this.ev('bossDrop', { lane: l, x: laneX(l), y: b.y + 330 });
+        b.warn = null; b.dropT = 0.9 + 1.1 * (b.hp / b.max);
+      }
+    }
+  }
+  hitBoss(dmg) {
+    const s = this.s, b = s.boss;
+    b.hp = Math.max(0, b.hp - dmg);
+    this.ev('bossHit', { dmg, x: s.p.x, y: s.p.y, hp: b.hp, max: b.max });
+    if (b.hp <= 0) {
+      b.phase = 'leave'; b.dir = s.p.x < W / 2 ? 1 : -1; b.warn = null;
+      const coins = 120 + s.bossN * 30, pts = Math.round(6000 * s.bossN * (s.speed / 700));
+      s.coins += coins * this.d.coin; s.score += pts; s.fuel = Math.min(s.fuelMax, s.fuel + 30); s.stats.bosses = (s.stats.bosses || 0) + 1;
+      // 남은 장애물은 날려 버림
+      for (const c of s.cars) if (CARS[c.kind].drop && c.state === 'drive') { c.state = 'fly'; c.ft = 1.2; c.rot = 0; c.vx = (this.R() - 0.5) * 1400; c.vy = -500; c.vr = (this.R() - 0.5) * 14; }
+      this.ev('bossDown', { x: b.x, y: b.y, coins, pts });
+    }
+  }
+
   checkpoint() {
     const s = this.s;
     if (s.cpY === null && s.dist > s.nextCp - (s.p.y + 200) / PX_PER_M) s.cpY = -200;
@@ -265,6 +318,7 @@ export class Race {
       s.score += 500 * s.checkpoints;
       s.nextCp += 500 + s.checkpoints * 40;
       this.ev('checkpoint', { n: s.checkpoints, add });
+      if (s.checkpoints % BOSS_EVERY === 0 && !s.boss) this.startBoss();
     }
   }
 }

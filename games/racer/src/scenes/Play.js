@@ -1,6 +1,6 @@
 // 레이스 화면: core/race.js 시뮬레이션을 고정 간격으로 돌리고 상태·사건을 그림·소리로 옮긴다.
 import { W, H } from '../config.js';
-import { Race, LANES, CARS, FEVER_FULL, FEVER_TIME, CHANT, DODGE, laneX } from '../core/race.js';
+import { Race, LANES, CARS, FEVER_FULL, FEVER_TIME, CHANT, DODGE, laneX, ROAD_X, LANE_W } from '../core/race.js';
 // 스·트·레·스·차·차·차 — 한 글자씩 도레미파솔라도로 올라가며 커짐
 const CHANT_VO = ['vo_seu', 'vo_teu', 'vo_re', 'vo_seu', 'vo_cha', 'vo_cha', 'vo_cha'];
 const CHANT_ST = [0, 2, 4, 5, 7, 9, 12];
@@ -18,6 +18,7 @@ const CAR_KEYS = {
   sedan: ['traffic_sedan_blue', 'traffic_sedan_yellow', 'traffic_sedan_purple'],
   mini: ['traffic_mini_pink', 'traffic_mini_orange'],
   bus: ['traffic_bus'], truck: ['traffic_truck'], tanker: ['traffic_tanker'], police: ['traffic_police'],
+  crate: ['boss_crate'], barrel: ['boss_barrel'],
 };
 const ITEM_KEY = { coin: 'item_coin', gold: 'item_gold', fuel: 'item_fuel', magnet: 'item_magnet', booster: 'item_booster', jump: 'item_jump' };
 const ITEM_NAME = { fuel: '연료 +18', magnet: '자석!', booster: '부스터!', jump: '점프 충전!' };
@@ -48,15 +49,70 @@ export class PlayScene extends Phaser.Scene {
     this.L = { ground: this.add.layer().setDepth(5), cars: this.add.layer().setDepth(10), fly: this.add.layer().setDepth(30), fx: this.add.layer().setDepth(40) };
     this.speedLines = this.add.particles(0, 0, 'glow', { x: { min: 0, max: W }, y: -80, speedY: { min: 2600, max: 3400 }, lifespan: 700, scaleX: 0.05, scaleY: { min: 1.2, max: 2.2 }, alpha: { start: 0.5, end: 0 }, frequency: 22, quantity: 2, emitting: false, blendMode: 'ADD' }).setDepth(45);
 
+    this.makeScenery();
     this.makePools();
     this.makePlayer();
+    this.makeBoss();
     this.makeHud();
     this.makeInput();
     audio.music('bgm_race', this);
-    audio.prefetch(this, ['bgm_fever']);
+    audio.prefetch(this, ['bgm_fever', 'bgm_boss']);
     this.cameras.main.fadeIn(300, 20, 26, 50);
     if (!d.tips.controls && !this.bot) this.tutorial();
     window.__play = this;
+  }
+
+  // 길가 풍경: 구역별 장식이 양쪽 길가를 따라 흘러감 (도로보다 아래 깊이, 차보다 아래)
+  makeScenery() {
+    this.side = []; this.sideFree = []; this.sideY = [0, 120];
+    this.L.side = this.add.layer().setDepth(3);
+    for (let i = 0; i < 6; i++) for (const sd of [0, 1]) this.spawnSide(sd, -i * 330 - sd * 160 + H);
+  }
+  spawnSide(sd, y) {
+    const list = ZONES[this.zone].side, key = list[Math.floor(Math.random() * list.length)];
+    let o = this.sideFree.pop();
+    if (!o) { o = this.add.image(0, 0, key); this.L.side.add(o); }
+    o.setTexture(key).setVisible(true);
+    const sz = key === 'side_lamp' || key === 'side_hydrant' ? 96 : key === 'side_shells' ? 104 : 132;
+    o.setScale(sz / Math.max(o.width, o.height) * (0.9 + Math.random() * 0.2));
+    o.setFlipX(sd === 1 && Math.random() < 0.5).setAngle((Math.random() - 0.5) * 20);
+    o.setPosition(sd === 0 ? ROAD_X * 0.45 : W - ROAD_X * 0.45, y);
+    o.sd = sd; this.side.push(o);
+  }
+  scrollScenery(dy) {
+    let minY = [1e9, 1e9];
+    for (const o of this.side) { o.y += dy; if (o.y < minY[o.sd]) minY[o.sd] = o.y; }
+    for (let i = this.side.length - 1; i >= 0; i--) { const o = this.side[i]; if (o.y > H + 120) { o.setVisible(false); this.sideFree.push(o); this.side.splice(i, 1); } }
+    for (const sd of [0, 1]) if (minY[sd] > -60) this.spawnSide(sd, minY[sd] - 260 - Math.random() * 180);
+  }
+
+  makeBoss() {
+    // 경고: 상자가 떨어질 차로 (빨간 띠 + 느낌표)
+    this.warnRect = this.add.rectangle(0, 0, LANE_W - 16, 100, 0xFF3B5B, 0.25).setOrigin(0.5, 0).setDepth(4).setVisible(false);
+    this.warnIco = txt(this, 0, 0, '!', 110, '#FF3B5B', { stroke: '#FFFFFF', thick: 14 }).setDepth(44).setVisible(false);
+    const c = this.add.container(0, -999).setDepth(31).setVisible(false);
+    const sh = this.add.image(10, 30, 'glow').setTint(0x000000).setAlpha(0.4).setScale(5, 5.5);
+    const img = this.add.image(0, 0, 'boss_truck'); img.setScale(400 / img.width);
+    const hpBg = this.add.rectangle(0, 236, 360, 34, 0x101830, 0.85).setStrokeStyle(4, 0xFFFFFF);
+    const hp = this.add.rectangle(-174, 236, 348, 22, 0xFF5A5A).setOrigin(0, 0.5);
+    const name = txt(this, 0, 282, `심술 트럭`, 40, '#FFE14D', { stroke: '#101830', thick: 10 });
+    c.add([sh, img, hpBg, hp, name]); c.img = img; c.hp = hp; c.nameT = name; c.k = img.scaleX;
+    this.bossC = c;
+  }
+  baseMusic() { const b = this.s.boss; return b && b.phase !== 'leave' ? 'bgm_boss' : 'bgm_race'; }
+  shootStar(dmg) {
+    const s = this.s, b = s.boss; if (!b) return;
+    for (let i = 0; i < dmg; i++) {
+      const st = this.add.image(s.p.x + (i ? 40 : 0), s.p.y - 120, 'boss_star').setDepth(46).setScale(0.55).setBlendMode('ADD');
+      this.tweens.add({ targets: st, x: b.x + (i ? 30 : -10), y: b.y + 60, duration: 300, delay: i * 90, ease: 'Quad.easeIn', onComplete: () => {
+        st.destroy();
+        audio.play('sfx_smash', { volume: 0.6, gap: 30 });
+        this.burst.setParticleTint(0xFFE14D); this.burst.emitParticleAt(b.x, b.y + 60, 12);
+        this.bossC.img.setTintFill(0xFFFFFF); this.time.delayedCall(70, () => this.bossC.img.clearTint());
+        this.tweens.add({ targets: this.bossC.img, scaleX: this.bossC.k * 1.06, scaleY: this.bossC.k * 0.94, duration: 60, yoyo: true });
+      } });
+    }
+    this.pop(b.x, b.y - 140, `-${dmg}`, '#FFE14D', 70);
   }
 
   makePools() {
@@ -177,6 +233,7 @@ export class PlayScene extends Phaser.Scene {
     const s = this.s, p = s.p, t = s.t;
     const dy = s.speed * dt;
     this.roadA.tilePositionY -= dy; this.roadB.tilePositionY -= dy;
+    this.scrollScenery(dy);
     const boost = s.feverT > 0 || s.booster > 0;
     this.speedLines.emitting = boost || s.speed > 1350;
     // 내 차: 차로 이동 중 기울기, 점프 시 커지고 그림자는 아래로
@@ -218,6 +275,14 @@ export class PlayScene extends Phaser.Scene {
     for (const ol of s.oils) { const o = this.pOil.get(ol.id); if (o._new) fit(o, 170); o.setPosition(ol.x, ol.y); }
     this.pOil.end();
     this.cp.setY(s.cpY ?? -999);
+    const b = s.boss;
+    this.bossC.setVisible(!!b);
+    if (b) {
+      this.bossC.setPosition(b.x, b.y + Math.sin(t * 3) * 8).setAngle((laneX(b.lane) - b.x) * 0.03);
+      this.bossC.hp.width = 348 * b.hp / b.max;
+      const w = b.warn; this.warnRect.setVisible(!!w); this.warnIco.setVisible(!!w);
+      if (w) { const blink = Math.floor(t * 10) % 2 ? 0.35 : 0.15; this.warnRect.setPosition(laneX(w.lane), b.y + 310).setSize(LANE_W - 16, H - b.y).setFillStyle(0xFF3B5B, blink); this.warnIco.setPosition(laneX(w.lane), b.y + 420).setScale(1 + Math.sin(t * 20) * 0.1); }
+    } else { this.warnRect.setVisible(false); this.warnIco.setVisible(false); }
 
     // HUD
     this.hDist.setText(`${fmt(s.dist)}m`);
@@ -338,11 +403,29 @@ export class PlayScene extends Phaser.Scene {
       case 'booster': audio.play('sfx_fever', { volume: 0.6 }); break;
       case 'boostEnd':
         this.boostAura.stop();
-        if (this.feverOn && s.feverT <= 0) { this.feverOn = false; audio.music('bgm_race', this); this.chant.forEach(t => t.setColor('#5A6488').setScale(1)); }
+        if (this.feverOn && s.feverT <= 0) { this.feverOn = false; audio.music(this.baseMusic(), this); this.chant.forEach(t => t.setColor('#5A6488').setScale(1)); }
         break;
       case 'slip': audio.play('sfx_slip', { volume: 0.5 }); this.pop(p.x, p.y - 260, '슬립스트림!', '#9AE8FF', 40); break;
       case 'oil': audio.play('sfx_skid', { volume: 0.6 }); this.pop(p.x, p.y - 200, '미끌!', '#D8CCFF', 48); break;
       case 'outOfFuel': this.onEnd(); break;
+      case 'bossStart':
+        audio.music(this.feverOn ? 'bgm_fever' : 'bgm_boss', this);
+        this.bossC.nameT.setText(`심술 트럭 Lv.${e.n}`);
+        this.banner('보스 등장!', '칼치기 하면 별이 날아가요! 상자를 아슬아슬 피하세요', 0x8A2BE2);
+        this.cameras.main.shake(400, 0.008); audio.play('sfx_boom', { volume: 0.5 });
+        break;
+      case 'bossWarn': audio.play('sfx_lowfuel', { volume: 0.4 }); break;
+      case 'bossDrop': audio.play('sfx_land', { volume: 0.6 }); this.fx('sheet_poof', e.x, e.y, 1.2); break;
+      case 'bossHit': this.shootStar(e.dmg); break;
+      case 'bossDown':
+        this.time.delayedCall(320, () => {
+          this.fx('sheet_boom', e.x, e.y, 3.2); this.fx('sheet_ring', e.x, e.y, 3); this.cameras.main.shake(500, 0.02); this.flash(0xFFE14D);
+          audio.play('sfx_boom', { volume: 0.9 }); audio.play('sfx_fever', { volume: 0.7 });
+          this.banner('보스 격파!', `코인 +${e.coins} · 연료 +30 · +${fmt(e.pts)}점`, 0xFF8A1F);
+          if (!this.feverOn) audio.music('bgm_race', this);
+        });
+        break;
+      case 'bossEscape': this.banner('보스가 도망갔어요', '다음엔 칼치기로 더 많이 맞혀요!', 0x1E2A52); if (!this.feverOn) audio.music('bgm_race', this); break;
     }
   }
 

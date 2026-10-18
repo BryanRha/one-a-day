@@ -90,6 +90,23 @@ export class LobbyScene extends Phaser.Scene {
       const b = button(this, x, y + 46, max ? '최대' : `🪙 ${fmt(M.partCost(lv))}`, () => { if (M.upgradePart(k)) { audio.play('sfx_item', { volume: 0.6 }); this.build(); } else toast(this, '코인이 부족해요'); }, { key: 'btn_purple', w: 250, h: 80, size: 30 });
       b.setEnabled(!max && d.coins >= M.partCost(lv));
     });
+    // 내 기록 + 오늘의 팁 (빈 공간 채우기)
+    const room = (H - 150 - 100) - (y + 100);
+    if (room > 240) {
+      const ch = 270, ry = y + 100 + ch / 2 + Math.max(0, (room - ch) / 2 - 10), t = d.totals;
+      card(this, W / 2, ry, W - 80, ch);
+      txt(this, 80, ry - 96, '내 기록', 36, '#1E2A52', { ox: 0, stroke: '#FFFFFF', thick: 6 });
+      const recs = [['🏆', '최고 점수', fmt(d.best || 0)], ['🛣️', '최고 거리', `${fmt(d.bestDist || 0)}m`], ['🔥', '피버', `${fmt(t.fevers || 0)}번`], ['🚚', '보스 격파', `${fmt(t.bosses || 0)}번`]];
+      recs.forEach(([ico, k, v], i) => {
+        const x = 170 + i * 247;
+        txt(this, x - 56, ry - 22, ico, 40, '#FFFFFF');
+        txt(this, x + 14, ry - 36, k, 24, '#5A6488', { stroke: '#FFFFFF', thick: 4 });
+        txt(this, x + 14, ry - 4, v, 32, '#3B5BDB', { stroke: '#FFFFFF', thick: 5 });
+      });
+      const TIPS = ['앞차에 바짝 붙었다가 휙! 가까울수록 PERFECT', '칼치기 7번을 끊기지 않게 이으면 피버!', '보스전: 칼치기 한 번에 별 한 발, PERFECT는 두 발', '점프로 차 위에 떨어지면 점프샷 대박 점수', '앞차 뒤에 붙어 달리면 슬립스트림 가속'];
+      this.add.rectangle(W / 2, ry + 76, W - 140, 64, 0xFFF4C2).setStrokeStyle(3, 0xFFC93C);
+      txt(this, W / 2, ry + 76, `💡 ${TIPS[(t.runs || 0) % TIPS.length]}`, 28, '#1E2A52', { stroke: '#FFF4C2', thick: 4 });
+    }
     // 출발
     const sy = Math.max(y + 190, H - 150);
     const go = button(this, W / 2, sy, '출발!', () => this.start(), { key: 'btn_gold', w: 620, h: 180, size: 78 });

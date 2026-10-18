@@ -36,5 +36,6 @@ export function applyRun(r) {
   d.coins += r.coins;
   d.best = Math.max(d.best, r.score); d.bestDist = Math.max(d.bestDist, r.dist);
   const t = d.totals; t.runs++; t.dist += r.dist; t.honks += r.honks; t.jumpshots += r.jumpshots;
+  t.fevers = (t.fevers || 0) + (r.fevers || 0); t.bosses = (t.bosses || 0) + (r.bosses || 0); t.bestCombo = Math.max(t.bestCombo || 0, r.combo || 0);
   save(); return out;
 }

@@ -25,12 +25,12 @@ export class CollectionScene extends Phaser.Scene {
     SKINS.forEach((s, i) => {
       const x = i % 2 ? W / 2 + 235 : W / 2 - 235, y = 470 + Math.floor(i / 2) * 420;
       this.add.existing(panel(this, x, y, 450, 390, { tone: d.skin === s.id ? 'gold' : undefined }));
-      this.add.image(x, y - 60, makeSkinPreview(this, s.id)).setDisplaySize(190, 190);
-      T(this, x, y + 70, s.name, 40, C.text, { w: 900 });
-      T(this, x, y + 112, s.desc, 24, C.sub, { w: 700 });
+      this.add.image(x, y - 82, makeSkinPreview(this, s.id)).setDisplaySize(170, 170);
+      T(this, x, y + 34, s.name, 40, C.text, { w: 900 });
+      T(this, x, y + 76, s.desc, 24, C.sub, { w: 700 });
       const own = d.skins[s.id];
       const label = d.skin === s.id ? '사용 중' : own ? '사용하기' : `★ ${s.cost}`;
-      const b = btn(this, x, y + 168, 300, 84, label, () => {
+      const b = btn(this, x, y + 148, 300, 80, label, () => {
         if (d.skin === s.id) return;
         if (!own) { if (d.stars < s.cost) return toast(this, '별 조각이 부족해요 — 오늘의 미션으로 모아요', C.sub); d.stars -= s.cost; d.skins[s.id] = true; audio.play('sfx_best', { volume: 0.6 }); }
         d.skin = s.id; save(); makeBlockTextures(this, s.id); this.scene.restart({ tab: 'skin' });

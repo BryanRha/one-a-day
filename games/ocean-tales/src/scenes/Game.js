@@ -182,6 +182,7 @@ export class GameScene extends Phaser.Scene {
       const b = img.baseScale, ph = t * 5 + (sp.x + sp.y) * 0.01;
       if (pc.sp === 'lineH') img.setScale(b * (1 + 0.07 * Math.sin(ph)), b * (1 - 0.03 * Math.sin(ph)));
       else if (pc.sp === 'lineV') img.setScale(b * (1 - 0.03 * Math.sin(ph)), b * (1 + 0.07 * Math.sin(ph)));
+      else if (pc.sp === 'bomb' && sp.armed) { img.setScale(b * (1.12 + 0.1 * Math.sin(t * 28))); img.setAngle(10 * Math.sin(t * 22)); img.setTint(Math.floor(t * 12) % 2 ? 0xFFFFFF : 0xFFE08A); }
       else if (pc.sp === 'bomb') { img.setScale(b * (1 + 0.07 * Math.sin(ph * 1.3))); img.setAngle(6 * Math.sin(ph * 0.65)); }
       else if (pc.sp === 'rainbow') img.setScale(b * (1 + 0.06 * Math.sin(ph * 1.3)));
       else if (img.scaleX !== b) img.setScale(b);
@@ -639,7 +640,7 @@ export class GameScene extends Phaser.Scene {
   async animBlast(st) {
     let big = false, ripple = null; const centers = [];
     // 히트스톱: 특수 블록이 터지는 순간 화면을 아주 잠깐 멈춰 '손맛'을 준다
-    const weight = Math.max(...st.fx.map(f => ({ lineH: 1, lineV: 1, bomb: 2, cross: 3, bigCross: 3, bigBomb: 3, rainbow: 2, rainbowAll: 4 }[f.fx] || 0)));
+    const weight = Math.max(...st.fx.map(f => ({ lineH: 1, lineV: 1, bomb: 2, bomb2: 2, cross: 3, bigCross: 3, bigBomb: 3, rainbow: 2, rainbowAll: 4 }[f.fx] || 0)));
     if (weight) await this.hitStop([0, 45, 70, 100, 140][weight]);
     for (const f of st.fx) {
       const at = f.at ? this.xy(...f.at) : { x: W / 2, y: H / 2 };
@@ -651,6 +652,7 @@ export class GameScene extends Phaser.Scene {
         case 'lineH': track('line'); audio.play('sfx_line', { pan }); audio.buzz(25); lineH(f.at[0]); break;
         case 'lineV': track('line'); audio.play('sfx_line', { pan }); audio.buzz(25); lineV(f.at[1]); break;
         case 'bomb': track('bomb'); await this.boom(f, at, st.hits, 1); centers.push(f.at); big = true; break;
+        case 'bomb2': await this.boom(f, at, st.hits, 1); centers.push(f.at); big = true; break;   // 떨어진 자리에서 2차 폭발
         case 'cross': audio.play('sfx_combo_special', { pan }); audio.buzz(50); lineH(f.at[0]); lineV(f.at[1]); big = true; break;
         case 'bigCross': audio.play('sfx_combo_special', { pan }); audio.buzz(70); for (let d = -1; d <= 1; d++) { lineH(f.at[0] + d); lineV(f.at[1] + d); } big = true; break;
         case 'bigBomb': track('bomb'); audio.play('sfx_combo_special'); await this.boom(f, at, st.hits, 2); centers.push(f.at); big = true; break;
@@ -719,7 +721,8 @@ export class GameScene extends Phaser.Scene {
     const sp = this.speed;
     const R = (rad + 0.5) * CELL;                  // 폭발 반경 (3×3 → 1.5칸, 5×5 → 2.5칸)
     const h = hits.find(x => x.at[0] === f.at[0] && x.at[1] === f.at[1] && x.pid);
-    const s = h && this.sprites.get(h.pid);
+    const s = (h && this.sprites.get(h.pid)) || (f.id && this.sprites.get(f.id));
+    if (f.first && s) { s.armed = true; this.time.delayedCall(140 / sp, () => this.tweens.add({ targets: s, scale: 1, duration: 220 / sp, ease: 'Back.Out' })); }
     // ① 빨아들임: 주변 물방울이 폭탄으로 모여들고, 폭탄이 하얗게 부풂
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2, d = R * 1.1;

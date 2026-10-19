@@ -362,11 +362,7 @@ export class Engine {
   activationFor(p, r, c) {
     if (p.sp === 'lineH') return { cells: this.rowCells(r), fx: 'lineH', at: [r, c] };
     if (p.sp === 'lineV') return { cells: this.colCells(c), fx: 'lineV', at: [r, c] };
-    // 폭탄(캔디크러쉬 포장 사탕처럼 두 번): 1차 — 제자리 3×3, 폭탄은 남아 '장전' 상태로 떨어짐 → 낙하 후 새 자리에서 2차 폭발
-    if (p.sp === 'bomb') {
-      if (!p.armed) { p.armed = true; return { cells: this.square(r, c, 1), fx: 'bomb', at: [r, c], id: p.id, first: true }; }
-      return { cells: this.square(r, c, 1), fx: 'bomb2', at: [r, c], id: p.id, second: p.id };
-    }
+    if (p.sp === 'bomb') return { cells: this.square(r, c, 1), fx: 'bomb', at: [r, c] };
     if (p.sp === 'rainbow') { // 폭발로 맞으면 가장 많은 색 제거
       const count = new Array(6).fill(0);
       this.each(cl => { if (this.matchable(cl)) count[cl.p.c]++; });
@@ -395,13 +391,14 @@ export class Engine {
           const cl = this.cell(r, c);
           if (!cl) continue;
           const p = cl.p;
+          // 연쇄로 맞은 특수 블록: 그 자리에서 바로 터지지 않고 '장전' → 블록이 떨어져 자리를 잡은 뒤 새 자리에서 터짐
+          //   (직접 3매치로 터뜨린 특수 블록은 원래 자리에서 바로 터짐 — cascade/swap 쪽 처리)
           if (p && p.k === 'tile' && p.sp && !activated.has(p.id) && !p.used && !skip.has(key) && !cl.cover) {
             activated.add(p.id);
-            const act = this.activationFor(p, r, c);
-            if (act) next.push(act);
+            p.armed = true;
           }
-          // 장전된 폭탄은 2차 폭발 전까지 부서지지 않음 (바닥 젤리는 맞음)
-          if (p && p.armed && wv.second !== p.id && !cl.cover) { if (cl.jelly > 0) { cl.jelly--; this.addGoal('jelly'); this.scoreAdd(SCORE.jelly); hits.push({ at: [r, c], jelly: cl.jelly }); } continue; }
+          // 장전된 블록은 터질 때까지 부서지지 않음 (바닥 젤리는 맞음)
+          if (p && p.armed && wv.second !== p.id && !cl.cover) { const h = { at: [r, c], armed: p.id }; if (cl.jelly > 0) { cl.jelly--; this.addGoal('jelly'); this.scoreAdd(SCORE.jelly); h.jelly = cl.jelly; } hits.push(h); continue; }
           hits.push(this.hitCell(r, c, 'blast'));
           if (wv.double) {
             // 두 번째 타격: 첫 타격에 덮개만 깨졌거나 기름띠가 남은 칸 (방금 발동한 특수 블록 칸은 제외)
@@ -421,7 +418,7 @@ export class Engine {
       }
       // 조합에 쓰인 조각(used) 제거
       this.each((cl, r, c) => { if (cl.p && cl.p.used) { hits.push({ at: [r, c], removed: cl.p.id, kind: 'tile', color: cl.p.c, sp: cl.p.sp }); this.scoreAdd(SCORE.special); this.collectColor(cl.p); cl.p = null; } });
-      this.push(steps, { type: 'blast', fx: queue.map(q => ({ fx: q.fx, at: q.at, color: q.color, cells: q.cells, id: q.id, first: q.first })), hits: hits.filter(Boolean) });
+      this.push(steps, { type: 'blast', fx: queue.map(q => ({ fx: q.fx, at: q.at, color: q.color, cells: q.cells })), hits: hits.filter(Boolean) });
       queue = next;
     }
   }
@@ -475,8 +472,8 @@ export class Engine {
     let prefer = swapCells.map(([r, c]) => `${r},${c}`);
     this.settle(steps);
     for (let guard = 0; guard < 50; guard++) {
-      // 장전된 폭탄: 떨어진 자리에서 2차 폭발 (연달아 장전되면 차례로)
-      for (let k = 0; k < 10 && this.detonateArmed(steps); k++) this.settle(steps);
+      // 연쇄로 장전된 특수 블록: 떨어져 자리를 잡은 뒤 터짐 (그 폭발로 또 장전되면 다시 떨어진 뒤 차례로)
+      for (let k = 0; k < 20 && this.detonateArmed(steps); k++) this.settle(steps);
       const groups = this.findMatches();
       if (!groups.length) break;
       this.cascadeLevel = level;
@@ -535,7 +532,7 @@ export class Engine {
 
   detonateArmed(steps) {
     const acts = [], activated = new Set();
-    this.each((cl, r, c) => { if (cl.p && cl.p.armed) { activated.add(cl.p.id); acts.push(this.activationFor(cl.p, r, c)); } });
+    this.each((cl, r, c) => { if (cl.p && cl.p.armed) { activated.add(cl.p.id); const a = this.activationFor(cl.p, r, c); if (a) { a.second = cl.p.id; if (!a.cells.some(([y, x]) => y === r && x === c)) a.cells.push([r, c]); acts.push(a); } else cl.p.armed = false; } });
     if (!acts.length) return false;
     this.blastWaves(acts, steps, activated);
     return true;

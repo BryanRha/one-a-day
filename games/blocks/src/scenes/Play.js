@@ -260,7 +260,7 @@ export class PlayScene extends Phaser.Scene {
     this.analyze();
     if (piece) piece.destroy();
     this.slots[idx].piece = null;
-    audio.play('sfx_place', { volume: 0.7 });
+    audio.play('sfx_place', { volume: 0.55 }); audio.play('sfx_body_place', { volume: 0.5 });   // 또렷한 '탁' + 부드러운 몸통
     res.placed.forEach(([y, x], i) => this.putCell(y, x, res.color, res.gems ? res.gems[i] : -1));
     const pcx = res.placed.reduce((a, [, x]) => a + this.cx(x), 0) / res.placed.length, pcy = res.placed.reduce((a, [y]) => a + this.cy(y), 0) / res.placed.length;
     if (res.lines) this.clearFx(res, pcx, pcy);
@@ -380,11 +380,11 @@ export class PlayScene extends Phaser.Scene {
   }
   clearFx(res, pcx, pcy) {
     const lines = res.lines;
-    audio.play(`sfx_clear_${Math.min(4, lines)}`, { volume: 0.75 });
+    audio.play(`sfx_clear_${Math.min(4, lines)}`, { volume: 0.6 }); audio.play(`sfx_body_${Math.min(4, lines)}`, { volume: 0.55 });
     if (res.combo >= 2) audio.play(`sfx_combo_${Math.min(8, res.combo - 1)}`, { volume: 0.6 });
     buzz(Math.min(80, 18 + lines * 14));
-    for (const rr of res.rows) this.sweep(W / 2, this.cy(rr), BW, CELL, false, TINT[res.color]);
-    for (const cc of res.cols) this.sweep(this.cx(cc), this.BY + BW / 2, CELL, BW, true, TINT[res.color]);
+    for (const rr of res.rows) { this.sweep(W / 2, this.cy(rr), BW, CELL, false, TINT[res.color]); this.beam(pcx, this.cy(rr), false, TINT[res.color]); }
+    for (const cc of res.cols) { this.sweep(this.cx(cc), this.BY + BW / 2, CELL, BW, true, TINT[res.color]); this.beam(this.cx(cc), pcy, true, TINT[res.color]); }
     let gemsGot = 0;
     for (const [y, x, col] of res.cleared) {
       const s = this.cells[y][x]; this.cells[y][x] = null;
@@ -393,10 +393,11 @@ export class PlayScene extends Phaser.Scene {
       if (gs) { gemsGot++; this.flyGem(gs, delay); }
       if (!s) continue;
       s.setDepth(12);
-      this.tweens.add({ targets: s, scale: s.scaleX * 1.2, duration: 90, delay, ease: 'Quad.easeOut', onStart: () => s.setTint(0xFFFFFF), onComplete: () => {
-        this.chips.setTexture(`blk_${col}`); this.chips.emitParticleAt(s.x, s.y, 2);
+      // 하얗게 번쩍 → 네 조각으로 깨져 흩어짐
+      this.tweens.add({ targets: s, scale: s.scaleX * 1.12, duration: 70, delay, ease: 'Quad.easeOut', onStart: () => s.setTintFill(0xFFFFFF), onComplete: () => {
+        this.shatter(s.x, s.y, col, pcx, pcy);
         this.burst.setParticleTint(TINT[col]); this.burst.emitParticleAt(s.x, s.y, 2);
-        this.tweens.add({ targets: s, scale: 0, angle: 90, alpha: 0, duration: 200, ease: 'Quad.easeIn', onComplete: () => s.destroy() });
+        s.destroy();
       } });
     }
     if (gemsGot) M.track('gems', gemsGot);
@@ -415,6 +416,36 @@ export class PlayScene extends Phaser.Scene {
       gs.destroy(); audio.play('sfx_pick', { volume: 0.4, gap: 30 });
       this.tweens.add({ targets: v.c, scale: 1.12, duration: 80, yoyo: true });
     } });
+  }
+  // 블록이 네 조각으로 깨져 바깥으로 튀었다가 떨어짐
+  shatter(x, y, col, ox, oy) {
+    const key = `blk_${col}`, half = 64;
+    const away = Math.atan2(y - oy, x - ox), push = 140 + Math.random() * 120;
+    for (let q = 0; q < 4; q++) {
+      const qx = q % 2, qy = q >> 1;
+      const sh = this.add.image(x, y, key).setDisplaySize(CELL, CELL).setDepth(58).setCrop(qx * half, qy * half, half, half);
+      const dir = Math.atan2(qy - 0.5, qx - 0.5), a = away * 0.6 + dir * 0.4 + (Math.random() - 0.5) * 0.6;
+      const vx = Math.cos(a) * push * (0.8 + Math.random() * 0.5), vy = Math.sin(a) * push - 260 - Math.random() * 180;
+      const spin = (Math.random() - 0.5) * 9, t0 = this.time.now, life = 520 + Math.random() * 200;
+      this.tweens.addCounter({ from: 0, to: 1, duration: life, onUpdate: tw => {
+        const t = tw.getValue() * life / 1000;
+        sh.setPosition(x + vx * t, y + vy * t + 1700 * t * t / 2).setRotation(spin * t).setAlpha(1 - tw.getValue() * tw.getValue());
+      }, onComplete: () => sh.destroy() });
+    }
+  }
+  // 놓은 자리에서 줄 끝까지 달려가는 빛줄기
+  beam(x, y, vertical, tint) {
+    // 줄 전체 크기로 만들고, 놓은 자리에서부터 양끝으로 펼쳐짐 (scale 로 늘림 — 판 밖으로 안 나감)
+    const L = BW + 20, cx = vertical ? x : W / 2, cy = vertical ? this.BY + BW / 2 : y;
+    const core = this.add.rectangle(cx, cy, vertical ? 10 : L, vertical ? L : 10, 0xFFFFFF, 1).setDepth(57).setBlendMode('ADD');
+    const glow = this.add.rectangle(cx, cy, vertical ? 46 : L, vertical ? L : 46, tint, 0.5).setDepth(56).setBlendMode('ADD');
+    for (const o of [core, glow]) {
+      // 시작은 놓은 자리 한 점에서
+      const off = vertical ? (y - cy) : (x - cx);
+      if (vertical) { o.setScale(1, 0.02); o.y = y; } else { o.setScale(0.02, 1); o.x = x; }
+      this.tweens.add({ targets: o, scaleX: 1, scaleY: 1, x: cx, y: cy, duration: 200, ease: 'Cubic.easeOut' });
+      this.tweens.add({ targets: o, alpha: 0, delay: 170, duration: 260, onComplete: () => o.destroy() });
+    }
   }
   sweep(x, y, w, h, vertical, tint) {
     const g = this.add.image(x, y, 'glow').setDepth(14).setBlendMode('ADD').setTint(tint).setAlpha(0.6);

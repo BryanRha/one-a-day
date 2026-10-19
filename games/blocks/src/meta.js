@@ -2,6 +2,7 @@
 import { load, save } from './save.js';
 import { seasonInfo, SEASON_LEVELS } from './core/levels.js';
 
+export const PICS = 10;   // 주간 그림 수 (assets season_0~9, 주마다 돌아감)
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
 
@@ -80,7 +81,7 @@ export function adv() {
     d.adv = { season: si.season, cleared: 0, winStreak: 0 };
     save();
   }
-  return { ...d.adv, ...si, picture: `season_${si.season % 2}` };
+  return { ...d.adv, ...si, picture: `season_${si.season % PICS}` };
 }
 export function advWin() { const d = load(); adv(); d.adv.cleared = Math.min(SEASON_LEVELS, d.adv.cleared + 1); d.adv.winStreak++; if (d.adv.cleared >= SEASON_LEVELS && !d.adv.trophy) { d.adv.trophy = true; d.trophies++; } save(); return d.adv; }
 export function advLose() { const d = load(); adv(); d.adv.winStreak = 0; save(); }

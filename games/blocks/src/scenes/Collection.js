@@ -46,7 +46,7 @@ export class CollectionScene extends Phaser.Scene {
     if (!d.gallery.length) T(this, W / 2, 1080, '이번 주 그림을 완성하면 여기에 걸려요', 30, C.dim, { w: 700 });
     d.gallery.slice(-6).forEach((gi, i) => {
       const x = W / 2 - 320 + (i % 3) * 320, y = 1160 + Math.floor(i / 3) * 260;
-      const im = this.add.image(x, y, `season_${gi.season % 2}`).setDisplaySize(288, 192);
+      const im = this.add.image(x, y, `season_${gi.season % 10}`).setDisplaySize(288, 192);
       if (!gi.trophy) im.setAlpha(0.45);
       T(this, x, y + 120, gi.trophy ? `🏆 ${gi.cleared}/96` : `${gi.cleared}/96`, 26, gi.trophy ? C.gold : C.sub, { w: 800 });
     });

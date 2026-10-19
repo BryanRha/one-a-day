@@ -102,7 +102,8 @@ export class Board {
   }
   deal() {
     let best = null;
-    if (this.mercy) {
+    // 도움 모드: 구원 모드(연속 패배 뒤)는 처음 40수까지, 그리고 누구나 첫 15수는 너그럽게 (초반 허무한 패배 방지)
+    if ((this.mercy && this.moves < 40) || this.moves < 15) {
       let bv = -1;
       for (let tries = 0; tries < 30; tries++) { const t = [this.pick(), this.pick(), this.pick()]; if (!this.solvable(t)) continue; const v = this.clearPotential(t) + this.R() * 0.5; if (v > bv) { bv = v; best = t; } }
     }

@@ -8,6 +8,12 @@ import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js';
 import { audio } from '../audio.js';
 import { load, save } from '../save.js';
 import * as M from '../meta.js';
+import { evaluateMoves, rateMove } from '../core/value.js';
+
+// 수 평가 (너그럽게 — 잘한다고 느낄 때 몰입): 최선의 수 · 좋은 수 · 아쉬운 수 · 더 좋은 자리 있었음
+const GRADE = { best: ['최선의 수', '#7CFFB2'], good: ['좋은 수', '#9BE7FF'], inacc: ['아쉬운 수', '#FFD27A'], miss: ['더 좋은 자리가 있었어요', '#FFB0A0'] };
+const VO_PRAISE = [null, 'vo_good', 'vo_great', 'vo_excellent', 'vo_amazing', 'vo_unbelievable'];
+const VO_BEST = ['vo_brilliant', 'vo_perfect', 'vo_nice'];
 
 const CELL = 116, BW = CELL * N;
 const LIFT = 250;            // 끄는 동안 조각을 손가락 위로 띄우는 높이
@@ -47,6 +53,9 @@ export class PlayScene extends Phaser.Scene {
     this.ghosts = []; this.lineGlow = [];
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (this.b.g[r][c] >= 0) this.putCell(r, c, this.b.g[r][c], this.b.gem[r][c], 0);
     this.makeTray();
+    this.stats = { best: 0, good: 0, inacc: 0, miss: 0 }; this.voiceCd = 0; this.lowSeen = false; this.voIdx = 0;
+    this.makeGauge();
+    this.analyze();
     this.burst = this.add.particles(0, 0, 'spark', { lifespan: { min: 300, max: 650 }, speed: { min: 180, max: 560 }, scale: { start: 0.5, end: 0 }, alpha: { start: 1, end: 0 }, rotate: { min: 0, max: 360 }, blendMode: 'ADD', emitting: false }).setDepth(60);
     this.chips = this.add.particles(0, 0, 'blk_0', { lifespan: { min: 450, max: 800 }, speedX: { min: -320, max: 320 }, speedY: { min: -620, max: -200 }, gravityY: 1600, scale: { start: 0.3, end: 0.05 }, rotate: { min: -180, max: 180 }, emitting: false }).setDepth(59);
     this.makeInput();
@@ -87,9 +96,34 @@ export class PlayScene extends Phaser.Scene {
       });
       this.updateGoals();
     }
-    this.hCombo = T(this, W / 2, 360, '', 40, C.gold, { w: 900, ls: 2 }).setDepth(D).setAlpha(0);
-    this.comboDots = [0, 1, 2].map(i => this.add.circle(W / 2 - 24 + i * 24, 400, 7, 0xF5C451).setDepth(D).setAlpha(0));
+    this.hCombo = T(this, W / 2, 408, '', 36, C.gold, { w: 900, ls: 2 }).setDepth(D).setAlpha(0);
+    this.comboDots = [0, 1, 2].map(i => this.add.circle(W / 2 - 24 + i * 24, 440, 6, 0xF5C451).setDepth(D).setAlpha(0));
   }
+  // ── AI 판세 게이지 (알파고 중계처럼): 지금 판에서 최선을 두면 앞으로 버틸 확률 ──
+  makeGauge() {
+    const y = 352, w = 560, x0 = W / 2 - w / 2, D = 50;
+    this.gy = y; this.gw = w; this.gx = x0;
+    this.gLabel = T(this, x0 - 20, y, '안정', 28, C.sub, { ox: 1, w: 800 }).setDepth(D);
+    this.gTrack = this.add.graphics().setDepth(D);
+    this.gTrack.fillStyle(0xFFFFFF, 0.1).fillRoundedRect(x0, y - 9, w, 18, 9);
+    this.gFill = this.add.graphics().setDepth(D);
+    this.gTxt = T(this, x0 + w + 20, y, '', 30, C.text, { ox: 0, w: 900 }).setDepth(D);
+    this.gVal = 1; this.gShown = 1;
+  }
+  setGauge(v) { this.gVal = v; }
+  drawGauge() {
+    this.gShown += (this.gVal - this.gShown) * 0.12;
+    const v = this.gShown, col = v >= 0.6 ? 0x5BE39A : v >= 0.3 ? 0xF5C451 : 0xFF6B7A;
+    this.gFill.clear().fillStyle(col, 1).fillRoundedRect(this.gx, this.gy - 9, Math.max(18, this.gw * v), 18, 9);
+    this.gTxt.setText(`${Math.round(v * 100)}%`).setColor(v >= 0.6 ? C.green : v >= 0.3 ? C.gold : '#FF8A96');
+    this.gLabel.setText(v >= 0.6 ? '안정' : v >= 0.3 ? '주의' : '위험');
+  }
+  analyze() {
+    if (this.b.over) { this.an = null; this.setGauge(this.b.won ? 1 : 0); return; }
+    this.an = evaluateMoves(this.b);
+    this.setGauge(this.an.best);
+  }
+
   updateGoals() {
     if (!this.goalViews) return;
     for (const v of this.goalViews) {
@@ -220,8 +254,11 @@ export class PlayScene extends Phaser.Scene {
 
   // ── 놓기 → 지우기 연출 ──
   placeAt(idx, r, c, piece) {
+    const an = this.an, rating = an ? rateMove(an, idx, r, c) : null;
+    const before = this.gVal;
     const res = this.b.place(idx, r, c);
     if (!res) return;
+    this.analyze();
     if (piece) piece.destroy();
     this.slots[idx].piece = null;
     audio.play('sfx_place', { volume: 0.7 });
@@ -230,13 +267,43 @@ export class PlayScene extends Phaser.Scene {
     if (res.lines) this.clearFx(res, pcx, pcy);
     this.floatText(pcx, pcy - 40, `+${fmt(res.gained)}`, res.lines ? C.gold : C.text, res.lines ? 58 : 40);
     this.updateCombo(); this.updateGoals();
+    this.moveFeedback(res, rating, before, an, pcx, pcy);
     if (res.lines) { M.track('lines', res.lines); if (res.lines >= 3) M.track('multi', res.lines); M.track('combo', res.combo); }
     if (res.allClear) M.track('allclear');
     if (res.dealt) this.time.delayedCall(res.lines ? 400 : 120, () => { audio.play('sfx_deal', { volume: 0.5 }); this.fillTray(true); });
     else this.dimUnfit();
-    if (this.mode === 'classic' && !this.newBest && this.b.score > load().best && load().best > 0) { this.newBest = true; audio.play('sfx_best', { volume: 0.7 }); toast(this, '최고 기록 갱신!', C.gold, 430); }
+    if (this.mode === 'classic' && !this.newBest && this.b.score > load().best && load().best > 0) { this.newBest = true; audio.play('sfx_best', { volume: 0.6 }); this.voice('vo_record', 3); toast(this, '최고 기록 갱신!', C.gold, 500); }
     if (res.won) { this.busy = true; this.time.delayedCall(900, () => this.advWin()); }
     else if (res.over) { this.busy = true; this.time.delayedCall(res.lines ? 1000 : 550, () => this.outOfMoves()); }
+  }
+  // 성우 보이스: 한 번에 하나, 우선순위가 높으면 끼어듦
+  voice(key, pri = 1) {
+    const now = this.time.now;
+    if (this.voiceT && now - this.voiceT < 1100 && pri <= (this.voicePri || 0)) return;
+    this.voiceT = now; this.voicePri = pri;
+    audio.play(key, { volume: 1, gap: 0 }); audio.duck(0.14); this.time.delayedCall(1400, () => audio.duck(0.34));
+  }
+  // 수 평가 + 칭찬: 줄 지우기 칭찬 > 판 비우기 > 콤보 고비 > 역전 > 최선의 수(가끔)
+  moveFeedback(res, rating, before, an, x, y) {
+    this.voiceCd--;
+    if (rating) {
+      this.stats[rating.grade]++;
+      const [label, col] = GRADE[rating.grade];
+      const t = T(this, x, y + 70, rating.grade === 'best' ? `✦ ${label}` : label, rating.grade === 'miss' ? 30 : 34, col, { w: 900, stroke: '#0B1026', thick: 6 }).setDepth(76).setAlpha(0);
+      this.tweens.add({ targets: t, alpha: 1, y: y + 40, duration: 180 });
+      this.tweens.add({ targets: t, alpha: 0, delay: 900, duration: 300, onComplete: () => t.destroy() });
+      if (rating.grade === 'best') { this.burst.setParticleTint(0x7CFFB2); this.burst.emitParticleAt(x, y, 8); }
+    }
+    const after = this.gVal;
+    if (res.praise) this.voice(VO_PRAISE[res.praise], 2 + res.praise);
+    else if (res.allClear) this.voice('vo_allclear', 6);
+    else if (res.combo === 5) this.voice('vo_onfire', 3);
+    else if (res.combo === 10) this.voice('vo_unstoppable', 4);
+    else if (this.lowSeen && before < 0.35 && after >= 0.6) { this.voice('vo_comeback', 4); this.lowSeen = false; toast(this, '대역전!', C.green, 500); }
+    else if (rating && rating.grade === 'best' && this.voiceCd <= 0 && an && an.moves.length > 3 && (res.lines || an.best - an.moves[Math.floor(an.moves.length / 2)].wr >= 0.12)) {
+      this.voice(VO_BEST[this.voIdx++ % VO_BEST.length], 1); this.voiceCd = 4;
+    }
+    if (after < 0.3) this.lowSeen = true;
   }
   clearFx(res, pcx, pcy) {
     const lines = res.lines;
@@ -262,7 +329,7 @@ export class PlayScene extends Phaser.Scene {
     if (gemsGot) M.track('gems', gemsGot);
     const big = lines >= 2 || res.combo >= 3;
     this.cameras.main.shake(big ? 220 : 110, big ? 0.004 + lines * 0.002 : 0.0025);
-    if (res.praise) { audio.play(`sfx_praise_${Math.min(3, res.praise)}`, { volume: 0.6 }); const [w, col] = PRAISE[res.praise]; this.bigWord(w, col, 96 + res.praise * 10); }
+    if (res.praise) { audio.play(`sfx_praise_${Math.min(3, res.praise)}`, { volume: 0.4 }); const [w, col] = PRAISE[res.praise]; this.bigWord(w, col, 96 + res.praise * 10); }
     if (res.combo >= 2) this.bigWord(`COMBO ${res.combo}`, C.gold, 64 + Math.min(40, res.combo * 4), this.BY + BW * 0.62);
     if (res.allClear) {
       audio.play('sfx_allclear', { volume: 0.8 }); buzz([40, 60, 80]);
@@ -300,6 +367,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   update() {
+    if (this.gFill) this.drawGauge();
     if (this.shown !== this.b.score) {
       this.shown += Math.max(1, Math.ceil((this.b.score - this.shown) * 0.18));
       if (this.shown > this.b.score) this.shown = this.b.score;
@@ -354,7 +422,7 @@ export class PlayScene extends Phaser.Scene {
       const gs = this.gemS[r][c]; if (gs) { this.gemS[r][c] = null; gs.destroy(); }
     }
     audio.play('sfx_allclear', { volume: 0.6 });
-    this.fillTray(true); this.updateGoals();
+    this.fillTray(true); this.updateGoals(); this.analyze();
     this.time.delayedCall(400, () => { this.busy = false; });
   }
   endGame() {
@@ -371,10 +439,11 @@ export class PlayScene extends Phaser.Scene {
     d.todayBest.score = Math.max(d.todayBest.score, b.score);
     save();
     M.track('games'); M.track('score', b.score); M.noteClassic(b.score, b.moves);
-    this.leave('Result', { score: b.score, best: d.best, newBest: b.score > prev && b.score > 0, lines: b.lines, combo: b.bestCombo, moves: b.moves });
+    const st = this.stats, tot = st.best + st.good + st.inacc + st.miss;
+    this.leave('Result', { score: b.score, best: d.best, newBest: b.score > prev && b.score > 0, lines: b.lines, combo: b.bestCombo, moves: b.moves, acc: tot ? Math.round((st.best + st.good * 0.7) / tot * 100) : 0, bestMoves: st.best });
   }
   advWin() {
-    audio.play('sfx_best', { volume: 0.8 }); buzz([30, 40, 60]);
+    audio.play('sfx_best', { volume: 0.8 }); buzz([30, 40, 60]); this.voice('vo_levelclear', 3);
     this.bigWord('LEVEL CLEAR', '#7CFFB2', 110, this.BY + BW / 2);
     const d = load(); d.plays++; d.lines += this.b.lines; save();
     M.advWin(); M.track('adv'); M.track('games');

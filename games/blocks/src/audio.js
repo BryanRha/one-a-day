@@ -5,6 +5,8 @@ export const SFX = [
   'sfx_pick', 'sfx_place', 'sfx_invalid', 'sfx_clear_1', 'sfx_clear_2', 'sfx_clear_3', 'sfx_clear_4',
   'sfx_combo_1', 'sfx_combo_2', 'sfx_combo_3', 'sfx_combo_4', 'sfx_combo_5', 'sfx_combo_6', 'sfx_combo_7', 'sfx_combo_8',
   'sfx_praise_1', 'sfx_praise_2', 'sfx_praise_3', 'sfx_allclear', 'sfx_deal', 'sfx_over', 'sfx_best', 'sfx_click',
+  'vo_good', 'vo_great', 'vo_excellent', 'vo_amazing', 'vo_unbelievable', 'vo_brilliant', 'vo_perfect', 'vo_nice',
+  'vo_allclear', 'vo_record', 'vo_levelclear', 'vo_onfire', 'vo_unstoppable', 'vo_comeback',
 ];
 export const BGM = ['bgm_game', 'bgm_lobby'];
 

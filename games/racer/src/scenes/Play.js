@@ -481,10 +481,10 @@ export class PlayScene extends Phaser.Scene {
 
   pause() {
     if (this.paused || this.over) return;
-    this.paused = true; this.tweens.pauseAll(); this.anims.pauseAll(); audio.duck(0.1);
+    this.paused = true; this.frozen = this.tweens.getTweens().filter(t => t.isPlaying()); this.frozen.forEach(t => t.pause()); this.anims.pauseAll(); audio.duck(0.1);
     const pop = popup(this, '잠시 멈춤', 700, { closable: false, depth: 2000 });
-    const resume = () => { pop.close(); this.time.delayedCall(160, () => { this.paused = false; this.tweens.resumeAll(); this.anims.resumeAll(); audio.duck(0.36); }); };
+    const resume = () => { pop.close(); this.time.delayedCall(160, () => { this.paused = false; (this.frozen || []).forEach(t => t.resume()); this.frozen = null; this.anims.resumeAll(); audio.duck(0.36); }); };
     pop.content.add(button(this, 0, -90, '계속 달리기', resume, { key: 'btn_gold', w: 520, h: 150 }));
-    pop.content.add(button(this, 0, 80, '차고로', () => { pop.close(); this.paused = false; this.tweens.resumeAll(); this.anims.resumeAll(); audio.stopMusic(); this.scene.start('Lobby'); }, { key: 'btn_purple', w: 440, h: 120 }));
+    pop.content.add(button(this, 0, 80, '차고로', () => { pop.close(); this.paused = false; (this.frozen || []).forEach(t => t.resume()); this.frozen = null; this.anims.resumeAll(); audio.stopMusic(); this.scene.start('Lobby'); }, { key: 'btn_purple', w: 440, h: 120 }));
   }
 }

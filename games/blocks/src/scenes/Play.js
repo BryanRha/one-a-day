@@ -54,6 +54,7 @@ export class PlayScene extends Phaser.Scene {
     this.makeTray();
     this.stats = { best: 0, good: 0, inacc: 0, miss: 0 }; this.voiceCd = 0; this.lowSeen = false; this.voIdx = 0;
     this.makeGauge();
+    this.makeComboFx();
     this.analyze();
     this.burst = this.add.particles(0, 0, 'spark', { lifespan: { min: 300, max: 650 }, speed: { min: 180, max: 560 }, scale: { start: 0.5, end: 0 }, alpha: { start: 1, end: 0 }, rotate: { min: 0, max: 360 }, blendMode: 'ADD', emitting: false }).setDepth(60);
     this.chips = this.add.particles(0, 0, 'blk_0', { lifespan: { min: 450, max: 800 }, speedX: { min: -320, max: 320 }, speedY: { min: -620, max: -200 }, gravityY: 1600, scale: { start: 0.3, end: 0.05 }, rotate: { min: -180, max: 180 }, emitting: false }).setDepth(59);
@@ -97,6 +98,45 @@ export class PlayScene extends Phaser.Scene {
     }
     this.hCombo = T(this, W / 2, 408, '', 36, C.gold, { w: 900, ls: 2 }).setDepth(D).setAlpha(0);
     this.comboDots = [0, 1, 2].map(i => this.add.circle(W / 2 - 24 + i * 24, 440, 6, 0xF5C451).setDepth(D).setAlpha(0));
+  }
+  // ── 큰 콤보 화면 반응: 판 테두리 발광(3+ 금 · 6+ 분홍 · 10+ 무지개) + 줄 지울 때 화면 가장자리 맥동 ──
+  makeComboFx() {
+    this.frameG = this.add.graphics().setDepth(7).setBlendMode('ADD');
+    // 가장자리 빛 (화면 네 변 안쪽으로 번지는 그라데이션)
+    if (!this.textures.exists('edgeglow')) {
+      const c = this.textures.createCanvas('edgeglow', 256, 512), g = c.getContext();
+      const gr = g.createRadialGradient(128, 256, 60, 128, 256, 300); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.65, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,1)');
+      g.fillStyle = gr; g.fillRect(0, 0, 256, 512); c.refresh();
+    }
+    this.edge = this.add.image(W / 2, H / 2, 'edgeglow').setDisplaySize(W * 1.05, H * 1.05).setDepth(84).setBlendMode('ADD').setAlpha(0);
+    this.frameA = 0;
+  }
+  comboColor(combo, t = this.time.now) {
+    if (combo >= 10) return Phaser.Display.Color.HSVToRGB(((t / 900) % 1), 0.75, 1).color;
+    return combo >= 6 ? 0xFF6FB5 : 0xF5C451;
+  }
+  drawComboFx() {
+    const combo = this.b.combo, want = combo >= 3 ? Math.min(1, 0.45 + (combo - 3) * 0.08) : 0;
+    this.frameA += (want - this.frameA) * 0.1;
+    const g = this.frameG; g.clear();
+    if (this.frameA < 0.02) return;
+    const p = 22, col = this.comboColor(combo), pulse = 0.75 + 0.25 * Math.sin(this.time.now / 160);
+    const thick = combo >= 10 ? 14 : combo >= 6 ? 10 : 7;
+    for (let k = 3; k >= 1; k--) g.lineStyle(thick * k, col, this.frameA * pulse * (0.16 / k)).strokeRoundedRect(this.BX - p - k * 3, this.BY - p - k * 3, BW + p * 2 + k * 6, BW + p * 2 + k * 6, 34 + k * 3);
+    g.lineStyle(4, col, this.frameA * pulse).strokeRoundedRect(this.BX - p, this.BY - p, BW + p * 2, BW + p * 2, 34);
+  }
+  edgePulse(combo, lines) {
+    if (combo < 2 && lines < 2) return;
+    const col = combo >= 3 ? this.comboColor(combo) : 0x9BE7FF;
+    this.tweens.killTweensOf(this.edge);
+    this.edge.setTint(col).setAlpha(Math.min(0.85, 0.3 + combo * 0.05 + lines * 0.08));
+    this.tweens.add({ targets: this.edge, alpha: 0, duration: 520 + Math.min(400, combo * 40), ease: 'Cubic.easeOut' });
+    // 콤보 단계가 올라가는 순간: 판이 살짝 커졌다 돌아옴
+    if (combo === 3 || combo === 6 || combo === 10) {
+      this.cameras.main.zoomTo(1.025, 90, 'Quad.easeOut', true);
+      this.time.delayedCall(120, () => this.cameras.main.zoomTo(1, 220, 'Quad.easeInOut', true));
+      this.bigWord(combo >= 10 ? 'COMBO FEVER' : combo >= 6 ? 'HOT STREAK' : 'COMBO ON', combo >= 10 ? '#C9A6FF' : combo >= 6 ? '#FF9BD2' : '#FFE07A', 72, this.BY - 40);
+    }
   }
   // ── AI 판세 게이지 (알파고 중계처럼): 지금 판에서 최선을 두면 앞으로 버틸 확률 ──
   makeGauge() {
@@ -383,6 +423,7 @@ export class PlayScene extends Phaser.Scene {
     audio.play(`sfx_clear_${Math.min(4, lines)}`, { volume: 0.6 }); audio.play(`sfx_body_${Math.min(4, lines)}`, { volume: 0.55 });
     if (res.combo >= 2) audio.play(`sfx_combo_${Math.min(8, res.combo - 1)}`, { volume: 0.6 });
     buzz(Math.min(80, 18 + lines * 14));
+    this.edgePulse(res.combo, lines);
     for (const rr of res.rows) { this.sweep(W / 2, this.cy(rr), BW, CELL, false, TINT[res.color]); this.beam(pcx, this.cy(rr), false, TINT[res.color]); }
     for (const cc of res.cols) { this.sweep(this.cx(cc), this.BY + BW / 2, CELL, BW, true, TINT[res.color]); this.beam(this.cx(cc), pcy, true, TINT[res.color]); }
     let gemsGot = 0;
@@ -469,6 +510,7 @@ export class PlayScene extends Phaser.Scene {
 
   update() {
     if (this.gFill) this.drawGauge();
+    if (this.frameG) this.drawComboFx();
     if (this.shown !== this.b.score) {
       this.shown += Math.max(1, Math.ceil((this.b.score - this.shown) * 0.18));
       if (this.shown > this.b.score) this.shown = this.b.score;

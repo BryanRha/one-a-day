@@ -31,9 +31,13 @@ export const CHAPTER = 12;            // 12레벨 = 그림 한 줄 (96 = 12×8 �
 export const SEASON_LEVELS = 96;      // 원작처럼 7일 동안 96레벨 → 픽셀 그림 완성
 
 // 그림을 판에 맞게: 꽉 찬 줄은 한 칸씩 비워 시작부터 지워지지 않게, 레벨이 낮을수록 블록을 조금 덜어냄
-function shapeGrid(pat, R, thin) {
+// minFill: 그림이 알아볼 수 있게 남겨 둘 최소 블록 수 (너무 비면 지루하고 그림이 안 보임)
+function shapeGrid(pat, R, thin, minFill = 16) {
   const g = pat.map(row => [...row]);
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (g[r][c] !== '.' && R() < thin) g[r][c] = '.';
+  const total = pat.join('').replace(/\./g, '').length, keepMin = Math.min(total, minFill);
+  const cells = []; for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (g[r][c] !== '.') cells.push([r, c]);
+  let left = total;
+  for (const [r, c] of cells.sort(() => R() - 0.5)) if (left > keepMin && R() < thin) { g[r][c] = '.'; left--; }
   for (let pass = 0; pass < 3; pass++) {
     for (let r = 0; r < N; r++) if (g[r].every(ch => ch !== '.')) g[r][Math.floor(R() * N)] = '.';
     for (let c = 0; c < N; c++) { let full = true; for (let r = 0; r < N; r++) if (g[r][c] === '.') { full = false; break; } if (full) g[Math.floor(R() * N)][c] = '.'; }

@@ -251,15 +251,16 @@ export class GameScene extends Phaser.Scene {
     // 목표
     this.goalViews = [];
     const goals = s.goals;
-    const span = 600, startX = 300 + (span - goals.length * 170) / 2 + 85;
+    // 목표가 많으면(물고기·해마 따로 등) 칸을 좁혀서 한 줄에
+    const span = 640, step = Math.min(170, span / goals.length), gk = step / 170, startX = 300 + (span - 40 - goals.length * step) / 2 + step / 2;
     goals.forEach((g, i) => {
       // 목표 칸: 아이콘은 위, 남은 개수는 칸 안쪽 아래 (테두리와 겹치지 않게)
-      const x = startX + i * 170, y = 114;
-      this.add.nineslice(x, y, 'hud_goal_box', null, 150, 156, 40, 40, 40, 40).setDepth(20);
+      const x = startX + i * step, y = 114;
+      this.add.nineslice(x, y, 'hud_goal_box', null, 150 * gk, 156, 40 * gk, 40 * gk, 40, 40).setDepth(20);
       const icon = this.add.image(x, y - 20, this.goalIcon(g)).setDepth(21);
-      icon.setScale(g.type === 'jelly' ? 0.64 : g.type === 'score' ? 1.3 : 0.58);
-      const txt = this.add.bitmapText(x, y + 44, 'font_num_white', '', 42).setOrigin(0.5).setDepth(22);
-      const check = this.add.image(x, y + 44, 'hud_goal_check').setScale(0.5).setDepth(22).setVisible(false);
+      icon.setScale((g.type === 'jelly' ? 0.64 : g.type === 'score' ? 1.3 : 0.58) * gk);
+      const txt = this.add.bitmapText(x, y + 44, 'font_num_white', '', 42 * Math.max(0.8, gk)).setOrigin(0.5).setDepth(22);
+      const check = this.add.image(x, y + 44, 'hud_goal_check').setScale(0.5 * gk).setDepth(22).setVisible(false);
       this.goalViews.push({ g, icon, txt, check, x, y });
     });
     // 점수 바
@@ -300,7 +301,7 @@ export class GameScene extends Phaser.Scene {
     switch (g.type) {
       case 'score': return 'star_small_on';
       case 'jelly': return 'obs_jelly_2';
-      case 'drop': return 'item_drop_a';
+      case 'drop': return `item_drop_${g.v || 'a'}`;
       case 'collect': return `tile_${g.color}`;
       case 'clear': return g.what === 'stone' ? 'obs_stone_3' : g.what === 'crate' ? 'obs_crate_2' : 'obs_slime';
       case 'cover': {
@@ -1219,8 +1220,8 @@ export class GameScene extends Phaser.Scene {
   goalSummary(box, y) {
     const s = this.engine.s;
     s.goals.forEach((g, i) => {
-      const x = (i - (s.goals.length - 1) / 2) * 170;
-      box.add(this.add.image(x, y + 30, this.goalIcon(g)).setScale(g.type === 'score' ? 1.4 : 0.7));
+      const st = Math.min(170, 720 / s.goals.length), x = (i - (s.goals.length - 1) / 2) * st;
+      box.add(this.add.image(x, y + 30, this.goalIcon(g)).setScale((g.type === 'score' ? 1.4 : 0.7) * st / 170));
       const left = g.type === 'score' ? Math.max(0, g.target - s.score) : Math.max(0, g.target - g.progress);
       box.add(left <= 0 ? this.add.image(x + 40, y + 70, 'hud_goal_check').setScale(0.6) : this.add.text(x, y + 100, g.type === 'score' ? `${Math.ceil(left / 1000)}k` : `${left}`, { ...TXT.small }).setOrigin(0.5));
     });
@@ -1286,14 +1287,14 @@ export class GameScene extends Phaser.Scene {
     B.add(this.add.text(0, -285, t('goal'), TXT.dark).setOrigin(0.5));
     // 목표 카드가 하나씩 튀어나옴
     s.goals.forEach((g, i) => {
-      const x = (i - (s.goals.length - 1) / 2) * 200;
+      const st = Math.min(200, 760 / s.goals.length), x = (i - (s.goals.length - 1) / 2) * st;
       const card = this.add.container(x, -160);
       card.add(this.add.nineslice(0, 0, 'hud_goal_box', null, 170, 190, 40, 40, 40, 40));
       card.add(this.add.image(0, -22, this.goalIcon(g)).setScale(g.type === 'score' ? 1.5 : g.type === 'jelly' ? 0.78 : 0.7));
       card.add(this.add.text(0, 52, g.type === 'score' ? g.target.toLocaleString('en-US') : `${g.target}`, { ...TXT.small, fontSize: '40px' }).setOrigin(0.5));
-      card.setScale(0);
+      card.setScale(0); card.fullScale = st / 200;
       B.add(card);
-      this.tweens.add({ targets: card, scale: 1, delay: 250 + i * 140, duration: 320, ease: 'Back.Out', onStart: () => audio.play('sfx_select') });
+      this.tweens.add({ targets: card, scale: card.fullScale, delay: 250 + i * 140, duration: 320, ease: 'Back.Out', onStart: () => audio.play('sfx_select') });
     });
     B.add(this.add.text(0, -20, `${t('moves')}  ${s.moves}`, TXT.dark).setOrigin(0.5));
     B.add(starsRow(this, 0, 70, load().stars[lv.id] || 0, { size: 76, gap: 92, key: 'small' }));

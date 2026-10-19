@@ -21,6 +21,18 @@ const PIECE_CHARS = {
 const FIXED_COLOR = { r: 0, o: 1, y: 2, g: 3, u: 4, p: 5 };
 const COVER_CHARS = { i: ['ice', 1], I: ['ice', 2], J: ['ice', 3], k: ['chain', 1], q: ['bubble', 1] };
 
+// 내려보내기 목표를 종류별로 나눔: 아기 물고기(a) · 아기 해마(b) 각각 따로 표시·집계 (홀수면 물고기가 하나 더)
+function splitDrops(goals) {
+  const out = [];
+  for (const g of goals) {
+    if (g.type !== 'drop' || g.v) { out.push(g); continue; }
+    const n = g.count || 1, a = Math.ceil(n / 2), b = n - a;
+    out.push({ ...g, v: 'a', count: a });
+    if (b > 0) out.push({ ...g, v: 'b', count: b });
+  }
+  return out;
+}
+
 export class Engine {
   constructor(level, seed = 1) {
     if (level) this.init(level, seed);
@@ -37,7 +49,7 @@ export class Engine {
       dropSpawn: level.dropSpawn || { chance: 0.12, maxOnBoard: 1 },
       timerMoves: level.timerMoves || 10,
       timerSpawn: level.timerSpawn || 0,
-      goals: (level.goals || [{ type: 'score' }]).map(g => ({ ...g, progress: 0 })),
+      goals: splitDrops(level.goals || [{ type: 'score' }]).map(g => ({ ...g, progress: 0 })),
       dropsSpawned: 0, dropsCollected: 0,
       cells: [], exits: {}, spawners: {},
     };
@@ -141,14 +153,16 @@ export class Engine {
   }
   spawnPiece() {
     const s = this.s;
-    const g = this.goal('drop');
-    if (g) {
+    const dg = s.goals.filter(g => g.type === 'drop');
+    if (dg.length) {
       const onBoard = this.countWhere(cell => cell.p && cell.p.k === 'drop');
-      const remaining = g.target - s.dropsCollected - onBoard;
+      // 종류별 남은 수 (아기 물고기 a · 아기 해마 b) — 각자 목표만큼만 내려보냄
+      const need = dg.map(g => ({ v: g.v || 'a', left: g.target - g.progress - this.countWhere(cell => cell.p && cell.p.k === 'drop' && (cell.p.v || 'a') === (g.v || 'a')) })).filter(x => x.left > 0);
       // 보드에 재료가 없으면 바로 다음 재료를 내려보낸다 (운에 따라 몇 턴씩 기다리지 않게)
-      if (remaining > 0 && onBoard < s.dropSpawn.maxOnBoard && (onBoard === 0 || this.rand() < s.dropSpawn.chance)) {
+      if (need.length && onBoard < s.dropSpawn.maxOnBoard && (onBoard === 0 || this.rand() < s.dropSpawn.chance)) {
         s.dropsSpawned++;
-        return this.newPiece('drop', { v: s.dropsSpawned % 2 ? 'a' : 'b' });
+        const pick = need.sort((x, y) => y.left - x.left)[0];
+        return this.newPiece('drop', { v: pick.v });
       }
     }
     if (s.timerSpawn && this.rand() < s.timerSpawn && this.countWhere(cell => cell.p && cell.p.k === 'timer') < 2)
@@ -603,7 +617,8 @@ export class Engine {
     this.each((cl, r, c) => {
       if (cl.p && cl.p.k === 'drop' && this.s.exits[`${r},${c}`]) {
         out.push({ at: [r, c], id: cl.p.id, v: cl.p.v });
-        cl.p = null; this.s.dropsCollected++; this.addGoal('drop'); this.scoreAdd(SCORE.drop);
+        const v = cl.p.v || 'a';
+        cl.p = null; this.s.dropsCollected++; this.addGoal('drop', 1, g => (g.v || 'a') === v); this.scoreAdd(SCORE.drop);
       }
     });
     return out;

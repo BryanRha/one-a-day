@@ -23,9 +23,9 @@ export const GAMES = {
     path: 'games/racer/', cover: 'covers/racer.png', icon: 'covers/racer_icon.png', time: '1~3분',
   },
   blocks: {
-    title: '판다 블록', en: 'Panda Blocks', genre: '퍼즐', color: '#8A6BFF',
-    tagline: '블록을 놓아 줄을 지워요',
-    desc: '조각 3개를 판에 쏙쏙 넣어 가로·세로 줄을 지우는 블록 퍼즐. 여러 줄을 한 번에, 콤보를 이어 최고 기록에 도전하세요!',
+    title: '블록 블리스', en: 'Block Bliss', genre: '퍼즐', color: '#4F72FF',
+    tagline: '줄을 지우는 보석 블록 퍼즐',
+    desc: '조각 3개를 판에 맞춰 가로·세로 줄을 지우는 블록 퍼즐. 최고 기록에 도전하는 클래식, 매주 96레벨로 그림 한 장을 완성하는 어드벤처, 매일 바뀌는 미션까지.',
     path: 'games/blocks/', cover: 'covers/blocks.png', icon: 'covers/blocks_icon.png', time: '3~6분',
   },
 };

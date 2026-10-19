@@ -21,8 +21,15 @@ export function choose(b, skill = 0.7, R = Math.random) {
       if (!b.fits(t.shape, r, c)) continue;
       const g = b.g.map(row => row.slice());
       for (const [dr, dc] of t.shape.cells) g[r + dr][c + dc] = t.color;
+      // 어드벤처: 보석이 든 줄을 지우면 가산
+      let gemV = 0;
+      if (b.goals.length) {
+        const { rows, cols } = Board.fullLines(g);
+        for (const rr of rows) for (let x = 0; x < N; x++) if (b.gem[rr][x] >= 0) gemV += 25;
+        for (const cc of cols) for (let y = 0; y < N; y++) if (b.gem[y][cc] >= 0) gemV += 25;
+      }
       const lines = Board.clearFull(g);
-      const v = lines * 30 + evalGrid(g) * skill + (R() - 0.5) * 40 * (1 - skill);
+      const v = lines * 30 + gemV * skill + evalGrid(g) * skill + (R() - 0.5) * 40 * (1 - skill);
       if (!best || v > best.v) best = { v, i, r, c };
     }
   }

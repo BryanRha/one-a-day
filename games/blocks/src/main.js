@@ -2,19 +2,21 @@ import { W, BASE_H, setH } from './config.js';
 import { audio } from './audio.js';
 import { WindFX } from './fx.js';
 import { BootScene } from './scenes/Boot.js';
-import { LobbyScene } from './scenes/Lobby.js';
+import { HomeScene } from './scenes/Home.js';
+import { AdventureScene } from './scenes/Adventure.js';
+import { CollectionScene } from './scenes/Collection.js';
 import { PlayScene } from './scenes/Play.js';
 import { ResultScene } from './scenes/Result.js';
 
 async function start() {
-  try { await document.fonts.load('48px Jua'); } catch { /* 기본 폰트 */ }
+  try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }
   const game = new Phaser.Game({
-    type: Phaser.AUTO, parent: 'game', width: W, height: BASE_H, backgroundColor: '#2B1E5A',
+    type: Phaser.AUTO, parent: 'game', width: W, height: BASE_H, backgroundColor: '#0B1026',
     scale: { mode: innerHeight / innerWidth > BASE_H / W ? Phaser.Scale.EXPAND : Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     render: { antialias: true, powerPreference: 'high-performance' },
     input: { activePointers: 2 }, fps: { target: 60 },
     pipeline: { WindFX },
-    scene: [BootScene, LobbyScene, PlayScene, ResultScene],
+    scene: [BootScene, HomeScene, AdventureScene, CollectionScene, PlayScene, ResultScene],
   });
   audio.attach(game);
   setH(game.scale.height);

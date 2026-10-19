@@ -2,7 +2,11 @@
 const KEY = 'panda_blocks_v1';
 let data = null;
 function fresh() {
-  return { v: 1, best: 0, plays: 0, lines: 0, bestCombo: 0, coins: 0, tips: {}, sfx: true, music: true, daily: {} };
+  return {
+    v: 1, best: 0, plays: 0, lines: 0, bestCombo: 0, tips: {}, sfx: true, music: true,
+    stars: 0, skin: 'jewel', skins: { jewel: true }, streak: { last: '', count: 0 }, missions: { date: '', list: [] },
+    adv: { season: -1, cleared: 0, winStreak: 0 }, gallery: [], trophies: 0, theme: 0, recent: [], todayBest: { date: '', score: 0 },
+  };
 }
 export function load() {
   if (data) return data;

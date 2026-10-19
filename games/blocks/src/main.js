@@ -1,0 +1,29 @@
+import { W, BASE_H, setH } from './config.js';
+import { audio } from './audio.js';
+import { WindFX } from './fx.js';
+import { BootScene } from './scenes/Boot.js';
+import { LobbyScene } from './scenes/Lobby.js';
+import { PlayScene } from './scenes/Play.js';
+import { ResultScene } from './scenes/Result.js';
+
+async function start() {
+  try { await document.fonts.load('48px Jua'); } catch { /* 기본 폰트 */ }
+  const game = new Phaser.Game({
+    type: Phaser.AUTO, parent: 'game', width: W, height: BASE_H, backgroundColor: '#2B1E5A',
+    scale: { mode: innerHeight / innerWidth > BASE_H / W ? Phaser.Scale.EXPAND : Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    render: { antialias: true, powerPreference: 'high-performance' },
+    input: { activePointers: 2 }, fps: { target: 60 },
+    pipeline: { WindFX },
+    scene: [BootScene, LobbyScene, PlayScene, ResultScene],
+  });
+  audio.attach(game);
+  setH(game.scale.height);
+  game.scale.on('resize', gs => setH(gs.height));
+  const refresh = () => [60, 250, 600].forEach(ms => setTimeout(() => game.scale.refresh(), ms));
+  addEventListener('resize', refresh); addEventListener('orientationchange', refresh);
+  window.__game = game;
+}
+// One a Day 앱 안(iframe)에서는 앱이 캐시를 관리하므로 자체 서비스 워커는 쓰지 않음
+const embedded = window.parent !== window;
+if (!embedded && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+start();

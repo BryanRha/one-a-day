@@ -22,5 +22,11 @@ export const GAMES = {
     desc: '동물 친구들의 꽉 막힌 도로 질주! 연료가 바닥나기 전에 체크포인트를 지나고, 앞차에 닿기 직전 옆으로 빠지는 칼치기를 이어 스·트·레·스·차·차·차를 완성하면 무적 피버 질주!. 점프로 차를 밟고 넘어가면 대박 점수.',
     path: 'games/racer/', cover: 'covers/racer.png', icon: 'covers/racer_icon.png', time: '1~3분',
   },
+  blocks: {
+    title: '판다 블록', en: 'Panda Blocks', genre: '퍼즐', color: '#8A6BFF',
+    tagline: '블록을 놓아 줄을 지워요',
+    desc: '조각 3개를 판에 쏙쏙 넣어 가로·세로 줄을 지우는 블록 퍼즐. 여러 줄을 한 번에, 콤보를 이어 최고 기록에 도전하세요!',
+    path: 'games/blocks/', cover: 'covers/blocks.png', icon: 'covers/blocks_icon.png', time: '3~6분',
+  },
 };
-export const ORDER = ['witch', 'ocean', 'racer'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks'];

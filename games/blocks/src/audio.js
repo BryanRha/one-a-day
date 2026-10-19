@@ -4,9 +4,9 @@ import { load, save } from './save.js';
 export const SFX = [
   'sfx_pick', 'sfx_place', 'sfx_invalid', 'sfx_clear_1', 'sfx_clear_2', 'sfx_clear_3', 'sfx_clear_4',
   'sfx_combo_1', 'sfx_combo_2', 'sfx_combo_3', 'sfx_combo_4', 'sfx_combo_5', 'sfx_combo_6', 'sfx_combo_7', 'sfx_combo_8',
-  'sfx_praise_1', 'sfx_praise_2', 'sfx_praise_3', 'sfx_allclear', 'sfx_deal', 'sfx_over', 'sfx_best', 'sfx_click',
-  'vo_good', 'vo_great', 'vo_excellent', 'vo_amazing', 'vo_unbelievable', 'vo_brilliant', 'vo_perfect', 'vo_nice',
-  'vo_allclear', 'vo_record', 'vo_levelclear', 'vo_onfire', 'vo_unstoppable', 'vo_comeback',
+  'sfx_praise_1', 'sfx_praise_2', 'sfx_praise_3', 'sfx_allclear', 'sfx_deal', 'sfx_over', 'sfx_best', 'sfx_click', 'sfx_cheer', 'sfx_fireworks',
+  // 성우(해리): 상황별 2~4가지 버전
+  ...Object.entries({ good: 2, great: 2, excellent: 2, amazing: 2, unbelievable: 2, best: 4, allclear: 2, record: 2, levelclear: 2, onfire: 1, unstoppable: 1, comeback: 2, hype: 3 }).flatMap(([k, n]) => Array.from({ length: n }, (_, i) => `vo_${k}_${i + 1}`)),
 ];
 export const BGM = ['bgm_game', 'bgm_lobby'];
 

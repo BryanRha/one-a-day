@@ -63,5 +63,10 @@ export function rateMove(an, i, r, c) {
   if (!m) return null;
   const loss = an.best - m.wr, rank = an.moves.indexOf(m) / Math.max(1, an.moves.length - 1);
   const grade = loss <= 0.04 || rank <= 0.1 ? 'best' : loss <= 0.14 ? 'good' : loss <= 0.32 ? 'inacc' : 'miss';
-  return { grade, wr: m.wr, loss, best: an.best };
+  // 수의 가치(%): 최선의 수 대비 생존 확률 — 최선 100%, 상위 10% 안이면 97% 이상으로 너그럽게
+  // 손실(생존 확률 차)과 순위를 함께 반영해 차이가 보이게, 최선 근처는 너그럽게 97~100
+  let q = Math.round(100 - loss * 320 - rank * 60);
+  if (grade === 'best') q = Math.max(q, 97 + Math.round(Math.max(0, 1 - rank * 10) * 3));
+  q = Math.max(15, Math.min(100, q));
+  return { grade, q, wr: m.wr, loss, best: an.best };
 }

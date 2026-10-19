@@ -10,10 +10,9 @@ import { load, save } from '../save.js';
 import * as M from '../meta.js';
 import { evaluateMoves, rateMove } from '../core/value.js';
 
-// 수 평가 (너그럽게 — 잘한다고 느낄 때 몰입): 최선의 수 · 좋은 수 · 아쉬운 수 · 더 좋은 자리 있었음
-const GRADE = { best: ['최선의 수', '#7CFFB2'], good: ['좋은 수', '#9BE7FF'], inacc: ['아쉬운 수', '#FFD27A'], miss: ['더 좋은 자리가 있었어요', '#FFB0A0'] };
-const VO_PRAISE = [null, 'vo_good', 'vo_great', 'vo_excellent', 'vo_amazing', 'vo_unbelievable'];
-const VO_BEST = ['vo_brilliant', 'vo_perfect', 'vo_nice'];
+// 성우 대사: 상황별 버전 수 (같은 말이 연달아 나오지 않게 번갈아)
+const VO = { hype: 3, good: 2, great: 2, excellent: 2, amazing: 2, unbelievable: 2, best: 4, allclear: 2, record: 2, levelclear: 2, onfire: 1, unstoppable: 1, comeback: 2 };
+const VO_PRAISE = [null, 'good', 'great', 'excellent', 'amazing', 'unbelievable'];
 
 const CELL = 116, BW = CELL * N;
 const LIFT = 250;            // 끄는 동안 조각을 손가락 위로 띄우는 높이
@@ -272,38 +271,112 @@ export class PlayScene extends Phaser.Scene {
     if (res.allClear) M.track('allclear');
     if (res.dealt) this.time.delayedCall(res.lines ? 400 : 120, () => { audio.play('sfx_deal', { volume: 0.5 }); this.fillTray(true); });
     else this.dimUnfit();
-    if (this.mode === 'classic' && !this.newBest && this.b.score > load().best && load().best > 0) { this.newBest = true; audio.play('sfx_best', { volume: 0.6 }); this.voice('vo_record', 3); toast(this, '최고 기록 갱신!', C.gold, 500); }
+    if (this.mode === 'classic' && !this.newBest && this.b.score > load().best && load().best > 0) { this.newBest = true; audio.play('sfx_best', { volume: 0.6 }); this.voice('record', 3); toast(this, '최고 기록 갱신!', C.gold, 500); }
     if (res.won) { this.busy = true; this.time.delayedCall(900, () => this.advWin()); }
     else if (res.over) { this.busy = true; this.time.delayedCall(res.lines ? 1000 : 550, () => this.outOfMoves()); }
   }
   // 성우 보이스: 한 번에 하나, 우선순위가 높으면 끼어듦
-  voice(key, pri = 1) {
+  voice(kind, pri = 1) {
     const now = this.time.now;
     if (this.voiceT && now - this.voiceT < 1100 && pri <= (this.voicePri || 0)) return;
     this.voiceT = now; this.voicePri = pri;
-    audio.play(key, { volume: 1, gap: 0 }); audio.duck(0.14); this.time.delayedCall(1400, () => audio.duck(0.34));
+    // 버전 고르기: 직전과 다른 것
+    this.voLast = this.voLast || {};
+    const n = VO[kind] || 1; let v = 1 + Math.floor(Math.random() * n); if (n > 1 && v === this.voLast[kind]) v = v % n + 1; this.voLast[kind] = v;
+    // 콤보가 이어질수록 살짝 높고 빠르게 (고조감)
+    const rate = 1 + Math.min(0.12, Math.max(0, this.b.combo - 2) * 0.02);
+    audio.play(`vo_${kind}_${v}`, { volume: 1, gap: 0, rate }); audio.duck(0.14); this.time.delayedCall(1500, () => audio.duck(0.34));
   }
   // 수 평가 + 칭찬: 줄 지우기 칭찬 > 판 비우기 > 콤보 고비 > 역전 > 최선의 수(가끔)
   moveFeedback(res, rating, before, an, x, y) {
     this.voiceCd--;
     if (rating) {
-      this.stats[rating.grade]++;
-      const [label, col] = GRADE[rating.grade];
-      const t = T(this, x, y + 70, rating.grade === 'best' ? `✦ ${label}` : label, rating.grade === 'miss' ? 30 : 34, col, { w: 900, stroke: '#0B1026', thick: 6 }).setDepth(76).setAlpha(0);
-      this.tweens.add({ targets: t, alpha: 1, y: y + 40, duration: 180 });
-      this.tweens.add({ targets: t, alpha: 0, delay: 900, duration: 300, onComplete: () => t.destroy() });
-      if (rating.grade === 'best') { this.burst.setParticleTint(0x7CFFB2); this.burst.emitParticleAt(x, y, 8); }
+      this.stats[rating.grade]++; this.stats.qSum = (this.stats.qSum || 0) + rating.q; this.stats.n = (this.stats.n || 0) + 1;
+      this.moveScore(x, y, rating.q);
     }
     const after = this.gVal;
-    if (res.praise) this.voice(VO_PRAISE[res.praise], 2 + res.praise);
-    else if (res.allClear) this.voice('vo_allclear', 6);
-    else if (res.combo === 5) this.voice('vo_onfire', 3);
-    else if (res.combo === 10) this.voice('vo_unstoppable', 4);
-    else if (this.lowSeen && before < 0.35 && after >= 0.6) { this.voice('vo_comeback', 4); this.lowSeen = false; toast(this, '대역전!', C.green, 500); }
+    if (res.allClear) { /* 판 비우기는 전용 연출 */ }
+    else if (res.praise) this.voice(VO_PRAISE[res.praise], 2 + res.praise);
+    else if (res.allClear) { /* allClearShow 가 직접 외침 */ }
+    else if (res.combo === 5) this.voice('onfire', 3);
+    else if (res.combo === 10 || (res.combo > 10 && res.combo % 5 === 0)) this.voice('unstoppable', 4);
+    else if (this.lowSeen && before < 0.35 && after >= 0.6) { this.voice('comeback', 4); this.lowSeen = false; toast(this, '대역전!', C.green, 500); }
     else if (rating && rating.grade === 'best' && this.voiceCd <= 0 && an && an.moves.length > 3 && (res.lines || an.best - an.moves[Math.floor(an.moves.length / 2)].wr >= 0.12)) {
-      this.voice(VO_BEST[this.voIdx++ % VO_BEST.length], 1); this.voiceCd = 4;
+      this.voice('best', 1); this.voiceCd = 4;
     }
     if (after < 0.3) this.lowSeen = true;
+  }
+  // ── 판 전체 비우기: 가장 크게 칭찬 (슬로 · 섬광 · 빛줄기 · 불꽃놀이 · 꽃가루 · 함성 · 성우 두 번 · 별 보상) ──
+  allClearShow() {
+    this.busy = true;
+    const cx = W / 2, cy = this.BY + BW / 2, cam = this.cameras.main;
+    const d = load(); d.stars += 10; d.allClears = (d.allClears || 0) + 1; save();
+    buzz([60, 40, 90, 40, 160]);
+    cam.flash(380, 255, 255, 255); cam.shake(500, 0.012);
+    this.tweens.add({ targets: cam, zoom: 1.07, duration: 160, yoyo: true, hold: 240, ease: 'Quad.easeOut' });
+    audio.play('sfx_allclear', { volume: 0.9 }); audio.play('sfx_cheer', { volume: 0.75 });
+    this.voice('allclear', 9);
+    this.time.delayedCall(1250, () => { this.voicePri = 0; this.voiceT = 0; this.voice('hype', 9); });
+    // 빛줄기
+    const rays = this.add.image(cx, cy, 'rays').setDepth(85).setBlendMode('ADD').setTint(0xFFE07A).setScale(0.2).setAlpha(0.9);
+    this.tweens.add({ targets: rays, scale: 4.2, angle: 120, duration: 2400, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: rays, alpha: 0, delay: 1700, duration: 700, onComplete: () => rays.destroy() });
+    // 판 칸이 무지개 물결로 반짝
+    this.cellImgs.forEach((ci, k) => { const r = Math.floor(k / N), c = k % N; this.time.delayedCall((r + c) * 45, () => { ci.setTint(TINT[(r + c) % TINT.length]); this.time.delayedCall(320, () => ci.clearTint()); }); });
+    // 거대한 글자: 한 글자씩 떨어져 튀어오름
+    const word = 'ALL CLEAR', size = 132, chars = [...word], gap = size * 0.66, x0 = cx - (chars.length - 1) * gap / 2;
+    const letters = chars.map((ch, i) => {
+      const t = T(this, x0 + i * gap, cy - 60 - 500, ch, size, ['#FFE07A', '#7CFFB2', '#9BE7FF', '#FF9BD2', '#C9A6FF'][i % 5], { w: 900, stroke: '#0B1026', thick: 14 }).setDepth(90);
+      this.tweens.add({ targets: t, y: cy - 60, duration: 520, delay: 120 + i * 60, ease: 'Bounce.easeOut' });
+      return t;
+    });
+    const sub = T(this, cx, cy + 70, 'PERFECT BOARD', 44, C.text, { w: 900, ls: 10 }).setDepth(90).setAlpha(0);
+    const bonus = T(this, cx, cy + 150, `+${fmt(1000)}   ★ +10`, 56, C.gold, { w: 900, stroke: '#0B1026', thick: 8 }).setDepth(90).setAlpha(0).setScale(0.5);
+    this.tweens.add({ targets: sub, alpha: 1, delay: 800, duration: 300 });
+    this.tweens.add({ targets: bonus, alpha: 1, scale: 1, delay: 1000, duration: 320, ease: 'Back.easeOut' });
+    // 불꽃놀이 6발
+    const fw = this.add.particles(0, 0, 'spark', { lifespan: { min: 700, max: 1200 }, speed: { min: 260, max: 760 }, gravityY: 500, scale: { start: 0.65, end: 0 }, alpha: { start: 1, end: 0 }, rotate: { min: 0, max: 360 }, blendMode: 'ADD', emitting: false }).setDepth(88);
+    for (let k = 0; k < 6; k++) this.time.delayedCall(250 + k * 230, () => {
+      const x = 160 + Math.random() * (W - 320), y = 260 + Math.random() * (BW * 0.7);
+      fw.setParticleTint(TINT[k % TINT.length]); fw.emitParticleAt(x, y, 36);
+      if (k % 2 === 0) audio.play('sfx_fireworks', { volume: 0.45, gap: 0 });
+    });
+    // 꽃가루 (블록 조각이 위에서 쏟아짐)
+    const conf = this.add.particles(0, 0, 'blk_0', { x: { min: 0, max: W }, y: -40, lifespan: 2600, speedY: { min: 380, max: 760 }, speedX: { min: -120, max: 120 }, scale: { start: 0.2, end: 0.12 }, rotate: { min: 0, max: 360 }, frequency: 26, quantity: 2 }).setDepth(87);
+    this.time.addEvent({ delay: 120, repeat: 14, callback: () => conf.setTexture(`blk_${Math.floor(Math.random() * 7)}`) });
+    this.time.delayedCall(1800, () => conf.stop());
+    // 정리 → 테마 바뀜 → 계속
+    this.time.delayedCall(2700, () => {
+      [...letters, sub, bonus].forEach(t => this.tweens.add({ targets: t, alpha: 0, y: t.y - 60, duration: 300, onComplete: () => t.destroy() }));
+      this.time.delayedCall(3200, () => { fw.destroy(); conf.destroy(); });
+      if (this.mode === 'classic') this.nextTheme();
+      this.busy = this.b.over;
+    });
+  }
+  // AI 가 계산하듯 숫자가 빠르게 돌다가 '이 수의 가치 %' 에 멈춤
+  moveScore(x, y, q) {
+    const col = q >= 97 ? '#7CFFB2' : q >= 85 ? '#9BE7FF' : q >= 65 ? '#FFE07A' : '#FFB0A0';
+    const cx = Phaser.Math.Clamp(x, 170, W - 170), cy = y + 46;
+    const c = this.add.container(cx, cy).setDepth(77);
+    const bgc = this.add.graphics(); bgc.fillStyle(0x0B1026, 0.82).fillRoundedRect(-118, -44, 236, 88, 26).lineStyle(2, Phaser.Display.Color.HexStringToColor(col).color, 0.7).strokeRoundedRect(-118, -44, 236, 88, 26);
+    const tag = T(this, -84, 0, 'AI', 24, C.sub, { w: 900, ls: 2 });
+    const num = T(this, 22, 0, '00%', 48, C.text, { w: 900 });
+    c.add([bgc, tag, num]); c.setScale(0.7).setAlpha(0);
+    this.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 140, ease: 'Back.easeOut' });
+    // 0.45초 동안 무작위로 돌다가 → 0.25초 동안 목표로 감속 → 착
+    let t0 = this.time.now;
+    const ev = this.time.addEvent({ delay: 34, loop: true, callback: () => {
+      const el = this.time.now - t0;
+      if (el < 450) num.setText(`${10 + Math.floor(Math.random() * 90)}%`);
+      else if (el < 700) { const k = (el - 450) / 250; num.setText(`${Math.round(q - (1 - k) * (1 - k) * 25 * (Math.random() * 0.6 + 0.4))}%`); }
+      else {
+        ev.remove(); num.setText(`${q}%`).setColor(col);
+        audio.play('sfx_pick', { volume: 0.35, rate: 0.8 + q / 250, gap: 0 });
+        this.tweens.add({ targets: num, scale: 1.25, duration: 90, yoyo: true });
+        if (q >= 97) { tag.setText('✦').setColor(col); this.burst.setParticleTint(0x7CFFB2); this.burst.emitParticleAt(cx, cy, 10); }
+        this.tweens.add({ targets: c, alpha: 0, y: cy - 30, delay: 650, duration: 260, onComplete: () => c.destroy() });
+      }
+    } });
   }
   clearFx(res, pcx, pcy) {
     const lines = res.lines;
@@ -331,10 +404,7 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.shake(big ? 220 : 110, big ? 0.004 + lines * 0.002 : 0.0025);
     if (res.praise) { audio.play(`sfx_praise_${Math.min(3, res.praise)}`, { volume: 0.4 }); const [w, col] = PRAISE[res.praise]; this.bigWord(w, col, 96 + res.praise * 10); }
     if (res.combo >= 2) this.bigWord(`COMBO ${res.combo}`, C.gold, 64 + Math.min(40, res.combo * 4), this.BY + BW * 0.62);
-    if (res.allClear) {
-      audio.play('sfx_allclear', { volume: 0.8 }); buzz([40, 60, 80]);
-      this.time.delayedCall(350, () => { this.bigWord('ALL CLEAR', '#7CFFB2', 120, this.BY + BW / 2); this.cameras.main.flash(300, 255, 255, 255); if (this.mode === 'classic') this.nextTheme(); });
-    }
+    if (res.allClear) this.time.delayedCall(260, () => this.allClearShow());
   }
   // 보석이 위쪽 목표 칩으로 날아감
   flyGem(gs, delay) {
@@ -439,11 +509,11 @@ export class PlayScene extends Phaser.Scene {
     d.todayBest.score = Math.max(d.todayBest.score, b.score);
     save();
     M.track('games'); M.track('score', b.score); M.noteClassic(b.score, b.moves);
-    const st = this.stats, tot = st.best + st.good + st.inacc + st.miss;
-    this.leave('Result', { score: b.score, best: d.best, newBest: b.score > prev && b.score > 0, lines: b.lines, combo: b.bestCombo, moves: b.moves, acc: tot ? Math.round((st.best + st.good * 0.7) / tot * 100) : 0, bestMoves: st.best });
+    const st = this.stats;
+    this.leave('Result', { score: b.score, best: d.best, newBest: b.score > prev && b.score > 0, lines: b.lines, combo: b.bestCombo, moves: b.moves, acc: st.n ? Math.round(st.qSum / st.n) : 0, bestMoves: st.best });
   }
   advWin() {
-    audio.play('sfx_best', { volume: 0.8 }); buzz([30, 40, 60]); this.voice('vo_levelclear', 3);
+    audio.play('sfx_best', { volume: 0.8 }); buzz([30, 40, 60]); this.voice('levelclear', 3);
     this.bigWord('LEVEL CLEAR', '#7CFFB2', 110, this.BY + BW / 2);
     const d = load(); d.plays++; d.lines += this.b.lines; save();
     M.advWin(); M.track('adv'); M.track('games');

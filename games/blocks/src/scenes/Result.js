@@ -18,7 +18,7 @@ export class ResultScene extends Phaser.Scene {
     const cy = top + 520;
     this.add.existing(panel(this, W / 2, cy, 900, 330));
     // AI 수 정확도 (바둑·체스 AI 복기처럼) — 잘한 판일수록 크게
-    if (r.acc) { const ac = T(this, W / 2, top + 330, `AI 정확도 ${r.acc}%  ·  최선의 수 ${r.bestMoves}번`, 36, r.acc >= 80 ? C.green : C.cyan, { w: 900 }); if (r.acc >= 85) T(this, W / 2, top + 384, '프로 수준의 판단이에요!', 30, C.gold, { w: 800 }); }
+    if (r.acc) { const ac = T(this, W / 2, top + 330, `AI 평균 수 가치 ${r.acc}%  ·  최선의 수 ${r.bestMoves}번`, 36, r.acc >= 80 ? C.green : C.cyan, { w: 900 }); if (r.acc >= 92) T(this, W / 2, top + 384, '프로 수준의 판단이에요!', 30, C.gold, { w: 800 }); }
     [['최고 기록', fmt(r.best), C.gold], ['지운 줄', `${fmt(r.lines)}`, C.text], ['최고 콤보', `×${r.combo}`, C.text]].forEach(([k, v, col], i) => {
       const y = cy - 100 + i * 100;
       T(this, 150, y, k, 36, C.sub, { ox: 0, w: 800 }); T(this, W - 150, y, v, 44, col, { ox: 1, w: 900 });

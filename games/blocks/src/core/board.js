@@ -39,7 +39,7 @@ export function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 
 // 점수 규칙
 export const LINE_PTS = [0, 80, 200, 360, 560, 800, 1100, 1500];
 export const COMBO_KEEP = 3;      // 이만큼 연속으로 못 지우면 콤보 끊김
-export const ALL_CLEAR = 300;
+export const ALL_CLEAR = 1000;   // 판 전체 비우기: 크게 보상 (가장 짜릿한 순간)
 
 export class Board {
   // level(어드벤처): { grid: 8줄 문자열('.'=빈칸, 0~6=색), gems: [[r,c,종류]...], goals: [{type:'gem', g, count} | {type:'score', target}], gemRate }

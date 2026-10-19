@@ -58,7 +58,7 @@ export class PlayScene extends Phaser.Scene {
     audio.music('bgm_race', this);
     audio.prefetch(this, ['bgm_fever', 'bgm_boss']);
     this.cameras.main.fadeIn(300, 20, 26, 50);
-    if (!d.tips.controls && !this.bot) this.tutorial();
+    if (!d.tips.practice && !this.bot) this.time.delayedCall(700, () => this.startPractice());
     window.__play = this;
   }
 
@@ -195,12 +195,62 @@ export class PlayScene extends Phaser.Scene {
     if (k) { k.on('keydown-LEFT', () => this.race.move(-1)); k.on('keydown-RIGHT', () => this.race.move(1)); k.on('keydown-UP', () => this.race.jump()); k.on('keydown-SPACE', () => this.race.jump()); }
   }
 
-  tutorial() {
-    const d = load(); d.tips.controls = 1; save();
-    const c = this.add.container(W / 2, H * 0.55).setDepth(98);
-    const box = this.add.rectangle(0, 0, 900, 260, 0x101830, 0.85).setStrokeStyle(5, 0xFFE14D);
-    c.add([box, txt(this, 0, -60, '👈 화면 왼쪽 / 오른쪽 탭 👉', 50, '#FFFFFF'), txt(this, 0, 10, '차로를 바꿔요 · 위로 밀면 점프!', 44, '#FFE8A8'), txt(this, 0, 80, '앞차 직전 칼치기 7연속 → 스트레스 차차차 피버!', 36, '#9AE8FF')]);
-    this.tweens.add({ targets: c, alpha: 0, delay: 4200, duration: 400, onComplete: () => c.destroy() });
+  // ── ① 첫 판 따라하기 (3단계, 연습 중엔 연료가 줄지 않음) ──
+  startPractice() {
+    this.tut = { step: 0, moves: 0, dodges: 0, t: 0 };
+    this.guide = true;
+    this.comboBase = this.race.d.combo; this.race.d.combo = Math.max(this.comboBase, 6);   // 연습 중엔 콤보 유지 시간을 넉넉히
+    const c = this.add.container(W / 2, 700).setDepth(97);
+    const box = this.add.rectangle(0, 0, 940, 230, 0x101830, 0.82).setStrokeStyle(5, 0xFFE14D);
+    const step = txt(this, -430, -78, '', 30, '#FFE14D', { ox: 0 });
+    const title = txt(this, 0, -14, '', 50, '#FFFFFF');
+    const sub = txt(this, 0, 56, '', 32, '#9AE8FF');
+    const skip = this.add.container(390, -78); skip.add([this.add.rectangle(0, 0, 150, 52, 0xFFFFFF, 0.15).setStrokeStyle(2, 0xFFFFFF, 0.6), txt(this, 0, 0, '건너뛰기', 26, '#FFFFFF')]);
+    skip.setSize(150, 52).setInteractive({ useHandCursor: true }).on('pointerdown', (pt, x, y, e) => { e.stopPropagation(); this.endPractice(true); });
+    c.add([box, step, title, sub, skip]);
+    this.tutUI = { c, step, title, sub };
+    this.nextPractice();
+  }
+  nextPractice() {
+    const T = this.tut; T.step++; T.t = 0;
+    this.race.s.practice = T.step;
+    const S = [null,
+      ['👈 화면 왼쪽 · 오른쪽을 탭 👉', '차로를 바꿔요 (세 번 해 보세요)'],
+      ['앞차에 바짝 붙었다가 옆으로 휙!', '= 칼치기 · 가까울수록 PERFECT (세 번)'],
+      ['칼치기를 계속 이어 가요!', '스·트·레·스·차·차·차 7글자를 채우면 피버'],
+    ][T.step];
+    if (!S) return this.endPractice(false);
+    const U = this.tutUI;
+    U.step.setText(`연습 ${T.step}/3`); U.title.setText(S[0]); U.sub.setText(S[1]);
+    U.c.setScale(0.6).setAlpha(0); this.tweens.add({ targets: U.c, scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' });
+    if (T.step > 1) audio.play('sfx_checkpoint', { volume: 0.5 });
+    if (T.step === 3) this.tweens.add({ targets: this.chantBg, scaleX: 1.06, scaleY: 1.2, duration: 300, yoyo: true, repeat: 5 });
+  }
+  practiceEvent(e) {
+    const T = this.tut; if (!T) return;
+    if (T.step === 1 && e.type === 'lane' && ++T.moves >= 3) this.nextPractice();
+    else if (T.step === 2 && e.type === 'honk' && ++T.dodges >= 3) this.nextPractice();
+    else if (T.step === 3 && e.type === 'fever') this.time.delayedCall(600, () => this.endPractice(false));
+  }
+  endPractice(skipped) {
+    if (!this.tut) return;
+    this.tut = null; this.race.s.practice = 0; this.race.d.combo = this.comboBase;
+    const d = load(); d.tips.practice = 1; d.tips.controls = 1; save();
+    if (this.tutUI) { const c = this.tutUI.c; this.tweens.add({ targets: c, alpha: 0, scale: 0.8, duration: 200, onComplete: () => c.destroy() }); this.tutUI = null; }
+    this.banner(skipped ? '바로 달려요!' : '연습 끝!', '이제 연료가 줄어요 · 체크포인트를 지나 멀리!', 0x2E9E6A);
+  }
+
+  // ── ② 처음 볼 때만 뜨는 짧은 팁 (잠깐 느리게) ──
+  tipOnce(key, title, sub, color = 0x3B5BDB) {
+    if (this.bot) return;
+    const d = load(); d.tips.seen = d.tips.seen || {};
+    if (d.tips.seen[key]) return; d.tips.seen[key] = 1; save();
+    this.tipSlowT = 1.6;
+    const c = this.add.container(W / 2, H * 0.47).setDepth(96);
+    c.add([this.add.rectangle(0, 0, 920, 190, color, 0.9).setStrokeStyle(5, 0xFFFFFF), txt(this, 0, -34, title, 46, '#FFFFFF'), txt(this, 0, 38, sub, 32, '#FFF3C2')]);
+    c.setScale(0.6).setAlpha(0);
+    this.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 220, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: c, alpha: 0, y: c.y - 40, delay: 2600, duration: 300, onComplete: () => c.destroy() });
   }
 
   update(time, dms) {
@@ -210,6 +260,7 @@ export class PlayScene extends Phaser.Scene {
     let k = 1;
     if (this.slowT > 0) { this.slowT -= real; k = 0.3; }
     if (this.guideOn) k = Math.min(k, 0.35);
+    if (this.tipSlowT > 0) { this.tipSlowT -= real; k = Math.min(k, 0.35); }
     const dt = real * k;
     this.acc += dt;
     let n = 0;
@@ -292,6 +343,8 @@ export class PlayScene extends Phaser.Scene {
     const f = s.fuel / s.fuelMax;
     this.fuelBar.width = 472 * f;
     this.fuelBar.fillColor = f < 0.25 ? (Math.floor(t * 6) % 2 ? 0xFF5A5A : 0xFFB0B0) : f < 0.5 ? 0xFFC93C : 0x6EE7C8;
+    if (f < 0.3 && !this.over && !this.tut) this.tipOnce('fuel', '연료가 얼마 안 남았어요!', '빨간 연료통을 먹거나 체크포인트를 지나면 충전', 0xC2410C);
+    if (s.oils.some(o => o.y > 300 && o.y < 900)) this.tipOnce('oil', '기름 웅덩이 조심!', '밟으면 옆으로 미끄러져요 · 점프(위로 밀기)로 넘어가요', 0x5A4A8A);
     if (f < 0.25 && !this.over) { this.lowFuelT -= dt; if (this.lowFuelT <= 0) { this.lowFuelT = 1.2; audio.play('sfx_lowfuel', { volume: 0.45 }); } }
     this.feverBar.height = 412 * (s.feverT > 0 ? s.feverT / FEVER_TIME : s.fever / FEVER_FULL);
     this.feverBar.fillColor = s.feverT > 0 ? (Math.floor(t * 10) % 2 ? 0xFFE14D : 0xFF8A1F) : 0xFF8A1F;
@@ -339,11 +392,13 @@ export class PlayScene extends Phaser.Scene {
 
   onEvent(e) {
     const s = this.s, p = s.p;
+    if (this.tut) this.practiceEvent(e);
     switch (e.type) {
       case 'honk': {
         // 칼치기 등급: 가까이서 뺄수록 크게
         const G = [null, ['GOOD', '#FFFFFF', 52], ['GREAT!', '#FFE14D', 60], ['PERFECT!', '#FF6FB5', 70]][e.grade];
         audio.play(`sfx_honk_${Math.min(4, e.grade - 1 + Math.floor((e.combo - 1) / 6))}`, { volume: 0.6, gap: 60 });
+        if (e.chain === 1 && !this.tut) this.tipOnce('chain', '스! 첫 글자가 켜졌어요', '4초 안에 칼치기를 계속 이어 7글자를 채우면 피버!', 0xFF4D8D);
         if (e.chain > 0) {
           const i = e.chain - 1, ch = this.chant[i];
           audio.play(CHANT_VO[i], { volume: 0.5 + 0.5 * i / 6, rate: Math.pow(2, CHANT_ST[i] / 12), gap: 0 });
@@ -411,7 +466,8 @@ export class PlayScene extends Phaser.Scene {
       case 'bossStart':
         audio.music(this.feverOn ? 'bgm_fever' : 'bgm_boss', this);
         this.bossC.nameT.setText(`심술 트럭 Lv.${e.n}`);
-        this.banner('보스 등장!', '칼치기 하면 별이 날아가요! 상자를 아슬아슬 피하세요', 0x8A2BE2);
+        if (load().tips.seen && load().tips.seen.boss) this.banner('보스 등장!', '칼치기 하면 별이 날아가요! 상자를 아슬아슬 피하세요', 0x8A2BE2);
+        else this.tipOnce('boss', '보스 등장! 칼치기로 별을 쏴요', '빨간 차로엔 상자가 떨어져요 · PERFECT는 별 2발', 0x8A2BE2);
         this.cameras.main.shake(400, 0.008); audio.play('sfx_boom', { volume: 0.5 });
         break;
       case 'bossWarn': audio.play('sfx_lowfuel', { volume: 0.4 }); break;

@@ -93,7 +93,7 @@ export class Race {
     const dy = s.speed * dt;
     s.dist += dy / PX_PER_M;
     // 연료: 달린 거리만큼 + 시간 조금 (엔진을 강화해도 연료 경제가 무너지지 않게 거리 기준)
-    if (!boost) s.fuel -= (dy / PX_PER_M * 0.09 + dt * 0.8) * this.d.fuel;
+    if (!boost && !s.practice) s.fuel -= (dy / PX_PER_M * 0.09 + dt * 0.8) * this.d.fuel;   // 첫 판 연습 중에는 연료가 줄지 않음
     if (s.fuel <= 0) { s.fuel = 0; s.status = 'over'; this.ev('outOfFuel', {}); return; }
     // 내 차: 옆 차로로 부드럽게 이동, 점프 체공
     const tx = laneX(p.lane);
@@ -120,6 +120,7 @@ export class Race {
     if (s.spawnY < gap) return;
     s.spawnY = 0;
     if (s.boss && R() < 0.55) return;   // 보스전에는 교통을 줄임
+    if (s.practice && s.practice < 2 && R() < 0.45) return;   // 연습 1단계: 한산하게
     // 한 물결에 1~3대, 최소 2개 차로는 비워 둠
     const n = Math.min(3, 1 + Math.floor(R() * (1.4 + d / 2500)));
     const lanes = [0, 1, 2, 3, 4].sort(() => R() - 0.5).slice(0, n);
@@ -318,7 +319,7 @@ export class Race {
       s.score += 500 * s.checkpoints;
       s.nextCp += 500 + s.checkpoints * 40;
       this.ev('checkpoint', { n: s.checkpoints, add });
-      if (s.checkpoints % BOSS_EVERY === 0 && !s.boss) this.startBoss();
+      if (s.checkpoints % BOSS_EVERY === 0 && !s.boss && !s.practice) this.startBoss();
     }
   }
 }

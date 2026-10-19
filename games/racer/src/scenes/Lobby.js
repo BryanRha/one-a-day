@@ -1,8 +1,8 @@
 // 차고: 메인 일러스트 + 드라이버 선택 · 자동차 선택 · 부품 강화 → 출발
 import { W, H } from '../config.js';
-import { txt, fmt, fit, button, toast } from '../ui.js';
+import { txt, fmt, fit, button, toast, popup } from '../ui.js';
 import { audio } from '../audio.js';
-import { load } from '../save.js';
+import { load, save } from '../save.js';
 import { wind } from '../fx.js';
 import * as M from '../meta.js';
 
@@ -45,7 +45,11 @@ export class LobbyScene extends Phaser.Scene {
     this.add.rectangle(W - 200, top - 60, 330, 72, 0x1E2A52, 0.85).setStrokeStyle(4, 0xFFE14D);
     this.add.image(W - 330, top - 60, 'item_coin').setDisplaySize(56, 56);
     txt(this, W - 180, top - 60, fmt(d.coins), 42, '#FFFFFF');
-    if (d.best) txt(this, 40, top - 60, `최고 ${fmt(d.best)}점 · ${fmt(d.bestDist)}m`, 36, '#1E2A52', { ox: 0, stroke: '#FFFFFF', thick: 8 });
+    // ③ 게임 방법 (언제든 다시 보기)
+    const hb = this.add.container(170, top - 60);
+    hb.add([this.add.rectangle(0, 0, 280, 72, 0x1E2A52, 0.85).setStrokeStyle(4, 0xFFE14D), txt(this, 0, 0, '❓ 게임 방법', 36, '#FFFFFF')]);
+    hb.setSize(280, 72).setInteractive({ useHandCursor: true }).on('pointerup', () => { audio.play('sfx_click', { volume: 0.5 }); this.helpPopup(); });
+    if (!d.tips.practice) this.tweens.add({ targets: hb, scale: 1.08, duration: 500, yoyo: true, repeat: -1 });
 
     let y = top + 40;
     // 드라이버
@@ -111,6 +115,25 @@ export class LobbyScene extends Phaser.Scene {
     const sy = Math.max(y + 190, H - 150);
     const go = button(this, W / 2, sy, '출발!', () => this.start(), { key: 'btn_gold', w: 620, h: 180, size: 78 });
     this.tweens.add({ targets: go, scale: 1.04, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  helpPopup() {
+    const pop = popup(this, '게임 방법', 1500, { depth: 2000 });
+    const rows = [
+      ['car_player_c', '칼치기', '앞차에 바짝 붙었다가 옆으로 휙!\n가까울수록 GOOD → GREAT → PERFECT'],
+      ['ico_fever', '스트레스 차차차 피버', '칼치기를 4초 안에 계속 이어 7글자를 채우면\n6초 무적! 부딪히거나 끊기면 처음부터'],
+      ['boss_truck', '보스 심술 트럭', '체크포인트 3개마다 등장 · 빨간 차로를 피해요\n칼치기 = 별 1발 · PERFECT = 2발'],
+      ['item_fuel', '연료 · 점프', '연료가 바닥나면 끝 · 연료통과 체크포인트로 충전\n위로 밀면 점프 · 차를 밟으면 점프샷'],
+    ];
+    rows.forEach(([key, t1, t2], i) => {
+      const y = -500 + i * 300;
+      pop.content.add(this.add.rectangle(0, y, 840, 270, 0xFFFFFF, 0.08).setStrokeStyle(3, 0xFFFFFF, 0.25));
+      if (key === 'ico_fever') pop.content.add(txt(this, -300, y, '스트\n레스', 46, '#FF6FB5', { stroke: '#22105A', thick: 10 }));
+      else pop.content.add(fit(this.add.image(-300, y, key), key === 'boss_truck' ? 220 : 180).setAngle(key === 'car_player_c' ? -15 : 0));
+      pop.content.add(txt(this, -170, y - 60, t1, 44, '#FFE14D', { ox: 0, stroke: '#22105A', thick: 8 }));
+      pop.content.add(txt(this, -170, y + 30, t2, 30, '#FFFFFF', { ox: 0, stroke: '#22105A', thick: 6 }));
+    });
+    pop.content.add(button(this, 0, 650, '연습 다시 하기', () => { const d = load(); d.tips.practice = 0; save(); pop.close(); this.start(); }, { key: 'btn_purple', w: 460, h: 120, size: 40 }));
   }
 
   start() {

@@ -180,9 +180,10 @@ export class GameScene extends Phaser.Scene {
       if (!pc || !img || pc.k !== 'tile') continue;
       if (img.baseScale === undefined) img.baseScale = img.scaleX;
       const b = img.baseScale, ph = t * 5 + (sp.x + sp.y) * 0.01;
+      // 연쇄로 장전된 특수 블록: 빠르게 떨며 반짝 (떨어져 자리를 잡은 뒤 터짐)
+      if (sp.armed && pc.sp) { img.setScale(b * (1.1 + 0.08 * Math.sin(t * 28))); img.setAngle(8 * Math.sin(t * 22)); img.setTint(Math.floor(t * 12) % 2 ? 0xFFFFFF : 0xFFE08A); continue; }
       if (pc.sp === 'lineH') img.setScale(b * (1 + 0.07 * Math.sin(ph)), b * (1 - 0.03 * Math.sin(ph)));
       else if (pc.sp === 'lineV') img.setScale(b * (1 - 0.03 * Math.sin(ph)), b * (1 + 0.07 * Math.sin(ph)));
-      if (sp.armed && pc.sp) {   // 장전: 빠르게 떨며 반짝 img.setScale(b * (1.1 + 0.08 * Math.sin(t * 28))); img.setAngle(8 * Math.sin(t * 22)); img.setTint(Math.floor(t * 12) % 2 ? 0xFFFFFF : 0xFFE08A); continue; }
       else if (pc.sp === 'bomb') { img.setScale(b * (1 + 0.07 * Math.sin(ph * 1.3))); img.setAngle(6 * Math.sin(ph * 0.65)); }
       else if (pc.sp === 'rainbow') img.setScale(b * (1 + 0.06 * Math.sin(ph * 1.3)));
       else if (img.scaleX !== b) img.setScale(b);

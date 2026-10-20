@@ -43,8 +43,10 @@ export class HomeScene extends Phaser.Scene {
     // 덱 미리보기 + 버튼
     const ky = dy + 250 + sp;
     T(this, 110, ky - 60, '내 덱', 34, C.text, { ox: 0, w: 900 });
-    d.deck.forEach((r, i) => { const x = 140 + i * 120; this.add.image(x, ky + 20, `die_${r}`).setDisplaySize(100, 100); this.add.image(x, ky + 20, `rune_${r}`).setDisplaySize(56, 56); T(this, x, ky + 86, `★${d.tiers[r] || 1}`, 22, C.sub, { w: 800 }); });
-    btn(this, W - 190, ky + 20, 240, 110, '룬 도감', () => this.go('Deck'), { style: 'ghost', icon: 'i_grid', size: 34 });
+    d.deck.forEach((r, i) => { const x = 130 + i * 116; this.add.image(x, ky + 20, `die_${r}`).setDisplaySize(100, 100); this.add.image(x, ky + 20, `rune_${r}`).setDisplaySize(56, 56); T(this, x, ky + 86, `★${d.tiers[r] || 1}`, 22, C.sub, { w: 800 }); });
+    btn(this, W - 190, ky - 34, 260, 96, '룬 컬렉션', () => this.go('Deck'), { style: 'ghost', icon: 'i_grid', size: 30 });
+    const ab = btn(this, W - 190, ky + 80, 260, 96, '룬 제단', () => this.go('Altar'), { style: 'indigo', icon: 'i_star', size: 32 });
+    if (M.freeToday() || d.keys > 0) { const dot = this.add.circle(W - 70, ky + 46, 14, 0xFF5A7A).setStrokeStyle(3, 0x0B1026); this.tweens.add({ targets: dot, scale: 1.25, duration: 500, yoyo: true, repeat: -1 }); T(this, W - 190, ky + 146, M.freeToday() ? '무료 뽑기 있음' : `열쇠 ${d.keys}개`, 22, '#FF9BB0', { w: 800 }); }
     // 미션
     this.my = ky + 300 + sp; this.drawMissions();
     audio.music('bgm_lobby', this);

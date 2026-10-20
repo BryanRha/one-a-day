@@ -3,6 +3,7 @@ import { audio } from './audio.js';
 import { WindFX } from './fx.js';
 import { BootScene } from './scenes/Boot.js';
 import { HomeScene } from './scenes/Home.js';
+import { AltarScene } from './scenes/Altar.js';
 import { DeckScene } from './scenes/Deck.js';
 import { PlayScene } from './scenes/Play.js';
 import { ResultScene } from './scenes/Result.js';
@@ -15,7 +16,7 @@ async function start() {
     render: { antialias: true, powerPreference: 'high-performance' },
     input: { activePointers: 2 }, fps: { target: 60 },
     pipeline: { WindFX },
-    scene: [BootScene, HomeScene, DeckScene, PlayScene, ResultScene],
+    scene: [BootScene, HomeScene, DeckScene, AltarScene, PlayScene, ResultScene],
   });
   audio.attach(game);
   setH(game.scale.height);

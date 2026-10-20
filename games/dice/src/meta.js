@@ -1,29 +1,69 @@
 // 진행·재방문: 룬 해금(최고 웨이브) · 수정으로 영구 등급업(확정, 뽑기 없음) · 연속 출석 · 오늘의 미션 · 오늘의 도전
 import { load, save } from './save.js';
-import { RUNE_ORDER } from './core/sim.js';
+import { RUNE_ORDER, RARITY } from './core/sim.js';
 
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
 
-// 룬 해금: 최고 웨이브 달성으로 (확정)
-// 해금 간격: 한 판에 한두 개씩 (처음 한 판에 몰려 열리지 않게). 뒤쪽은 등급업으로 강해져야 닿는 장기 목표
-export const UNLOCK = { flame: 0, frost: 0, storm: 0, iron: 0, gale: 0, venom: 8, light: 11, mana: 13, sniper: 15, echo: 17, curse: 19, crit: 21, fortune: 23, mine: 25, summoner: 27, growth: 30 };
+// ── 룬 수집: 뽑기(제단) ──
+// 과하지 않게: 게임에서 버는 수정으로만 · 확률 공개 · 천장(30회 안에 전설) · 10회는 영웅 이상 1개 보장 · 중복은 등급업 재료
+export const DRAW_COST = 50, DRAW10_COST = 450, PITY = 30;
+export const ODDS = [0.58, 0.28, 0.11, 0.03];             // 일반·희귀·영웅·전설
+export const MILESTONE = [5, 10, 15, 20, 25, 30, 40, 50];   // 처음 도달하면 제단 열쇠 1개 (무료 뽑기)
 export const MAX_TIER = 10;
-export const tierCost = t => Math.round(30 * Math.pow(t, 1.5));
-export function checkUnlocks() {
-  const d = load(), got = [];
-  // 한 판에 하나씩만 (수집하는 재미 · 매번 새 룬을 받는 기대감)
-  for (const r of RUNE_ORDER.slice().sort((a, b) => UNLOCK[a] - UNLOCK[b])) if (!d.unlocked[r] && d.best >= UNLOCK[r]) { d.unlocked[r] = 1; got.push(r); break; }
-  if (got.length) save();
+export const tierCost = t => Math.round(20 * Math.pow(t, 1.5));
+export const cardsNeed = (r, t) => Math.max(1, Math.round(t * [2, 1.5, 1, 0.5][RARITY[r]]));
+export const freeToday = () => load().freeDraw !== dayKey();
+export const ownedCount = () => Object.keys(load().unlocked).length;
+function drawOne(d, floor) {
+  d.pulls++; d.pity++;
+  let rar;
+  if (d.pity >= PITY) rar = 3;
+  else { let x = Math.random(); rar = 0; for (let k = 0; k < 4; k++) { if (x < ODDS[k]) { rar = k; break; } x -= ODDS[k]; } }
+  rar = Math.max(rar, floor);
+  if (rar === 3) d.pity = 0;
+  const pool = RUNE_ORDER.filter(r => RARITY[r] === rar);
+  // 아직 없는 룬이 조금 더 잘 나오게 (수집 진행감)
+  const fresh = pool.filter(r => !d.unlocked[r]);
+  const r = fresh.length && Math.random() < 0.5 ? fresh[Math.floor(Math.random() * fresh.length)] : pool[Math.floor(Math.random() * pool.length)];
+  const isNew = !d.unlocked[r];
+  if (isNew) d.unlocked[r] = 1; else d.cards[r] = (d.cards[r] || 0) + 1;
+  return { r, rar, isNew };
+}
+// how: 'free' | 'key' | 'one' | 'ten' → 결과 배열 (실패면 null)
+export function draw(how) {
+  const d = load();
+  if (how === 'free') { if (!freeToday()) return null; d.freeDraw = dayKey(); }
+  else if (how === 'key') { if (d.keys < 1) return null; d.keys--; }
+  else if (how === 'one') { if (d.crystals < DRAW_COST) return null; d.crystals -= DRAW_COST; }
+  else if (how === 'ten') { if (d.crystals < DRAW10_COST) return null; d.crystals -= DRAW10_COST; }
+  const n = how === 'ten' ? 10 : 1, out = [];
+  for (let i = 0; i < n; i++) out.push(drawOne(d, 0));
+  if (n === 10 && !out.some(o => o.rar >= 2)) { const i = Math.floor(Math.random() * 10); const o = out[i]; if (o.isNew) delete d.unlocked[o.r]; else d.cards[o.r]--; d.pulls--; d.pity--; out[i] = drawOne(d, 2); }
+  save(); track('draw', n);
+  return out;
+}
+export function checkUnlocks() {   // 최고 웨이브 이정표 → 제단 열쇠
+  const d = load(); let got = 0;
+  for (const w of MILESTONE) if (d.best >= w && !d.milestones[w]) { d.milestones[w] = 1; d.keys++; got++; }
+  if (got) save();
   return got;
 }
 export function upgrade(r) {
-  const d = load(), t = d.tiers[r] || 1;
-  if (!d.unlocked[r] || t >= MAX_TIER || d.crystals < tierCost(t)) return false;
-  d.crystals -= tierCost(t); d.tiers[r] = t + 1; save(); return true;
+  const d = load(), t = d.tiers[r] || 1, need = cardsNeed(r, t);
+  if (!d.unlocked[r] || t >= MAX_TIER || d.crystals < tierCost(t) || (d.cards[r] || 0) < need) return false;
+  d.crystals -= tierCost(t); d.cards[r] -= need; d.tiers[r] = t + 1; save(); return true;
 }
-export function setDeck(deck) { const d = load(); d.deck = deck.slice(0, 5); save(); }
+// ── 덱 3개 (프리셋) ──
+export function decks() { const d = load(); if (!d.decks) { d.decks = [d.deck.slice(), d.deck.slice(), d.deck.slice()]; d.deckIdx = 0; save(); } return d.decks; }
+export function selectDeck(i) { const d = load(); decks(); d.deckIdx = i; d.deck = d.decks[i].slice(); save(); }
+export function setDeck(deck) { const d = load(); decks(); d.deck = deck.slice(0, 5); d.decks[d.deckIdx] = d.deck.slice(); save(); }
+export function setSlot(slot, r) {   // 덱의 slot 자리에 r 넣기 (이미 덱에 있으면 자리 맞바꿈)
+  const d = load(), deck = d.deck.slice(), j = deck.indexOf(r);
+  if (j >= 0) [deck[j], deck[slot]] = [deck[slot], deck[j]]; else deck[slot] = r;
+  setDeck(deck);
+}
 
 // ── 오늘의 미션 ──
 const POOL = [
@@ -39,6 +79,7 @@ const POOL = [
   { id: 'power6', kind: 'power', goal: 6, text: '판 안 강화 6번', reward: 25 },
   { id: 'daily', kind: 'daily', goal: 1, text: '오늘의 도전 참여', reward: 30 },
   { id: 'games2', kind: 'games', goal: 2, text: '2판 플레이', reward: 15 },
+  { id: 'draw3', kind: 'draw', goal: 3, text: '룬 제단에서 3번 뽑기', reward: 30 },
 ];
 function pick(day) {
   let h = 0; for (const ch of day) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -92,5 +133,5 @@ export function finishRun(r, mode) {
   save();
   track('games'); track('wave', r.wave); track('kills', r.kills); track('boss', r.bossKills); track('pips', r.maxPips); track('merge', r.merges); track('power', r.powers);
   if (mode === 'daily') track('daily');
-  return { crystals, newBest: mode !== 'daily' && r.wave > prev, unlocked: checkUnlocks() };
+  return { crystals, newBest: mode !== 'daily' && r.wave > prev, keys: checkUnlocks() };
 }

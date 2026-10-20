@@ -19,9 +19,9 @@ export class ResultScene extends Phaser.Scene {
     [['처치한 적', fmt(r.kills)], ['보스 처치', `${r.bossKills}`], ['최고 주사위', `${r.maxPips}눈${r.maxPips >= 7 ? ' · 각성' : ''}`], ['얻은 수정', `◆ ${r.crystals}`]].forEach(([k, v], i) => {
       const y = cy - 130 + i * 86; T(this, 150, y, k, 36, C.sub, { ox: 0, w: 800 }); T(this, W - 150, y, v, 42, i === 3 ? '#8FE3FF' : C.text, { ox: 1, w: 900 });
     });
-    if (r.unlocked && r.unlocked.length) {
-      const uy = cy + 280; T(this, W / 2, uy - 40, '새 룬 해금!', 40, C.gold, { w: 900 });
-      r.unlocked.forEach((u, i) => { const x = W / 2 + (i - (r.unlocked.length - 1) / 2) * 140; this.add.image(x, uy + 50, `die_${u}`).setDisplaySize(110, 110); this.add.image(x, uy + 50, `rune_${u}`).setDisplaySize(62, 62); T(this, x, uy + 122, RUNES[u].name, 26, C.text, { w: 800 }); });
+    if (r.keys) {   // 웨이브 이정표 → 제단 열쇠
+      const uy = cy + 300; T(this, W / 2, uy - 30, `웨이브 이정표 달성 · 제단 열쇠 +${r.keys}`, 40, C.gold, { w: 900 });
+      btn(this, W / 2, uy + 60, 420, 100, '룬 제단에서 뽑기', () => this.go('Altar'), { style: 'indigo', icon: 'i_star', size: 32 });
       audio.play('sfx_awaken', { volume: 0.7 });
     }
     const by = Math.min(H - 150, cy + 560);

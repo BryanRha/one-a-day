@@ -1,6 +1,6 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
 import { W, H } from '../config.js';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES } from '../core/sim.js';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES , synergiesOf } from '../core/sim.js';
 import { act } from '../core/ai.js';
 import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js';
 import { audio } from '../audio.js';
@@ -52,6 +52,7 @@ export class PlayScene extends Phaser.Scene {
     audio.music('bgm_game', this);
     this.cameras.main.fadeIn(300, 5, 6, 26);
     if (!d.tips.dice && !this.bot) this.time.delayedCall(500, () => this.tutorial());
+    else { const sy = synergiesOf(this.s.deck); if (sy.length) this.time.delayedCall(700, () => this.banner('덱 조합 발동', sy.map(x => `${x.name} · ${x.desc}`).join('\n'), '#F5C451')); }
     if (this.bot) this.time.addEvent({ delay: 220, loop: true, callback: () => { if (!this.paused) for (let k = 0; k < 3; k++) if (!act(this.s, 0.8)) break; this.render(); } });
     window.__play = this;
   }
@@ -92,7 +93,8 @@ export class PlayScene extends Phaser.Scene {
     const col = RUNES[d.type].color;
     for (const [px, py] of PIPS[d.pips]) { const x = px * CS * 0.25, y = py * CS * 0.25; c.add(this.add.image(x, y, 'pip').setDisplaySize(46, 46).setTint(col).setBlendMode('ADD')); c.add(this.add.circle(x, y, 10, 0xFFFFFF)); }
     if (d.pips >= MAX_PIPS) { const aw = this.add.image(0, 0, 'glow').setTint(col).setBlendMode('ADD').setScale(1.9).setAlpha(0.55); c.addAt(aw, 0); this.tweens.add({ targets: aw, alpha: 0.2, scale: 2.2, duration: 700, yoyo: true, repeat: -1 }); }
-    c.die = d; c.key = `${d.id}_${d.type}_${d.pips}`; c.body = body;
+    if (d.buff > 0) { const bf = this.add.image(0, 0, 'glow').setTint(0xFF3848).setBlendMode('ADD').setScale(1.3 + d.buff * 0.5).setAlpha(0.35 + d.buff * 0.2); c.addAt(bf, 0); c.add(T(this, CS * 0.32, -CS * 0.36, `+${Math.round(d.buff * 100)}%`, 22, '#FF8A94', { w: 900 })); }
+    c.die = d; c.key = `${d.id}_${d.type}_${d.pips}_${Math.round((d.buff || 0) * 10)}`; c.body = body;
     c.setSize(CS, CS);
     return c;
   }
@@ -100,7 +102,7 @@ export class PlayScene extends Phaser.Scene {
     const s = this.s;
     for (let i = 0; i < SLOTS; i++) {
       const d = s.board[i], v = this.dieViews[i];
-      const key = d ? `${d.id}_${d.type}_${d.pips}` : null;
+      const key = d ? `${d.id}_${d.type}_${d.pips}_${Math.round((d.buff || 0) * 10)}` : null;
       if (v && (!d || v.key !== key)) { if (this.drag && this.drag.v === v) this.drag = null; v.destroy(); this.dieViews[i] = null; }
       if (d && !this.dieViews[i]) { const nv = this.makeDieView(i, d); this.dieViews[i] = nv; nv.setScale(0.5); this.tweens.add({ targets: nv, scale: 1, duration: 200, ease: 'Back.easeOut' }); }
       const cv = this.dieViews[i];
@@ -287,7 +289,7 @@ export class PlayScene extends Phaser.Scene {
       v.img.setPosition(0, oy).setScale(v.k * sx * (dx < -0.5 ? -1 : 1), v.k * sy).setRotation(rot);
       v.lit.setPosition(0, oy).setScale(v.img.scaleX, v.img.scaleY).setRotation(rot).setVisible(!(v.flashT > this.time.now));
       v.sh.setScale((e.kind === 'boss' ? 2.2 : 1.1) * (1 + oy / 60), (e.kind === 'boss' ? 0.7 : 0.4) * (1 + oy / 60));
-      if (!(v.flashT > this.time.now)) v.img.setTint(e.shieldOn > 0 ? 0xFFE08A : e.vulnT > 0 ? 0xF0A8FF : e.slow > 0.05 ? 0xA8E6FF : e.poison > 1 ? 0xB8FFA8 : 0xFFFFFF);
+      if (!(v.flashT > this.time.now)) v.img.setTint(e.stun > 0 ? 0x9FDFFF : e.shieldOn > 0 ? 0xFFE08A : e.vulnT > 0 ? 0xF0A8FF : e.slow > 0.05 ? 0xA8E6FF : e.poison > 1 ? 0xB8FFA8 : 0xFFFFFF);
       if (e.critT > 0) { e.critT = 0; if (Math.random() < 0.5) this.float(x + (Math.random() - 0.5) * 40, y - EN_SIZE[e.kind] / 2 - 20, '치명!', '#FF8FCB', 30); }
       if (e.kind !== 'boss') { const w = 70, k = Math.max(0, e.hp / e.max), hy = -EN_SIZE[e.kind] / 2 - 14 + oy; v.hb.clear(); if (k < 1) v.hb.fillStyle(0x000000, 0.6).fillRoundedRect(-w / 2, hy, w, 8, 4).fillStyle(0xFF5A7A).fillRoundedRect(-w / 2, hy, w * k, 8, 4); }
       else boss = e;
@@ -368,6 +370,22 @@ export class PlayScene extends Phaser.Scene {
         ring(0.6, 1, 200); this.spark.setParticleTint(0xFFFFFF); this.spark.emitParticleAt(x, y, 7);
         if (v && v.kind === 'boss') this.cameras.main.shake(70, 0.002); break;
       }
+      case 'pierce': {  // 길을 따라 꿰뚫는 빛줄기
+        audio.play('sfx_hit', { volume: 0.28, gap: 60, rate: 1.2 });
+        const behind = this.s.enemies.filter(o => o.id !== target && o.hp > 0 && o.d < (this.s.enemies.find(q => q.id === target) || { d: 0 }).d && (this.s.enemies.find(q => q.id === target).d - o.d) < RUNES.pierce.pierce).map(o => this.ePool.get(o.id)).filter(Boolean);
+        const g = this.add.graphics().setDepth(37).setBlendMode('ADD'); let px = x, py = y;
+        for (const o of behind) { g.lineStyle(6, 0xFFF0B8, 0.9).lineBetween(px, py, o.x, o.y); this.hitFlash(o); px = o.x; py = o.y; }
+        this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() }); ring(0.4, 0.9, 180); break;
+      }
+      case 'time': {    // 시계 고리가 퍼지며 뒤로 밀어냄
+        audio.play('sfx_ice', { volume: 0.22, gap: 120, rate: 0.7 });
+        ring(0.8, 0.9, 380); ring(0.5, 0.6, 300); break;
+      }
+      case 'hammer': {  // 무거운 내려찍기
+        audio.play('sfx_clank', { volume: 0.4, gap: 120, rate: 0.75 });
+        ring(0.9, 1, 260); this.spark.setParticleTint(0xFFC27A); this.spark.emitParticleAt(x, y, 9);
+        if (v && v.kind === 'boss') this.cameras.main.shake(90, 0.003); break;
+      }
       default: { audio.play('sfx_hit', { volume: 0.25, gap: 50 }); ring(0.35, 0.8, 200); this.spark.setParticleTint(col); this.spark.emitParticleAt(x, y, 3); }
     }
   }
@@ -413,6 +431,8 @@ export class PlayScene extends Phaser.Scene {
       case 'mine': { const [x0, y0] = this.slotXY(e.slot), [x1, y1] = this.pathXY(e.d); const b = this.add.image(x0, y0, 'bolt').setTint(0xFFA43A).setBlendMode('ADD').setScale(0.6).setDepth(35); this.tweens.add({ targets: b, x: x1, y: y1, duration: 260, ease: 'Quad.easeOut', onComplete: () => b.destroy() }); break; }
       case 'boom': { const [x, y] = this.pathXY(e.d); audio.play('sfx_fire', { volume: 0.5, gap: 60, rate: 0.8 }); const f = this.add.image(x, y, 'glow').setTint(0xFF8A2E).setBlendMode('ADD').setScale(0.4).setDepth(36); this.tweens.add({ targets: f, scale: 2.2, alpha: 0, duration: 340, onComplete: () => f.destroy() }); const r = this.add.image(x, y, 'ring').setTint(0xFFB24A).setBlendMode('ADD').setScale(0.2).setDepth(36); this.tweens.add({ targets: r, scale: 1.2, alpha: 0, duration: 320, onComplete: () => r.destroy() }); this.spark.setParticleTint(0xFFB24A); this.spark.emitParticleAt(x, y, 10); this.cameras.main.shake(80, 0.003); break; }
       case 'telegraph': this.telegraph(e); break;
+      case 'stun': { const v = this.ePool.get(e.id); if (v) { audio.play('sfx_ice', { volume: 0.35, gap: 120, rate: 1.3 }); const c = this.add.image(v.x, v.y, 'flake').setTint(0xDFF6FF).setBlendMode('ADD').setScale(0.2).setDepth(37); this.tweens.add({ targets: c, scale: 1.1, angle: 90, alpha: 0, duration: 420, onComplete: () => c.destroy() }); if (Math.random() < 0.4) this.float(v.x, v.y - 70, '얼음!', '#BFE9FF', 26); } break; }
+      case 'sacrifice': { audio.play('sfx_power', { volume: 0.5, rate: 0.8 }); const [x0, y0] = this.slotXY(e.from); this.float(x0, y0 - 70, '희생!', '#FF6A75'); for (const i of e.slots) { const [x, y] = this.slotXY(i); const b = this.add.image(x0, y0, 'bolt').setTint(0xFF4050).setBlendMode('ADD').setScale(0.7).setDepth(35); this.tweens.add({ targets: b, x, y, duration: 300, ease: 'Quad.easeOut', onComplete: () => { b.destroy(); this.spark.setParticleTint(0xFF5060); this.spark.emitParticleAt(x, y, 6); } }); } break; }
       case 'summonMinion': audio.play('sfx_summon', { volume: 0.4, rate: 0.6 }); break;
     }
   }

@@ -5,7 +5,7 @@ import * as I from './install.js';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.8.1';
+const VERSION = '0.8.2';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];

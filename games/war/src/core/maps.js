@@ -187,7 +187,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'inf', x: 3, y: 1 }, { t: 'cruiser', x: 7, y: 0 }, { t: 'sub', x: 6, y: 2 }, { t: 'ltank', x: 4, y: 1 }], 14),
     funds: [9000, 9000], tip: '잠수함은 멀리 봐요 · 순양함이 잠수함 사냥꾼',
-    camp: { funds: [11000, 5000], incomeMul: [1, 1, 0.55] },
+    camp: { funds: [11000, 5000], incomeMul: [1, 1, 0.6] },
   },
   {
     id: 'm12', name: '산악 요새', desc: '산으로 둘러싸인 요새 · 포병 대결', par: 16, enemyCo: 'viktor',
@@ -205,7 +205,7 @@ export const MAPS = [
     camp: { funds: [8000, 6000], incomeMul: [1, 1, 0.75] },
   },
   {
-    id: 'm13', name: '섬 사이', desc: '안개 낀 섬들 · 수송헬기로 건너요', par: 16, fog: true,
+    id: 'm13', name: '섬 사이', desc: '안개 낀 섬들 · 수송헬기로 건너요', par: 18, fog: true,
     rows: mirror([
       'H2 C2 b  s  s  s  b  C2 A2',
       'B2 .  P2 s  x  s  b  .  C0',
@@ -232,7 +232,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'battleship', x: 4, y: 0 }, { t: 'cruiser', x: 2, y: 0 }, { t: 'sub', x: 6, y: 0 }, { t: 'inf', x: 0, y: 1 }], 14),
     funds: [14000, 14000], tip: '전함은 멀리서 · 잠수함은 함선에 강해요 · 순양함은 잠수함에 강해요',
-    camp: { funds: [16000, 8000], incomeMul: [1, 1, 0.6] },
+    camp: { funds: [16000, 8000], incomeMul: [1, 1, 0.5] },
   },
   {
     id: 'm15', name: '최후의 결전', desc: '안개 낀 붉은 군단 본진 · 육해공 총력전', par: 18, fog: true,

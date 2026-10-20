@@ -1,12 +1,12 @@
 // 작전 준비: 캠페인 작전 고르기 · 지도 미리보기 · 지휘관 고르기 · (자유 대전) 지도·난이도·AI/2인 대전·내 지도
-import { W, H } from '../config.js?v=0.11.1';
-import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.11.1';
-import { audio } from '../audio.js?v=0.11.1';
-import { load, save } from '../save.js?v=0.11.1';
-import * as M from '../meta.js?v=0.11.1';
-import { COS } from '../core/data.js?v=0.11.1';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.11.1';
-import { Sim } from '../core/sim.js?v=0.11.1';
+import { W, H } from '../config.js?v=0.11.2';
+import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.11.2';
+import { audio } from '../audio.js?v=0.11.2';
+import { load, save } from '../save.js?v=0.11.2';
+import * as M from '../meta.js?v=0.11.2';
+import { COS } from '../core/data.js?v=0.11.2';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.11.2';
+import { Sim } from '../core/sim.js?v=0.11.2';
 
 const LV = { easy: '쉬움', normal: '보통', hard: '어려움' };
 const TCOL = { plain: 0x8DB05A, farm: 0x9BB45A, wheat: 0xD8B85A, forest: 0x3E7A34, mountain: 0x9A8C78, road: 0xC8A878, bridge: 0xB0A090, river: 0x4A9AD8, beach: 0xE8D8A0, sea: 0x2A6AB0, reef: 0x3A7A90, trench: 0x8A7A50 };

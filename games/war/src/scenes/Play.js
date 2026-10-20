@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.11.1';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.1';
-import { audio } from '../audio.js?v=0.11.1';
-import { load, save } from '../save.js?v=0.11.1';
-import * as M from '../meta.js?v=0.11.1';
-import { inOAD, exitToOAD } from '../oad.js?v=0.11.1';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.11.1';
-import { AI, apply } from '../core/ai.js?v=0.11.1';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from '../core/data.js?v=0.11.1';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.11.1';
+import { W, H } from '../config.js?v=0.11.2';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.2';
+import { audio } from '../audio.js?v=0.11.2';
+import { load, save } from '../save.js?v=0.11.2';
+import * as M from '../meta.js?v=0.11.2';
+import { inOAD, exitToOAD } from '../oad.js?v=0.11.2';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.11.2';
+import { AI, apply } from '../core/ai.js?v=0.11.2';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from '../core/data.js?v=0.11.2';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.11.2';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -68,8 +68,10 @@ export class PlayScene extends Phaser.Scene {
   vis(u) { return !!u && (u.p === this.me || !this.s.fog || this.s.canSee(this.me, u)); }
   unitSeen(x, y) { const u = this.s.unitAt(x, y); return this.vis(u) ? u : null; }
   // 화면 고정: 위·아래 정보칸과 팝업은 지도를 끌어도 그대로
+  // 묶음(container) 안의 버튼도 고정해야 터치 위치가 맞음 (Phaser 는 터치 판정에 자식의 값을 씀) — 버튼이 나중에 추가되므로 매 프레임 확인
   update() {
-    for (const o of this.children.list) if (!o.__sf) { o.__sf = 1; if ((o.depth >= 48 && o.depth <= 50) || o.depth >= 800) o.setScrollFactor(0); }
+    const fix = o => { if (o.scrollFactorX !== 0) o.setScrollFactor(0); if (o.list) for (const c of o.list) fix(c); };
+    for (const o of this.children.list) if (o.scrollFactorX === 0 || (o.depth >= 48 && o.depth <= 50) || o.depth >= 800) fix(o);
   }
   // 칸이 화면 밖이면 그 칸이 보이게 지도를 옮김
   follow(x, y, now) {

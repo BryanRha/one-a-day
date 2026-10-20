@@ -1,12 +1,12 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
-import { W, H } from '../config.js?v=0.8.10';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.10';
-import { DESC } from './Deck.js?v=0.8.10';
-import { act } from '../core/ai.js?v=0.8.10';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.10';
-import { audio } from '../audio.js?v=0.8.10';
-import { load, save } from '../save.js?v=0.8.10';
-import * as M from '../meta.js?v=0.8.10';
+import { W, H } from '../config.js?v=0.8.11';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.11';
+import { DESC } from './Deck.js?v=0.8.11';
+import { act } from '../core/ai.js?v=0.8.11';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.11';
+import { audio } from '../audio.js?v=0.8.11';
+import { load, save } from '../save.js?v=0.8.11';
+import * as M from '../meta.js?v=0.8.11';
 
 // 판 크기: 양옆 길 위 몬스터(보스 포함)가 화면 밖으로 잘리지 않게 여백 확보
 const CS = 188, GAP = 14, BW = COLS * CS + (COLS - 1) * GAP, BH = ROWS * CS + (ROWS - 1) * GAP;
@@ -79,7 +79,12 @@ export class PlayScene extends Phaser.Scene {
     // 시작·끝 표시
     const [sx, sy] = this.pathPts[0], [ex, ey] = this.pathPts[3];
     this.add.image(sx, sy + 34, 'glow').setTint(0x6E4BFF).setAlpha(0.6).setScale(1.4).setDepth(2).setBlendMode('ADD');
-    this.goal = this.add.image(ex, ey + 30, 'glow').setTint(0xFFB36B).setAlpha(0.6).setScale(1.4).setDepth(2).setBlendMode('ADD');
+    this.goal = this.add.image(ex, ey + 30, 'glow').setTint(0xFF5A7A).setAlpha(0.7).setScale(1.6).setDepth(2).setBlendMode('ADD');
+    this.tweens.add({ targets: this.goal, alpha: 0.35, scale: 1.9, duration: 900, yoyo: true, repeat: -1 });
+    // 길 시작 · 끝 이름표 (적이 '제단'에 닿으면 생명이 줄어요)
+    const tag = (x, y, str, col) => { const t = T(this, x, y, str, 22, '#FFFFFF', { w: 900, shadow: false }); const g = this.add.graphics(); g.fillStyle(col, 0.92).fillRoundedRect(x - t.width / 2 - 14, y - 18, t.width + 28, 36, 18); g.setDepth(19); t.setDepth(20); return t; };
+    tag(sx, sy - 40, '입구', 0x5A3FD8);
+    this.goalTag = tag(ex, ey - 40, '제단 ▼', 0xD8405A);
   }
 
   // ── 판 ──
@@ -124,8 +129,9 @@ export class PlayScene extends Phaser.Scene {
     this.hWave = T(this, W / 2, 92, '', 54, C.text, { w: 900, ls: 2 }).setDepth(D);
     this.hSub = T(this, W / 2, 148, '', 26, C.sub, { w: 800 }).setDepth(D);
     this.hearts = [0, 1, 2].map(i => this.add.image(70 + i * 58, 92, 'i_flame').setDisplaySize(46, 46).setTint(0xFF5A7A).setDepth(D));
+    this.livesT = T(this, 44, 132, '생명 3', 22, '#FF9BB0', { ox: 0, w: 900 }).setDepth(D);
     const tag = M.ARCADE[this.mode] ? M.ARCADE[this.mode].name : this.mode === 'daily' ? '오늘의 도전' : null;
-    if (tag) T(this, 44, 146, tag, 24, C.gold, { ox: 0, w: 900 }).setDepth(D);
+    if (tag) T(this, 44, 166, tag, 22, C.gold, { ox: 0, w: 900 }).setDepth(D);
     this.hBoss = this.add.container(W / 2, 250).setDepth(D).setVisible(false);
     const bb = this.add.graphics(); bb.fillStyle(0x000000, 0.5).fillRoundedRect(-300, -16, 600, 32, 16);
     this.hBossFill = this.add.graphics(); this.hBossName = T(this, 0, -44, '', 30, '#FF9BB0', { w: 900 });
@@ -317,7 +323,7 @@ export class PlayScene extends Phaser.Scene {
     this.hSp.setText(s.sp >= 100000 ? `${Math.floor(s.sp / 1000)}k` : fmt(s.sp));
     const cost = s.summonCost(), full = !s.emptySlots().length;
     this.sumBtn.setEnabled(!full && s.sp >= cost); this.sumCost.setText(full ? '판이 가득 찼어요 · 끌어서 합성' : `${fmt(cost)} SP`);
-    this.hearts.forEach((h, i) => h.setAlpha(i < s.lives ? 1 : 0.15));
+    this.hearts.forEach((h, i) => h.setAlpha(i < s.lives ? 1 : 0.15)); this.livesT.setText(`생명 ${s.lives}`);
     this.updateBossPreview();
     for (const p of this.pw) { const lv = s.power[p.t], c = s.powerCost(p.t), st = c == null ? 'max' : s.sp >= c ? 'ok' : 'no'; p.lv.setText(`Lv${lv + 1}`); this.drawPower(p, st, c); if (st === 'ok' && s.wave >= 2) this.powerHint(p); }
   }
@@ -483,7 +489,18 @@ export class PlayScene extends Phaser.Scene {
       case 'grow': { const [x, y] = this.slotXY(e.slot); this.float(x, y - 60, '성장!', C.green); if (e.die.pips >= MAX_PIPS) this.awaken(x, y, RUNES.growth.color); break; }
       case 'power': { audio.play('sfx_power', { volume: 0.6 }); const p = this.pw.find(q => q.t === e.type); if (p) { this.tweens.add({ targets: p.c, scale: 1.12, duration: 90, yoyo: true }); } for (let i = 0; i < SLOTS; i++) { const d = this.s.board[i]; if (d && d.type === e.type) { const [x, y] = this.slotXY(i); this.spark.setParticleTint(RUNES[d.type].color); this.spark.emitParticleAt(x, y, 4); } } break; }
       case 'kill': { audio.play('sfx_pop', { volume: 0.45, gap: 40, rate: 0.9 + Math.random() * 0.25 }); const [x, y] = this.pathXY(e.d); if (e.bounty && e.kind !== 'boss') this.float(x, y - 50, `+${e.sp}`, '#FFD54A', 26); if (e.kind === 'boss') this.bossDown(x, y); else if (e.kind === 'big') this.float(x, y - 50, `+${e.sp}`, C.sub); break; }
-      case 'leak': audio.play('sfx_leak', { volume: 0.7 }); buzz(60); this.cameras.main.shake(200, 0.008); this.cameras.main.flash(160, 120, 0, 30); this.leakedWave = true; if (this.s.lives === 1) this.voice('danger', 3); break;
+      case 'leak': {
+        audio.play('sfx_leak', { volume: 0.7 }); buzz(60); this.cameras.main.shake(200, 0.008); this.cameras.main.flash(160, 120, 0, 30); this.leakedWave = true; if (this.s.lives === 1) this.voice('danger', 3);
+        const [gx, gy] = this.pathXY(0.99);
+        this.float(gx - 60, gy - 110, `${e.kind === 'boss' ? '보스가 ' : ''}제단에 닿았어요! 생명 -${e.loss}`, '#FF7A8A', 30);
+        if (this.s.lives > 0) toast(this, this.s.lives === 1 ? '마지막 생명! 적이 제단에 닿으면 끝나요' : `남은 생명 ${this.s.lives}`, '#FF9BB0', this.BY - 90);
+        for (let k = Math.max(0, this.s.lives); k < Math.min(3, this.s.lives + e.loss); k++) { const h = this.hearts[k], s0 = 46 / h.width; this.tweens.add({ targets: h, scale: s0 * 1.8, duration: 200, yoyo: true, onComplete: () => h.setScale(s0) }); }
+        if (this.s.lives === 1 && !this.danger) {   // 마지막 생명: 화면 가장자리가 붉게 숨 쉼
+          const v = this.add.graphics().setDepth(90); for (let k = 0; k < 6; k++) v.lineStyle(30, 0xFF2040, 0.12 - k * 0.018).strokeRect(k * 26, k * 26, W - k * 52, H - k * 52);
+          this.danger = v; this.tweens.add({ targets: v, alpha: 0.3, duration: 700, yoyo: true, repeat: -1 });
+        }
+        break;
+      }
       case 'wave': if (e.wave > 1) audio.music('bgm_game', this); break;
       case 'boss': audio.play('sfx_boss', { volume: 0.8 }); this.voice('boss', 3); audio.music('bgm_boss', this); this.banner(e.name, BOSSES.find(b => b.id === e.boss) ? this.bossTip(e.boss) : '', '#FF9BB0'); this.cameras.main.shake(300, 0.006); break;
       case 'waveClear': {
@@ -571,15 +588,16 @@ export class PlayScene extends Phaser.Scene {
 
   tutorial() {
     const c = this.add.container(W / 2, this.BY + BH / 2).setDepth(95);
-    const g = this.add.graphics(); g.fillStyle(0x05061A, 0.92).fillRoundedRect(-440, -170, 880, 340, 34); c.add(g);
+    const g = this.add.graphics(); g.fillStyle(0x05061A, 0.92).fillRoundedRect(-460, -180, 920, 440, 34); c.add(g);
     c.add(T(this, 0, -110, '룬 주사위로 제단을 지키세요', 40, C.text, { w: 900 }));
     c.add(T(this, 0, -30, '① 소환 — SP 로 무작위 룬 주사위를 불러요', 30, C.sub, { w: 800 }));
     c.add(T(this, 0, 20, '② 합성 — 같은 종류·같은 눈끼리 끌어 겹치면 눈+1', 30, C.sub, { w: 800 }));
     c.add(T(this, 0, 70, '③ 강화 — 아래 룬 버튼으로 그 종류 전체 강화', 30, C.sub, { w: 800 }));
-    c.add(T(this, 0, 128, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
+    c.add(T(this, 0, 130, '적이 길 끝 [제단]에 닿으면 생명 -1 (보스 -2)\n생명 3개를 모두 잃으면 끝나요', 28, '#FF9BB0', { w: 800, lh: 8 }));
+    c.add(T(this, 0, 214, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
     this.paused = true;
     const z = this.add.zone(W / 2, H / 2, W, H).setInteractive().setDepth(96);
-    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.10').then(m => m.save()); });
+    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.11').then(m => m.save()); });
   }
 
   gameOver() {
@@ -613,7 +631,8 @@ export class PlayScene extends Phaser.Scene {
     if (this.paused || this.ended) return;
     this.paused = true; this.tweens.getTweens().filter(t => t.isPlaying()).forEach(t => { t.pause(); (this.frozen ||= []).push(t); });
     audio.duck(0.1);
-    const pop = popup(this, '일시정지', 760, 620, { closable: false, depth: 2000 });
+    const pop = popup(this, '일시정지', 820, 760, { closable: false, depth: 2000 });
+    pop.content.add(T(this, 0, 220, '적이 길 끝 [제단]에 닿으면 생명 -1 · 보스 -2\n생명 3개를 모두 잃으면 끝나요', 26, C.sub, { w: 800, lh: 8 }));
     pop.content.add(btn(this, 0, -90, 500, 130, '계속하기', () => { pop.close(); this.time.delayedCall(150, () => { this.paused = false; (this.frozen || []).forEach(t => t.resume()); this.frozen = []; audio.duck(0.32); }); }, { style: 'gold', icon: 'i_play', size: 42 }));
     pop.content.add(btn(this, 0, 70, 420, 100, '포기하고 나가기', () => { pop.close(); this.paused = false; this.s.over = true; }, { style: 'ghost', size: 32 }));
   }

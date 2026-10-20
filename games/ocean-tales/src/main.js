@@ -1,11 +1,11 @@
-import { W, BASE_H, setH } from './config.js?v=0.8.10';
-import { audio } from './audio.js?v=0.8.10';
-import { BootScene } from './scenes/Boot.js?v=0.8.10';
-import { TitleScene } from './scenes/Title.js?v=0.8.10';
-import { MapScene } from './scenes/Map.js?v=0.8.10';
-import { GameScene } from './scenes/Game.js?v=0.8.10';
-import { WorldClearScene } from './scenes/WorldClear.js?v=0.8.10';
-import { ReefScene } from './scenes/Reef.js?v=0.8.10';
+import { W, BASE_H, setH } from './config.js?v=0.8.11';
+import { audio } from './audio.js?v=0.8.11';
+import { BootScene } from './scenes/Boot.js?v=0.8.11';
+import { TitleScene } from './scenes/Title.js?v=0.8.11';
+import { MapScene } from './scenes/Map.js?v=0.8.11';
+import { GameScene } from './scenes/Game.js?v=0.8.11';
+import { WorldClearScene } from './scenes/WorldClear.js?v=0.8.11';
+import { ReefScene } from './scenes/Reef.js?v=0.8.11';
 
 async function start() {
   try { await document.fonts.load('48px Jua'); } catch { /* 폰트 실패 시 기본 폰트 */ }

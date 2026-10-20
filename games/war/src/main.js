@@ -1,11 +1,12 @@
-import { W, BASE_H, setH } from './config.js?v=0.10.8';
-import { audio } from './audio.js?v=0.10.8';
-import { BootScene } from './scenes/Boot.js?v=0.10.8';
-import { HomeScene } from './scenes/Home.js?v=0.10.8';
-import { BriefScene } from './scenes/Brief.js?v=0.10.8';
-import { PlayScene } from './scenes/Play.js?v=0.10.8';
-import { ResultScene } from './scenes/Result.js?v=0.10.8';
-import { installBack } from './oad.js?v=0.10.8';
+import { W, BASE_H, setH } from './config.js?v=0.11.0';
+import { audio } from './audio.js?v=0.11.0';
+import { BootScene } from './scenes/Boot.js?v=0.11.0';
+import { HomeScene } from './scenes/Home.js?v=0.11.0';
+import { BriefScene } from './scenes/Brief.js?v=0.11.0';
+import { PlayScene } from './scenes/Play.js?v=0.11.0';
+import { ResultScene } from './scenes/Result.js?v=0.11.0';
+import { EditorScene } from './scenes/Editor.js?v=0.11.0';
+import { installBack } from './oad.js?v=0.11.0';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }
@@ -14,7 +15,7 @@ async function start() {
     scale: { mode: innerHeight / innerWidth > BASE_H / W ? Phaser.Scale.EXPAND : Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     render: { antialias: true, powerPreference: 'high-performance' },
     input: { activePointers: 2 }, fps: { target: 60 },
-    scene: [BootScene, HomeScene, BriefScene, PlayScene, ResultScene],
+    scene: [BootScene, HomeScene, BriefScene, PlayScene, ResultScene, EditorScene],
   });
   audio.attach(game);
   setH(game.scale.height);

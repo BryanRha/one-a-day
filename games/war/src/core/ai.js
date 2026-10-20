@@ -1,7 +1,7 @@
 // 상대 AI: 다음 행동 하나씩 돌려줌 (화면이 한 동작씩 보여 줄 수 있게)
 // { kind: 'power' } · { kind: 'act', id, to, then: { kind: 'attack'|'capture'|'wait'|'unload', target, at } } · { kind: 'build', x, y, type } · { kind: 'end' }
-import { UNITS, UNIT_ORDER, TERRAIN, base } from './data.js?v=0.10.8';
-import { dist } from './sim.js?v=0.10.8';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, base } from './data.js?v=0.11.0';
+import { dist } from './sim.js?v=0.11.0';
 
 const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.12, threat: 0.45, focus: 1.1 }, hard: { noise: 0, threat: 0.6, focus: 1.3 } };
 
@@ -26,7 +26,8 @@ export class AI {
   next(sim) {
     const p = sim.turn;
     if (sim.over) return { kind: 'end' };
-    if (sim.powerReady(p)) return { kind: 'power' };
+    if (sim.powerReady(p, 2)) return { kind: 'power', lvl: 2 };
+    if (sim.powerReady(p, 1) && sim.power[p] < (COS[sim.cos[p]].sneed * 0.8)) return { kind: 'power', lvl: 1 };
     if (!this.cache || this.cache.day !== sim.day || this.cache.p !== p || this.cache.n !== sim.units.length) this.cache = { day: sim.day, p, n: sim.units.length, threat: threatMap(sim, p) };
     // 간접 유닛 먼저 (움직이기 전에 쏠 수 있게), 그다음 비싼 유닛, 마지막에 보병
     const todo = sim.mine(p).filter(u => !u.done && !u.inside).sort((a, b) => (UNITS[b.type].indirect ? 1 : 0) - (UNITS[a.type].indirect ? 1 : 0) || UNITS[b.type].cost - UNITS[a.type].cost);
@@ -84,7 +85,7 @@ export class AI {
       }
     }
     // 트럭: 실은 보병 내리기 (점령할 건물 옆이면)
-    if (u.cargo && !best?.then?.kind?.startsWith('attack')) {
+    if (u.cargo.length && !best?.then?.kind?.startsWith('attack')) {
       const spots = sim.unloadSpots(u);
       for (const [x, y] of spots) { const t = sim.tile(x, y); if (TERRAIN[t.t].prop && t.owner !== p) return { kind: 'act', id: u.id, to: [u.x, u.y], then: { kind: 'unload', at: [x, y] } }; }
     }
@@ -102,7 +103,7 @@ export class AI {
       // 헬기가 많은데 대공포차가 모자라면 돈을 모아 대공포차부터
       const air = enemies.filter(e => UNITS[e.type].air).length, myAA = mine.filter(u => u.type === 'aa').length;
       if (kind === 'ground' && air >= 2 && myAA < Math.ceil(air / 2)) { if (funds >= UNITS.aa.cost) return { kind: 'build', x: o.x, y: o.y, type: 'aa' }; continue; }
-      const opts = UNIT_ORDER.filter(t => (kind === 'air') === !!UNITS[t].air && UNITS[t].cost <= funds && t !== 'truck');
+      const opts = UNIT_ORDER.filter(t => UNITS[t].dom === kind && UNITS[t].cost <= funds && UNITS[t].range);   // 수송 유닛은 AI 가 만들지 않음
       if (!opts.length) continue;
       let pick = null, bs = -1e9;
       const needCap = caps < Math.min(4, neutral + 2) && sim.day < 10;
@@ -126,7 +127,7 @@ export class AI {
 }
 // 한 행동 실행 (화면 없이 · 봇용)
 export function apply(sim, a) {
-  if (a.kind === 'power') return sim.usePower();
+  if (a.kind === 'power') return sim.usePower(a.lvl || 1);
   if (a.kind === 'build') return sim.build(a.x, a.y, a.type);
   if (a.kind === 'end') { sim.endTurn(); return true; }
   if (a.kind === 'act') {

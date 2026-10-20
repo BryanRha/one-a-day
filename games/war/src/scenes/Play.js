@@ -1,18 +1,18 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.8';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.8';
-import { audio } from '../audio.js?v=0.10.8';
-import { load, save } from '../save.js?v=0.10.8';
-import * as M from '../meta.js?v=0.10.8';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.8';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.8';
-import { AI, apply } from '../core/ai.js?v=0.10.8';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, base } from '../core/data.js?v=0.10.8';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.10.8';
+import { W, H } from '../config.js?v=0.11.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.0';
+import { audio } from '../audio.js?v=0.11.0';
+import { load, save } from '../save.js?v=0.11.0';
+import * as M from '../meta.js?v=0.11.0';
+import { inOAD, exitToOAD } from '../oad.js?v=0.11.0';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.11.0';
+import { AI, apply } from '../core/ai.js?v=0.11.0';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from '../core/data.js?v=0.11.0';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.11.0';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
-const BLD = { city: 'city', base: 'base', air: 'air', hq: 'hq' };
+const BLD = { city: 'city', base: 'base', air: 'air', hq: 'hq', port: 'port' };
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
 const SND = { inf: 'sfx_rifle', bazooka: 'sfx_bazooka', recon: 'sfx_mg', ltank: 'sfx_cannon', htank: 'sfx_cannon', arty: 'sfx_cannon', rocket: 'sfx_rocket', aa: 'sfx_mg', heli: 'sfx_mg', truck: 'sfx_mg' };
 const MOVE_SND = { foot: 'sfx_move_foot', mech: 'sfx_move_foot', tire: 'sfx_move_car', tread: 'sfx_move_tank', air: 'sfx_move_heli' };
@@ -22,13 +22,13 @@ export class PlayScene extends Phaser.Scene {
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 쓰므로 지난 판 값이 남으면 끝나지 않거나 멈춤)
-    Object.assign(this, { ended: false, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
+    Object.assign(this, { fogG: null, pendingEvs: null, unloadList: [], ended: false, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
     this.mode = data.mode || 'free';
-    this.map = MAPS.find(m => m.id === data.mapId) || MAPS[0];
+    this.map = data.custom || MAPS.find(m => m.id === data.mapId) || MAPS[0];
     this.simMap = this.mode === 'campaign' || this.mode === 'daily' ? campaignMap(this.map) : this.map;
     this.level = data.level || 'normal';
     this.co = data.co || d.co || 'ella';
-    this.enemyCo = data.enemyCo || 'scarlet';
+    this.enemyCo = data.enemyCo || this.map.enemyCo || 'scarlet';
     this.s = new Sim(this.simMap, [null, this.co, this.enemyCo], { limit: data.limit || this.map.par + 8 });
     this.resumed = !!data.resume;
     if (data.resume) { this.s.restore(data.resume.sim); this.captures = data.resume.captures || 0; this.powers0 = data.resume.powers || 0; }
@@ -60,6 +60,13 @@ export class PlayScene extends Phaser.Scene {
     this.time.delayedCall(350, () => this.startTurn());
   }
 
+  // 사람이 조작하는 쪽: 2인 대전이면 지금 차례 · 아니면 파랑(1)
+  get me() { return this.mode === 'versus' ? this.s.turn : 1; }
+  get foe() { return this.me === 1 ? 2 : 1; }
+  human(p) { return this.mode === 'versus' || p === 1; }
+  // 안개 속에서 보이는지 (보는 쪽 = me)
+  vis(u) { return !!u && (u.p === this.me || !this.s.fog || this.s.canSee(this.me, u)); }
+  unitSeen(x, y) { const u = this.s.unitAt(x, y); return this.vis(u) ? u : null; }
   // 화면 고정: 위·아래 정보칸과 팝업은 지도를 끌어도 그대로
   update() {
     for (const o of this.children.list) if (!o.__sf) { o.__sf = 1; if ((o.depth >= 48 && o.depth <= 50) || o.depth >= 800) o.setScrollFactor(0); }
@@ -89,9 +96,11 @@ export class PlayScene extends Phaser.Scene {
         key = h && v ? 't_road_x' : 't_road_h'; if (!h && v) ang = 90;
       } else if (t.t === 'river') { key = 't_river_h'; const h = ['river', 'bridge'].includes(kind(x - 1, y)) || ['river', 'bridge'].includes(kind(x + 1, y)); if (!h) ang = 90; }
       else if (t.t === 'bridge') { key = 't_bridge_h'; if (kind(x - 1, y) === 'river' || kind(x + 1, y) === 'river') ang = 90; }
-      else if (BLD[t.t]) key = 't_plain';
+      else if (t.t === 'reef') key = 't_sea';
+      else if (BLD[t.t]) key = t.t === 'port' ? 't_sea' : 't_plain';
       const im = this.add.image(px, py, key).setDisplaySize(ts + 1, ts + 1).setAngle(ang).setDepth(1);
       if (['plain', 'forest', 'farm', 'wheat', 'sea'].includes(t.t) && (x * 7 + y * 13) % 2) im.setFlipX(true);
+      if (t.t === 'reef') { const g = this.add.graphics().setDepth(1.2); for (const [rx, ry, rr] of [[-0.22, -0.12, 0.13], [0.18, 0.05, 0.16], [-0.05, 0.22, 0.1], [0.25, -0.24, 0.08]]) { g.fillStyle(0x6E7468, 1).fillEllipse(px + rx * ts, py + ry * ts, rr * ts * 2.2, rr * ts * 1.5).fillStyle(0xA9AE9C, 1).fillEllipse(px + rx * ts - 3, py + ry * ts - 4, rr * ts * 1.4, rr * ts * 0.8).lineStyle(3, 0xD8F2FF, 0.6).strokeEllipse(px + rx * ts, py + ry * ts + 4, rr * ts * 2.6, rr * ts * 1.6); } }
       if (BLD[t.t]) this.drawBld(x, y);
     }
     // 지형 톤 낮추기 (유닛·건물이 앞으로 나와 보이게)
@@ -126,6 +135,7 @@ export class PlayScene extends Phaser.Scene {
     // 흰 외곽선: 같은 그림을 흰색으로 칠해 네 방향으로 살짝 밀어 깔기
     const outline = [[-2, 0], [2, 0], [0, -2], [0, 2], [-1.5, -1.5], [1.5, 1.5], [-1.5, 1.5], [1.5, -1.5]].map(([dx, dy]) => this.add.image(dx * 1.4, foot + dy * 1.4, key).setOrigin(0.5, 1).setScale(k).setTintFill(0xFFFFFF));
     const img = this.add.image(0, foot, key).setOrigin(0.5, 1).setScale(k); img.base = k;
+    if (UNITS[u.type].dom === 'air') { const lift = ts * 0.2; [img, ...outline].forEach(o => { o.y -= lift; this.tweens.add({ targets: o, y: o.y - 6, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }); }
     const hp = this.add.container(ts * 0.3, -ts * 0.28);
     const hpBg = this.add.circle(0, 0, ts * 0.18, 0x111111, 0.95).setStrokeStyle(4, 0xFFFFFF);
     const hpT = T(this, 0, 1, '', Math.round(ts * 0.25), '#FFFFFF', { w: 900, shadow: false });
@@ -140,28 +150,35 @@ export class PlayScene extends Phaser.Scene {
   face(c, u, dx) { if (!dx) return; const right = dx > 0, f = u.p === 1 ? !right : right; c.img.setFlipX(f); c.outline.forEach(o => o.setFlipX(f)); }
   syncUnit(u) {
     const c = this.views.get(u.id); if (!c) return;
-    c.setVisible(!u.inside);
+    c.setVisible(!u.inside && this.vis(u));
     const n = hpOf(u); c.hp.setVisible(n < 10); c.hpT.setText(n);
     c.hpBg.setFillStyle(n <= 3 ? 0xD9301E : n <= 6 ? 0xE8A21C : 0x111111, 0.95);
-    c.cargo.setVisible(!!u.cargo);
-    const myTurn = this.s.turn === 1 && u.p === 1, dim = u.done && myTurn, ready = !u.done && myTurn && !this.s.over;
+    c.cargo.setVisible(u.cargo.length > 0);
+    const myTurn = this.human(this.s.turn) && u.p === this.s.turn, dim = u.done && myTurn, ready = !u.done && myTurn && !this.s.over;
     c.img.setTint(dim ? 0x808080 : 0xFFFFFF); c.outline.forEach(o => o.setAlpha(dim ? 0.35 : 0.95));
     c.ring.setAlpha(dim ? 0.35 : 0.9); c.doneT.setVisible(dim);
     // 행동할 수 있는 아군: 발밑이 은은하게 숨 쉼
     if (ready && !c.pulse) { c.glow.setAlpha(0.15); c.pulse = this.tweens.add({ targets: c.glow, alpha: 0.55, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
     if (!ready && c.pulse) { c.pulse.stop(); c.pulse = null; c.glow.setAlpha(0); }
   }
-  syncAll() { for (const u of this.s.units) { if (!this.views.has(u.id)) this.makeUnit(u); this.syncUnit(u); } for (const [id, c] of this.views) if (!this.s.unit(id)) { c.destroy(); this.views.delete(id); } this.updateHud(); }
+  syncAll() { for (const u of this.s.units) { if (!this.views.has(u.id)) this.makeUnit(u); this.syncUnit(u); } for (const [id, c] of this.views) if (!this.s.unit(id)) { c.destroy(); this.views.delete(id); } this.drawFog(); this.updateHud(); }
+  // 안개: 보이지 않는 칸을 어둡게
+  drawFog() {
+    if (!this.s.fog) return;
+    if (!this.fogG) this.fogG = this.add.graphics().setDepth(9);
+    const g = this.fogG.clear(), ts = this.ts, v = this.s.visible(this.me);
+    g.fillStyle(0x0A0E08, 0.55);
+    for (let y = 0; y < this.s.h; y++) for (let x = 0; x < this.s.w; x++) if (!v.has(y * this.s.w + x)) g.fillRect(this.ox + x * ts, this.oy + y * ts, ts, ts);
+  }
 
   // ── 위 정보 ──
   makeHud() {
     const D = 50, d = load();
     this.add.existing(panel(this, W / 2, 96, W - 24, 176, { r: 26 })).setDepth(D - 1);
-    const co = COS[this.co];
     const face = this.add.image(96, 96, `co_${this.co}`).setDepth(D); face.setScale(130 / Math.max(face.width, face.height));
     const fm = this.make.graphics().setScrollFactor(0); fm.fillCircle(96, 96, 62); face.setMask(fm.createGeometryMask());
-    this.add.circle(96, 96, 64).setStrokeStyle(5, TEAM[1]).setDepth(D);
-    T(this, 176, 58, co.name, 32, C.text, { ox: 0, w: 900 }).setDepth(D);
+    this.coRing = this.add.circle(96, 96, 64).setStrokeStyle(5, TEAM[1]).setDepth(D);
+    this.coFace = face; this.coName = T(this, 176, 58, COS[this.co].name, 32, C.text, { ox: 0, w: 900 }).setDepth(D);
     this.pwBarBg = this.add.graphics().setDepth(D); this.pwBar = this.add.graphics().setDepth(D);
     this.pwT = T(this, 176, 132, '', 24, C.sub, { ox: 0, w: 800 }).setDepth(D);
     this.pwBtn = btn(this, 330, 132, 170, 64, '필살기', () => this.usePower(), { style: 'gold', size: 24 }).setDepth(D).setVisible(false);
@@ -173,16 +190,20 @@ export class PlayScene extends Phaser.Scene {
     iconBtn(this, W - 72, 96, 'i_pause', () => this.pause(), 92).setDepth(D);
   }
   updateHud() {
-    const s = this.s, need = COS[this.co].need, k = Math.min(1, s.power[1] / need);
+    const s = this.s, me = this.me, foe = this.foe, coK = s.cos[me], co = COS[coK], k = Math.min(1, s.power[me] / co.sneed), kn = co.need / co.sneed;
+    if (this.coFace.texture.key !== `co_${coK}`) { this.coFace.setTexture(`co_${coK}`); this.coFace.setScale(130 / Math.max(this.coFace.width, this.coFace.height)); this.coName.setText(co.name); }
+    this.coRing.setStrokeStyle(5, TEAM[me]);
     this.dayT.setText(`DAY ${s.day} / ${s.limit}`);
-    this.turnT.setText(s.turn === 1 ? '아군 턴' : '적군 턴').setColor(s.turn === 1 ? C.blue : C.red);
-    this.fundT.setText(`자금 ${fmt(s.funds[1])}`);
-    this.enT.setText(`적 자금 ${fmt(s.funds[2])} · 건물 ${s.props(1)}:${s.props(2)}`);
-    this.pwBarBg.clear().fillStyle(0x000000, 0.5).fillRoundedRect(176, 92, 230, 16, 8);
-    this.pwBar.clear().fillStyle(s.powerOn[1] ? 0xFF8A3D : k >= 1 ? 0xFFD45A : 0x8EC2FF, 1).fillRoundedRect(176, 92, Math.max(16, 230 * k), 16, 8);
-    const ready = s.turn === 1 && s.powerReady(1) && !this.busy;
-    this.pwBtn.setVisible(ready); this.pwT.setVisible(!ready).setText(s.powerOn[1] ? `${COS[this.co].power} 발동 중!` : `필살기 ${Math.floor(k * 100)}%`);
-    if (this.endBtn) this.endBtn.setEnabled(s.turn === 1 && !this.busy);
+    const vs = this.mode === 'versus';
+    this.turnT.setText(vs ? (s.turn === 1 ? '파랑 차례' : '빨강 차례') : s.turn === 1 ? '아군 턴' : '적군 턴').setColor(s.turn === 1 ? C.blue : C.red);
+    this.fundT.setText(`자금 ${fmt(s.funds[me])}`);
+    this.enT.setText(`${vs ? '상대' : '적'} 자금 ${s.fog ? '?' : fmt(s.funds[foe])} · 건물 ${s.props(me)}:${s.props(foe)}`);
+    // 게이지: 필살기 칸 · 초필살기 칸 (눈금)
+    this.pwBarBg.clear().fillStyle(0x000000, 0.5).fillRoundedRect(176, 92, 230, 16, 8).fillStyle(0xFFFFFF, 0.8).fillRect(176 + 230 * kn - 1, 88, 3, 24);
+    this.pwBar.clear().fillStyle(s.powerOn[me] ? 0xFF8A3D : k >= 1 ? 0xFF6A3D : k >= kn ? 0xFFD45A : 0x8EC2FF, 1).fillRoundedRect(176, 92, Math.max(16, 230 * k), 16, 8);
+    const ready = this.human(s.turn) && s.powerReady(me, 1) && !this.busy, sup = ready && s.powerReady(me, 2);
+    this.pwBtn.setVisible(ready).setLabel(sup ? '초필살기' : '필살기'); this.pwT.setVisible(!ready).setText(s.powerOn[me] ? `${s.powerOn[me] === 2 ? co.superp : co.power} 발동 중!` : `필살기 ${Math.floor(Math.min(1, k / kn) * 100)}%`);
+    if (this.endBtn) this.endBtn.setEnabled(this.human(s.turn) && !this.busy);
     this.updateIdle();
   }
 
@@ -203,17 +224,17 @@ export class PlayScene extends Phaser.Scene {
     this.info.removeAll(true);
     const y0 = H - BOTTOM + 34, ix = 48;
     if (x == null) {
-      this.info.add(T(this, ix, y0 + 40, this.s.turn === 1 ? '유닛을 눌러 이동하세요 · 기지를 누르면 생산' : '적군이 움직이는 중…', 28, C.sub, { ox: 0, w: 800 }));
+      this.info.add(T(this, ix, y0 + 40, this.human(this.s.turn) ? '유닛을 눌러 이동하세요 · 기지·비행장·항구를 누르면 생산' : '적군이 움직이는 중…', 28, C.sub, { ox: 0, w: 800 }));
       return;
     }
-    const t = this.s.tile(x, y), tr = TERRAIN[t.t], u = this.s.unitAt(x, y);
+    const t = this.s.tile(x, y), tr = TERRAIN[t.t], u = this.unitSeen(x, y);
     // 지형
-    const tk = BLD[t.t] ? `b_${BLD[t.t]}_${t.owner === 1 ? 'b' : t.owner === 2 ? 'r' : 'n'}` : `t_${t.t === 'road' ? 'road_h' : t.t === 'river' ? 'river_h' : t.t === 'bridge' ? 'bridge_h' : t.t}`;
+    const tk = BLD[t.t] ? `b_${BLD[t.t]}_${t.owner === 1 ? 'b' : t.owner === 2 ? 'r' : 'n'}` : `t_${t.t === 'road' ? 'road_h' : t.t === 'river' ? 'river_h' : t.t === 'bridge' ? 'bridge_h' : t.t === 'reef' ? 'sea' : t.t}`;
     const ti = this.add.image(ix + 56, y0 + 56, tk); ti.setScale(104 / Math.max(ti.width, ti.height)); this.info.add(ti);
     this.info.add(T(this, ix + 124, y0 + 22, tr.name, 30, C.text, { ox: 0, w: 900 }));
     for (let k = 0; k < 4; k++) this.info.add(T(this, ix + 124 + k * 30, y0 + 62, '★', 28, k < tr.def ? C.gold : '#4A4A30', { ox: 0, w: 900, shadow: false }));
     this.info.add(T(this, ix + 250, y0 + 62, `방어 ${tr.def}`, 24, C.sub, { ox: 0, w: 800 }));
-    if (tr.prop) this.info.add(T(this, ix + 124, y0 + 98, `${t.owner === 1 ? '아군' : t.owner === 2 ? '적군' : '중립'}${t.cap < 20 ? ` · 점령 ${20 - t.cap}/20` : ''}`, 24, t.owner === 1 ? C.blue : t.owner === 2 ? C.red : C.sub, { ox: 0, w: 800 }));
+    if (tr.prop) this.info.add(T(this, ix + 124, y0 + 98, `${t.owner === this.me ? '아군' : t.owner ? '적군' : '중립'}${t.cap < 20 ? ` · 점령 ${20 - t.cap}/20` : ''}`, 24, t.owner === 1 ? C.blue : t.owner === 2 ? C.red : C.sub, { ox: 0, w: 800 }));
     // 유닛
     if (u) {
       const U = UNITS[u.type], ux = 400;
@@ -221,9 +242,9 @@ export class PlayScene extends Phaser.Scene {
       this.info.add(T(this, ux + 132, y0 + 20, `${U.name}`, 32, u.p === 1 ? C.blue : C.red, { ox: 0, w: 900 }));
       const n = hpOf(u), hb = this.add.graphics(); hb.fillStyle(0x000000, 0.5).fillRoundedRect(ux + 132, y0 + 46, 260, 18, 9).fillStyle(n <= 3 ? 0xD9301E : n <= 6 ? 0xE8A21C : 0x6FCB4A, 1).fillRoundedRect(ux + 132, y0 + 46, Math.max(18, 26 * n), 18, 9); this.info.add(hb);
       this.info.add(T(this, ux + 402, y0 + 55, `${n}/10`, 24, C.text, { ox: 0, w: 900 }));
-      this.info.add(T(this, ux + 132, y0 + 92, `이동 ${this.s.moveOf(u)}${U.range ? ` · 사거리 ${this.s.rangeOf(u).join('~')}` : ' · 수송'}`, 24, C.text, { ox: 0, w: 800 }));
+      this.info.add(T(this, ux + 132, y0 + 92, `이동 ${this.s.moveOf(u)}${U.range ? ` · 사거리 ${this.s.rangeOf(u).join('~')}` : ` · 수송 ${u.cargo.length}/${U.carry.n}`}`, 24, C.text, { ox: 0, w: 800 }));
       // 상성: 강한 상대 · 조심할 상대 (각 2종)
-      const others = UNIT_ORDER.filter(t => t !== 'truck');
+      const others = UNIT_ORDER.filter(t => UNITS[t].range);
       const strong = others.slice().sort((a, b) => base(u.type, b) - base(u.type, a)).slice(0, 2).filter(t => base(u.type, t) >= 55);
       const weak = others.slice().sort((a, b) => base(b, u.type) - base(a, u.type)).slice(0, 2).filter(t => base(t, u.type) >= 55);
       let cx = 48;
@@ -233,7 +254,6 @@ export class PlayScene extends Phaser.Scene {
   }
   setActs(list) {
     this.acts.removeAll(true);
-    const idle = !list && this.s.turn === 1 && !this.busy;
     [this.endBtn, this.nextBtn, this.dangerBtn].forEach(b => b.setVisible(!list));
     if (!list) { this.updateIdle(); return; }
     const n = list.length, w = Math.min(240, (W - 80 - (n - 1) * 16) / n), y = H - 82;
@@ -243,13 +263,13 @@ export class PlayScene extends Phaser.Scene {
   // 다음 유닛 · 위험 지역
   updateIdle() {
     if (!this.nextBtn) return;
-    const left = this.s.mine(1).filter(u => !u.done && !u.inside).length;
-    this.nextBtn.setLabel(left ? `다음 유닛 ${left}` : '모두 완료').setEnabled(left > 0 && this.s.turn === 1 && !this.busy);
-    this.dangerBtn.setEnabled(this.s.turn === 1 && !this.busy);
+    const left = this.s.mine(this.me).filter(u => !u.done && !u.inside).length, h = this.human(this.s.turn);
+    this.nextBtn.setLabel(left ? `다음 유닛 ${left}` : '모두 완료').setEnabled(left > 0 && h && !this.busy);
+    this.dangerBtn.setEnabled(h && !this.busy);
   }
   nextUnit() {
-    if (this.busy || this.s.turn !== 1) return;
-    const list = this.s.mine(1).filter(u => !u.done && !u.inside).sort((a, b) => a.y - b.y || a.x - b.x);
+    if (this.busy || !this.human(this.s.turn)) return;
+    const list = this.s.mine(this.me).filter(u => !u.done && !u.inside).sort((a, b) => a.y - b.y || a.x - b.x);
     if (!list.length) return;
     this.nextIdx = ((this.nextIdx ?? -1) + 1) % list.length;
     const u = list[this.nextIdx]; this.follow(u.x, u.y); this.showInfo(u.x, u.y); this.select(u);
@@ -259,10 +279,10 @@ export class PlayScene extends Phaser.Scene {
   // 적 전부의 다음 턴 공격 범위 (빨간 그물)
   drawDanger() {
     this.dangerLayer.removeAll(true);
-    if (!this.danger || this.s.turn !== 1) return;
+    if (!this.danger || !this.human(this.s.turn)) return;
     const set = new Set();
     for (const e of this.s.units) {
-      if (e.p === 1 || e.inside) continue; const r = this.s.rangeOf(e); if (!r) continue;
+      if (e.p === this.me || e.inside || !this.vis(e)) continue; const r = this.s.rangeOf(e); if (!r) continue;
       const from = UNITS[e.type].indirect ? [[e.x, e.y]] : [...this.s.reach(e).values()].filter(v => v.stop).map(v => [v.x, v.y]);
       for (const [fx, fy] of from) for (let dx = -r[1]; dx <= r[1]; dx++) for (let dy = -r[1]; dy <= r[1]; dy++) { const dd = Math.abs(dx) + Math.abs(dy); if (dd >= r[0] && dd <= r[1] && this.s.tile(fx + dx, fy + dy)) set.add(`${fx + dx},${fy + dy}`); }
     }
@@ -275,7 +295,7 @@ export class PlayScene extends Phaser.Scene {
   }
   // 이어하기 저장 (아군 턴 시작마다)
   autosave() {
-    if (this.auto || this.mode === 'tutorial') return;
+    if (this.auto || this.mode === 'versus' || this.map.custom) return;
     try { localStorage.setItem('front_tactics_resume', JSON.stringify({ mode: this.mode, mapId: this.map.id, level: this.level, co: this.co, enemyCo: this.enemyCo, captures: this.captures, powers: this.powers, sim: this.s.snapshot(), at: Date.now() })); } catch { /* */ }
   }
 
@@ -291,8 +311,9 @@ export class PlayScene extends Phaser.Scene {
     const s = this.s; this.syncAll();
     if (s.turn === 1 && this.enemySum) { const m = this.enemySum; this.enemySum = null; this.time.delayedCall(900, () => toast(this, m, m.includes('없음') ? C.green : C.pink, TOP + 60)); }
     if (this.resumed) { this.resumed = false; toast(this, `이어하기 · DAY ${s.day}`, C.gold, TOP + 60); }
-    await this.banner(s.turn === 1 ? `DAY ${s.day}` : '적군 턴', s.turn === 1 ? '아군 턴 · 작전을 시작하세요' : COS[this.enemyCo].name + ' 장군이 움직여요', s.turn === 1 ? C.blue : C.red);
-    if (s.turn === 2) { audio.music('bgm_enemy', this); this.speed = 2; this.setActs(null); [this.endBtn, this.nextBtn, this.dangerBtn].forEach(b => b.setVisible(false)); this.skipBtn.setVisible(true); await this.enemyTurn(); }
+    if (this.mode === 'versus') { await this.handoff(); this.syncAll(); }
+    else await this.banner(s.turn === 1 ? `DAY ${s.day}` : '적군 턴', s.turn === 1 ? '아군 턴 · 작전을 시작하세요' : COS[this.enemyCo].name + ' 장군이 움직여요', s.turn === 1 ? C.blue : C.red);
+    if (!this.human(s.turn)) { audio.music('bgm_enemy', this); this.speed = 2; this.setActs(null); [this.endBtn, this.nextBtn, this.dangerBtn].forEach(b => b.setVisible(false)); this.skipBtn.setVisible(true); await this.enemyTurn(); }
     else { audio.music('bgm_battle', this); this.speed = 1; this.skipBtn.setVisible(false); this.setActs(null); this.autosave(); this.drawDanger(); if (this.auto) return this.enemyTurn(1); if (!load().tips.war) this.tutorial(); }
   }
   banner(title, sub, col) {
@@ -302,9 +323,21 @@ export class PlayScene extends Phaser.Scene {
     c.add([bg, ln, ln2, T(this, 0, -24, title, 76, C.text, { w: 900, ls: 3 }), T(this, 0, 52, sub, 30, col, { w: 800 })]);
     return new Promise(r => { this.tweens.add({ targets: c, alpha: 1, duration: 200, hold: 700 / this.speed, yoyo: true, onComplete: () => { c.destroy(); r(); } }); });
   }
+  // 2인 대전: 차례가 바뀌면 화면을 가리고 넘겨받은 사람이 눌러야 시작 (상대 진영을 못 보게)
+  handoff() {
+    const s = this.s, p = s.turn, col = p === 1 ? 0x1E4C94 : 0x8E2414;
+    audio.play('sfx_turn', { volume: 0.6 });
+    const c = this.add.container(0, 0).setDepth(990);
+    c.add(this.add.rectangle(W / 2, H / 2, W, H, col, 1).setInteractive());
+    const face = this.add.image(W / 2, H / 2 - 260, `co_${s.cos[p]}`); face.setScale(360 / face.height); c.add(face);
+    c.add(T(this, W / 2, H / 2 + 20, `${p === 1 ? '파랑' : '빨강'} 차례 · DAY ${s.day}`, 64, C.text, { w: 900 }));
+    c.add(T(this, W / 2, H / 2 + 100, `${COS[s.cos[p]].name} 지휘관에게 폰을 넘겨주세요`, 32, '#FFE9B0', { w: 800 }));
+    c.add(T(this, W / 2, H / 2 + 220, '화면을 누르면 시작', 34, C.gold, { w: 900 }));
+    return new Promise(r => c.list[0].once('pointerup', () => { c.destroy(); r(); }));
+  }
   askEnd() {
-    if (this.busy || this.s.turn !== 1) return;
-    const left = this.s.mine(1).filter(u => !u.done && !u.inside).length;
+    if (this.busy || !this.human(this.s.turn)) return;
+    const left = this.s.mine(this.me).filter(u => !u.done && !u.inside).length;
     if (!left) return this.endTurn();
     const p = popup(this, '턴 종료', 760, 520);
     p.content.add(T(this, 0, -60, `아직 움직이지 않은 유닛이 ${left}기 있어요`, 30, C.sub, { w: 800 }));
@@ -330,29 +363,40 @@ export class PlayScene extends Phaser.Scene {
       await sleep(this, 90 / this.speed);
     }
     if (this.s.over) return this.finish();
-    if (p === 2) { const lost = this.s.stats.lost[1] - before.lost, pl = before.props - this.s.props(1); const msg = [lost ? `아군 ${lost}기 손실` : '', pl > 0 ? `건물 ${pl}곳 빼앗김` : ''].filter(Boolean).join(' · '); this.enemySum = msg || '적 턴 동안 피해 없음!'; }
+    if (p === 2 && this.mode !== 'versus') { const lost = this.s.stats.lost[1] - before.lost, pl = before.props - this.s.props(1); const msg = [lost ? `아군 ${lost}기 손실` : '', pl > 0 ? `건물 ${pl}곳 빼앗김` : ''].filter(Boolean).join(' · '); this.enemySum = msg || '적 턴 동안 피해 없음!'; }
     this.busy = false; this.showInfo(null); this.startTurn();
   }
 
   // ── 사건 재생 (이동 · 공격 · 점령 · 생산 · 필살기) ──
   async drain() {
-    const evs = this.s.events.splice(0);
-    for (const e of evs) await this.playEv(e);
+    const evs = this.s.events.splice(0); this.pendingEvs = evs;
+    while (evs.length) await this.playEv(evs.shift());
     this.syncAll();
   }
   async playEv(e) {
     const sp = this.speed;
     if (e.type === 'move') {
-      const c = this.views.get(e.id), u = this.s.unit(e.id); if (!c || e.path.length < 2) return;
-      if (u && u.p === 2) { this.follow(...e.path[e.path.length - 1]); await sleep(this, 120 / this.speed); }
+      const c = this.views.get(e.id), u = this.s.unit(e.id); if (!c || !u || e.path.length < 2) return;
+      // 안개: 보이는 칸을 지나지 않는 적의 이동은 보여 주지 않음
+      const seenAny = u.p === this.me || !this.s.fog || e.path.some(([x, y]) => this.s.seen(this.me, x, y));
+      if (!seenAny) { const [px, py] = this.xy(u.x, u.y); c.setPosition(px, py); return; }
+      if (!this.human(u.p)) { this.follow(...e.path[e.path.length - 1]); await sleep(this, 120 / this.speed); }
+      c.setVisible(!u.inside);
       audio.play(MOVE_SND[UNITS[u.type].mt], { volume: 0.45, gap: 200 });
       for (let i = 1; i < e.path.length; i++) {
         const [x, y] = e.path[i], [px, py] = this.xy(x, y); this.face(c, u, x - e.path[i - 1][0]);
         await new Promise(r => this.tweens.add({ targets: c, x: px, y: py, duration: 85 / sp, onComplete: r }));
         c.setDepth(10 + y * 0.01);
       }
-    } else if (e.type === 'attack' || e.type === 'counter') await this.fight(e.a, e.d, e.dmg, e.type === 'counter');
-    else if (e.type === 'kill') {
+    } else if (e.type === 'attack' || e.type === 'counter') {
+      if (e.type === 'attack' && this.cutsceneOn()) { const nx = this.pendingEvs && this.pendingEvs[0]; const ctr = nx && nx.type === 'counter' && nx.a === e.d ? this.pendingEvs.shift() : null; await this.cutscene(e, ctr); }
+      else await this.fight(e.a, e.d, e.dmg, e.type === 'counter');
+    } else if (e.type === 'trap') {
+      const [px, py] = this.xy(e.x, e.y); audio.play('sfx_cancel', { volume: 0.8 }); this.cameras.main.shake(160, 0.006);
+      this.float(px, py - this.ts * 0.6, '매복! 적과 마주쳤어요', C.pink, 34);
+      const ex = this.views.get(e.by); if (ex) { ex.setVisible(true); this.tweens.add({ targets: ex, scale: 1.15, duration: 160, yoyo: true }); }
+      await sleep(this, 600 / sp);
+    } else if (e.type === 'kill') {
       const c = this.views.get(e.id); this.boom(...this.xy(e.x, e.y), 1.4); audio.play('sfx_explode', { volume: 0.7 });
       if (c) { this.views.delete(e.id); this.tweens.add({ targets: c, alpha: 0, scale: 0.6, duration: 300, onComplete: () => c.destroy() }); }
       await sleep(this, 260 / sp);
@@ -360,13 +404,13 @@ export class PlayScene extends Phaser.Scene {
       const [px, py] = this.xy(e.x, e.y);
       audio.play(e.done ? 'sfx_captured' : 'sfx_capture', { volume: 0.7 });
       this.drawBld(e.x, e.y);
-      if (e.done) { this.float(px, py - this.ts * 0.6, e.t === 'hq' ? '본부 점령!' : '점령 완료!', this.s.tile(e.x, e.y).owner === 1 ? C.gold : C.red, 36); if (this.s.tile(e.x, e.y).owner === 1) this.captures++; this.flash(px, py, 0xFFD45A); }
+      if (e.done) { const ow = this.s.tile(e.x, e.y).owner; this.float(px, py - this.ts * 0.6, e.t === 'hq' ? '본부 점령!' : '점령 완료!', ow === 1 ? C.gold : C.red, 36); if (ow === 1) this.captures++; this.flash(px, py, 0xFFD45A); }
       else this.float(px, py - this.ts * 0.6, `점령 ${20 - e.left}/20`, C.text, 28);
       await sleep(this, 420 / sp);
     } else if (e.type === 'build') {
       const u = this.s.unit(e.id); const c = this.makeUnit(u); c.setScale(0.3); audio.play('sfx_build', { volume: 0.6 });
       await new Promise(r => this.tweens.add({ targets: c, scale: 1, duration: 260 / sp, ease: 'Back.easeOut', onComplete: r }));
-    } else if (e.type === 'power') await this.powerFx(e.p);
+    } else if (e.type === 'power') await this.powerFx(e.p, e.lvl);
     else if (e.type === 'load') { const c = this.views.get(e.id); if (c) c.setVisible(false); }
     else if (e.type === 'unload') { const c = this.views.get(e.id), [px, py] = this.xy(e.x, e.y); if (c) { c.setVisible(true); const [fx, fy] = this.xy(...[this.s.unit(e.from).x, this.s.unit(e.from).y]); c.setPosition(fx, fy); await new Promise(r => this.tweens.add({ targets: c, x: px, y: py, duration: 160 / sp, onComplete: r })); } }
     else if (e.type === 'repair') { const c = this.views.get(e.id); if (c && c.visible) this.float(c.x, c.y - this.ts * 0.4, '+수리', C.green, 24); }
@@ -406,33 +450,35 @@ export class PlayScene extends Phaser.Scene {
   }
   flash(x, y, col) { const r = this.add.image(x, y, 'ring').setTint(col).setBlendMode('ADD').setScale(0.2).setDepth(65); this.tweens.add({ targets: r, scale: 1.2, alpha: 0, duration: 500, onComplete: () => r.destroy() }); }
   float(x, y, s, col, size = 34) { const t = T(this, x, y, s, size, col, { w: 900, stroke: '#14160A', thick: 6 }).setDepth(80); this.tweens.add({ targets: t, y: y - 50, alpha: 0, delay: 350, duration: 650, onComplete: () => t.destroy() }); }
-  async powerFx(p) {
+  async powerFx(p, lvl = 1) {
     const co = this.s.cos[p], c = this.add.container(0, H / 2).setDepth(950);
     audio.play('sfx_power', { volume: 0.8 }); this.cameras.main.flash(250, 255, 220, 140);
     const bg = this.add.rectangle(W / 2, 0, W, 300, p === 1 ? 0x1E4C94 : 0x8E2414, 0.92);
     const face = this.add.image(-200, 0, `co_${co}`); face.setScale(300 / face.height);
-    c.add([bg, face, T(this, W / 2 + 120, -40, COS[co].power, 70, C.gold, { w: 900, stroke: '#14160A', thick: 8 }), T(this, W / 2 + 120, 50, COS[co].pdesc, 28, C.text, { w: 800 })]);
+    c.add([bg, face, T(this, W / 2 + 120, -40, lvl === 2 ? COS[co].superp : COS[co].power, 70, C.gold, { w: 900, stroke: '#14160A', thick: 8 }), T(this, W / 2 + 120, 50, lvl === 2 ? COS[co].sdesc : COS[co].pdesc, 28, C.text, { w: 800, wrap: 640 })]);
+    if (lvl === 2) c.add(T(this, W / 2 + 120, -110, '초필살기', 34, '#FF8A6A', { w: 900, ls: 6 }));
     this.tweens.add({ targets: face, x: 200, duration: 300, ease: 'Back.easeOut' });
     await sleep(this, 1500 / this.speed);
     await new Promise(r => this.tweens.add({ targets: c, alpha: 0, duration: 250, onComplete: () => { c.destroy(); r(); } }));
     if (p === 1) this.powers++;
+    this.drawFog();
   }
 
   // ── 플레이어 입력 ──
   tap(p) {
-    if (this.busy || this.s.turn !== 1 || this.s.over || this.paused) return;
+    if (this.busy || !this.human(this.s.turn) || this.s.over || this.paused) return;
     if (p.y < TOP || p.y > H - BOTTOM) return;
     if (this.dragged) { this.dragged = false; return; }
     const c = this.cell(p.worldX, p.worldY); if (!c) return;
     const [x, y] = c, s = this.s;
     audio.play('sfx_click', { volume: 0.35 });
     if (this.state === 'idle') {
-      const u = s.unitAt(x, y);
+      const u = this.unitSeen(x, y), me = this.me;
       this.showInfo(x, y);
-      if (u && u.p === 1 && !u.done) return this.select(u);
-      if (u && u.p === 2) return this.showEnemyRange(u);
+      if (u && u.p === me && !u.done) return this.select(u);
+      if (u && u.p !== me) return this.showEnemyRange(u);
       const t = s.tile(x, y);
-      if (!u && t.owner === 1 && TERRAIN[t.t].builds) return this.buildMenu(x, y);
+      if (!u && !s.unitAt(x, y) && t.owner === me && TERRAIN[t.t].builds) return this.buildMenu(x, y);
       this.clearHl(); return;
     }
     if (this.state === 'move') {
@@ -441,7 +487,7 @@ export class PlayScene extends Phaser.Scene {
       this.cancelSel(); return this.tap(p);
     }
     if (this.state === 'target') {
-      const e = s.unitAt(x, y);
+      const e = this.unitSeen(x, y);
       if (e && this.tgts.includes(e)) { if (this.pending === e) return this.doAttack(e); return this.preview(e); }
       this.toAct(); return;
     }
@@ -483,6 +529,8 @@ export class PlayScene extends Phaser.Scene {
   }
   async moveTo(x, y) {
     const u = this.sel, c = this.views.get(u.id), path = this.s.path(this.reach, x, y);
+    // 안개: 길 위에 숨은 적이 있으면 바로 확정 (매복 처리)
+    if (this.s.fog && path.slice(1).some(([px, py]) => { const o = this.s.unitAt(px, py); return o && o.p !== u.p; })) { this.ghost = [x, y]; return this.commit(() => {}); }
     this.clearHl(); this.busy = true;
     if (path.length > 1) { audio.play(MOVE_SND[UNITS[u.type].mt], { volume: 0.45 }); for (let i = 1; i < path.length; i++) { const [px, py] = this.xy(...path[i]); this.face(c, u, path[i][0] - path[i - 1][0]); await new Promise(r => this.tweens.add({ targets: c, x: px, y: py, duration: 70, onComplete: r })); } }
     c.setDepth(10 + y * 0.01);
@@ -500,12 +548,13 @@ export class PlayScene extends Phaser.Scene {
     this.tgts = s.targets(u, x, y, moved);
     const t = s.tile(x, y), list = [];
     if (this.tgts.length) list.push(['공격', () => this.toTarget(), 'red']);
-    if (UNITS[u.type].capture && TERRAIN[t.t].prop && t.owner !== 1) list.push(['점령', () => this.commit(() => s.capture(u.id)), 'gold']);
-    if (u.cargo) { const sv = [u.x, u.y]; u.x = x; u.y = y; this.spotsCache = s.unloadSpots(u); u.x = sv[0]; u.y = sv[1]; if (this.spotsCache.length) list.push(['하차', () => this.toUnload(), 'blue']); }
+    if (UNITS[u.type].capture && TERRAIN[t.t].prop && t.owner !== u.p) list.push(['점령', () => this.commit(() => s.capture(u.id)), 'gold']);
+    if (u.cargo.length) { const sv = [u.x, u.y]; u.x = x; u.y = y; this.spotsCache = s.unloadSpots(u); u.x = sv[0]; u.y = sv[1]; if (this.spotsCache.length) list.push(['하차', () => this.toUnload(), 'blue']); }
     list.push(['대기', () => this.commit(() => s.wait(u.id)), 'olive']);
     list.push(['취소', () => this.cancelSel(), 'ghost']);
     this.setActs(list); this.showInfo(x, y);
-    if (UNITS[u.type].indirect && moved && s.rangeOf(u)) toast(this, '야포·로켓포는 이동한 턴에 쏠 수 없어요', C.sub, TOP + 60);
+    if (UNITS[u.type].indirect && moved && s.rangeOf(u)) toast(this, '원거리 무기는 이동한 턴에 쏠 수 없어요', C.sub, TOP + 60);
+    if (u.cargo.length && !this.spotsCache.length && UNITS[u.type].dom === 'sea') toast(this, '상륙정은 모래사장·항구에서 내릴 수 있어요', C.sub, TOP + 60);
   }
   toTarget() {
     this.state = 'target'; this.clearHl();
@@ -526,14 +575,29 @@ export class PlayScene extends Phaser.Scene {
       this.info.add(T(this, bx + 124, y0 + 76, val, 40, col, { ox: 0, w: 900 }));
     };
     const eAfter = Math.max(0, Math.ceil((e.hp - f.dmg) / 10)), uAfter = Math.max(0, Math.ceil((u.hp - f.counter) / 10));
-    box(30, `u_${e.type}_r`, `${UNITS[e.type].name} 피해`, f.kill ? '격파!' : `${hpOf(e)} → ${eAfter}`, f.kill ? C.gold : '#FFE27A');
-    box(530, `u_${u.type}_b`, '반격', f.counter ? `${hpOf(u)} → ${uAfter}` : '없음', f.counter ? C.pink : C.green);
+    box(30, `u_${e.type}_${TEAMS[e.p]}`, `${UNITS[e.type].name} 피해`, f.kill ? '격파!' : `${hpOf(e)} → ${eAfter}`, f.kill ? C.gold : '#FFE27A');
+    box(530, `u_${u.type}_${TEAMS[u.p]}`, '반격', f.counter ? `${hpOf(u)} → ${uAfter}` : '없음', f.counter ? C.pink : C.green);
     this.setActs([['공격!', () => this.doAttack(e), 'red'], ['뒤로', () => this.toAct(), 'ghost']]);
     this.clearHl(); for (const t of this.tgts) this.mark(t.x, t.y, 0xFF5040, t === e ? 0.6 : 0.2, t !== e);
   }
   doAttack(e) { const id = this.sel.id; this.commit(() => this.s.attack(id, e.id)); }
-  toUnload() { this.state = 'unload'; this.clearHl(); this.spots = this.spotsCache; for (const [x, y] of this.spots) this.mark(x, y, 0x5AFFA0, 0.45); this.setActs([['뒤로', () => this.toAct(), 'ghost']]); }
-  doUnload(x, y) { const id = this.sel.id; this.commit(() => this.s.unload(id, x, y)); }
+  toUnload() { this.unloadList = []; this.nextUnloadSpot(); }
+  nextUnloadSpot() {
+    const u = this.sel, taken = this.unloadList;
+    this.state = 'unload'; this.clearHl();
+    this.spots = this.spotsCache.filter(([a, b]) => !taken.some(([c, d]) => a === c && b === d));
+    for (const [x, y] of this.spots) this.mark(x, y, 0x5AFFA0, 0.45);
+    for (const [x, y] of taken) this.mark(x, y, 0xFFE27A, 0.5);
+    const more = taken.length > 0;
+    this.setActs(more ? [['여기까지', () => this.doUnloadAll(), 'gold'], ['뒤로', () => this.toAct(), 'ghost']] : [['뒤로', () => this.toAct(), 'ghost']]);
+    toast(this, `${taken.length + 1}번째로 내릴 자리를 누르세요`, C.sub, TOP + 60);
+  }
+  doUnload(x, y) {
+    this.unloadList.push([x, y]);
+    const u = this.sel; if (this.unloadList.length < u.cargo.length && this.spots.length > 1) return this.nextUnloadSpot();
+    this.doUnloadAll();
+  }
+  doUnloadAll() { const id = this.sel.id, list = this.unloadList.slice(); this.commit(() => { for (const [x, y] of list) this.s.unload(id, x, y); const t = this.s.unit(id); if (t && !t.done) this.s.wait(id); }); }
   // 이동 확정 + 행동
   async commit(act) {
     const u = this.sel, [x, y] = this.ghost;
@@ -541,7 +605,7 @@ export class PlayScene extends Phaser.Scene {
     const c = this.views.get(u.id), [ox, oy] = this.xy(u.x, u.y); c.setPosition(ox, oy);   // 이동은 이미 보여 줬으므로 기록만
     try {
     this.s.move(u.id, x, y); this.s.events = this.s.events.filter(e => e.type !== 'move');
-    const [px, py] = this.xy(x, y); c.setPosition(px, py);
+    const [px, py] = this.xy(u.x, u.y); c.setPosition(px, py);
     if (this.s.unit(u.id) && !this.s.unit(u.id).done) act();
     this.sel = null; this.ghost = null; this.state = 'idle';
     await this.drain();
@@ -549,17 +613,17 @@ export class PlayScene extends Phaser.Scene {
     this.sel = null; this.ghost = null; this.state = 'idle'; this.busy = false; this.showInfo(null); this.updateHud(); this.updateIdle(); this.drawDanger();
     if (this.s.over) return this.finish();
     // 모두 움직였으면 턴 종료 버튼 반짝
-    if (!this.s.mine(1).some(u2 => !u2.done && !u2.inside)) this.tweens.add({ targets: this.endBtn, scale: 1.08, duration: 260, yoyo: true, repeat: 3 });
+    if (!this.s.mine(this.me).some(u2 => !u2.done && !u2.inside)) this.tweens.add({ targets: this.endBtn, scale: 1.08, duration: 260, yoyo: true, repeat: 3 });
   }
   buildMenu(x, y) {
-    const kind = TERRAIN[this.s.tile(x, y).t].builds, list = UNIT_ORDER.filter(t => (kind === 'air') === !!UNITS[t].air);
+    const kind = TERRAIN[this.s.tile(x, y).t].builds, list = UNIT_ORDER.filter(t => UNITS[t].dom === kind), me = this.me;
     const rows = Math.ceil(list.length / 2), ph = 260 + rows * 170;
-    const p = popup(this, kind === 'air' ? '비행장 생산' : '기지 생산', 980, ph);
-    p.content.add(T(this, 0, -ph / 2 + 140, `자금 ${fmt(this.s.funds[1])} · 만든 유닛은 다음 턴부터 움직여요`, 26, C.sub, { w: 800 }));
+    const p = popup(this, { ground: '기지 생산', air: '비행장 생산', sea: '항구 생산' }[kind], 980, ph);
+    p.content.add(T(this, 0, -ph / 2 + 140, `자금 ${fmt(this.s.funds[me])} · 만든 유닛은 다음 턴부터 움직여요`, 26, C.sub, { w: 800 }));
     list.forEach((t, i) => {
-      const U = UNITS[t], bx = (i % 2 ? 1 : -1) * 232, by = -ph / 2 + 260 + Math.floor(i / 2) * 170, ok = this.s.funds[1] >= U.cost;
+      const U = UNITS[t], bx = (i % 2 ? 1 : -1) * 232, by = -ph / 2 + 260 + Math.floor(i / 2) * 170, ok = this.s.funds[me] >= U.cost;
       const g = this.add.graphics(); g.fillStyle(0x000000, ok ? 0.28 : 0.12).fillRoundedRect(bx - 222, by - 76, 444, 152, 20).lineStyle(2, ok ? 0xFFD45A : 0x666655, 0.6).strokeRoundedRect(bx - 222, by - 76, 444, 152, 20); p.content.add(g);
-      const im = this.add.image(bx - 150, by, `u_${t}_b`).setAlpha(ok ? 1 : 0.4); im.setScale(130 / Math.max(im.width, im.height)); p.content.add(im);
+      const im = this.add.image(bx - 150, by, `u_${t}_${TEAMS[me]}`).setAlpha(ok ? 1 : 0.4); im.setScale(130 / Math.max(im.width, im.height)); p.content.add(im);
       p.content.add(T(this, bx - 70, by - 36, U.name, 30, ok ? C.text : C.dim, { ox: 0, w: 900 }));
       p.content.add(T(this, bx - 70, by + 6, fmt(U.cost), 28, ok ? C.gold : C.dim, { ox: 0, w: 900 }));
       p.content.add(T(this, bx - 70, by + 44, U.desc, 18, C.sub, { ox: 0, w: 700, wrap: 280 }));
@@ -567,7 +631,17 @@ export class PlayScene extends Phaser.Scene {
       z.on('pointerup', () => { if (!ok) return toast(this, '자금이 부족해요', C.sub); p.close(); this.s.build(x, y, t); this.drain().then(() => this.updateHud()); });
     });
   }
-  async usePower() { if (this.busy || !this.s.powerReady(1)) return; this.busy = true; this.s.usePower(); await this.drain(); this.busy = false; this.updateHud(); }
+  usePower() {
+    const me = this.me, co = COS[this.s.cos[me]];
+    if (this.busy || !this.s.powerReady(me, 1)) return;
+    if (!this.s.powerReady(me, 2)) return this.firePower(1);
+    const p = popup(this, '필살기 선택', 900, 700);
+    p.content.add(btn(this, 0, -120, 700, 150, `필살기 · ${co.power}`, () => { p.close(); this.firePower(1); }, { style: 'olive', size: 34 }));
+    p.content.add(T(this, 0, -30, co.pdesc, 24, C.sub, { w: 800 }));
+    p.content.add(btn(this, 0, 110, 700, 150, `초필살기 · ${co.superp}`, () => { p.close(); this.firePower(2); }, { style: 'red', size: 34 }));
+    p.content.add(T(this, 0, 200, co.sdesc, 24, C.sub, { w: 800 }));
+  }
+  async firePower(lvl) { this.busy = true; this.s.usePower(lvl); await this.drain(); this.busy = false; this.updateHud(); }
   tutorial() {
     const d = load(); d.tips.war = 1; save();
     const p = popup(this, '작전 안내', 940, 900);
@@ -582,19 +656,77 @@ export class PlayScene extends Phaser.Scene {
   pause() {
     if (this.paused) return; this.paused = true;
     const resume = () => { p.close(); this.time.delayedCall(150, () => { this.paused = false; }); };
-    const p = popup(this, '작전 일시정지', 820, 780, { closable: false, onBack: () => resume() });
-    p.content.add(btn(this, 0, -170, 520, 130, '계속하기', resume, { style: 'gold', icon: 'i_play', size: 40 }));
-    p.content.add(btn(this, 0, -20, 520, 100, `속도 ${this.speed === 1 ? '보통' : '빠르게'}`, () => { this.speed = this.speed === 1 ? 2 : 1; resume(); toast(this, this.speed === 2 ? '적 턴을 빠르게 보여 줘요' : '보통 속도', C.sub); }, { style: 'olive', size: 32 }));
-    p.content.add(btn(this, 0, 110, 420, 96, '항복하고 나가기', () => { p.close(); this.paused = false; this.s.over = true; this.s.winner = 2; this.finish(true); }, { style: 'red', size: 30 }));
+    const p = popup(this, '작전 일시정지', 820, 900, { closable: false, onBack: () => resume() });
+    p.content.add(btn(this, 0, -230, 520, 130, '계속하기', resume, { style: 'gold', icon: 'i_play', size: 40 }));
+    p.content.add(btn(this, 0, -80, 520, 100, `속도 ${this.speed === 1 ? '보통' : '빠르게'}`, () => { this.speed = this.speed === 1 ? 2 : 1; resume(); toast(this, this.speed === 2 ? '적 턴을 빠르게 보여 줘요' : '보통 속도', C.sub); }, { style: 'olive', size: 32 }));
+    const d = load(), cut = btn(this, 0, 50, 520, 100, `전투 장면 ${d.cutscene === false ? '끔' : '켬'}`, () => { d.cutscene = d.cutscene === false; save(); cut.setLabel(`전투 장면 ${d.cutscene === false ? '끔' : '켬'}`); }, { style: 'olive', size: 32 }); p.content.add(cut);
+    p.content.add(btn(this, 0, 180, 420, 96, '항복하고 나가기', () => { p.close(); this.paused = false; this.s.over = true; this.s.winner = this.foe; this.finish(true); }, { style: 'red', size: 30 }));
+  }
+
+  // ── 전투 장면 (원작처럼 양쪽 부대가 마주 보고 싸우는 컷신) ──
+  cutsceneOn() { return load().cutscene !== false && this.speed <= 2; }
+  async cutscene(e, ctr) {
+    const s = this.s, ap = e.ap, A = { type: e.aType, p: ap, hp: e.aHp }, D = { type: e.dType, p: ap === 1 ? 2 : 1, hp: e.dHp };
+    const au = s.unit(e.a), du = s.unit(e.d);
+    const tileOf = u => (u ? s.tile(u.x, u.y).t : 'plain');
+    const L = ap === 1 ? A : D, Rr = ap === 1 ? D : A;   // 파랑은 왼쪽 · 빨강은 오른쪽
+    L.t = L === A ? tileOf(au) : tileOf(du); Rr.t = Rr === A ? tileOf(au) : tileOf(du);
+    const c = this.add.container(0, 0).setDepth(960).setScrollFactor(0), cy = H / 2, bh = 560;
+    let skip = false;
+    const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x0A0C06, 0.75).setInteractive(); dim.on('pointerup', () => { skip = true; }); c.add(dim);
+    const side = (S, x0) => {
+      const key = { road: 't_road_h', river: 't_river_h', bridge: 't_bridge_h', city: 't_plain', base: 't_plain', air: 't_plain', port: 't_sea', hq: 't_plain' }[S.t] || `t_${S.t}`;
+      const bg = this.add.image(x0 + W / 4, cy, this.textures.exists(key) ? key : 't_plain').setDisplaySize(W / 2, bh); c.add(bg);
+      c.add(this.add.rectangle(x0 + W / 4, cy - bh / 2 + 70, W / 2, 140, 0x000000, 0.25));
+      c.add(this.add.rectangle(x0 + W / 4, cy, W / 2 - 6, bh, 0, 0).setStrokeStyle(6, S.p === 1 ? 0x3E7FD8 : 0xD9472E));
+      S.x0 = x0; S.sprites = [];
+      const foot = FOOT.includes(S.type), n = foot ? Math.max(1, Math.ceil(S.hp / 20)) : 1, key2 = `u_${S.type}_${TEAMS[S.p]}`;
+      const slots = foot ? [[0.3, 0.38], [0.65, 0.3], [0.45, 0.55], [0.75, 0.6], [0.25, 0.72]] : [[0.5, 0.52]];
+      for (let i = 0; i < n; i++) { const [fx, fy] = slots[i]; const im = this.add.image(x0 + (S.p === 1 ? fx : 1 - fx) * W / 2, cy - bh / 2 + fy * bh + 60, key2); im.setScale((foot ? 190 : 360) / Math.max(im.width, im.height)); if (UNITS[S.type].dom === 'air') im.y -= 60; c.add(im); S.sprites.push(im); }
+      S.hpT = T(this, x0 + W / 4, cy - bh / 2 + 50, '', 46, C.text, { w: 900, stroke: '#14160A', thick: 8 }); c.add(S.hpT); S.hpT.setText(`${UNITS[S.type].name}  ${Math.ceil(S.hp / 10)}`);
+    };
+    side(L, 0); side(Rr, W / 2);
+    c.add(this.add.rectangle(W / 2, cy, 8, bh, 0x14160A));
+    c.setAlpha(0); await new Promise(r => this.tweens.add({ targets: c, alpha: 1, duration: 160, onComplete: r }));
+    const wait = ms => skip ? Promise.resolve() : sleep(this, ms);
+    const strike = async (Atk, Def, dmg) => {
+      if (!Atk.sprites.length) return;
+      audio.play(SND[Atk.type], { volume: 0.7 });
+      for (const im of Atk.sprites) { const dx = Atk.p === 1 ? 24 : -24; this.tweens.add({ targets: im, x: im.x + dx, duration: 90, yoyo: true }); }
+      const shots = UNITS[Atk.type].indirect ? 2 : FOOT.includes(Atk.type) ? Atk.sprites.length * 2 : 4;
+      for (let k = 0; k < shots; k++) {
+        const from = Atk.sprites[k % Atk.sprites.length], to = Def.sprites[k % Math.max(1, Def.sprites.length)] || { x: Def.x0 + W / 4, y: cy };
+        const b = this.add.image(from.x + (Atk.p === 1 ? 60 : -60), from.y - 20, 'glow').setTint(0xFFF0A0).setBlendMode('ADD').setScale(0.25); c.add(b);
+        const mz = this.add.image(b.x, b.y, 'glow').setTint(0xFFD060).setBlendMode('ADD').setScale(0.5); c.add(mz); this.tweens.add({ targets: mz, alpha: 0, scale: 0.9, duration: 120, onComplete: () => mz.destroy() });
+        this.tweens.add({ targets: b, x: to.x, y: to.y - 10, duration: 220, delay: k * 70, onComplete: () => { b.destroy(); const f = this.add.image(to.x, to.y, 'glow').setTint(0xFFB050).setBlendMode('ADD').setScale(0.3); c.add(f); this.tweens.add({ targets: f, scale: 1.3, alpha: 0, duration: 260, onComplete: () => f.destroy() }); } });
+      }
+      await wait(260 + shots * 70);
+      if (dmg > 0) { audio.play(dmg > 40 ? 'sfx_explode' : 'sfx_mg', { volume: 0.6 }); this.cameras.main.shake(120, 0.005); }
+      for (const im of Def.sprites) this.tweens.add({ targets: im, x: im.x + 10, duration: 40, yoyo: true, repeat: 3 });
+      const before = Def.hp; Def.hp = Math.max(0, Def.hp - dmg);
+      this.tweens.addCounter({ from: Math.ceil(before / 10), to: Math.ceil(Def.hp / 10), duration: 400, onUpdate: tw => Def.hpT.setText(`${UNITS[Def.type].name}  ${Math.round(tw.getValue())}`) });
+      const keep = FOOT.includes(Def.type) ? Math.ceil(Def.hp / 20) : Def.hp > 0 ? 1 : 0;
+      while (Def.sprites.length > keep) { const im = Def.sprites.pop(); this.tweens.add({ targets: im, alpha: 0, y: im.y + 30, angle: Def.p === 1 ? -25 : 25, duration: 360, onComplete: () => im.destroy() }); }
+      await wait(520);
+    };
+    await strike(A, D, e.dmg);
+    if (ctr && D.hp > 0) await strike(D, A, ctr.dmg);
+    await wait(250);
+    await new Promise(r => this.tweens.add({ targets: c, alpha: 0, duration: 160, onComplete: () => { c.destroy(); r(); } }));
   }
 
   // ── 끝 ──
   finish(surrender) {
     if (this.ended) return; this.ended = true; this.busy = true;
     const s = this.s, win = s.winner === 1;
-    audio.stopMusic(); audio.play(win ? 'sfx_win' : 'sfx_lose', { volume: 0.8 });
-    const r = { mode: this.mode, mapId: this.map.id, win, day: s.day, lost: s.stats.lost[1], kills: s.stats.kills[1], captures: this.captures, built: s.stats.built[1], powers: this.powers, co: this.co, why: surrender ? 'surrender' : this.winWhy };
+    audio.stopMusic(); audio.play(win || this.mode === 'versus' ? 'sfx_win' : 'sfx_lose', { volume: 0.8 });
     try { localStorage.removeItem('front_tactics_resume'); } catch { /* */ }
+    if (this.mode === 'versus') {   // 2인 대전: 기록·경험치 없이 승자만
+      const r = { mode: 'versus', winner: s.winner, day: s.day, cos: s.cos.slice(), kills: s.stats.kills.slice(), lost: s.stats.lost.slice(), mapId: this.map.id, custom: this.map.custom ? this.map : null, why: surrender ? 'surrender' : this.winWhy };
+      this.time.delayedCall(surrender ? 100 : 900, () => { this.cameras.main.fadeOut(500, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', r)); });
+      return;
+    }
+    const r = { mode: this.mode, mapId: this.map.id, win, day: s.day, lost: s.stats.lost[1], kills: s.stats.kills[1], captures: this.captures, built: s.stats.built[1], powers: this.powers, co: this.co, why: surrender ? 'surrender' : this.winWhy };
     const res = M.finish(r);
     this.time.delayedCall(surrender ? 100 : 900, () => { this.cameras.main.fadeOut(500, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', { ...r, ...res, level: this.level, enemyCo: this.enemyCo })); });
   }

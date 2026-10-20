@@ -1,10 +1,10 @@
 // 홈: 계급 · 캠페인 · 오늘의 작전 · 자유 대전 · 지휘관 · 오늘의 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.10.8';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.8';
-import { audio } from '../audio.js?v=0.10.8';
-import { load } from '../save.js?v=0.10.8';
-import * as M from '../meta.js?v=0.10.8';
-import { COS } from '../core/data.js?v=0.10.8';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.11.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.0';
+import { audio } from '../audio.js?v=0.11.0';
+import { load } from '../save.js?v=0.11.0';
+import * as M from '../meta.js?v=0.11.0';
+import { COS } from '../core/data.js?v=0.11.0';
 
 // 계급장: 이병~병장 갈매기 · 부사관 · 장교 다이아 · 장성 별
 export function insignia(scene, x, y, k, s = 1) {
@@ -68,21 +68,22 @@ export class HomeScene extends Phaser.Scene {
     this.add.existing(panel(this, W / 2 + hw / 2 + 6, y, hw, 270));
     T(this, W / 2 + 36, y - 96, 'SKIRMISH', 20, C.green, { ox: 0, w: 900, ls: 3 });
     T(this, W / 2 + 36, y - 52, '자유 대전', 40, C.text, { ox: 0, w: 900 });
-    T(this, W / 2 + 36, y - 4, '지도 · 지휘관 · 난이도', 24, C.sub, { ox: 0, w: 800 });
-    btn(this, W / 2 + hw / 2 + 6, y + 80, hw - 70, 90, '시작', () => this.go('Brief', { mode: 'free' }), { style: 'olive', size: 32 });
+    T(this, W / 2 + 36, y - 4, 'AI 대전 · 둘이서 · 내 지도', 24, C.sub, { ox: 0, w: 800 });
+    btn(this, W / 2 + hw / 2 + 6 - 108, y + 80, 200, 90, '시작', () => this.go('Brief', { mode: 'free' }), { style: 'olive', size: 30 });
+    btn(this, W / 2 + hw / 2 + 6 + 108, y + 80, 200, 90, '지도 제작', () => this.go('Editor'), { style: 'ghost', size: 26 });
     // 지휘관
     y += 290 + sp;
-    T(this, 50, y - 110, '지휘관', 34, C.text, { ox: 0, w: 900 });
+    T(this, 50, y - 110, `지휘관 ${Object.keys(COS).filter(k => d.cos[k]).length}/${Object.keys(COS).length}`, 34, C.text, { ox: 0, w: 900 });
     Object.keys(COS).forEach((k, i) => {
-      const x = 130 + i * 230, own = d.cos[k];
-      const fr = this.add.image(x, y + 10, `co_${k}`); fr.setScale(180 / fr.height); if (!own) fr.setTint(0x333333);
-      const m = this.make.graphics(); m.fillRoundedRect(x - 95, y - 80, 190, 180, 20); fr.setMask(m.createGeometryMask());
-      this.add.graphics().lineStyle(4, own ? COS[k].color : 0x555544, 1).strokeRoundedRect(x - 95, y - 80, 190, 180, 20);
-      T(this, x, y + 124, own ? `${COS[k].name} Lv${M.coLevel(k)}` : '잠김', 26, own ? C.text : C.dim, { w: 900 });
-      const z = this.add.zone(x, y + 10, 190, 180).setInteractive({ useHandCursor: true }); z.on('pointerup', () => this.coInfo(k));
+      const sz = 112, x = 40 + sz / 2 + i * (sz + 12), cy = y - 10, own = d.cos[k];
+      const fr = this.add.image(x, cy, `co_${k}`); fr.setScale((sz + 30) / fr.height); if (!own) fr.setTint(0x333333);
+      const m = this.make.graphics(); m.fillRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16); fr.setMask(m.createGeometryMask());
+      this.add.graphics().lineStyle(3, own ? COS[k].color : 0x555544, 1).strokeRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16);
+      T(this, x, cy + 80, own ? COS[k].name : '잠김', 22, own ? C.text : C.dim, { w: 900 });
+      const z = this.add.zone(x, cy, sz, sz).setInteractive({ useHandCursor: true }); z.on('pointerup', () => this.coInfo(k));
     });
     // 미션
-    this.my = y + 360 + sp; this.drawMissions();
+    this.my = y + 290 + sp; this.drawMissions();
     audio.music('bgm_lobby', this);
     this.cameras.main.fadeIn(260, 20, 22, 10);
     if (ci) this.time.delayedCall(400, () => toast(this, `${ci.count}일 연속 출석 · 훈장 +${ci.bonus}`, C.gold, 260));
@@ -100,11 +101,13 @@ export class HomeScene extends Phaser.Scene {
     const im = p.content.add(this.add.image(-230, -60, `co_${k}`)); im.setScale(420 / im.height);
     p.content.add(T(this, 40, -230, '특성', 26, C.gold, { ox: 0, w: 900 }));
     p.content.add(T(this, 40, -190, co.desc, 28, C.text, { ox: 0, w: 800, wrap: 380 }));
-    p.content.add(T(this, 40, -80, `필살기 · ${co.power}`, 26, C.gold, { ox: 0, w: 900 }));
-    p.content.add(T(this, 40, -40, co.pdesc, 26, C.text, { ox: 0, w: 800, wrap: 380 }));
+    p.content.add(T(this, 40, -100, `필살기 · ${co.power}`, 26, C.gold, { ox: 0, w: 900 }));
+    p.content.add(T(this, 40, -64, co.pdesc, 22, C.text, { ox: 0, w: 800, wrap: 380 }));
+    p.content.add(T(this, 40, 0, `초필살기 · ${co.superp}`, 26, '#FF8A6A', { ox: 0, w: 900 }));
+    p.content.add(T(this, 40, 36, co.sdesc, 22, C.text, { ox: 0, w: 800, wrap: 380 }));
     const st = M.STAGES.find(s => s.unlockCo === k);
-    if (!own) p.content.add(T(this, 40, 90, st ? `캠페인 ${st.n}. ${st.name} 승리로 합류` : '', 26, C.sub, { ox: 0, w: 800, wrap: 380 }));
-    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.10.8').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
+    if (!own) p.content.add(T(this, 40, 130, st ? `캠페인 ${st.n}. ${st.name} 승리로 합류` : '', 26, C.sub, { ox: 0, w: 800, wrap: 380 }));
+    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.11.0').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
   }
   drawMissions() {
     if (this.mBox) this.mBox.destroy();
@@ -121,9 +124,9 @@ export class HomeScene extends Phaser.Scene {
     });
   }
   settings() {
-    const d = load(), pop = popup(this, '설정', 760, 540);
+    const d = load(), pop = popup(this, '설정', 760, 620);
     const row = (y, label, on, fn) => { pop.content.add(T(this, -260, y, label, 40, C.text, { ox: 0 })); const b = btn(this, 200, y, 220, 96, on ? '켜짐' : '꺼짐', () => { fn(); b.setLabel(b.label.text === '켜짐' ? '꺼짐' : '켜짐'); }, { style: on ? 'green' : 'ghost', size: 34 }); pop.content.add(b); };
-    row(-60, '효과음', d.sfx, () => audio.toggleSfx()); row(80, '배경음악', d.music, () => audio.toggleMusic());
+    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.11.0').then(m => m.save()); });
   }
   go(k, data) { audio.stopMusic(); this.cameras.main.fadeOut(220, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(k, data)); }
 }

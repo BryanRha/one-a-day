@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.7';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.7';
-import { audio } from '../audio.js?v=0.10.7';
-import { load, save } from '../save.js?v=0.10.7';
-import * as M from '../meta.js?v=0.10.7';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.7';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.7';
-import { AI, apply } from '../core/ai.js?v=0.10.7';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, base } from '../core/data.js?v=0.10.7';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.10.7';
+import { W, H } from '../config.js?v=0.10.8';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.8';
+import { audio } from '../audio.js?v=0.10.8';
+import { load, save } from '../save.js?v=0.10.8';
+import * as M from '../meta.js?v=0.10.8';
+import { inOAD, exitToOAD } from '../oad.js?v=0.10.8';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.8';
+import { AI, apply } from '../core/ai.js?v=0.10.8';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, base } from '../core/data.js?v=0.10.8';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.10.8';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -21,6 +21,8 @@ export class PlayScene extends Phaser.Scene {
   constructor() { super('Play'); }
   create(data = {}) {
     const d = load();
+    // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 쓰므로 지난 판 값이 남으면 끝나지 않거나 멈춤)
+    Object.assign(this, { ended: false, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
     this.mode = data.mode || 'free';
     this.map = MAPS.find(m => m.id === data.mapId) || MAPS[0];
     this.simMap = this.mode === 'campaign' || this.mode === 'daily' ? campaignMap(this.map) : this.map;
@@ -321,8 +323,9 @@ export class PlayScene extends Phaser.Scene {
     const ai = p === 2 ? this.ai : (this.autoAi ||= new AI('hard'));
     let guard = 0;
     while (this.s.turn === p && !this.s.over && guard++ < 400) {
-      const a = ai.next(this.s);
-      apply(this.s, a); await this.drain(a);
+      let a = { kind: 'end' };
+      try { a = ai.next(this.s); apply(this.s, a); await this.drain(a); }
+      catch (err) { console.warn('적 턴 오류 — 턴을 넘김', err); this.s.events.length = 0; if (this.s.turn === p) this.s.endTurn(); this.s.events.length = 0; break; }
       if (a.kind === 'end') break;
       await sleep(this, 90 / this.speed);
     }
@@ -536,11 +539,14 @@ export class PlayScene extends Phaser.Scene {
     const u = this.sel, [x, y] = this.ghost;
     this.busy = true; this.clearHl(); this.setActs(null);
     const c = this.views.get(u.id), [ox, oy] = this.xy(u.x, u.y); c.setPosition(ox, oy);   // 이동은 이미 보여 줬으므로 기록만
+    try {
     this.s.move(u.id, x, y); this.s.events = this.s.events.filter(e => e.type !== 'move');
     const [px, py] = this.xy(x, y); c.setPosition(px, py);
     if (this.s.unit(u.id) && !this.s.unit(u.id).done) act();
     this.sel = null; this.ghost = null; this.state = 'idle';
-    await this.drain(); this.busy = false; this.showInfo(null); this.updateHud(); this.updateIdle(); this.drawDanger();
+    await this.drain();
+    } catch (err) { console.warn('행동 처리 오류', err); this.s.events.length = 0; this.syncAll(); }
+    this.sel = null; this.ghost = null; this.state = 'idle'; this.busy = false; this.showInfo(null); this.updateHud(); this.updateIdle(); this.drawDanger();
     if (this.s.over) return this.finish();
     // 모두 움직였으면 턴 종료 버튼 반짝
     if (!this.s.mine(1).some(u2 => !u2.done && !u2.inside)) this.tweens.add({ targets: this.endBtn, scale: 1.08, duration: 260, yoyo: true, repeat: 3 });

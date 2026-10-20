@@ -1,10 +1,10 @@
 // 홈: 계급 · 캠페인 · 오늘의 작전 · 자유 대전 · 지휘관 · 오늘의 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.10.7';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.7';
-import { audio } from '../audio.js?v=0.10.7';
-import { load } from '../save.js?v=0.10.7';
-import * as M from '../meta.js?v=0.10.7';
-import { COS } from '../core/data.js?v=0.10.7';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.10.8';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.8';
+import { audio } from '../audio.js?v=0.10.8';
+import { load } from '../save.js?v=0.10.8';
+import * as M from '../meta.js?v=0.10.8';
+import { COS } from '../core/data.js?v=0.10.8';
 
 // 계급장: 이병~병장 갈매기 · 부사관 · 장교 다이아 · 장성 별
 export function insignia(scene, x, y, k, s = 1) {
@@ -22,7 +22,7 @@ function star(g, x, y, r, col) { const pts = []; for (let i = 0; i < 10; i++) { 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
   create() {
-    const d = load(), ci = M.checkIn(), sp = Math.max(0, (H - 1920) / 6);
+    const d = load(), ci = M.checkIn(), sp = Math.max(0, (H - 1920) / 6); this.mBox = null;
     this.add.rectangle(W / 2, H / 2, W, H, 0x262A14);
     // 키 아트 + 아래로 배경색에 스며들게 + 제목
     const k = this.add.image(W / 2, 150, 'key_art').setOrigin(0.5, 0); k.setScale(W / k.width);
@@ -104,7 +104,7 @@ export class HomeScene extends Phaser.Scene {
     p.content.add(T(this, 40, -40, co.pdesc, 26, C.text, { ox: 0, w: 800, wrap: 380 }));
     const st = M.STAGES.find(s => s.unlockCo === k);
     if (!own) p.content.add(T(this, 40, 90, st ? `캠페인 ${st.n}. ${st.name} 승리로 합류` : '', 26, C.sub, { ox: 0, w: 800, wrap: 380 }));
-    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.10.7').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
+    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.10.8').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
   }
   drawMissions() {
     if (this.mBox) this.mBox.destroy();

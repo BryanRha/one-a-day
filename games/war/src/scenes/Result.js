@@ -1,12 +1,12 @@
 // 작전 결과: 승패 · 별 · 전과 · 경험치 · 계급 · 새 지휘관
-import { W, H } from '../config.js?v=0.10.7';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.10.7';
-import { audio } from '../audio.js?v=0.10.7';
-import { load } from '../save.js?v=0.10.7';
-import * as M from '../meta.js?v=0.10.7';
-import { COS } from '../core/data.js?v=0.10.7';
-import { MAPS } from '../core/maps.js?v=0.10.7';
-import { insignia } from './Home.js?v=0.10.7';
+import { W, H } from '../config.js?v=0.10.8';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.10.8';
+import { audio } from '../audio.js?v=0.10.8';
+import { load } from '../save.js?v=0.10.8';
+import * as M from '../meta.js?v=0.10.8';
+import { COS } from '../core/data.js?v=0.10.8';
+import { MAPS } from '../core/maps.js?v=0.10.8';
+import { insignia } from './Home.js?v=0.10.8';
 
 const PRAISE = ['완벽한 작전!', '훌륭한 지휘였어요!', '전선이 무너졌어요, 대승!', '역시 명지휘관!'];
 export class ResultScene extends Phaser.Scene {

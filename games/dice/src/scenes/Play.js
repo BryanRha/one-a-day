@@ -1,12 +1,12 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
-import { W, H } from '../config.js?v=0.8.5';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.5';
-import { DESC } from './Deck.js?v=0.8.5';
-import { act } from '../core/ai.js?v=0.8.5';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.5';
-import { audio } from '../audio.js?v=0.8.5';
-import { load } from '../save.js?v=0.8.5';
-import * as M from '../meta.js?v=0.8.5';
+import { W, H } from '../config.js?v=0.8.6';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.6';
+import { DESC } from './Deck.js?v=0.8.6';
+import { act } from '../core/ai.js?v=0.8.6';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.6';
+import { audio } from '../audio.js?v=0.8.6';
+import { load } from '../save.js?v=0.8.6';
+import * as M from '../meta.js?v=0.8.6';
 
 // 판 크기: 양옆 길 위 몬스터(보스 포함)가 화면 밖으로 잘리지 않게 여백 확보
 const CS = 188, GAP = 14, BW = COLS * CS + (COLS - 1) * GAP, BH = ROWS * CS + (ROWS - 1) * GAP;
@@ -451,7 +451,22 @@ export class PlayScene extends Phaser.Scene {
       case 'mine': { const [x0, y0] = this.slotXY(e.slot), [x1, y1] = this.pathXY(e.d); const b = this.add.image(x0, y0, 'bolt').setTint(0xFFA43A).setBlendMode('ADD').setScale(0.6).setDepth(35); this.tweens.add({ targets: b, x: x1, y: y1, duration: 260, ease: 'Quad.easeOut', onComplete: () => b.destroy() }); break; }
       case 'boom': { const [x, y] = this.pathXY(e.d); audio.play('sfx_fire', { volume: 0.5, gap: 60, rate: 0.8 }); const f = this.add.image(x, y, 'glow').setTint(0xFF8A2E).setBlendMode('ADD').setScale(0.4).setDepth(36); this.tweens.add({ targets: f, scale: 2.2, alpha: 0, duration: 340, onComplete: () => f.destroy() }); const r = this.add.image(x, y, 'ring').setTint(0xFFB24A).setBlendMode('ADD').setScale(0.2).setDepth(36); this.tweens.add({ targets: r, scale: 1.2, alpha: 0, duration: 320, onComplete: () => r.destroy() }); this.spark.setParticleTint(0xFFB24A); this.spark.emitParticleAt(x, y, 10); this.cameras.main.shake(80, 0.003); break; }
       case 'telegraph': this.telegraph(e); break;
-      case 'quake': { audio.play('sfx_clank', { volume: 0.4, gap: 200, rate: 0.55 }); this.cameras.main.shake(140, 0.004); for (const en of this.s.enemies) { const v = this.ePool.get(en.id); if (v) { this.hitFlash(v); this.dust(v.x, v.y + 30); } } break; }
+      case 'quake': {   // 전체 공격: 지진류는 흔들림+먼지, 나머지는 룬 색 물결
+        const ty = e.type || 'quake', col = RUNES[ty].color, earthy = ty === 'quake' || ty === 'earthspike';
+        if (earthy) { audio.play('sfx_clank', { volume: 0.4, gap: 200, rate: 0.55 }); this.cameras.main.shake(140, 0.004); }
+        else audio.play(ty === 'blizzard' ? 'sfx_ice' : 'sfx_zap', { volume: 0.3, gap: 220, rate: 0.7 });
+        for (const en of this.s.enemies) { const v = this.ePool.get(en.id); if (!v) continue; this.hitFlash(v); if (earthy) this.dust(v.x, v.y + 30); else { const r = this.add.image(v.x, v.y, 'ring').setTint(col).setBlendMode('ADD').setScale(0.2).setDepth(36); this.tweens.add({ targets: r, scale: 0.9, alpha: 0, duration: 320, onComplete: () => r.destroy() }); } }
+        break;
+      }
+      case 'forge': { const [x, y] = this.slotXY(e.slot); this.float(x, y - 80, '단조 +1!', '#FFB060'); this.spark.setParticleTint(0xFFA040); this.spark.emitParticleAt(x, y, 12); break; }
+      case 'bell': { audio.play('sfx_power', { volume: 0.6, rate: 1.5 }); const [x, y] = this.slotXY(e.slot); const r = this.add.image(x, y, 'ring').setTint(0xF8D050).setBlendMode('ADD').setScale(0.3).setDepth(38); this.tweens.add({ targets: r, scale: 6, alpha: 0, duration: 500, onComplete: () => r.destroy() }); this.float(x, y - 80, '일제 사격!', '#F8D050'); break; }
+      case 'battery': { const [x, y] = this.slotXY(e.slot); this.float(x, y - 60, `+${e.sp} SP`, '#6AF06A', 28); break; }
+      case 'execute': { const [x, y] = this.pathXY(e.d); if (Math.random() < 0.5) this.float(x, y - 60, '처형!', '#3FD8B0', 28); break; }
+      case 'judge': { const v = this.ePool.get(e.id); audio.play('sfx_clank', { volume: 0.5, rate: 1.3 }); if (v) { const b = this.add.rectangle(v.x, v.y - 400, 26, 800, 0xFFF0C0, 0.9).setBlendMode('ADD').setDepth(38); this.tweens.add({ targets: b, alpha: 0, scaleX: 3, duration: 380, onComplete: () => b.destroy() }); this.float(v.x, v.y - 100, '심판!', '#FFF0C0', 36); } break; }
+      case 'timeStop': { audio.play('sfx_silence', { volume: 0.5, rate: 0.7 }); this.cameras.main.flash(160, 120, 220, 210); this.float(W / 2, this.BY - 60, '시간 정지!', '#60D0C8', 40); break; }
+      case 'heal': audio.play('sfx_awaken', { volume: 0.6, rate: 1.2 }); this.banner('천사의 축복', '생명 +1', '#FFF4D0'); break;
+      case 'phoenix': audio.play('sfx_awaken', { volume: 0.9, rate: 0.8 }); this.cameras.main.flash(400, 255, 160, 60); this.cameras.main.shake(300, 0.008); this.banner('불사조 부활!', '패배를 한 번 막았어요', '#FF8A2A'); break;
+      case 'oracle': audio.play('sfx_power', { volume: 0.5, rate: 1.6 }); this.float(W / 2, this.BY - 60, '예언자가 막았어요!', '#F0E090', 36); break;
       case 'nova': { audio.play('sfx_awaken', { volume: 0.5, gap: 200, rate: 1.3 }); const [x0, y0] = this.slotXY(e.slot); const r = this.add.image(x0, y0, 'ring').setTint(0xFF9CF0).setBlendMode('ADD').setScale(0.3).setDepth(38); this.tweens.add({ targets: r, scale: 9, alpha: 0, duration: 520, onComplete: () => r.destroy() }); this.cameras.main.flash(120, 255, 180, 240); for (const en of this.s.enemies) { const v = this.ePool.get(en.id); if (v) { this.hitFlash(v); this.spark.setParticleTint(0xFF9CF0); this.spark.emitParticleAt(v.x, v.y, 5); } } this.float(x0, y0 - 70, '초신성!', '#FF9CF0'); break; }
       case 'split': { const [x, y] = this.pathXY(e.d); this.float(x, y - 80, '갈라졌다!', '#FF9BB0', 34); this.cameras.main.shake(160, 0.005); break; }
       case 'steal': { audio.play('sfx_leak', { volume: 0.4, rate: 1.4 }); this.float(this.hSp.x + 60, this.hSp.y - 50, `-${e.amt} SP`, '#FF7A8A', 34); this.tweens.add({ targets: this.hSp, scale: 0.85, duration: 90, yoyo: true }); break; }
@@ -513,7 +528,7 @@ export class PlayScene extends Phaser.Scene {
     c.add(T(this, 0, 128, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
     this.paused = true;
     const z = this.add.zone(W / 2, H / 2, W, H).setInteractive().setDepth(96);
-    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.5').then(m => m.save()); });
+    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.6').then(m => m.save()); });
   }
 
   gameOver() {

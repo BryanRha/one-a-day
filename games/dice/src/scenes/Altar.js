@@ -1,10 +1,10 @@
 // 룬 제단 (뽑기): 게임에서 번 수정·열쇠·매일 무료 1회로만 · 확률 공개 · 천장 · 10회 영웅 보장 · 중복은 등급업 카드
-import { W, H } from '../config.js?v=0.8.5';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.5';
-import { audio } from '../audio.js?v=0.8.5';
-import { load } from '../save.js?v=0.8.5';
-import * as M from '../meta.js?v=0.8.5';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.8.5';
+import { W, H } from '../config.js?v=0.8.6';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.6';
+import { audio } from '../audio.js?v=0.8.6';
+import { load } from '../save.js?v=0.8.6';
+import * as M from '../meta.js?v=0.8.6';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.8.6';
 
 const hex = n => '#' + n.toString(16).padStart(6, '0');
 
@@ -29,7 +29,7 @@ export class AltarScene extends Phaser.Scene {
     this.orb = showcase.map((r, i) => { const c = this.add.container(W / 2, cy); c.add([this.add.image(0, 0, `die_${r}`).setDisplaySize(160, 160), this.add.image(0, 0, `rune_${r}`).setDisplaySize(92, 92)]); c.a = i * Math.PI / 2; return c; });
     this.core = this.add.image(W / 2, cy, 'glow').setTint(0xFFE6A0).setBlendMode("ADD").setScale(2).setAlpha(0.8);
     this.tweens.add({ targets: this.core, scale: 2.4, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
-    T(this, W / 2, by - 170, '전설 룬 · 성장 · 거울 · 변이 · 망치', 28, C.gold, { w: 800 });
+    T(this, W / 2, by - 170, `룬 ${RUNE_ORDER.length}종 · 전설 ${RUNE_ORDER.filter(r => RARITY[r] === 3).length}종`, 28, C.gold, { w: 800 });
     this.pityT = T(this, W / 2, by - 122, '', 26, C.sub, { w: 800 });
     // 버튼
     this.bFree = btn(this, W / 2, by, 760, 130, '', () => this.pull(load().legendTix > 0 ? 'legend' : M.freeToday() ? 'free' : 'key'), { style: 'green', size: 40 });
@@ -114,8 +114,8 @@ export class AltarScene extends Phaser.Scene {
   }
   odds() {
     const p = popup(this, '확률 정보', 900, 1100), c = p.content;
-    const lines = [0, 1, 2, 3].map(k => `${RARITY_NAME[k]} ${Math.round(M.ODDS[k] * 100)}%  ·  ${RUNE_ORDER.filter(r => RARITY[r] === k).map(r => RUNES[r].name).join(' ')}`);
-    lines.forEach((s, i) => c.add(T(this, 0, -330 + i * 120, s, 28, hex(RARITY_COLOR[i]), { w: 800, wrap: 780 })));
+    const d = load();
+    [0, 1, 2, 3].forEach(k => { const all = RUNE_ORDER.filter(r => RARITY[r] === k), own = all.filter(r => d.unlocked[r]).length; c.add(T(this, 0, -330 + k * 100, `${RARITY_NAME[k]}  ${Math.round(M.ODDS[k] * 100)}%   ·   ${all.length}종 (보유 ${own})`, 34, hex(RARITY_COLOR[k]), { w: 900 })); });
     c.add(T(this, 0, 220, `· ${M.PITY}회 안에 전설이 반드시 나와요\n· 10회 뽑기는 영웅 이상 1개 보장\n· 같은 등급 안에서는 아직 없는 룬이 더 잘 나와요\n· 이미 가진 룬은 등급업 카드가 돼요\n· 수정은 게임 안에서만 얻어요 (구매 없음)`, 28, C.sub, { w: 700, lh: 14 }));
   }
   go(k) { audio.stopMusic(); this.cameras.main.fadeOut(200, 5, 6, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(k)); }

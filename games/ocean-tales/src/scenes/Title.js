@@ -1,9 +1,9 @@
-import { W, H, TXT, VERSION } from '../config.js?v=0.8.5';
-import { t } from '../i18n.js?v=0.8.5';
-import { audio } from '../audio.js?v=0.8.5';
-import { load } from '../save.js?v=0.8.5';
-import { button, iconButton, popup, toast, enableGlow } from '../ui/widgets.js?v=0.8.5';
-import { settingsPopup } from './Map.js?v=0.8.5';
+import { W, H, TXT, VERSION } from '../config.js?v=0.8.6';
+import { t } from '../i18n.js?v=0.8.6';
+import { audio } from '../audio.js?v=0.8.6';
+import { load } from '../save.js?v=0.8.6';
+import { button, iconButton, popup, toast, enableGlow } from '../ui/widgets.js?v=0.8.6';
+import { settingsPopup } from './Map.js?v=0.8.6';
 
 export class TitleScene extends Phaser.Scene {
   constructor() { super('Title'); }

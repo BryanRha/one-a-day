@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.5';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.5';
-import { audio } from '../audio.js?v=0.10.5';
-import { load, save } from '../save.js?v=0.10.5';
-import * as M from '../meta.js?v=0.10.5';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.5';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.5';
-import { AI, apply } from '../core/ai.js?v=0.10.5';
-import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.5';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.10.5';
+import { W, H } from '../config.js?v=0.10.6';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.6';
+import { audio } from '../audio.js?v=0.10.6';
+import { load, save } from '../save.js?v=0.10.6';
+import * as M from '../meta.js?v=0.10.6';
+import { inOAD, exitToOAD } from '../oad.js?v=0.10.6';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.6';
+import { AI, apply } from '../core/ai.js?v=0.10.6';
+import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.6';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.10.6';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -73,6 +73,8 @@ export class PlayScene extends Phaser.Scene {
       if (['plain', 'forest', 'farm', 'wheat', 'sea'].includes(t.t) && (x * 7 + y * 13) % 2) im.setFlipX(true);
       if (BLD[t.t]) this.drawBld(x, y);
     }
+    // 지형 톤 낮추기 (유닛·건물이 앞으로 나와 보이게)
+    this.add.rectangle(this.ox + s.w * ts / 2, this.oy + s.h * ts / 2, s.w * ts, s.h * ts, 0x2A2A18, 0.22).setDepth(1.5);
     // 칸 선
     const g = this.add.graphics().setDepth(2); g.lineStyle(2, 0x1A1C0C, 0.22);
     for (let x = 0; x <= s.w; x++) g.lineBetween(this.ox + x * ts, this.oy, this.ox + x * ts, this.oy + s.h * ts);
@@ -90,29 +92,41 @@ export class PlayScene extends Phaser.Scene {
   }
 
   // ── 유닛 ──
+  // 유닛: 칸보다 크게 서 있는 말 + 흰 외곽선 + 팀 색 원판 + 큰 체력 배지 + 행동 상태(✓ · 발밑 빛)
   makeUnit(u) {
     const [px, py] = this.xy(u.x, u.y), ts = this.ts, c = this.add.container(px, py).setDepth(10 + u.y * 0.01);
-    const ring = this.add.ellipse(0, ts * 0.32, ts * 0.78, ts * 0.24, TEAM[u.p], 0.55);
-    const img = this.add.image(0, ts * 0.36, `u_${u.type}_${TEAMS[u.p]}`).setOrigin(0.5, 1);
-    const k = Math.min(ts * 1.06 / img.width, ts * 0.9 / img.height); img.setScale(k); img.base = k;
-    const hp = this.add.container(ts * 0.3, ts * 0.3);
-    const hpBg = this.add.circle(0, 0, ts * 0.17, 0x111111, 0.85).setStrokeStyle(3, TEAM[u.p]);
-    const hpT = T(this, 0, 0, '', Math.round(ts * 0.22), '#FFFFFF', { w: 900, shadow: false });
+    const key = `u_${u.type}_${TEAMS[u.p]}`, foot = ts * 0.4;
+    const glow = this.add.ellipse(0, foot - ts * 0.04, ts * 0.98, ts * 0.36, 0xFFF2A0, 0).setBlendMode('ADD');
+    const ring = this.add.ellipse(0, foot - ts * 0.04, ts * 0.86, ts * 0.3, TEAM[u.p], 0.9).setStrokeStyle(3, 0xFFFFFF, 0.9);
+    const probe = this.textures.get(key).getSourceImage();
+    const k = Math.min(ts * 1.25 / probe.width, ts * 0.98 / probe.height);
+    // 흰 외곽선: 같은 그림을 흰색으로 칠해 네 방향으로 살짝 밀어 깔기
+    const outline = [[-2, 0], [2, 0], [0, -2], [0, 2], [-1.5, -1.5], [1.5, 1.5], [-1.5, 1.5], [1.5, -1.5]].map(([dx, dy]) => this.add.image(dx * 1.4, foot + dy * 1.4, key).setOrigin(0.5, 1).setScale(k).setTintFill(0xFFFFFF));
+    const img = this.add.image(0, foot, key).setOrigin(0.5, 1).setScale(k); img.base = k;
+    const hp = this.add.container(ts * 0.3, -ts * 0.28);
+    const hpBg = this.add.circle(0, 0, ts * 0.18, 0x111111, 0.95).setStrokeStyle(4, 0xFFFFFF);
+    const hpT = T(this, 0, 1, '', Math.round(ts * 0.25), '#FFFFFF', { w: 900, shadow: false });
     hp.add([hpBg, hpT]);
-    const cargo = this.add.image(-ts * 0.3, -ts * 0.28, 'u_inf_' + TEAMS[u.p]).setScale(k * 0.45).setVisible(false);
-    c.add([ring, img, hp, cargo]);
-    Object.assign(c, { img, ring, hp, hpT, cargo, uid: u.id });
+    const done = T(this, -ts * 0.32, -ts * 0.28, '✓', Math.round(ts * 0.3), '#FFFFFF', { w: 900, stroke: '#14160A', thick: 6 }).setVisible(false);
+    const cargo = this.add.image(-ts * 0.32, -ts * 0.3, 'u_inf_' + TEAMS[u.p]).setScale(k * 0.5).setVisible(false);
+    c.add([glow, ring, ...outline, img, hp, done, cargo]);
+    Object.assign(c, { img, outline, ring, glow, hp, hpBg, hpT, doneT: done, cargo, uid: u.id });
     this.views.set(u.id, c); this.syncUnit(u);
     return c;
   }
-  face(c, u, dx) { if (!dx) return; const right = dx > 0; c.img.setFlipX(u.p === 1 ? !right : right); }
+  face(c, u, dx) { if (!dx) return; const right = dx > 0, f = u.p === 1 ? !right : right; c.img.setFlipX(f); c.outline.forEach(o => o.setFlipX(f)); }
   syncUnit(u) {
     const c = this.views.get(u.id); if (!c) return;
     c.setVisible(!u.inside);
     const n = hpOf(u); c.hp.setVisible(n < 10); c.hpT.setText(n);
+    c.hpBg.setFillStyle(n <= 3 ? 0xD9301E : n <= 6 ? 0xE8A21C : 0x111111, 0.95);
     c.cargo.setVisible(!!u.cargo);
-    const dim = u.done && u.p === this.s.turn && u.p === 1;
-    c.img.setTint(dim ? 0x7A7A7A : 0xFFFFFF); c.ring.setAlpha(dim ? 0.25 : 0.55);
+    const myTurn = this.s.turn === 1 && u.p === 1, dim = u.done && myTurn, ready = !u.done && myTurn && !this.s.over;
+    c.img.setTint(dim ? 0x808080 : 0xFFFFFF); c.outline.forEach(o => o.setAlpha(dim ? 0.35 : 0.95));
+    c.ring.setAlpha(dim ? 0.35 : 0.9); c.doneT.setVisible(dim);
+    // 행동할 수 있는 아군: 발밑이 은은하게 숨 쉼
+    if (ready && !c.pulse) { c.glow.setAlpha(0.15); c.pulse = this.tweens.add({ targets: c.glow, alpha: 0.55, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
+    if (!ready && c.pulse) { c.pulse.stop(); c.pulse = null; c.glow.setAlpha(0); }
   }
   syncAll() { for (const u of this.s.units) { if (!this.views.has(u.id)) this.makeUnit(u); this.syncUnit(u); } for (const [id, c] of this.views) if (!this.s.unit(id)) { c.destroy(); this.views.delete(id); } this.updateHud(); }
 

@@ -1,7 +1,7 @@
 // AI 예측: 실제 게임 규칙(Sim)을 봇으로 여러 판 빠르게 돌려 "기록 경신 확률"을 계산 · 보유 룬으로 덱 추천
-import { Sim, RUNES, RUNE_ORDER, RARITY, synergiesOf } from './sim.js?v=0.8.7';
-import { act } from './ai.js?v=0.8.7';
-import { RATING } from './rating.js?v=0.8.7';
+import { Sim, RUNES, RUNE_ORDER, RARITY, synergiesOf } from './sim.js?v=0.8.8';
+import { act } from './ai.js?v=0.8.8';
+import { RATING } from './rating.js?v=0.8.8';
 
 // 한 판 빠르게 (시간 간격을 키워 계산량을 줄임 · 결과는 일반 판과 거의 같음)
 export function quickRun(deck, tiers, critBonus, seed, skill = 0.6) {
@@ -35,26 +35,33 @@ export function candidates(owned, tiers) {
   add(sorted.slice(1, 6));
   return out.slice(0, 5);
 }
+// 확률 표시용: 몇 판 안 돌려도 0% · 100% 로 딱 잘리지 않게 보정 (라플라스)
+export const smooth = (hits, n) => (hits + 1) / (n + 2);
 // 비동기로 나눠 계산 (화면이 멈추지 않게) — onStep(done, total, deck)
-// 목표: 지금 덱 예상보다 3웨이브 더 (이미 기록 경신이 쉬우면 더 높은 목표로 비교해야 의미가 있음)
+// 결과: 지금 덱 · 추천 덱의 웨이브 표본(같은 판 순서로 비교) — 추천이 지금 덱보다 못하면 지금 덱을 그대로 추천
 export async function recommend(owned, tiers, critBonus, best, current, onStep, adj = 0) {
-  const cands = candidates(owned, tiers);
-  const N1 = 8, N2 = 16, total = N2 + cands.length * N1 + N2;
+  const key = d => d.slice().sort().join();
+  const cands = candidates(owned, tiers).filter(c => key(c) !== key(current));
+  const N1 = 8, N2 = 16, total = N2 + cands.length * N1 + (cands.length ? N2 : 0);
   let done = 0; const tick = () => new Promise(r => setTimeout(r, 0));
-  const runs = async (deck, n, seed0) => { const ws = []; for (let i = 0; i < n; i++) { ws.push(quickRun(deck, tiers, critBonus, seed0 + i * 7919)); done++; onStep && onStep(done, total, deck); await tick(); } return ws.sort((a, b) => a - b); };
-  const sum = (ws, target) => ({ p: ws.filter(w => w + adj >= target).length / ws.length, median: Math.round(ws[Math.floor(ws.length / 2)] + adj), mean: ws.reduce((a, b) => a + b, 0) / ws.length + adj });
-  const curWs = await runs(current, N2, 101), curMean = curWs.reduce((a, b) => a + b, 0) / N2;
-  const target = Math.max(best + 1, Math.round(curMean + adj) + 3, 10);
+  const runs = async (deck, n, seed0) => { const ws = []; for (let i = 0; i < n; i++) { ws.push(quickRun(deck, tiers, critBonus, seed0 + i * 7919) + adj); done++; onStep && onStep(done, total, deck); await tick(); } return ws.sort((a, b) => a - b); };
+  const mean = ws => ws.reduce((a, b) => a + b, 0) / ws.length;
+  const curWs = await runs(current, N2, 101);
   let top = null;
-  for (const c of cands) { const ws = await runs(c, N1, 11), m = ws.reduce((a, b) => a + b, 0) / N1; if (!top || m > top.m) top = { deck: c, m }; }
-  const finWs = await runs(top.deck, N2, 101);
-  return { deck: top.deck, target, ...sum(finWs, target), current: sum(curWs, target), tested: cands.length, sims: total };
+  for (const c of cands) { const ws = await runs(c, N1, 101), m = mean(ws); if (!top || m > top.m) top = { deck: c, m }; }
+  let deck = current, ws = curWs;
+  if (top) { const w2 = await runs(top.deck, N2, 101); if (mean(w2) > mean(curWs) + 0.25) { deck = top.deck; ws = w2; } }
+  return { deck, ws, curWs, same: deck === current, tested: cands.length + 1, sims: done, best };
 }
+// 표본에서 목표 웨이브 도달 확률 (보정)
+export const chance = (ws, target) => smooth(ws.filter(w => w >= target).length, ws.length);
+export const median = ws => Math.round(ws[Math.floor(ws.length / 2)]);
+export const avg = ws => ws.reduce((a, b) => a + b, 0) / ws.length;
 export async function predictAsync(deck, tiers, critBonus, target, n, onStep, adj = 0) {
   const ws = []; const tick = () => new Promise(r => setTimeout(r, 0));
   for (let i = 0; i < n; i++) { ws.push(quickRun(deck, tiers, critBonus, 101 + i * 7919)); onStep && onStep(i + 1, n, ws); await tick(); }
   ws.sort((a, b) => a - b);
   const raw = ws[Math.floor(n / 2)];
-  return { p: ws.filter(w => w + adj >= target).length / n, median: Math.round(raw + adj), raw };
+  return { p: smooth(ws.filter(w => w + adj >= target).length, n), median: Math.round(raw + adj), raw };
 }
 export { RUNE_ORDER, RARITY };

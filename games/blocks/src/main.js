@@ -1,12 +1,13 @@
-import { W, BASE_H, setH } from './config.js?v=0.8.12';
-import { audio } from './audio.js?v=0.8.12';
-import { WindFX } from './fx.js?v=0.8.12';
-import { BootScene } from './scenes/Boot.js?v=0.8.12';
-import { HomeScene } from './scenes/Home.js?v=0.8.12';
-import { AdventureScene } from './scenes/Adventure.js?v=0.8.12';
-import { CollectionScene } from './scenes/Collection.js?v=0.8.12';
-import { PlayScene } from './scenes/Play.js?v=0.8.12';
-import { ResultScene } from './scenes/Result.js?v=0.8.12';
+import { W, BASE_H, setH } from './config.js?v=0.9.0';
+import { audio } from './audio.js?v=0.9.0';
+import { WindFX } from './fx.js?v=0.9.0';
+import { BootScene } from './scenes/Boot.js?v=0.9.0';
+import { HomeScene } from './scenes/Home.js?v=0.9.0';
+import { AdventureScene } from './scenes/Adventure.js?v=0.9.0';
+import { CollectionScene } from './scenes/Collection.js?v=0.9.0';
+import { PlayScene } from './scenes/Play.js?v=0.9.0';
+import { ResultScene } from './scenes/Result.js?v=0.9.0';
+import { installBack } from './oad.js?v=0.9.0';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }
@@ -24,6 +25,7 @@ async function start() {
   const refresh = () => [60, 250, 600].forEach(ms => setTimeout(() => game.scale.refresh(), ms));
   addEventListener('resize', refresh); addEventListener('orientationchange', refresh);
   window.__game = game;
+  installBack(game, { home: 'Home', roots: [] });   // One a Day 뒤로가기: 한 단계씩
 }
 // One a Day 앱 안(iframe)에서는 앱이 캐시를 관리하므로 자체 서비스 워커는 쓰지 않음
 const embedded = window.parent !== window;

@@ -1,6 +1,6 @@
 // 화면·게임 공통 상수
 // 화면 아래에 표시되는 버전 (배포할 때마다 올림)
-export const VERSION = '2.7.3';
+export const VERSION = '2.7.4';
 export const W = 1080;
 export const BASE_H = 1920;
 // 실제 세로 길이 (세로로 긴 폰에서는 1920 보다 커짐). ES 모듈 live binding 이라 import 한 곳에서도 갱신된 값이 보인다.

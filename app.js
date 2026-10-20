@@ -5,7 +5,7 @@ import * as I from './install.js';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.8.12';
+const VERSION = '0.9.0';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -201,11 +201,25 @@ function closeGame() {
   // 첫 게임을 마치고 돌아오면 한 번만 홈 화면 추가를 권함
   if (!I.installed() && !localStorage.getItem('oad_nudged')) { localStorage.setItem('oad_nudged', '1'); setTimeout(() => openSheet(I.env.inApp || !I.canPrompt() ? I.guide() : `<div class="intro"><h2>📲 내일도 쉽게 만나요</h2><p style="color:var(--sub)">홈 화면에 추가하면 매일 새 게임을 한 번에 열 수 있어요.</p><div class="stack"><button class="btn" data-install>홈 화면에 추가</button><button class="btn ghost" data-close>나중에</button></div></div>`), 500); }
 }
-$('#pull').onclick = () => openSheet(`<h2 style="text-align:center">홈으로 나갈까요?</h2><p class="note">진행 중인 판은 저장되지 않을 수 있어요</p>
+$('#pull').onclick = () => openSheet(`<h2 style="text-align:center">원어데이 홈으로 나갈까요?</h2><p class="note">진행 중인 판은 저장되지 않을 수 있어요</p>
   <div class="stack"><button class="btn alt" data-close>계속 하기</button><button class="btn ghost" data-exit>홈으로</button></div>`);
-addEventListener('popstate', () => { if (!player.hidden) closeGame(); });
-// 게임 쪽에서 보내는 메시지: { type: 'oad:exit' } → 홈으로
-addEventListener('message', e => { if (e.data && e.data.type === 'oad:exit' && !player.hidden) history.back(); });
+// 뒤로가기: 먼저 게임에게 물어봄 (팝업 닫기 · 이전 화면 · 일시정지) → 게임이 처리하면 다시 막아 두고, 게임 첫 화면이면 원어데이로
+let forceExit = false, backWait = null;
+function exitGame() { forceExit = true; history.back(); }
+addEventListener('popstate', () => {
+  if (player.hidden) return;
+  if (!$('#sheet').hidden && !forceExit) { closeSheet(); history.pushState({ game: true }, ''); return; }   // 나가기 확인 창이 떠 있으면 그 창만 닫음
+  if (forceExit || !frame || !frame.contentWindow) { forceExit = false; closeGame(); return; }
+  clearTimeout(backWait);
+  backWait = setTimeout(() => { backWait = null; closeGame(); }, 450);   // 응답 없는 게임(옛 버전)은 바로 닫음
+  frame.contentWindow.postMessage({ type: 'oad:back' }, '*');
+});
+// 게임 쪽에서 보내는 메시지: { type: 'oad:exit' } → 원어데이로 · { type: 'oad:back-result', handled } → 뒤로가기 처리 결과
+addEventListener('message', e => {
+  const d = e.data; if (!d || player.hidden) return;
+  if (d.type === 'oad:exit') exitGame();
+  else if (d.type === 'oad:back-result' && backWait) { clearTimeout(backWait); backWait = null; if (d.handled) history.pushState({ game: true }, ''); else closeGame(); }
+});
 
 // ── 공통 클릭 처리 ─────────────────────────────────
 document.addEventListener('click', e => {
@@ -216,7 +230,7 @@ document.addEventListener('click', e => {
   else if (d.open) detail(d.open);
   else if (d.ad) watchAd(d.ad);
   else if ('close' in d) closeSheet();
-  else if ('exit' in d) { closeSheet(); history.back(); }
+  else if ('exit' in d) { closeSheet(); if (!player.hidden) exitGame(); else history.back(); }
   else if ('intro' in d) intro();
   else if ('install' in d) { closeSheet(); doInstall(); }
   else if ('ext' in d) I.openExternal();

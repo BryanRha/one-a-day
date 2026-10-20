@@ -1,11 +1,12 @@
-import { W, BASE_H, setH } from './config.js?v=0.8.12';
-import { audio } from './audio.js?v=0.8.12';
-import { BootScene } from './scenes/Boot.js?v=0.8.12';
-import { TitleScene } from './scenes/Title.js?v=0.8.12';
-import { MapScene } from './scenes/Map.js?v=0.8.12';
-import { GameScene } from './scenes/Game.js?v=0.8.12';
-import { WorldClearScene } from './scenes/WorldClear.js?v=0.8.12';
-import { ReefScene } from './scenes/Reef.js?v=0.8.12';
+import { W, BASE_H, setH } from './config.js?v=0.9.0';
+import { audio } from './audio.js?v=0.9.0';
+import { BootScene } from './scenes/Boot.js?v=0.9.0';
+import { TitleScene } from './scenes/Title.js?v=0.9.0';
+import { MapScene } from './scenes/Map.js?v=0.9.0';
+import { GameScene } from './scenes/Game.js?v=0.9.0';
+import { WorldClearScene } from './scenes/WorldClear.js?v=0.9.0';
+import { ReefScene } from './scenes/Reef.js?v=0.9.0';
+import { installBack } from './oad.js?v=0.9.0';
 
 async function start() {
   try { await document.fonts.load('48px Jua'); } catch { /* 폰트 실패 시 기본 폰트 */ }
@@ -33,6 +34,7 @@ async function start() {
   addEventListener('orientationchange', refresh);
   screen.orientation?.addEventListener?.('change', refresh);
   window.__game = game; // 디버그용
+  installBack(game, { home: 'Map', roots: ['Title'] });   // One a Day 뒤로가기: 한 단계씩
 }
 
 // 홈 화면 추가(앱 설치): 크롬·삼성 인터넷은 설치 창을 띄울 수 있게 이벤트를 보관해 둔다

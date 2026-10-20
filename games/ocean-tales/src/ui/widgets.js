@@ -1,6 +1,7 @@
 // 공용 UI 위젯: 버튼 · 아이콘 버튼 · 팝업 · 토스트
-import { W, H, TXT, FONT, INK } from '../config.js?v=0.8.12';
-import { audio } from '../audio.js?v=0.8.12';
+import { W, H, TXT, FONT, INK } from '../config.js?v=0.9.0';
+import { audio } from '../audio.js?v=0.9.0';
+import { pushBack } from '../oad.js?v=0.9.0';
 
 // 9-slice 버튼 (btn_primary / btn_secondary) + 글자
 export function button(scene, x, y, label, onClick, { kind = 'primary', width = 480, height = 150, size = 56 } = {}) {
@@ -43,7 +44,8 @@ export function iconButton(scene, x, y, icon, onClick, { size = 120, bg = 'btn_i
 }
 
 // 모달 팝업. 반환된 container 에 내용을 add 하고, close() 로 닫는다.
-export function popup(scene, { title, width = 900, height = 1100, onClose, closeButton = true } = {}) {
+export function popup(scene, { title, width = 900, height = 1100, onClose, closeButton = true, onBack } = {}) {
+  const o = { onBack };
   const layer = scene.add.container(0, 0).setDepth(1000);
   // 배경: 옅은 남색 + 가장자리 비네트 (단색으로 덮지 않고 뒤 화면이 비쳐 보이게)
   const dim = scene.add.rectangle(W / 2, H / 2, W * 2, H * 2, 0x06204A, 0.32).setInteractive();
@@ -71,6 +73,9 @@ export function popup(scene, { title, width = 900, height = 1100, onClose, close
     x.icon.setVisible(false);
     box.add(x);
   }
+  // 뒤로가기 (One a Day): 맨 위 팝업부터 — 닫을 수 있으면 닫고, 닫기 없는 창은 onBack 이 있으면 그것(예: 일시정지 → 계속하기), 없으면 그대로 둠
+  const unback = pushBack(() => { if (layer.closing) return false; if (o.onBack) { o.onBack(); return true; } if (!closeButton) return true; close(); return true; });
+  layer.once('destroy', unback);
   box.setScale(0.82); box.alpha = 0; box.y += 40;
   scene.tweens.add({ targets: box, scale: 1, alpha: 1, y: H / 2, duration: 320, ease: 'Back.Out' });
   audio.play('sfx_popup_open');

@@ -104,7 +104,10 @@ h1, h2, h3, .jua { font-family: 'Jua', sans-serif; font-weight: 400; margin: 0; 
 /* 게임 화면 */
 #player { position: fixed; inset: 0; z-index: 50; background: #000; }
 #frame { width: 100%; height: 100%; border: 0; display: block; }
-#pull { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 22px; height: 64px; border: 0; border-radius: 0 14px 14px 0; background: rgba(20,16,46,.55); color: #fff; font: 22px sans-serif; cursor: pointer; backdrop-filter: blur(6px); opacity: .7; }
+/* 게임 중 '원어데이 홈' 탭: 모든 게임 왼쪽 가장자리 · 눌러서 나가기 확인 */
+#pull { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 34px; height: 84px; padding: 0; border: 1px solid rgba(255,255,255,.22); border-left: 0; border-radius: 0 16px 16px 0; background: linear-gradient(180deg, rgba(110,80,230,.78), rgba(48,30,120,.78)); color: #fff; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 2px 0 12px rgba(0,0,0,.35); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; z-index: 2; }
+#pull span { font: 700 11px/1 'Pretendard', sans-serif; letter-spacing: .5px; }
+#pull:active { transform: translateY(-50%) scale(.94); }
 
 /* 시트(팝업) */
 #sheet { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; }

@@ -1,6 +1,7 @@
 // 프리미엄 UI 키트: 깔끔한 글자 · 유리 패널 · 그라데이션 버튼 · 선 아이콘 (모두 코드로 그림 — 선명하고 가벼움)
-import { W, H, FONT } from './config.js?v=0.8.12';
-import { audio } from './audio.js?v=0.8.12';
+import { W, H, FONT } from './config.js?v=0.9.0';
+import { audio } from './audio.js?v=0.9.0';
+import { pushBack } from './oad.js?v=0.9.0';
 
 export const C = {
   ink: '#0B1026', text: '#F4F6FF', sub: '#9AA3D6', dim: '#5E679A', gold: '#F5C451', cyan: '#5EE3FF', pink: '#FF6FAE', green: '#5BE39A',
@@ -132,6 +133,9 @@ export function popup(scene, title, w = 900, h = 900, o = {}) {
   const content = scene.add.container(0, 0); box.add(content);
   const close = () => { if (root.closing) return; root.closing = true; scene.tweens.add({ targets: box, scale: 0.92, alpha: 0, duration: 140, onComplete: () => { root.destroy(); o.onClose && o.onClose(); } }); scene.tweens.add({ targets: dim, alpha: 0, duration: 140 }); };
   if (o.closable !== false) { box.add(iconBtn(scene, w / 2 - 70, -h / 2 + 70, 'i_close', close, 88)); if (o.dimClose !== false) dim.on('pointerup', close); }
+  // 뒤로가기 (One a Day): 맨 위 팝업부터 — 닫을 수 있으면 닫고, 닫기 없는 창은 onBack 이 있으면 그것(예: 일시정지 → 계속하기), 없으면 그대로 둠
+  const unback = pushBack(() => { if (root.closing) return false; if (o.onBack) { o.onBack(); return true; } if (o.closable === false) return true; close(); return true; });
+  root.once('destroy', unback);
   box.setScale(0.92); box.alpha = 0;
   scene.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Cubic.easeOut' });
   Object.assign(root, { box, content, close, w, h });

@@ -1,7 +1,8 @@
 // 공용 UI 위젯: 글자 · 버튼 · 아이콘 버튼 · 재화 표시줄 · 팝업 · 토스트
-import { W, H, FONT, INK } from './config.js?v=0.8.12';
-import { load } from './save.js?v=0.8.12';
-import { audio } from './audio.js?v=0.8.12';
+import { W, H, FONT, INK } from './config.js?v=0.9.0';
+import { load } from './save.js?v=0.9.0';
+import { audio } from './audio.js?v=0.9.0';
+import { pushBack } from './oad.js?v=0.9.0';
 
 // 그림의 긴 변이 size 가 되도록 크기 조절 (원화 해상도가 바뀌어도 화면 크기 유지)
 export const fit = (img, size) => img.setScale(size / Math.max(img.width, img.height));
@@ -115,6 +116,9 @@ export function popup(scene, title, ph = 1200, o = {}) {
     box.add(x);
     if (o.dimClose !== false) dim.on('pointerup', close);
   }
+  // 뒤로가기 (One a Day): 맨 위 팝업부터 — 닫을 수 있으면 닫고, 닫기 없는 창은 onBack 이 있으면 그것(예: 일시정지 → 계속하기), 없으면 그대로 둠
+  const unback = pushBack(() => { if (root.closing) return false; if (o.onBack) { o.onBack(); return true; } if (o.closable === false) return true; close(); return true; });
+  root.once('destroy', unback);
   box.setScale(0.8); box.alpha = 0;
   scene.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 220, ease: 'Back.easeOut' });
   root.box = box; root.close = close; root.top = -ph / 2; root.pw = pw; root.ph = ph;

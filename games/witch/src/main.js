@@ -1,11 +1,12 @@
-import { W, BASE_H, setH } from './config.js?v=0.8.12';
-import { audio } from './audio.js?v=0.8.12';
-import { BootScene } from './scenes/Boot.js?v=0.8.12';
-import { TitleScene } from './scenes/Title.js?v=0.8.12';
-import { LobbyScene } from './scenes/Lobby.js?v=0.8.12';
-import { PlayScene } from './scenes/Play.js?v=0.8.12';
-import { ResultScene } from './scenes/Result.js?v=0.8.12';
-import { WindFX } from './fx.js?v=0.8.12';
+import { W, BASE_H, setH } from './config.js?v=0.9.0';
+import { audio } from './audio.js?v=0.9.0';
+import { BootScene } from './scenes/Boot.js?v=0.9.0';
+import { TitleScene } from './scenes/Title.js?v=0.9.0';
+import { LobbyScene } from './scenes/Lobby.js?v=0.9.0';
+import { PlayScene } from './scenes/Play.js?v=0.9.0';
+import { ResultScene } from './scenes/Result.js?v=0.9.0';
+import { WindFX } from './fx.js?v=0.9.0';
+import { installBack } from './oad.js?v=0.9.0';
 
 async function start() {
   try { await document.fonts.load('48px Jua'); } catch { /* 기본 폰트 */ }
@@ -30,6 +31,7 @@ async function start() {
   addEventListener('resize', refresh);
   addEventListener('orientationchange', refresh);
   window.__game = game;
+  installBack(game, { home: 'Lobby', roots: ['Title'] });   // One a Day 뒤로가기: 한 단계씩
 }
 // One a Day 앱 안에서 실행될 때(iframe)는 앱이 캐시를 관리하므로 게임 자체 서비스 워커는 쓰지 않음
 const embedded = window.parent !== window;

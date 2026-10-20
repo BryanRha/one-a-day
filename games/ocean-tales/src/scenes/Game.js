@@ -1,13 +1,14 @@
 // 인게임: 엔진(core/engine.js)이 만든 steps 를 순서대로 애니메이션으로 재생한다.
-import { W, H, CELL, TXT, COLOR_HEX, COLOR_NAMES, BOOSTER_PRICE, asset, themeOf } from '../config.js?v=0.8.12';
-import { Engine } from '../core/engine.js?v=0.8.12';
-import { LEVELS } from '../core/levels.js?v=0.8.12';
-import { t } from '../i18n.js?v=0.8.12';
-import { audio, WORLD_BGM } from '../audio.js?v=0.8.12';
-import { pickTip } from '../tips.js?v=0.8.12';
-import { track, flush, onMissionDone } from '../missions.js?v=0.8.12';
-import { load, save, addStreak, breakStreak, recordWin, addCoins, addBooster, spendCoins, useBooster } from '../save.js?v=0.8.12';
-import { button, iconButton, popup, toast, starsRow, enableGlow } from '../ui/widgets.js?v=0.8.12';
+import { W, H, CELL, TXT, COLOR_HEX, COLOR_NAMES, BOOSTER_PRICE, asset, themeOf } from '../config.js?v=0.9.0';
+import { Engine } from '../core/engine.js?v=0.9.0';
+import { LEVELS } from '../core/levels.js?v=0.9.0';
+import { t } from '../i18n.js?v=0.9.0';
+import { audio, WORLD_BGM } from '../audio.js?v=0.9.0';
+import { pickTip } from '../tips.js?v=0.9.0';
+import { track, flush, onMissionDone } from '../missions.js?v=0.9.0';
+import { load, save, addStreak, breakStreak, recordWin, addCoins, addBooster, spendCoins, useBooster } from '../save.js?v=0.9.0';
+import { button, iconButton, popup, toast, starsRow, enableGlow } from '../ui/widgets.js?v=0.9.0';
+import { inOAD, exitToOAD } from '../oad.js?v=0.9.0';
 
 const BOARD_TOP = 436;
 // 별 게이지: 별 3개를 같은 간격에 두고, 점수는 별 사이 구간별로 선형 보간 (기준 점수 간격이 달라도 보기 좋게)
@@ -1257,7 +1258,7 @@ export class GameScene extends Phaser.Scene {
     this.resetHint();
     const wasBusy = this.busy; this.busy = true;
     const d = load();
-    const p = popup(this, { title: t('paused'), width: 860, height: 1000, onClose: () => { this.busy = wasBusy; if (!wasBusy) this.scheduleHint(); } });
+    const p = popup(this, { title: t('paused'), width: 860, height: inOAD ? 1120 : 1000, onClose: () => { this.busy = wasBusy; if (!wasBusy) this.scheduleHint(); } });
     const row = (y, label, getOn, toggle, on, off) => {
       p.box.add(this.add.text(-280, y, label, TXT.dark).setOrigin(0, 0.5));
       const b = iconButton(this, 220, y, getOn() ? on : off, () => { const v = toggle(); b.icon.setTexture(v ? on : off); });
@@ -1269,7 +1270,10 @@ export class GameScene extends Phaser.Scene {
     const abandon = () => { if (this.engine.s.turn > 0) breakStreak(); };
     p.box.add(button(this, -150, 260, t('retry'), () => { abandon(); this.restart(); }, { kind: 'secondary', width: 280, height: 120, size: 40 }));
     p.box.add(button(this, 150, 260, t('quit'), () => { abandon(); this.toMap(); }, { kind: 'secondary', width: 280, height: 120, size: 40 }));
+    if (inOAD) p.box.add(button(this, 0, 410, '원어데이로', () => { abandon(); exitToOAD(); }, { kind: 'secondary', width: 420, height: 110, size: 40 }));
   }
+  // 뒤로가기 (One a Day): 퍼즐 중이면 일시정지 창
+  onBack() { if (this.engine.s.status === 'play') { this.pausePopup(); return true; } }
 
   levelStartPopup() {
     const lv = this.level;

@@ -1,5 +1,5 @@
 // 전투 규칙 (화면과 무관): 지도 · 이동 · 공격(운 없음 — 미리 정확히 계산) · 점령 · 생산 · 턴
-import { UNITS, TERRAIN, INCOME, CAPTURE, base, coAtk, coMove, coRange, coCapture, COS } from './data.js?v=0.10.2';
+import { UNITS, TERRAIN, INCOME, CAPTURE, base, coAtk, coMove, coRange, coCapture, COS } from './data.js?v=0.10.3';
 export const TUNE = { dmg: 1.1 };   // 전체 피해 배율 (한 판을 짧게)
 
 // 지도 칸 글자: 앞 글자 = 지형, 뒤 글자 = 주인(0 중립 · 1 파랑 · 2 빨강 · _ 없음)
@@ -27,6 +27,13 @@ export class Sim {
     this.income(1);
   }
   ev(type, d = {}) { this.events.push({ type, ...d }); }
+  // 저장 · 이어하기: 판 상태만 (지도 모양은 지도 id 로 다시 만듦)
+  snapshot() { return { tiles: this.tiles.map(t => [t.owner, t.cap]), units: this.units.map(u => ({ ...u })), nextId: this.nextId, power: this.power, powerOn: this.powerOn, funds: this.funds, turn: this.turn, day: this.day, limit: this.limit, stats: this.stats }; }
+  restore(o) {
+    o.tiles.forEach(([ow, cap], i) => { this.tiles[i].owner = ow; this.tiles[i].cap = cap; });
+    this.units = o.units.map(u => ({ ...u })); Object.assign(this, { nextId: o.nextId, power: o.power, powerOn: o.powerOn, funds: o.funds, turn: o.turn, day: o.day, limit: o.limit, stats: o.stats });
+    this.events = []; return this;
+  }
   tile(x, y) { return x < 0 || y < 0 || x >= this.w || y >= this.h ? null : this.tiles[y * this.w + x]; }
   unitAt(x, y) { return this.units.find(u => u.x === x && u.y === y && !u.inside); }
   unit(id) { return this.units.find(u => u.id === id); }

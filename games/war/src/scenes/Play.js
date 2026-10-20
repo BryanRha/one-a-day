@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.11.2';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.2';
-import { audio } from '../audio.js?v=0.11.2';
-import { load, save } from '../save.js?v=0.11.2';
-import * as M from '../meta.js?v=0.11.2';
-import { inOAD, exitToOAD } from '../oad.js?v=0.11.2';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.11.2';
-import { AI, apply } from '../core/ai.js?v=0.11.2';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from '../core/data.js?v=0.11.2';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.11.2';
+import { W, H } from '../config.js?v=0.11.3';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.3';
+import { audio } from '../audio.js?v=0.11.3';
+import { load, save } from '../save.js?v=0.11.3';
+import * as M from '../meta.js?v=0.11.3';
+import { inOAD, exitToOAD } from '../oad.js?v=0.11.3';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.11.3';
+import { AI, apply } from '../core/ai.js?v=0.11.3';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from '../core/data.js?v=0.11.3';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.11.3';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -674,7 +674,7 @@ export class PlayScene extends Phaser.Scene {
     const L = ap === 1 ? A : D, Rr = ap === 1 ? D : A;   // 파랑은 왼쪽 · 빨강은 오른쪽
     L.t = L === A ? tileOf(au) : tileOf(du); Rr.t = Rr === A ? tileOf(au) : tileOf(du);
     const c = this.add.container(0, 0).setDepth(960).setScrollFactor(0), cy = H / 2, bh = 560;
-    let skip = false;
+    let skip = false; const tws = [];   // 건너뛰면 남은 숫자 tween 을 꼭 정리 (지워진 글자에 그리면 게임 전체가 멈춤)
     const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x0A0C06, 0.75).setInteractive(); dim.on('pointerup', () => { skip = true; }); c.add(dim);
     const side = (S, x0) => {
       const key = { road: 't_road_h', river: 't_river_h', bridge: 't_bridge_h', city: 't_plain', base: 't_plain', air: 't_plain', port: 't_sea', hq: 't_plain' }[S.t] || `t_${S.t}`;
@@ -700,13 +700,13 @@ export class PlayScene extends Phaser.Scene {
         const from = Atk.sprites[k % Atk.sprites.length], to = Def.sprites[k % Math.max(1, Def.sprites.length)] || { x: Def.x0 + W / 4, y: cy };
         const b = this.add.image(from.x + (Atk.p === 1 ? 60 : -60), from.y - 20, 'glow').setTint(0xFFF0A0).setBlendMode('ADD').setScale(0.25); c.add(b);
         const mz = this.add.image(b.x, b.y, 'glow').setTint(0xFFD060).setBlendMode('ADD').setScale(0.5); c.add(mz); this.tweens.add({ targets: mz, alpha: 0, scale: 0.9, duration: 120, onComplete: () => mz.destroy() });
-        this.tweens.add({ targets: b, x: to.x, y: to.y - 10, duration: 220, delay: k * 70, onComplete: () => { b.destroy(); const f = this.add.image(to.x, to.y, 'glow').setTint(0xFFB050).setBlendMode('ADD').setScale(0.3); c.add(f); this.tweens.add({ targets: f, scale: 1.3, alpha: 0, duration: 260, onComplete: () => f.destroy() }); } });
+        this.tweens.add({ targets: b, x: to.x, y: to.y - 10, duration: 220, delay: k * 70, onComplete: () => { b.destroy(); if (!c.active) return; const f = this.add.image(to.x, to.y, 'glow').setTint(0xFFB050).setBlendMode('ADD').setScale(0.3); c.add(f); this.tweens.add({ targets: f, scale: 1.3, alpha: 0, duration: 260, onComplete: () => f.destroy() }); } });
       }
       await wait(260 + shots * 70);
       if (dmg > 0) { audio.play(dmg > 40 ? 'sfx_explode' : 'sfx_mg', { volume: 0.6 }); this.cameras.main.shake(120, 0.005); }
       for (const im of Def.sprites) this.tweens.add({ targets: im, x: im.x + 10, duration: 40, yoyo: true, repeat: 3 });
       const before = Def.hp; Def.hp = Math.max(0, Def.hp - dmg);
-      this.tweens.addCounter({ from: Math.ceil(before / 10), to: Math.ceil(Def.hp / 10), duration: 400, onUpdate: tw => Def.hpT.setText(`${UNITS[Def.type].name}  ${Math.round(tw.getValue())}`) });
+      const tc = this.tweens.addCounter({ from: Math.ceil(before / 10), to: Math.ceil(Def.hp / 10), duration: 400, onUpdate: tw => { if (Def.hpT.active) Def.hpT.setText(`${UNITS[Def.type].name}  ${Math.round(tw.getValue())}`); } }); tws.push(tc);
       const keep = FOOT.includes(Def.type) ? Math.ceil(Def.hp / 20) : Def.hp > 0 ? 1 : 0;
       while (Def.sprites.length > keep) { const im = Def.sprites.pop(); this.tweens.add({ targets: im, alpha: 0, y: im.y + 30, angle: Def.p === 1 ? -25 : 25, duration: 360, onComplete: () => im.destroy() }); }
       await wait(520);
@@ -714,7 +714,7 @@ export class PlayScene extends Phaser.Scene {
     await strike(A, D, e.dmg);
     if (ctr && D.hp > 0) await strike(D, A, ctr.dmg);
     await wait(250);
-    await new Promise(r => this.tweens.add({ targets: c, alpha: 0, duration: 160, onComplete: () => { c.destroy(); r(); } }));
+    await new Promise(r => this.tweens.add({ targets: c, alpha: 0, duration: 160, onComplete: () => { for (const t of tws) t.remove(); this.tweens.killTweensOf(c.getAll()); c.destroy(); r(); } }));
   }
 
   // ── 끝 ──

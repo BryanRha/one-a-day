@@ -1,12 +1,12 @@
-import { W, BASE_H, setH } from './config.js?v=0.11.2';
-import { audio } from './audio.js?v=0.11.2';
-import { BootScene } from './scenes/Boot.js?v=0.11.2';
-import { HomeScene } from './scenes/Home.js?v=0.11.2';
-import { BriefScene } from './scenes/Brief.js?v=0.11.2';
-import { PlayScene } from './scenes/Play.js?v=0.11.2';
-import { ResultScene } from './scenes/Result.js?v=0.11.2';
-import { EditorScene } from './scenes/Editor.js?v=0.11.2';
-import { installBack } from './oad.js?v=0.11.2';
+import { W, BASE_H, setH } from './config.js?v=0.11.3';
+import { audio } from './audio.js?v=0.11.3';
+import { BootScene } from './scenes/Boot.js?v=0.11.3';
+import { HomeScene } from './scenes/Home.js?v=0.11.3';
+import { BriefScene } from './scenes/Brief.js?v=0.11.3';
+import { PlayScene } from './scenes/Play.js?v=0.11.3';
+import { ResultScene } from './scenes/Result.js?v=0.11.3';
+import { EditorScene } from './scenes/Editor.js?v=0.11.3';
+import { installBack } from './oad.js?v=0.11.3';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }
@@ -17,6 +17,9 @@ async function start() {
     input: { activePointers: 2 }, fps: { target: 60 },
     scene: [BootScene, HomeScene, BriefScene, PlayScene, ResultScene, EditorScene],
   });
+  // 안전망: 한 프레임에서 오류가 나도 게임 전체가 멈추지 않게 (requestAnimationFrame 이 끊기지 않도록)
+  const step = game.step; let errN = 0;
+  game.step = function (t, d) { try { step.call(this, t, d); } catch (err) { if (errN++ < 5) console.warn('프레임 오류', err); } };
   audio.attach(game);
   setH(game.scale.height);
   game.scale.on('resize', gs => setH(gs.height));

@@ -1,6 +1,6 @@
 // 프리미엄 UI 키트: 깔끔한 글자 · 유리 패널 · 그라데이션 버튼 · 선 아이콘 (모두 코드로 그림 — 선명하고 가벼움)
-import { W, H, FONT } from './config.js?v=0.8.6';
-import { audio } from './audio.js?v=0.8.6';
+import { W, H, FONT } from './config.js?v=0.8.7';
+import { audio } from './audio.js?v=0.8.7';
 
 export const C = {
   ink: '#0B1026', text: '#F4F6FF', sub: '#9AA3D6', dim: '#5E679A', gold: '#F5C451', cyan: '#5EE3FF', pink: '#FF6FAE', green: '#5BE39A',
@@ -19,14 +19,14 @@ export function T(scene, x, y, s, size = 44, color = C.text, o = {}) {
   return t;
 }
 
-const rr = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+const rr = (g, x, y, w, h, r) => { r = Math.max(0, Math.min(r, w / 2, h / 2)); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 function canvasTex(scene, key, w, h, draw) { if (scene.textures.exists(key)) return key; const c = scene.textures.createCanvas(key, w, h); draw(c.getContext(), w, h); c.refresh(); return key; }
 
 // 유리 패널 (반투명 남색 + 얇은 밝은 테두리 + 위쪽 은은한 빛)
 export function panel(scene, x, y, w, h, o = {}) {
-  const r = o.r ?? 36, key = `pnl_${w}_${h}_${r}_${o.tone || 'n'}`;
-  canvasTex(scene, key, w + 40, h + 40, (g) => {
-    g.translate(20, 20);
+  const r = o.r ?? 36, key = `pnl2_${w}_${h}_${r}_${o.tone || 'n'}`;
+  canvasTex(scene, key, w + 96, h + 96, (g) => {
+    g.translate(48, 48);
     g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 24; g.shadowOffsetY = 10;
     rr(g, 0, 0, w, h, r);
     const gr = g.createLinearGradient(0, 0, 0, h);
@@ -48,9 +48,9 @@ const STY = {
   ghost: { a: 'rgba(255,255,255,0.10)', b: 'rgba(255,255,255,0.06)', c: 'rgba(255,255,255,0.25)', text: '#F4F6FF' },
 };
 export function btn(scene, x, y, w, h, label, onClick, o = {}) {
-  const st = STY[o.style || 'gold'], r = o.r ?? h / 2, key = `btn_${o.style || 'gold'}_${w}_${h}`;
-  canvasTex(scene, key, w + 30, h + 36, (g) => {
-    g.translate(15, 12);
+  const st = STY[o.style || 'gold'], r = o.r ?? h / 2, key = `btn2_${o.style || 'gold'}_${w}_${h}`;
+  canvasTex(scene, key, w + 80, h + 80, (g) => {
+    g.translate(40, 34);
     g.shadowColor = 'rgba(0,0,0,0.4)'; g.shadowBlur = 18; g.shadowOffsetY = 10;
     rr(g, 0, 6, w, h - 6, r); g.fillStyle = st.c; g.fill(); g.shadowColor = 'transparent';
     rr(g, 0, 0, w, h - 8, r); const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, st.a); gr.addColorStop(1, st.b); g.fillStyle = gr; g.fill();

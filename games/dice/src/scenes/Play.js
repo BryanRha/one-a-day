@@ -1,12 +1,12 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
-import { W, H } from '../config.js?v=0.8.6';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.6';
-import { DESC } from './Deck.js?v=0.8.6';
-import { act } from '../core/ai.js?v=0.8.6';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.6';
-import { audio } from '../audio.js?v=0.8.6';
-import { load } from '../save.js?v=0.8.6';
-import * as M from '../meta.js?v=0.8.6';
+import { W, H } from '../config.js?v=0.8.7';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.7';
+import { DESC } from './Deck.js?v=0.8.7';
+import { act } from '../core/ai.js?v=0.8.7';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.7';
+import { audio } from '../audio.js?v=0.8.7';
+import { load, save } from '../save.js?v=0.8.7';
+import * as M from '../meta.js?v=0.8.7';
 
 // 판 크기: 양옆 길 위 몬스터(보스 포함)가 화면 밖으로 잘리지 않게 여백 확보
 const CS = 188, GAP = 14, BW = COLS * CS + (COLS - 1) * GAP, BH = ROWS * CS + (ROWS - 1) * GAP;
@@ -28,7 +28,7 @@ export class PlayScene extends Phaser.Scene {
     const d = load(), q = new URLSearchParams(location.search);
     this.bot = q.has('bot');
     this.mode = data.mode || 'run';
-    const seed = (Date.now() & 0xffffff) + 1, base = { tiers: d.tiers, seed, critBonus: M.critBonus(), mode: this.mode };
+    const seed = (Date.now() & 0xffffff) + 1, base = { tiers: M.effTiers(), seed, critBonus: M.critBonus(), mode: this.mode };
     if (this.mode === 'daily') { const dc = M.dailyChallenge(); this.s = new Sim({ deck: dc.deck, seed: dc.seed, mode: 'daily' }); }
     else if (this.mode === 'mono') this.s = new Sim({ ...base, deck: Array(5).fill(data.rune) });
     else if (this.mode === 'arena') this.s = new Sim({ ...base, deck: [data.rune] });
@@ -36,7 +36,7 @@ export class PlayScene extends Phaser.Scene {
     else this.s = new Sim({ ...base, deck: d.deck });
     this.powers = 0; this.acc = 0; this.paused = false; this.ended = false; this.awakened = false; this.leakedWave = false; this.voT = 0;
 
-    const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
+    const bg = this.add.image(W / 2, H / 2, M.bgKey()); bg.setScale(Math.max(W / bg.width, H / bg.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x05061A, 0.35);
     // 배치: 판은 가운데 아래쪽, 길은 판 둘레 ㄷ자
     // 조작부는 화면 아래에 붙이고, 판(+둘레 길)은 위 정보와 조작부 사이 가운데에
@@ -72,10 +72,10 @@ export class PlayScene extends Phaser.Scene {
     const g = this.add.graphics().setDepth(2);
     g.lineStyle(108, 0x0A0D24, 0.72); g.beginPath(); g.moveTo(...this.pathPts[0]); for (const p of this.pathPts.slice(1)) g.lineTo(...p); g.strokePath();
     const edge = this.add.graphics().setDepth(2);
-    edge.lineStyle(2, 0xB59BFF, 0.28); edge.beginPath(); edge.moveTo(...this.pathPts[0]); for (const p of this.pathPts.slice(1)) edge.lineTo(...p); edge.strokePath();
+    edge.lineStyle(2, M.field().accent, 0.28); edge.beginPath(); edge.moveTo(...this.pathPts[0]); for (const p of this.pathPts.slice(1)) edge.lineTo(...p); edge.strokePath();
     // 흐르는 룬 점 (방향 표시)
     this.flowDots = [];
-    for (let i = 0; i < 26; i++) { const dt = this.add.image(0, 0, 'pip').setDepth(3).setTint(0xB59BFF).setAlpha(0.35).setScale(0.45); dt.k = i / 26; this.flowDots.push(dt); }
+    for (let i = 0; i < 26; i++) { const dt = this.add.image(0, 0, 'pip').setDepth(3).setTint(M.field().accent).setAlpha(0.35).setScale(0.45); dt.k = i / 26; this.flowDots.push(dt); }
     // 시작·끝 표시
     const [sx, sy] = this.pathPts[0], [ex, ey] = this.pathPts[3];
     this.add.image(sx, sy + 34, 'glow').setTint(0x6E4BFF).setAlpha(0.6).setScale(1.4).setDepth(2).setBlendMode('ADD');
@@ -86,7 +86,7 @@ export class PlayScene extends Phaser.Scene {
   slotXY(i) { const r = Math.floor(i / COLS), c = i % COLS; return [this.BX + c * (CS + GAP) + CS / 2, this.BY + r * (CS + GAP) + CS / 2]; }
   makeBoard() {
     const g = this.add.graphics().setDepth(4);
-    g.fillStyle(0x070A1E, 0.75).fillRoundedRect(this.BX - 22, this.BY - 22, BW + 44, BH + 44, 34).lineStyle(2, 0xB59BFF, 0.25).strokeRoundedRect(this.BX - 22, this.BY - 22, BW + 44, BH + 44, 34);
+    g.fillStyle(0x070A1E, 0.75).fillRoundedRect(this.BX - 22, this.BY - 22, BW + 44, BH + 44, 34).lineStyle(2, M.field().accent, 0.25).strokeRoundedRect(this.BX - 22, this.BY - 22, BW + 44, BH + 44, 34);
     for (let i = 0; i < SLOTS; i++) { const [x, y] = this.slotXY(i); this.add.image(x, y, 'slot').setDisplaySize(CS, CS).setDepth(5); }
     this.dieViews = new Array(SLOTS).fill(null);
   }
@@ -149,17 +149,48 @@ export class PlayScene extends Phaser.Scene {
     const D = 50, y0 = this.ctrlY;
     if (this.pw) this.pw.forEach(p => p.c.destroy());
     const types = [...new Set(this.s.deck)];
+    // 버튼처럼 보이게: 도톰한 몸통 + 아래 그림자 + "▲ 강화 · 가격" 알약 (강화할 수 있으면 금색으로 빛남)
     this.pw = types.map((t, i) => {
-      const x = W / 2 + (i - (types.length - 1) / 2) * 196, c = this.add.container(x, y0).setDepth(D);
-      const g = this.add.graphics(); g.fillStyle(0x0D1230, 0.85).fillRoundedRect(-86, -64, 172, 128, 24).lineStyle(2, RUNES[t].color, 0.6).strokeRoundedRect(-86, -64, 172, 128, 24);
-      const ic = this.add.image(-38, -12, `rune_${t}`).setDisplaySize(62, 62);
-      const lv = T(this, 34, -26, 'Lv1', 26, C.text, { w: 900 });
-      const cost = T(this, 34, 10, '', 24, C.gold, { w: 800 });
-      const nm = T(this, 0, 42, RUNES[t].name, 22, C.sub, { w: 800 });
-      c.add([g, ic, lv, cost, nm]); c.setSize(172, 128).setInteractive({ useHandCursor: true });
-      c.on('pointerup', () => this.doPower(t));
-      return { t, c, lv, cost };
+      const x = W / 2 + (i - (types.length - 1) / 2) * 196, c = this.add.container(x, y0).setDepth(D), col = RUNES[t].color;
+      const g = this.add.graphics();
+      g.fillStyle(0x000000, 0.45).fillRoundedRect(-84, -60, 168, 146, 24);                       // 아래 그림자 (눌리는 버튼 느낌)
+      g.fillStyle(0x1A2150, 1).fillRoundedRect(-86, -70, 172, 146, 24);
+      g.fillStyle(0xFFFFFF, 0.07).fillRoundedRect(-80, -64, 160, 40, 18);                         // 위쪽 광택
+      g.lineStyle(3, col, 0.85).strokeRoundedRect(-86, -70, 172, 146, 24);
+      const glow = this.add.image(0, 0, 'glow').setTint(0xF5C451).setBlendMode('ADD').setScale(2.6, 2.2).setAlpha(0);
+      const ic = this.add.image(-42, -26, `rune_${t}`).setDisplaySize(58, 58);
+      const lv = T(this, 30, -40, 'Lv1', 26, C.text, { w: 900 });
+      const nm = T(this, 30, -10, RUNES[t].name, 19, C.sub, { w: 800 });
+      const pill = this.add.graphics();
+      const cost = T(this, 0, 42, '', 24, C.text, { w: 900, shadow: false });
+      c.add([glow, g, ic, lv, nm, pill, cost]); c.setSize(172, 150).setInteractive({ useHandCursor: true });
+      c.on('pointerdown', () => c.setScale(0.94));
+      c.on('pointerout', () => c.setScale(1));
+      c.on('pointerup', () => { c.setScale(1); this.doPower(t); });
+      return { t, c, lv, cost, pill, glow, state: '' };
     });
+  }
+  // 강화 버튼 상태 그리기 (상태가 바뀔 때만)
+  drawPower(p, state, c) {
+    if (p.state === state && p.cv === c) return;
+    const first = p.state !== state; p.state = state; p.cv = c;
+    p.pill.clear();
+    if (state === 'max') { p.pill.fillStyle(0x2A3060, 1).fillRoundedRect(-74, 24, 148, 38, 19); p.cost.setText('MAX').setColor(C.gold); }
+    else if (state === 'ok') { p.pill.fillStyle(0xC98612, 1).fillRoundedRect(-74, 28, 148, 38, 19).fillStyle(0xF5C451, 1).fillRoundedRect(-74, 23, 148, 38, 19); p.cost.setText(`▲ 강화 ${fmt(c)}`).setColor('#2A1A00'); }
+    else { p.pill.fillStyle(0x2A3060, 1).fillRoundedRect(-74, 24, 148, 38, 19); p.cost.setText(`▲ ${fmt(c)}`).setColor(C.sub); }
+    if (first) {
+      if (p.pulse) { p.pulse.stop(); p.pulse = null; p.glow.setAlpha(0); }
+      if (state === 'ok') p.pulse = this.tweens.add({ targets: p.glow, alpha: { from: 0.15, to: 0.45 }, duration: 600, yoyo: true, repeat: -1 });
+    }
+  }
+  // 처음으로 강화할 수 있을 때 한 번 알려 줌
+  powerHint(p) {
+    const d = load(); if (d.tips.power || this.hinted || this.bot) return; this.hinted = true;
+    const h = this.add.container(p.c.x, p.c.y - 120).setDepth(60);
+    const bg = this.add.graphics(); bg.fillStyle(0xF5C451, 1).fillRoundedRect(-110, -30, 220, 56, 28).fillTriangle(-12, 24, 12, 24, 0, 40);
+    h.add([bg, T(this, 0, -2, '눌러서 강화!', 26, '#2A1A00', { w: 900, shadow: false })]);
+    this.tweens.add({ targets: h, y: h.y - 12, duration: 450, yoyo: true, repeat: 9, onComplete: () => h.destroy() });
+    this.powerHintObj = h;
   }
   // 다음 보스 예고: 남은 공간에 보스 초상 · 이름 · 특징 · 웨이브 진행도
   makeBossPreview(y0, y1, x0, x1) {
@@ -190,7 +221,11 @@ export class PlayScene extends Phaser.Scene {
     this.bpImg.setAlpha(s.phase === 'boss' ? 0.45 : 1);
   }
   doSummon() { if (this.paused || this.s.over) return; const slot = this.s.summon(); if (slot == null) { audio.play('sfx_click', { volume: 0.3 }); return; } this.render(); }
-  doPower(t) { if (this.paused || this.s.over) return; if (this.s.powerUp(t)) { this.powers++; this.render(); } else audio.play('sfx_click', { volume: 0.3 }); }
+  doPower(t) {
+    if (this.paused || this.s.over) return;
+    if (this.s.powerUp(t)) { this.powers++; const d = load(); if (!d.tips.power) { d.tips.power = 1; save(); } if (this.powerHintObj && this.powerHintObj.active) this.powerHintObj.destroy(); this.render(); }
+    else { audio.play('sfx_click', { volume: 0.3 }); const c = this.s.powerCost(t); if (c != null) toast(this, `SP 가 ${fmt(c - this.s.sp)} 더 필요해요`, C.sub, this.ctrlY - 160); }
+  }
 
   // ── 끌어서 합성 ──
   makeInput() {
@@ -268,7 +303,7 @@ export class PlayScene extends Phaser.Scene {
     this.sumBtn.setEnabled(!full && s.sp >= cost); this.sumCost.setText(full ? '판이 가득 찼어요 · 끌어서 합성' : `${fmt(cost)} SP`);
     this.hearts.forEach((h, i) => h.setAlpha(i < s.lives ? 1 : 0.15));
     this.updateBossPreview();
-    for (const p of this.pw) { const lv = s.power[p.t], c = s.powerCost(p.t); p.lv.setText(`Lv${lv + 1}`); p.cost.setText(c == null ? 'MAX' : fmt(c)); p.c.setAlpha(c != null && s.sp >= c ? 1 : 0.55); }
+    for (const p of this.pw) { const lv = s.power[p.t], c = s.powerCost(p.t), st = c == null ? 'max' : s.sp >= c ? 'ok' : 'no'; p.lv.setText(`Lv${lv + 1}`); this.drawPower(p, st, c); if (st === 'ok' && s.wave >= 2) this.powerHint(p); }
   }
   // 적 그리기 + 움직임: 정령은 둥실 · 임프는 뛰어다님 · 골렘은 쿵쿵 · 보스는 숨쉬며 흔들림. 진행 방향을 바라봄
   drawEnemies() {
@@ -528,13 +563,13 @@ export class PlayScene extends Phaser.Scene {
     c.add(T(this, 0, 128, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
     this.paused = true;
     const z = this.add.zone(W / 2, H / 2, W, H).setInteractive().setDepth(96);
-    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.6').then(m => m.save()); });
+    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.7').then(m => m.save()); });
   }
 
   gameOver() {
     this.ended = true;
     audio.stopMusic(); this.voice('over', 5);
-    const s = this.s, r = { wave: s.wave, kills: s.kills, bossKills: s.bossKills, maxPips: s.maxPips, merges: s.merges, powers: this.powers };
+    const s = this.s, r = { wave: s.wave, kills: s.kills, bossKills: s.bossKills, maxPips: s.maxPips, merges: s.merges, powers: this.powers, deck: s.deck.slice() };
     const res = M.finishRun(r, this.mode);
     this.cameras.main.fadeOut(1400, 5, 6, 26);
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', { ...r, ...res, mode: this.mode }));

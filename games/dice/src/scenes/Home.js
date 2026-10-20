@@ -1,23 +1,24 @@
 // 홈: 생존 원정 · 오늘의 도전 · 덱 · 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.8.6';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.6';
-import { audio } from '../audio.js?v=0.8.6';
-import { load } from '../save.js?v=0.8.6';
-import * as M from '../meta.js?v=0.8.6';
-import { RUNES } from '../core/sim.js?v=0.8.6';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.8.7';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.7';
+import { audio } from '../audio.js?v=0.8.7';
+import { load } from '../save.js?v=0.8.7';
+import * as M from '../meta.js?v=0.8.7';
+import { RUNES } from '../core/sim.js?v=0.8.7';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
   create() {
     const d = load();
-    const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
+    const bg = this.add.image(W / 2, H / 2, M.bgKey()); bg.setScale(Math.max(W / bg.width, H / bg.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x05061A, 0.45);
     const ci = M.checkIn(); M.checkUnlocks();
     const sp = Math.max(0, (H - 1920) / 6);
     this.add.image(70, 92, 'i_flame').setDisplaySize(48, 48).setTint(0xFF8A3D);
     T(this, 104, 92, `${d.streak.count}일 연속`, 32, C.text, { ox: 0, w: 800 });
-    this.add.image(W - 310, 92, 'i_star').setDisplaySize(44, 44).setTint(0x8FE3FF);
-    this.cry = T(this, W - 278, 92, fmt(d.crystals), 34, '#8FE3FF', { ox: 0, w: 900 });
+    this.add.image(W - 420, 92, 'i_star').setDisplaySize(44, 44).setTint(0x8FE3FF);
+    iconBtn(this, W - 200, 92, 'i_land', () => this.fields(), 96);
+    this.cry = T(this, W - 388, 92, fmt(d.crystals), 34, '#8FE3FF', { ox: 0, w: 900 });
     iconBtn(this, W - 80, 92, 'i_gear', () => this.settings(), 96);
     // 로고: 룬 주사위 3개 + 제목
     const ly = 290 + sp * 0.6;
@@ -34,20 +35,20 @@ export class HomeScene extends Phaser.Scene {
     btn(this, W - 260, cy + 6, 300, 130, '출정', () => this.go('Play', { mode: 'run' }), { style: 'gold', icon: 'i_play', size: 44 });
     // 오늘의 도전
     const dc = M.dailyChallenge(), dy = cy + 320 + sp;
-    // 오늘의 도전 (왼쪽) · 아케이드 (오른쪽)
-    const hw = 470, lx = W / 2 - hw / 2 - 10, rx = W / 2 + hw / 2 + 10;
-    this.add.existing(panel(this, lx, dy, hw, 280, { tone: 'gold' }));
-    T(this, lx - hw / 2 + 36, dy - 100, 'DAILY CHALLENGE', 20, C.gold, { ox: 0, w: 900, ls: 4 });
-    T(this, lx - hw / 2 + 36, dy - 54, '오늘의 도전', 42, C.text, { ox: 0, w: 900 });
-    dc.deck.forEach((r, i) => { const x = lx - hw / 2 + 66 + i * 70; this.add.image(x, dy + 12, `die_${r}`).setDisplaySize(60, 60); this.add.image(x, dy + 12, `rune_${r}`).setDisplaySize(34, 34); });
-    btn(this, lx, dy + 92, hw - 70, 92, dc.tries ? `도전 · 기록 ${dc.best}` : '도전', () => this.go('Play', { mode: 'daily' }), { style: 'gold', size: 32 });
-    this.add.existing(panel(this, rx, dy, hw, 280));
-    T(this, rx - hw / 2 + 36, dy - 100, 'ARCADE', 20, '#B59BFF', { ox: 0, w: 900, ls: 4 });
-    T(this, rx - hw / 2 + 36, dy - 54, '아케이드', 42, C.text, { ox: 0, w: 900 });
-    T(this, rx - hw / 2 + 36, dy + 2, '보스 러시 · 랜덤 아레나\n단일 룬 시련 · 심연 광산', 22, C.sub, { ox: 0, w: 800, lh: 6, align: 'left' });
-    btn(this, rx, dy + 92, hw - 70, 92, '입장', () => this.go('Arcade'), { style: 'indigo', size: 34 });
+    // 오늘의 도전 (왼쪽) · 아케이드 (오른쪽) — 버튼이 카드 안에 들어오게 여유 있게
+    const hw = 470, lx = W / 2 - hw / 2 - 10, rx = W / 2 + hw / 2 + 10, cy2 = dy + 15, chh = 310;
+    this.add.existing(panel(this, lx, cy2, hw, chh, { tone: 'gold' }));
+    T(this, lx - hw / 2 + 36, dy - 106, 'DAILY CHALLENGE', 20, C.gold, { ox: 0, w: 900, ls: 4 });
+    T(this, lx - hw / 2 + 36, dy - 60, '오늘의 도전', 42, C.text, { ox: 0, w: 900 });
+    dc.deck.forEach((r, i) => { const x = lx - hw / 2 + 70 + i * 74; this.add.image(x, dy + 6, `die_${r}`).setDisplaySize(62, 62); this.add.image(x, dy + 6, `rune_${r}`).setDisplaySize(36, 36); });
+    btn(this, lx, dy + 98, hw - 80, 84, dc.tries ? `도전 · 기록 ${dc.best}` : '도전', () => this.go('Play', { mode: 'daily' }), { style: 'gold', size: 30 });
+    this.add.existing(panel(this, rx, cy2, hw, chh));
+    T(this, rx - hw / 2 + 36, dy - 106, 'ARCADE', 20, '#B59BFF', { ox: 0, w: 900, ls: 4 });
+    T(this, rx - hw / 2 + 36, dy - 60, '아케이드', 42, C.text, { ox: 0, w: 900 });
+    T(this, rx - hw / 2 + 36, dy + 6, '보스 러시 · 랜덤 아레나\n단일 룬 시련 · 심연 광산', 22, C.sub, { ox: 0, w: 800, lh: 6, align: 'left' });
+    btn(this, rx, dy + 98, hw - 80, 84, '입장', () => this.go('Arcade'), { style: 'indigo', size: 32 });
     // 덱 미리보기 + 버튼
-    const ky = dy + 268 + sp;
+    const ky = dy + 290 + sp;
     T(this, 110, ky - 60, '내 덱', 34, C.text, { ox: 0, w: 900 });
     d.deck.forEach((r, i) => { const x = 130 + i * 116; this.add.image(x, ky + 20, `die_${r}`).setDisplaySize(100, 100); this.add.image(x, ky + 20, `rune_${r}`).setDisplaySize(56, 56); T(this, x, ky + 86, `★${d.tiers[r] || 1}`, 22, C.sub, { w: 800 }); });
     const dot = (x, y) => { const c = this.add.circle(x, y, 13, 0xFF5A7A).setStrokeStyle(3, 0x0B1026); this.tweens.add({ targets: c, scale: 1.25, duration: 500, yoyo: true, repeat: -1 }); };
@@ -76,6 +77,23 @@ export class HomeScene extends Phaser.Scene {
       if (m.claimed) c.add(T(this, W - 160, y, '받음', 28, C.dim, { w: 800 }));
       else if (m.done) c.add(btn(this, W - 170, y + 4, 200, 72, `◆ ${m.reward}`, () => { const r = M.claim(m.id); if (r) { audio.play('sfx_power', { volume: 0.6 }); toast(this, `수정 +${r}`, '#8FE3FF'); this.cry.setText(fmt(load().crystals)); this.drawMissions(); } }, { style: 'gold', size: 28 }));
       else c.add(T(this, W - 160, y, `◆ ${m.reward}`, 28, '#8FE3FF', { w: 800 }));
+    });
+  }
+  // 전장 꾸미기: 배경과 길 색 (수정으로 구매 · 영구)
+  fields() {
+    const d = load(), p = popup(this, '전장 꾸미기', 1020, 860), c = p.content;
+    c.add(T(this, 0, -282, '배경과 길 빛깔이 바뀌어요 · 한 번 사면 영구', 26, C.sub, { w: 800 }));
+    M.FIELDS.forEach((f, i) => {
+      const x = (i - 2) * 190, y = 20, own = d.fields[f.id], on = d.field === f.id;
+      const fr = this.add.graphics(); fr.fillStyle(0x0B1026, 1).fillRoundedRect(x - 86, y - 200, 172, 300, 18).lineStyle(on ? 6 : 3, on ? 0xF5C451 : f.accent, on ? 1 : 0.6).strokeRoundedRect(x - 86, y - 200, 172, 300, 18); c.add(fr);
+      const im = this.add.image(x, y - 50, `bg_${f.id}`); im.setScale(Math.max(160 / im.width, 288 / im.height)); im.setCrop((im.width - 160 / im.scaleX) / 2, (im.height - 288 / im.scaleY) / 2, 160 / im.scaleX, 288 / im.scaleY); c.add(im);
+      if (!own) c.add(this.add.image(x, y - 50, 'i_lock').setDisplaySize(44, 44).setAlpha(0.85));
+      c.add(T(this, x, y + 140, f.name, 26, on ? C.gold : C.text, { w: 900 }));
+      c.add(btn(this, x, y + 210, 170, 80, on ? '사용 중' : own ? '사용' : `◆${f.cost}`, () => {
+        if (on) return;
+        if (own) M.setField(f.id); else if (!M.buyField(f.id)) return toast(this, '수정이 부족해요', C.sub);
+        audio.play(own ? 'sfx_click' : 'sfx_awaken', { volume: 0.6 }); p.close(); this.time.delayedCall(160, () => this.scene.restart());
+      }, { style: on ? 'ghost' : own ? 'indigo' : 'gold', size: own ? 28 : 26 }));
     });
   }
   settings() {

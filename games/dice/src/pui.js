@@ -1,6 +1,6 @@
 // 프리미엄 UI 키트: 깔끔한 글자 · 유리 패널 · 그라데이션 버튼 · 선 아이콘 (모두 코드로 그림 — 선명하고 가벼움)
-import { W, H, FONT } from './config.js?v=0.8.6';
-import { audio } from './audio.js?v=0.8.6';
+import { W, H, FONT } from './config.js?v=0.8.7';
+import { audio } from './audio.js?v=0.8.7';
 
 export const C = {
   ink: '#0B1026', text: '#F4F6FF', sub: '#9AA3D6', dim: '#5E679A', gold: '#F5C451', cyan: '#5EE3FF', pink: '#FF6FAE', green: '#5BE39A',
@@ -19,14 +19,16 @@ export function T(scene, x, y, s, size = 44, color = C.text, o = {}) {
   return t;
 }
 
-const rr = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+// 둥근 사각형 — 모서리 반지름이 높이·너비의 절반을 넘으면 arcTo 가 바깥으로 뾰족하게 튀므로(뿔 모양 자국) 반드시 줄임
+const rr = (g, x, y, w, h, r) => { r = Math.max(0, Math.min(r, w / 2, h / 2)); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 function canvasTex(scene, key, w, h, draw) { if (scene.textures.exists(key)) return key; const c = scene.textures.createCanvas(key, w, h); draw(c.getContext(), w, h); c.refresh(); return key; }
 
 // 유리 패널 (반투명 남색 + 얇은 밝은 테두리 + 위쪽 은은한 빛)
 export function panel(scene, x, y, w, h, o = {}) {
-  const r = o.r ?? 36, key = `pnl_${w}_${h}_${r}_${o.tone || 'n'}`;
-  canvasTex(scene, key, w + 40, h + 40, (g) => {
-    g.translate(20, 20);
+  const r = o.r ?? 36, key = `pnl2_${w}_${h}_${r}_${o.tone || 'n'}`;
+  // 그림자가 잘리지 않게 여백을 넉넉히 (그림자 번짐 24 + 아래로 10)
+  canvasTex(scene, key, w + 96, h + 96, (g) => {
+    g.translate(48, 48);
     g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 24; g.shadowOffsetY = 10;
     rr(g, 0, 0, w, h, r);
     const gr = g.createLinearGradient(0, 0, 0, h);
@@ -48,9 +50,10 @@ const STY = {
   ghost: { a: 'rgba(255,255,255,0.10)', b: 'rgba(255,255,255,0.06)', c: 'rgba(255,255,255,0.25)', text: '#F4F6FF' },
 };
 export function btn(scene, x, y, w, h, label, onClick, o = {}) {
-  const st = STY[o.style || 'gold'], r = o.r ?? h / 2, key = `btn_${o.style || 'gold'}_${w}_${h}`;
-  canvasTex(scene, key, w + 30, h + 36, (g) => {
-    g.translate(15, 12);
+  const st = STY[o.style || 'gold'], r = o.r ?? h / 2, key = `btn2_${o.style || 'gold'}_${w}_${h}`;
+  // 그림자(번짐 18 · 아래 10)가 잘려 모서리에 각진 자국이 남지 않게 여백을 넉넉히 — 버튼 중심은 예전과 같게
+  canvasTex(scene, key, w + 80, h + 80, (g) => {
+    g.translate(40, 34);
     g.shadowColor = 'rgba(0,0,0,0.4)'; g.shadowBlur = 18; g.shadowOffsetY = 10;
     rr(g, 0, 6, w, h - 6, r); g.fillStyle = st.c; g.fill(); g.shadowColor = 'transparent';
     rr(g, 0, 0, w, h - 8, r); const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, st.a); gr.addColorStop(1, st.b); g.fillStyle = gr; g.fill();
@@ -113,6 +116,7 @@ export function makeIcons(scene) {
   ic('i_lock', g => { g.fillRect(24, 44, 48, 36); g.beginPath(); g.arc(48, 42, 16, Math.PI, 0); g.stroke(); });
   ic('i_check', g => { g.lineWidth = 11; g.beginPath(); g.moveTo(20, 50); g.lineTo(40, 70); g.lineTo(78, 28); g.stroke(); });
   ic('i_grid', g => { for (const [x, y] of [[18, 18], [52, 18], [18, 52], [52, 52]]) g.fillRect(x, y, 26, 26); });
+  ic('i_land', g => { g.lineWidth = 7; g.strokeRect(14, 18, 68, 60); g.beginPath(); g.moveTo(18, 72); g.lineTo(40, 44); g.lineTo(54, 60); g.lineTo(64, 50); g.lineTo(78, 72); g.closePath(); g.fill(); g.beginPath(); g.arc(64, 34, 7, 0, Math.PI * 2); g.fill(); });
   ic('i_film', g => { g.lineWidth = 7; g.strokeRect(16, 24, 64, 48); g.beginPath(); g.moveTo(42, 38); g.lineTo(58, 48); g.lineTo(42, 58); g.closePath(); g.fill(); });
 }
 
@@ -134,7 +138,12 @@ export function popup(scene, title, w = 900, h = 900, o = {}) {
   return root;
 }
 
+// 알림: 어두운 알약 배경 위 글자 (어느 배경에서도 읽히게)
 export function toast(scene, msg, color = C.text, y = H * 0.4) {
-  const t = T(scene, W / 2, y, msg, 42, color, { w: 800 }).setDepth(3000).setAlpha(0);
-  scene.tweens.add({ targets: t, alpha: 1, y: y - 20, duration: 180, yoyo: true, hold: 1100, onComplete: () => t.destroy() });
+  const c = scene.add.container(W / 2, y).setDepth(3000).setAlpha(0);
+  const t = T(scene, 0, 0, msg, 38, color, { w: 800, wrap: W - 160 });
+  const bw = Math.min(W - 60, t.width + 80), bh = t.height + 34;
+  const bg = scene.add.graphics(); bg.fillStyle(0x070A1E, 0.88).fillRoundedRect(-bw / 2, -bh / 2, bw, bh, Math.min(40, bh / 2)).lineStyle(2, 0xFFFFFF, 0.12).strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, Math.min(40, bh / 2));
+  c.add([bg, t]);
+  scene.tweens.add({ targets: c, alpha: 1, y: y - 20, duration: 180, yoyo: true, hold: 1100, onComplete: () => c.destroy() });
 }

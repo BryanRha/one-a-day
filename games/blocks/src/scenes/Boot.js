@@ -1,9 +1,9 @@
 // 로딩 + 코드로 그리는 그림들: 블록 스킨 5종 × 7색 · 보석 3종 · 배경 테마 · 아이콘
-import { W, H, TITLE } from '../config.js?v=0.8.6';
-import { SFX } from '../audio.js?v=0.8.6';
-import { makeTextures } from '../fx.js?v=0.8.6';
-import { makeIcons } from '../pui.js?v=0.8.6';
-import { load } from '../save.js?v=0.8.6';
+import { W, H, TITLE } from '../config.js?v=0.8.7';
+import { SFX } from '../audio.js?v=0.8.7';
+import { makeTextures } from '../fx.js?v=0.8.7';
+import { makeIcons } from '../pui.js?v=0.8.7';
+import { load } from '../save.js?v=0.8.7';
 
 // 블록 색: [기본, 밝은 면, 어두운 면]
 export const PALETTE = [
@@ -26,7 +26,7 @@ export const THEMES = [
   { name: '선셋', top: '#1A0A16', bot: '#5A1E3A', glow: 'rgba(255,120,120,0.30)', board: 0x210B1C, cell: '#3A1530' },
 ];
 
-function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function rr(g, x, y, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h / 2)); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 
 // 스킨별 블록 그리기
 function drawBlock(g, S, [base, light, dark], skin) {

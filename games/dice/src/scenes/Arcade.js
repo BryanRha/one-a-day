@@ -1,11 +1,11 @@
 // 아케이드: 보스 러시 · 랜덤 아레나 · 단일 룬 시련 · 심연 광산 (원작 아케이드 모드를 혼자 하는 버전으로)
-import { W, H } from '../config.js?v=0.8.6';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.6';
-import { audio } from '../audio.js?v=0.8.6';
-import { load, save } from '../save.js?v=0.8.6';
-import * as M from '../meta.js?v=0.8.6';
-import { RUNES, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.8.6';
-import { DESC } from './Deck.js?v=0.8.6';
+import { W, H } from '../config.js?v=0.8.7';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.7';
+import { audio } from '../audio.js?v=0.8.7';
+import { load, save } from '../save.js?v=0.8.7';
+import * as M from '../meta.js?v=0.8.7';
+import { RUNES, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.8.7';
+import { DESC } from './Deck.js?v=0.8.7';
 
 const hex = n => '#' + n.toString(16).padStart(6, '0');
 const LOOK = { rush: ['boss_serpent', 0xFF5A7A], arena: ['die_echo', 0xB59BFF], mono: ['die_flame', 0xFF8A3D], abyss: ['boss_statue', 0x5EE3FF] };
@@ -14,7 +14,7 @@ export class ArcadeScene extends Phaser.Scene {
   constructor() { super('Arcade'); }
   create() {
     const d = load();
-    const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
+    const bg = this.add.image(W / 2, H / 2, M.bgKey()); bg.setScale(Math.max(W / bg.width, H / bg.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x05061A, 0.6);
     iconBtn(this, 80, 92, 'i_home', () => this.go('Home'), 96);
     T(this, W / 2, 92, '아케이드', 44, C.text, { w: 900 });
@@ -49,7 +49,7 @@ export class ArcadeScene extends Phaser.Scene {
   pick(k) {
     const d = load(), opts = M.pickChoices(3);
     const p = popup(this, k === 'mono' ? '시련의 룬을 골라요' : '첫 룬을 골라요', 980, 900), c = p.content;
-    c.add(T(this, 0, -350, k === 'mono' ? '이 룬 하나만으로 끝까지 버텨요' : '3웨이브마다 룬을 하나씩 더 골라요 (최대 5개)', 26, C.sub, { w: 800 }));
+    c.add(T(this, 0, -290, k === 'mono' ? '이 룬 하나만으로 끝까지 버텨요' : '3웨이브마다 룬을 하나씩 더 골라요 (최대 5개)', 26, C.sub, { w: 800 }));
     opts.forEach((r, i) => {
       const x = (i - 1) * 300, y = 30, col = RARITY_COLOR[RARITY[r]];
       const g = this.add.graphics(); g.fillStyle(0x10153A, 0.95).fillRoundedRect(x - 135, y - 230, 270, 460, 26).lineStyle(4, col, 0.9).strokeRoundedRect(x - 135, y - 230, 270, 460, 26); c.add(g);

@@ -1,9 +1,9 @@
 // 보상 길: 원정마다 명성이 쌓이고 단계마다 보상 (10단계마다 전설 확정권) — 끌어서 위아래로 보기
-import { W, H } from '../config.js?v=0.8.6';
-import { T, C, fmt, btn, iconBtn, toast } from '../pui.js?v=0.8.6';
-import { audio } from '../audio.js?v=0.8.6';
-import { load } from '../save.js?v=0.8.6';
-import * as M from '../meta.js?v=0.8.6';
+import { W, H } from '../config.js?v=0.8.7';
+import { T, C, fmt, btn, iconBtn, toast } from '../pui.js?v=0.8.7';
+import { audio } from '../audio.js?v=0.8.7';
+import { load } from '../save.js?v=0.8.7';
+import * as M from '../meta.js?v=0.8.7';
 
 const ROW = 150;
 
@@ -11,7 +11,7 @@ export class RoadScene extends Phaser.Scene {
   constructor() { super('Road'); }
   create(data = {}) {
     const d = load(), r = M.road();
-    const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
+    const bg = this.add.image(W / 2, H / 2, M.bgKey()); bg.setScale(Math.max(W / bg.width, H / bg.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x05061A, 0.62);
     // 길 목록 (끌어서 스크롤)
     const top = 400, bottom = H - 40, view = bottom - top;

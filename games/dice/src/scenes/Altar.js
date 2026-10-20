@@ -1,10 +1,10 @@
 // 룬 제단 (뽑기): 게임에서 번 수정·열쇠·매일 무료 1회로만 · 확률 공개 · 천장 · 10회 영웅 보장 · 중복은 등급업 카드
-import { W, H } from '../config.js?v=0.8.6';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.6';
-import { audio } from '../audio.js?v=0.8.6';
-import { load } from '../save.js?v=0.8.6';
-import * as M from '../meta.js?v=0.8.6';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.8.6';
+import { W, H } from '../config.js?v=0.8.7';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.7';
+import { audio } from '../audio.js?v=0.8.7';
+import { load } from '../save.js?v=0.8.7';
+import * as M from '../meta.js?v=0.8.7';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.8.7';
 
 const hex = n => '#' + n.toString(16).padStart(6, '0');
 
@@ -12,7 +12,7 @@ export class AltarScene extends Phaser.Scene {
   constructor() { super('Altar'); }
   create() {
     const d = load();
-    const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
+    const bg = this.add.image(W / 2, H / 2, M.bgKey()); bg.setScale(Math.max(W / bg.width, H / bg.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x05061A, 0.55);
     iconBtn(this, 80, 92, 'i_home', () => this.go('Home'), 96);
     T(this, W / 2, 92, '룬 제단', 44, C.text, { w: 900 });
@@ -68,7 +68,7 @@ export class AltarScene extends Phaser.Scene {
   }
   reveal(res) {
     const L = this.add.container(0, 0).setDepth(500);
-    L.add(this.add.rectangle(W / 2, H / 2, W, H, 0x03040E, 0.86).setInteractive());
+    L.add(this.add.rectangle(W / 2, H / 2, W, H, 0x03040E, 0.95).setInteractive());
     const n = res.length, per = n === 1 ? 1 : 5, cw = n === 1 ? 380 : 188, chh = n === 1 ? 500 : 270;
     const top = H / 2 - (n === 1 ? 60 : 200);
     L.add(T(this, W / 2, top - (n === 1 ? 340 : 240), n === 1 ? '룬 획득' : '룬 10개 획득', 52, C.text, { w: 900 }));

@@ -1,6 +1,6 @@
 // 진행·재방문: 룬 해금(최고 웨이브) · 수정으로 영구 등급업(확정, 뽑기 없음) · 연속 출석 · 오늘의 미션 · 오늘의 도전
-import { load, save } from './save.js?v=0.8.6';
-import { RUNE_ORDER, RARITY } from './core/sim.js?v=0.8.6';
+import { load, save } from './save.js?v=0.8.7';
+import { RUNE_ORDER, RARITY } from './core/sim.js?v=0.8.7';
 
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -46,11 +46,39 @@ export function draw(how) {
   save(); track('draw', n);
   return out;
 }
+// ── 한계 돌파: 최고 등급(★10) 룬을 3단계 더 (단계마다 피해 +30% · 치명타 피해 +3%) ──
+export const LIMIT_MAX = 3;
+export const limitCost = k => ({ cards: 8 * (k + 1), crystals: 400 * (k + 1) });
+export function limitBreak(r) {
+  const d = load(), k = d.limit[r] || 0, c = limitCost(k);
+  if ((d.tiers[r] || 1) < MAX_TIER || k >= LIMIT_MAX || (d.cards[r] || 0) < c.cards || d.crystals < c.crystals) return false;
+  d.cards[r] -= c.cards; d.crystals -= c.crystals; d.limit[r] = k + 1; save(); return true;
+}
+// 게임에 넘기는 등급 (한계 돌파 1단계 = 등급 2칸)
+export function effTiers() { const d = load(), o = { ...d.tiers }; for (const [r, k] of Object.entries(d.limit || {})) o[r] = (o[r] || 1) + 2 * k; return o; }
+
+// ── 전장 꾸미기 (배경 · 길 색) ──
+export const FIELDS = [
+  { id: 'altar', name: '고대 제단', cost: 0, accent: 0xB59BFF },
+  { id: 'frost', name: '얼음 성소', cost: 600, accent: 0x8FD8FF },
+  { id: 'lava', name: '용암 대장간', cost: 900, accent: 0xFF8A3D },
+  { id: 'sky', name: '천공 정원', cost: 1200, accent: 0xFFB8D8 },
+  { id: 'abyss', name: '심해 신전', cost: 1500, accent: 0x40E0D0 },
+];
+export const field = () => FIELDS.find(f => f.id === load().field) || FIELDS[0];
+export const bgKey = () => `bg_${field().id}`;
+export function buyField(id) { const d = load(), f = FIELDS.find(x => x.id === id); if (!f || d.fields[id] || d.crystals < f.cost) return false; d.crystals -= f.cost; d.fields[id] = 1; d.field = id; save(); return true; }
+export function setField(id) { const d = load(); if (!d.fields[id]) return false; d.field = id; save(); return true; }
+
+// ── AI 예측 실력 보정: 내 실제 기록 - AI 예상 (최근 6판 평균) ──
+export function notePred(deck, median) { const d = load(); d.lastPred = { key: deck.slice().sort().join(), median }; save(); }
+export function skillAdj() { const c = load().calib || []; if (!c.length) return 0; const a = c.reduce((x, y) => x + y, 0) / c.length; return Math.max(-6, Math.min(6, Math.round(a * 2) / 2)); }
+
 // 전설 확정권 (보상 길 10단계마다)
 export function drawLegend() { const d = load(); if (d.legendTix < 1) return null; d.legendTix--; const o = drawOne(d, 3); d.pity = Math.max(0, d.pity - 1); save(); return [o]; }
 
 // ── 수집 보너스: 등급을 올릴수록 모든 주사위의 치명타 피해가 영구히 오름 (원작의 핵심 성장) ──
-export function critBonus() { const d = load(); let b = 0; for (const r of Object.keys(d.unlocked)) b += 0.01 + 0.05 * ((d.tiers[r] || 1) - 1); return b; }
+export function critBonus() { const d = load(); let b = 0; for (const r of Object.keys(d.unlocked)) b += 0.01 + 0.05 * ((d.tiers[r] || 1) - 1) + 0.03 * ((d.limit || {})[r] || 0); return b; }
 export const critPct = () => Math.round((2.5 + critBonus()) * 100);
 
 // ── 보상 길: 원정마다 명성이 쌓이고, 단계마다 보상 (10단계마다 전설 확정권) ──
@@ -203,6 +231,7 @@ export function finishRun(r, mode) {
   d.crystals += crystals; d.plays++; d.kills += r.kills; d.bossKills += r.bossKills;
   if (mode === 'daily') { d.daily.best = Math.max(d.daily.best, r.wave); d.daily.tries++; }
   else if (!arc && r.wave > d.best) d.best = r.wave;
+  if (mode === 'run' && r.deck && d.lastPred && d.lastPred.key === r.deck.slice().sort().join()) { d.calib = [...(d.calib || []), r.wave - d.lastPred.median].slice(-6); }
   save();
   track('games'); track('wave', r.wave); track('kills', r.kills); track('boss', r.bossKills); track('pips', r.maxPips); track('merge', r.merges); track('power', r.powers);
   if (mode === 'daily') track('daily');

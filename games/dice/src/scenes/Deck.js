@@ -1,11 +1,11 @@
 // 룬 컬렉션: 덱 3개(프리셋) · 칸 골라 룬 넣기 · 덱 조합 보너스 · 24룬 (희귀도) · 카드+수정으로 등급업
-import { W, H } from '../config.js?v=0.8.6';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.6';
-import { audio } from '../audio.js?v=0.8.6';
-import { load } from '../save.js?v=0.8.6';
-import * as M from '../meta.js?v=0.8.6';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js?v=0.8.6';
-import * as P from '../core/predict.js?v=0.8.6';
+import { W, H } from '../config.js?v=0.8.7';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.7';
+import { audio } from '../audio.js?v=0.8.7';
+import { load } from '../save.js?v=0.8.7';
+import * as M from '../meta.js?v=0.8.7';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js?v=0.8.7';
+import * as P from '../core/predict.js?v=0.8.7';
 
 export const DESC = {
   flame: '맞은 적 주변까지 불태워요', frost: '맞은 적을 느리게 해요', storm: '근처 적 둘에게 번개가 이어져요', venom: '독이 쌓여 계속 피해를 줘요',
@@ -28,13 +28,15 @@ export const DESC = {
   growth: '시간이 지나면 눈이 늘어요 (6눈까지)', mirror: '옆에서 가장 센 주사위의 능력을 따라 해요', shift: '합성 결과가 덱에서 가장 높은 등급 룬이 돼요', hammer: '보스 최대 체력에 비례한 피해',
 };
 const hex = n => '#' + n.toString(16).padStart(6, '0');
+// 받침 있으면 '을', 없으면 '를'
+const josa = w => { const c = w.charCodeAt(w.length - 1) - 0xAC00; return c >= 0 && c < 11172 && c % 28 ? '을' : '를'; };
 
 export class DeckScene extends Phaser.Scene {
   constructor() { super('Deck'); }
   create(data = {}) {
     const d = load(); M.decks();
     this.slot = data.slot ?? this.slot ?? 0;
-    const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
+    const bg = this.add.image(W / 2, H / 2, M.bgKey()); bg.setScale(Math.max(W / bg.width, H / bg.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x05061A, 0.62);
     iconBtn(this, 80, 92, 'i_home', () => this.go('Home'), 96);
     T(this, W / 2, 92, '룬 컬렉션', 44, C.text, { w: 900 });
@@ -89,15 +91,17 @@ export class DeckScene extends Phaser.Scene {
   target() { return Math.max(10, load().best + 1); }
   // 지금 덱의 기록 경신 확률 (봇으로 20판) — 숫자가 바뀌며 올라가는 연출
   async predict() {
-    const d = load(), n = 20, tgt = this.target(), id = (this.predId = (this.predId || 0) + 1);
-    const res = await P.predictAsync(d.deck, d.tiers, M.critBonus(), tgt, n, (k, N, ws) => {
+    const d = load(), n = 20, tgt = this.target(), id = (this.predId = (this.predId || 0) + 1), adj = M.skillAdj();
+    const res = await P.predictAsync(d.deck, M.effTiers(), M.critBonus(), tgt, n, (k, N, ws) => {
       if (this.predId !== id || !this.aiT.active) return;
-      const p = ws.filter(w => w >= tgt).length / ws.length;
+      const p = ws.filter(w => w + adj >= tgt).length / ws.length;
       this.aiT.setText(`AI 예측 · 기록 경신 ${Math.round(p * 100)}%  (${k}/${N}판)`);
-    });
+    }, adj);
     if (this.predId !== id || !this.aiT.active) return;
+    M.notePred(d.deck, res.raw);
     this.aiT.setText(`AI 예측 · 기록 경신 ${Math.round(res.p * 100)}%`).setColor(res.p >= 0.5 ? '#7CFFB2' : res.p >= 0.2 ? C.gold : '#FF9BB0');
-    this.aiS.setText(`목표 웨이브 ${tgt} · 예상 웨이브 ${res.median} · 봇 ${n}판 시뮬레이션`);
+    const c = (d.calib || []).length;
+    this.aiS.setText(`목표 ${tgt} · 예상 웨이브 ${res.median} · ${c ? `내 실력 보정 ${adj >= 0 ? '+' : ''}${adj} (${c}판)` : '원정을 하면 내 실력에 맞춰져요'}`);
     this.tweens.add({ targets: this.aiT, scale: 1.06, duration: 120, yoyo: true });
   }
   // AI 추천: 보유 룬으로 후보 덱들을 만들고 실제로 돌려 보고 가장 좋은 덱을 고름
@@ -106,20 +110,20 @@ export class DeckScene extends Phaser.Scene {
     if (owned.length < 5) return toast(this, '룬이 5개 이상 있어야 해요', C.sub);
     this.predId = (this.predId || 0) + 1;
     const p = popup(this, 'AI 덱 추천', 940, 1080, { closable: false }), c = p.content;
-    const sub = T(this, 0, -420, `보유 룬 ${owned.length}개로 덱을 조합해 봐요`, 28, C.sub, { w: 800 }); c.add(sub);
+    const sub = T(this, 0, -398, `보유 룬 ${owned.length}개로 덱을 조합해 봐요`, 28, C.sub, { w: 800 }); c.add(sub);
     const big = T(this, 0, -250, '0%', 140, C.text, { w: 900 }); c.add(big);
     const msg = T(this, 0, -130, 'AI 가 덱을 조합해 시뮬레이션하는 중…', 28, C.sub, { w: 800 }); c.add(msg);
     const bar = this.add.graphics(); c.add(bar);
     const icons = this.add.container(0, 30); c.add(icons);
     const showDeck = deck => { icons.removeAll(true); deck.forEach((r, i) => { const x = (i - 2) * 160; icons.add(this.add.image(x, 0, `die_${r}`).setDisplaySize(130, 130)); icons.add(this.add.image(x, 0, `rune_${r}`).setDisplaySize(74, 74)); }); };
     let shown = '';
-    const res = await P.recommend(owned, d.tiers, M.critBonus(), d.best, d.deck, (k, N, deck) => {
+    const res = await P.recommend(owned, M.effTiers(), M.critBonus(), d.best, d.deck, (k, N, deck) => {
       if (!big.active) return;
       big.setText(`${Math.floor(Math.random() * 100)}%`);   // 계산 중: 확률이 흔들리며 바뀜
       msg.setText(`시뮬레이션 ${k} / ${N}판`);
       bar.clear().fillStyle(0xFFFFFF, 0.1).fillRoundedRect(-360, -80, 720, 16, 8).fillStyle(0x8FE3FF, 1).fillRoundedRect(-360, -80, Math.max(16, 720 * k / N), 16, 8);
       const key = deck.join(); if (key !== shown) { shown = key; showDeck(deck); }
-    });
+    }, M.skillAdj());
     if (!big.active) return;
     showDeck(res.deck); bar.clear();
     const pct = Math.round(res.p * 100), curPct = Math.round(res.current.p * 100);
@@ -139,16 +143,18 @@ export class DeckScene extends Phaser.Scene {
     const d = load(), own = d.unlocked[r], inDeck = d.deck.includes(r), t = d.tiers[r] || 1, rar = RARITY[r], col = RARITY_COLOR[rar];
     this.add.existing(panel(this, x, y, Math.round(cw), Math.round(ch), { tone: inDeck ? 'gold' : undefined, r: 22 }));
     const g = this.add.graphics(); g.fillStyle(col, own ? 0.9 : 0.3).fillRoundedRect(x - cw / 2 + 18, y - ch / 2 + 8, cw - 36, 6, 3);
-    const s = Math.min(112, ch * 0.5), iy = y - ch * 0.14;
+    const s = Math.min(96, ch * 0.46), iy = y - ch * 0.12;
     const ic = this.add.image(x, iy, `die_${r}`).setDisplaySize(s, s), rn = this.add.image(x, iy, `rune_${r}`).setDisplaySize(s * 0.58, s * 0.58);
     if (!own) { ic.setAlpha(0.25); rn.setAlpha(0.25).setTint(0x8890B0); this.add.image(x, iy, 'i_lock').setDisplaySize(34, 34).setAlpha(0.8); }
     T(this, x, y + ch * 0.2, RUNES[r].name, 26, own ? C.text : C.dim, { w: 900 });
     if (own) {
-      const have = d.cards[r] || 0, need = M.cardsNeed(r, t), k = Math.min(1, have / need), ready = t < M.MAX_TIER && have >= need;
-      const bx = x - cw / 2 + 24, bw = cw - 48, by = y + ch * 0.38;
+      const have = d.cards[r] || 0, need = t < M.MAX_TIER ? M.cardsNeed(r, t) : M.limitCost((d.limit || {})[r] || 0).cards, k = Math.min(1, have / need), ready = (t < M.MAX_TIER || ((d.limit || {})[r] || 0) < M.LIMIT_MAX) && have >= need;
+      const bx = x - cw / 2 + 22, bw = cw - 70, by = y + ch * 0.38;
       g.fillStyle(0xFFFFFF, 0.1).fillRoundedRect(bx, by - 7, bw, 14, 7).fillStyle(ready ? 0x5BE39A : col, 1).fillRoundedRect(bx, by - 7, Math.max(14, bw * k), 14, 7);
-      T(this, x - cw / 2 + 16, y - ch / 2 + 32, `★${t}`, 22, inDeck ? C.gold : C.sub, { ox: 0, w: 900 });
-      if (ready) { const up = T(this, x + cw / 2 - 18, y - ch / 2 + 32, '▲', 24, C.green, { ox: 1, w: 900 }); this.tweens.add({ targets: up, y: up.y - 6, duration: 500, yoyo: true, repeat: -1 }); }
+      const lk = (d.limit || {})[r] || 0;
+      T(this, x - cw / 2 + 14, y - ch / 2 + 30, `★${t}`, 20, inDeck || lk ? C.gold : C.sub, { ox: 0, w: 900 });
+      if (lk && !d.newRunes[r]) T(this, x + cw / 2 - 14, y - ch / 2 + 30, `✦${lk}`, 20, C.gold, { ox: 1, w: 900 });
+      if (ready) { const up = T(this, x + cw / 2 - 16, y + ch * 0.38, '▲', 22, C.green, { ox: 1, w: 900 }); this.tweens.add({ targets: up, y: up.y - 6, duration: 500, yoyo: true, repeat: -1 }); }
     } else T(this, x, y + ch * 0.38, RARITY_NAME[rar], 20, hex(col), { w: 800 });
     if (d.newRunes[r]) { const tg = this.add.graphics(); tg.fillStyle(0xFF5A9A, 1).fillRoundedRect(x + cw / 2 - 76, y - ch / 2 + 16, 64, 30, 15); const nt = T(this, x + cw / 2 - 44, y - ch / 2 + 31, 'NEW', 18, '#FFFFFF', { w: 900, shadow: false }); this.tweens.add({ targets: [tg, nt], alpha: 0.55, duration: 600, yoyo: true, repeat: -1 }); }
     const z = this.add.zone(x, y, cw, ch).setInteractive({ useHandCursor: true });
@@ -157,29 +163,60 @@ export class DeckScene extends Phaser.Scene {
   detail(r) {
     const wasNew = !!load().newRunes[r]; M.seen(r);
     const d = load(), own = d.unlocked[r], t = d.tiers[r] || 1, rar = RARITY[r], col = RARITY_COLOR[rar];
-    const p = popup(this, null, 860, 980, wasNew ? { onClose: () => this.scene.restart({ slot: this.slot, filter: this.filter, y: this.grid ? this.grid.y : 0 }) } : {}), c = p.content;
-    const glow = this.add.image(0, -300, 'glow').setTint(RUNES[r].color).setBlendMode('ADD').setScale(3).setAlpha(0.45); c.add(glow);
-    c.add(this.add.image(0, -300, `die_${r}`).setDisplaySize(220, 220).setAlpha(own ? 1 : 0.4));
-    c.add(this.add.image(0, -300, `rune_${r}`).setDisplaySize(128, 128).setAlpha(own ? 1 : 0.4));
-    c.add(T(this, 0, -150, RARITY_NAME[rar].toUpperCase(), 26, hex(col), { w: 900, ls: 6 }));
-    c.add(T(this, 0, -96, RUNES[r].name, 60, C.text, { w: 900 }));
-    c.add(T(this, 0, -20, DESC[r], 30, C.sub, { w: 700, wrap: 700 }));
-    const R = RUNES[r]; c.add(T(this, 0, 44, `피해 ${R.dmg} · 초당 ${R.rate}회`, 26, C.dim, { w: 800 }));
     const partners = SYNERGY.filter(s => s.runes.includes(r));
-    if (partners.length) c.add(T(this, 0, 98, partners.map(s => `${s.name} (${s.runes.map(q => RUNES[q].name).join(' + ')}) ${s.desc}`).join('\n'), 24, C.gold, { w: 800, wrap: 760 }));
+    const ph = 980 + Math.max(0, partners.length - 1) * 70;   // 조합 줄이 많으면 창을 늘림
+    const p = popup(this, null, 880, ph, wasNew ? { onClose: () => this.scene.restart({ slot: this.slot, filter: this.filter, y: this.grid ? this.grid.y : 0 }) } : {}), c = p.content;
+    const top = -ph / 2;
+    const glow = this.add.image(0, top + 190, 'glow').setTint(RUNES[r].color).setBlendMode('ADD').setScale(3).setAlpha(0.45); c.add(glow);
+    c.add(this.add.image(0, top + 190, `die_${r}`).setDisplaySize(220, 220).setAlpha(own ? 1 : 0.4));
+    c.add(this.add.image(0, top + 190, `rune_${r}`).setDisplaySize(128, 128).setAlpha(own ? 1 : 0.4));
+    // 아래로 차례로 쌓음 (글줄 수에 따라 자동으로 밀림 — 겹치지 않게)
+    let y = top + 330;
+    const put = (str, size, color, o = {}) => { const tx = T(this, 0, y, str, size, color, { w: 800, oy: 0, wrap: 760, ...o }); c.add(tx); y += tx.height + (o.gap ?? 12); return tx; };
+    put(RARITY_NAME[rar], 26, hex(col), { w: 900, ls: 6, gap: 4 });
+    put(RUNES[r].name, 60, C.text, { w: 900, gap: 14 });
+    put(DESC[r], 30, C.sub, { w: 700, gap: 10 });
+    const R = RUNES[r]; put(`피해 ${R.dmg} · 초당 ${R.rate}회`, 24, C.dim, { gap: 22 });
+    for (const s of partners) put(`${s.name} · ${s.runes.map(q => RUNES[q].name).join(' + ')}\n${s.desc}`, 22, C.gold, { gap: 12, lh: 4 });
+    const by = ph / 2 - 110;
     if (!own) {
-      c.add(T(this, 0, 220, '룬 제단에서 얻을 수 있어요', 32, C.text, { w: 800 }));
-      c.add(btn(this, 0, 340, 460, 120, '룬 제단으로', () => { p.close(); this.go('Altar'); }, { style: 'gold', size: 38 }));
+      c.add(T(this, 0, by - 120, '룬 제단에서 얻을 수 있어요', 30, C.text, { w: 800 }));
+      c.add(btn(this, 0, by, 460, 120, '룬 제단으로', () => { p.close(); this.go('Altar'); }, { style: 'gold', size: 38 }));
       return;
     }
     const have = d.cards[r] || 0, need = M.cardsNeed(r, t), cost = M.tierCost(t);
-    c.add(T(this, 0, 196, t >= M.MAX_TIER ? `★${t} 최고 등급` : `★${t} → ★${t + 1}   카드 ${have}/${need} · ◆${cost}`, 28, C.text, { w: 800 }));
-    c.add(btn(this, -200, 330, 360, 120, `${this.slot + 1}번 칸에 넣기`, () => { M.setSlot(this.slot, r); audio.play('sfx_summon', { volume: 0.5 }); p.close(); this.scene.restart({ slot: this.slot, filter: this.filter, y: this.grid ? this.grid.y : 0 }); }, { style: d.deck[this.slot] === r ? 'ghost' : 'gold', size: 32 }));
+    const lk = (d.limit || {})[r] || 0, lc = M.limitCost(lk), maxed = t >= M.MAX_TIER;
+    c.add(T(this, 0, by - 120, !maxed ? `★${t} → ★${t + 1}   카드 ${have}/${need} · ◆${cost}` : lk >= M.LIMIT_MAX ? `★${t} · 한계 돌파 완료 ✦${lk}` : `한계 돌파 ✦${lk} → ✦${lk + 1}   카드 ${have}/${lc.cards} · ◆${lc.crystals}`, 28, maxed ? C.gold : C.text, { w: 800 }));
+    const inDeck = d.deck.includes(r);
+    c.add(btn(this, -200, by, 360, 120, inDeck ? '덱에 있어요' : '덱에 넣기', () => { if (inDeck) return toast(this, '이미 덱에 있어요', C.sub); p.close(); this.time.delayedCall(160, () => this.swapPick(r)); }, { style: inDeck ? 'ghost' : 'gold', size: 32 }));
+    if (maxed) {
+      const okL = lk < M.LIMIT_MAX && have >= lc.cards && d.crystals >= lc.crystals;
+      c.add(btn(this, 200, by, 360, 120, lk >= M.LIMIT_MAX ? '완료' : '한계 돌파', () => {
+        if (lk >= M.LIMIT_MAX) return;
+        if (!M.limitBreak(r)) return toast(this, have < lc.cards ? '카드가 부족해요' : '수정이 부족해요', C.sub);
+        audio.play('sfx_awaken', { volume: 0.8 }); this.cameras.main.flash(300, 255, 210, 120); p.close(); toast(this, `${R.name} 한계 돌파 ✦${lk + 1}!`, C.gold);
+        this.time.delayedCall(160, () => this.scene.restart({ slot: this.slot, filter: this.filter, y: this.grid ? this.grid.y : 0 }));
+      }, { style: okL ? 'gold' : 'ghost', size: 32 }));
+      return;
+    }
     const ok = t < M.MAX_TIER && have >= need && d.crystals >= cost;
-    const ub = btn(this, 200, 330, 360, 120, '등급업', () => {
+    const ub = btn(this, 200, by, 360, 120, '등급업', () => {
       if (!M.upgrade(r)) return toast(this, have < need ? '카드가 부족해요 · 제단에서 같은 룬을 모아요' : '수정이 부족해요', C.sub);
       audio.play('sfx_awaken', { volume: 0.6 }); this.cameras.main.flash(200, 255, 230, 160); p.close(); this.scene.restart({ slot: this.slot, filter: this.filter, y: this.grid ? this.grid.y : 0 }); toast(this, `${R.name} ★${t + 1}!`, C.gold);
     }, { style: ok ? 'indigo' : 'ghost', size: 34 }); c.add(ub);
+  }
+  // 덱에 넣기: 바꿀 룬을 직접 고름 (덱 5칸 중 하나)
+  swapPick(r) {
+    const d = load(), p = popup(this, '어느 룬과 바꿀까요?', 1000, 680), c = p.content;
+    c.add(this.add.image(0, -120, `die_${r}`).setDisplaySize(100, 100)); c.add(this.add.image(0, -120, `rune_${r}`).setDisplaySize(56, 56));
+    c.add(T(this, 0, -46, `${RUNES[r].name}${josa(RUNES[r].name)} 넣을 자리를 눌러요`, 26, C.sub, { w: 800 }));
+    d.deck.forEach((q, i) => {
+      const x = (i - 2) * 180, y = 110;
+      const im = this.add.image(x, y, `die_${q}`).setDisplaySize(140, 140).setInteractive({ useHandCursor: true }); c.add(im); c.add(this.add.image(x, y, `rune_${q}`).setDisplaySize(80, 80));
+      c.add(T(this, x, y + 100, RUNES[q].name, 24, C.text, { w: 800 }));
+      c.add(T(this, x, y + 134, `★${d.tiers[q] || 1}`, 20, C.sub, { w: 800 }));
+      im.on('pointerup', () => { M.setSlot(i, r); this.slot = i; audio.play('sfx_summon', { volume: 0.6 }); p.close(); toast(this, `${RUNES[q].name} → ${RUNES[r].name}`, C.gold); this.time.delayedCall(160, () => this.scene.restart({ slot: i, filter: this.filter, y: this.grid ? this.grid.y : 0 })); });
+    });
   }
   synergyList() {
     const d = load(), rows = Math.ceil(SYNERGY.length / 2), ph = Math.min(H - 120, 260 + rows * 112), p = popup(this, `덱 조합 ${SYNERGY.length}종`, 1040, ph), c = p.content;

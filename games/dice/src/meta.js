@@ -44,6 +44,57 @@ export function draw(how) {
   save(); track('draw', n);
   return out;
 }
+// 전설 확정권 (보상 길 10단계마다)
+export function drawLegend() { const d = load(); if (d.legendTix < 1) return null; d.legendTix--; const o = drawOne(d, 3); d.pity = Math.max(0, d.pity - 1); save(); return [o]; }
+
+// ── 수집 보너스: 등급을 올릴수록 모든 주사위의 치명타 피해가 영구히 오름 (원작의 핵심 성장) ──
+export function critBonus() { const d = load(); let b = 0; for (const r of Object.keys(d.unlocked)) b += 0.01 + 0.05 * ((d.tiers[r] || 1) - 1); return b; }
+export const critPct = () => Math.round((2.5 + critBonus()) * 100);
+
+// ── 보상 길: 원정마다 명성이 쌓이고, 단계마다 보상 (10단계마다 전설 확정권) ──
+export const ROAD_MAX = 40;
+export const roadNeed = k => 120 + 30 * k;                         // k단계 → k+1 단계에 필요한 명성
+export function roadReward(k) {   // k: 1부터
+  if (k % 10 === 0) return { legend: 1, text: '전설 확정권' };
+  if (k % 5 === 0) return { keys: 2, text: '열쇠 2개' };
+  if (k % 3 === 0) return { keys: 1, text: '열쇠 1개' };
+  const c = 40 + 5 * k; return { crystals: c, text: `수정 ${c}` };
+}
+export function road() {
+  const d = load(); let lv = 0, rest = d.fame;
+  while (lv < ROAD_MAX && rest >= roadNeed(lv)) { rest -= roadNeed(lv); lv++; }
+  return { fame: d.fame, level: lv, into: rest, need: lv < ROAD_MAX ? roadNeed(lv) : 1, claimed: d.roadClaimed };
+}
+export function claimRoad(k) {
+  const d = load(), r = road();
+  if (k > r.level || d.roadClaimed[k]) return null;
+  const rw = roadReward(k); d.roadClaimed[k] = 1;
+  if (rw.crystals) d.crystals += rw.crystals; if (rw.keys) d.keys += rw.keys; if (rw.legend) d.legendTix += rw.legend;
+  save(); return rw;
+}
+export const roadUnclaimed = () => { const r = road(); let n = 0; for (let k = 1; k <= r.level; k++) if (!r.claimed[k]) n++; return n; };
+
+// ── 오늘의 상점: 매일 바뀌는 룬 카드 3묶음 + 무료 수정 ──
+export function shop() {
+  const d = load(), day = dayKey();
+  if (d.shop.date !== day) { d.shop = { date: day, bought: [] }; save(); }
+  let h = 17; for (const ch of day) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
+  const own = RUNE_ORDER.filter(r => d.unlocked[r]), out = [{ free: true, crystals: 20, text: '수정 20', price: 0 }];
+  const used = new Set();
+  for (let i = 0; out.length < 4 && i < 40; i++) {
+    h = (h * 1103515245 + 12345) >>> 0; const r = own[h % own.length]; if (used.has(r)) continue; used.add(r);
+    const rar = RARITY[r]; out.push({ r, qty: [5, 3, 2, 1][rar], price: [40, 60, 90, 120][rar] });
+  }
+  return out.map((o, i) => ({ ...o, i, sold: d.shop.bought.includes(i) }));
+}
+export function buy(i) {
+  const d = load(), o = shop()[i];
+  if (!o || o.sold || d.crystals < o.price) return null;
+  d.crystals -= o.price; d.shop.bought.push(i);
+  if (o.free) d.crystals += o.crystals; else d.cards[o.r] = (d.cards[o.r] || 0) + o.qty;
+  save(); return o;
+}
+
 export function checkUnlocks() {   // 최고 웨이브 이정표 → 제단 열쇠
   const d = load(); let got = 0;
   for (const w of MILESTONE) if (d.best >= w && !d.milestones[w]) { d.milestones[w] = 1; d.keys++; got++; }
@@ -127,11 +178,12 @@ export function dailyChallenge() {
 export function finishRun(r, mode) {
   const d = load(), prev = d.best;
   const crystals = r.wave * 3 + r.bossKills * 6 + (mode === 'daily' ? 20 : 0);
+  const fame = r.wave * 10 + r.bossKills * 8 + (mode === 'daily' ? 30 : 0); d.fame += fame;
   d.crystals += crystals; d.plays++; d.kills += r.kills; d.bossKills += r.bossKills;
   if (mode === 'daily') { d.daily.best = Math.max(d.daily.best, r.wave); d.daily.tries++; }
   else if (r.wave > d.best) d.best = r.wave;
   save();
   track('games'); track('wave', r.wave); track('kills', r.kills); track('boss', r.bossKills); track('pips', r.maxPips); track('merge', r.merges); track('power', r.powers);
   if (mode === 'daily') track('daily');
-  return { crystals, newBest: mode !== 'daily' && r.wave > prev, keys: checkUnlocks() };
+  return { crystals, fame, newBest: mode !== 'daily' && r.wave > prev, keys: checkUnlocks() };
 }

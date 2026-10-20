@@ -32,11 +32,12 @@ export class AltarScene extends Phaser.Scene {
     T(this, W / 2, by - 170, '전설 룬 · 성장 · 거울 · 변이 · 망치', 28, C.gold, { w: 800 });
     this.pityT = T(this, W / 2, by - 122, '', 26, C.sub, { w: 800 });
     // 버튼
-    this.bFree = btn(this, W / 2, by, 760, 130, '', () => this.pull(load().keys > 0 && !M.freeToday() ? 'key' : M.freeToday() ? 'free' : 'key'), { style: 'green', size: 40 });
+    this.bFree = btn(this, W / 2, by, 760, 130, '', () => this.pull(load().legendTix > 0 ? 'legend' : M.freeToday() ? 'free' : 'key'), { style: 'green', size: 40 });
     this.b1 = btn(this, W / 2 - 200, by + 170, 360, 130, `1회  ◆${M.DRAW_COST}`, () => this.pull('one'), { style: 'indigo', size: 38 });
     this.b10 = btn(this, W / 2 + 200, by + 170, 360, 130, `10회  ◆${M.DRAW10_COST}`, () => this.pull('ten'), { style: 'gold', size: 38 });
     T(this, W / 2 + 200, by + 262, '영웅 이상 1개 보장 · 10% 할인', 22, C.gold, { w: 800 });
-    btn(this, W / 2, by + 360, 300, 80, '확률 정보', () => this.odds(), { style: 'ghost', size: 26 });
+    btn(this, W / 2 - 170, by + 360, 300, 84, '확률 정보', () => this.odds(), { style: 'ghost', size: 26 });
+    btn(this, W / 2 + 170, by + 360, 300, 84, '오늘의 상점', () => this.shop(), { style: 'ghost', size: 26 });
     this.refresh();
     audio.music('bgm_lobby', this);
     this.cameras.main.fadeIn(220, 5, 6, 26);
@@ -47,14 +48,15 @@ export class AltarScene extends Phaser.Scene {
     const d = load(), free = M.freeToday();
     this.cry.setText(fmt(d.crystals));
     this.pityT.setText(`전설 확정까지 ${M.PITY - d.pity}회`);
-    if (free) this.bFree.setLabel('오늘의 무료 뽑기').setEnabled(true).setVisible(true);
+    if (d.legendTix > 0) this.bFree.setLabel(`전설 확정권 사용 (${d.legendTix}장)`).setEnabled(true).setVisible(true);
+    else if (free) this.bFree.setLabel('오늘의 무료 뽑기').setEnabled(true).setVisible(true);
     else if (d.keys > 0) this.bFree.setLabel(`열쇠로 뽑기 (${d.keys}개)`).setEnabled(true).setVisible(true);
     else this.bFree.setLabel('내일 무료 뽑기 · 웨이브 기록으로 열쇠').setEnabled(false).setVisible(true);
     this.b1.setEnabled(d.crystals >= M.DRAW_COST); this.b10.setEnabled(d.crystals >= M.DRAW10_COST);
   }
   pull(how) {
     if (this.busy) return;
-    const res = M.draw(how);
+    const res = how === 'legend' ? M.drawLegend() : M.draw(how);
     if (!res) return toast(this, '수정이 부족해요 · 미션과 원정으로 모아요', C.sub);
     this.busy = true; this.refresh();
     // 제단이 빨려 들어가듯 모였다가 터짐 → 결과
@@ -95,6 +97,18 @@ export class AltarScene extends Phaser.Scene {
       if (best === 3) L.add(T(this, W / 2, ey, '전설 룬!', 56, C.gold, { w: 900, ls: 4 }));
       else if (nw) L.add(T(this, W / 2, ey, `새 룬 ${nw}개!`, 48, C.gold, { w: 900 }));
       const ok = btn(this, W / 2, ey + 150, 460, 130, '확인', () => { L.destroy(); this.busy = false; this.refresh(); }, { style: 'gold', size: 42 }); L.add(ok);
+    });
+  }
+  shop() {
+    const p = popup(this, '오늘의 상점', 900, 1180), c = p.content;
+    c.add(T(this, 0, -436, '매일 자정에 바뀌어요 · 가진 룬의 등급업 카드', 26, C.sub, { w: 800 }));
+    M.shop().forEach((o, i) => {
+      const y = -290 + i * 206;
+      const g = this.add.graphics(); g.fillStyle(0x141A44, 0.9).fillRoundedRect(-400, y - 90, 800, 180, 28).lineStyle(2, o.free ? 0x5BE39A : RARITY_COLOR[RARITY[o.r]], 0.6).strokeRoundedRect(-400, y - 90, 800, 180, 28); c.add(g);
+      if (o.free) { c.add(this.add.image(-300, y, 'i_star').setDisplaySize(80, 80).setTint(0x8FE3FF)); c.add(T(this, -220, y - 22, '오늘의 선물', 36, C.text, { ox: 0, w: 900 })); c.add(T(this, -220, y + 26, '수정 20 무료', 26, C.sub, { ox: 0, w: 800 })); }
+      else { c.add(this.add.image(-300, y, `die_${o.r}`).setDisplaySize(120, 120)); c.add(this.add.image(-300, y, `rune_${o.r}`).setDisplaySize(68, 68)); c.add(T(this, -220, y - 22, `${RUNES[o.r].name} 카드 ×${o.qty}`, 36, C.text, { ox: 0, w: 900 })); c.add(T(this, -220, y + 26, `${RARITY_NAME[RARITY[o.r]]} · 등급업 재료`, 26, hex(RARITY_COLOR[RARITY[o.r]]), { ox: 0, w: 800 })); }
+      if (o.sold) c.add(T(this, 290, y, '구매 완료', 30, C.dim, { w: 800 }));
+      else c.add(btn(this, 290, y, 210, 96, o.free ? '받기' : `◆${o.price}`, () => { const r = M.buy(i); if (!r) return toast(this, '수정이 부족해요', C.sub); audio.play('sfx_power', { volume: 0.6 }); p.close(); this.refresh(); this.time.delayedCall(160, () => this.shop()); toast(this, r.free ? '수정 +20' : `${RUNES[r.r].name} 카드 +${r.qty}`, C.gold); }, { style: o.free ? 'green' : 'indigo', size: 32 }));
     });
   }
   odds() {

@@ -28,7 +28,7 @@ export class PlayScene extends Phaser.Scene {
     this.bot = q.has('bot');
     this.mode = data.mode || 'run';
     if (this.mode === 'daily') { const dc = M.dailyChallenge(); this.s = new Sim({ deck: dc.deck, seed: dc.seed }); }
-    else this.s = new Sim({ deck: d.deck, tiers: d.tiers, seed: (Date.now() & 0xffffff) + 1 });
+    else this.s = new Sim({ deck: d.deck, tiers: d.tiers, seed: (Date.now() & 0xffffff) + 1, critBonus: M.critBonus() });
     this.powers = 0; this.acc = 0; this.paused = false; this.ended = false; this.awakened = false; this.leakedWave = false; this.voT = 0;
 
     const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
@@ -290,6 +290,8 @@ export class PlayScene extends Phaser.Scene {
       v.lit.setPosition(0, oy).setScale(v.img.scaleX, v.img.scaleY).setRotation(rot).setVisible(!(v.flashT > this.time.now));
       v.sh.setScale((e.kind === 'boss' ? 2.2 : 1.1) * (1 + oy / 60), (e.kind === 'boss' ? 0.7 : 0.4) * (1 + oy / 60));
       if (!(v.flashT > this.time.now)) v.img.setTint(e.stun > 0 ? 0x9FDFFF : e.shieldOn > 0 ? 0xFFE08A : e.vulnT > 0 ? 0xF0A8FF : e.slow > 0.05 ? 0xA8E6FF : e.poison > 1 ? 0xB8FFA8 : 0xFFFFFF);
+      v.img.setAlpha(e.hidden > 0 ? 0.22 : 1); if (e.hidden > 0) v.lit.setVisible(false);
+      if (e.regenOn && Math.random() < 0.06) this.float(x + (Math.random() - 0.5) * 60, y - 40, '+', '#7CFFB2', 30);
       if (e.critT > 0) { e.critT = 0; if (Math.random() < 0.5) this.float(x + (Math.random() - 0.5) * 40, y - EN_SIZE[e.kind] / 2 - 20, '치명!', '#FF8FCB', 30); }
       if (e.kind !== 'boss') { const w = 70, k = Math.max(0, e.hp / e.max), hy = -EN_SIZE[e.kind] / 2 - 14 + oy; v.hb.clear(); if (k < 1) v.hb.fillStyle(0x000000, 0.6).fillRoundedRect(-w / 2, hy, w, 8, 4).fillStyle(0xFF5A7A).fillRoundedRect(-w / 2, hy, w * k, 8, 4); }
       else boss = e;
@@ -303,6 +305,9 @@ export class PlayScene extends Phaser.Scene {
       this.tweens.add({ targets: v, alpha: 0, duration: 160, delay: 80, onComplete: () => v.destroy() });
       this.spark.setParticleTint(v.kind === 'boss' ? 0xFFD27A : 0xC9A6FF); this.spark.emitParticleAt(v.x, v.y, v.kind === 'big' ? 12 : 7);
     }
+    // 서리 군주 냉기: 판 위에 푸른 서리막
+    if (!this.chillFx) { this.chillFx = this.add.rectangle(this.BX + BW / 2, this.BY + BH / 2, BW + 44, BH + 44, 0x8FD8FF, 0).setDepth(12).setBlendMode('ADD'); }
+    this.chillFx.setFillStyle(0x8FD8FF, s.chillT > 0 ? 0.12 + 0.05 * Math.sin(t * 8) : 0);
     // 지뢰
     this.minePool ||= new Map(); const ms = new Set();
     for (const m of s.mines) { ms.add(m.id); let o = this.minePool.get(m.id); if (!o) { const [mx, my] = this.pathXY(m.d); o = this.add.image(mx, my, 'rune_mine').setDisplaySize(68, 68).setDepth(15); o.setScale(0.01); this.tweens.add({ targets: o, scale: 68 / o.width, duration: 220, ease: 'Back.easeOut' }); this.minePool.set(m.id, o); } o.setAngle(t * 60); }
@@ -412,7 +417,7 @@ export class PlayScene extends Phaser.Scene {
       }
       case 'grow': { const [x, y] = this.slotXY(e.slot); this.float(x, y - 60, '성장!', C.green); if (e.die.pips >= MAX_PIPS) this.awaken(x, y, RUNES.growth.color); break; }
       case 'power': { audio.play('sfx_power', { volume: 0.6 }); const p = this.pw.find(q => q.t === e.type); if (p) { this.tweens.add({ targets: p.c, scale: 1.12, duration: 90, yoyo: true }); } for (let i = 0; i < SLOTS; i++) { const d = this.s.board[i]; if (d && d.type === e.type) { const [x, y] = this.slotXY(i); this.spark.setParticleTint(RUNES[d.type].color); this.spark.emitParticleAt(x, y, 4); } } break; }
-      case 'kill': { audio.play('sfx_pop', { volume: 0.45, gap: 40, rate: 0.9 + Math.random() * 0.25 }); const [x, y] = this.pathXY(e.d); if (e.kind === 'boss') this.bossDown(x, y); else if (e.kind === 'big') this.float(x, y - 50, `+${e.sp}`, C.sub); break; }
+      case 'kill': { audio.play('sfx_pop', { volume: 0.45, gap: 40, rate: 0.9 + Math.random() * 0.25 }); const [x, y] = this.pathXY(e.d); if (e.bounty && e.kind !== 'boss') this.float(x, y - 50, `+${e.sp}`, '#FFD54A', 26); if (e.kind === 'boss') this.bossDown(x, y); else if (e.kind === 'big') this.float(x, y - 50, `+${e.sp}`, C.sub); break; }
       case 'leak': audio.play('sfx_leak', { volume: 0.7 }); buzz(60); this.cameras.main.shake(200, 0.008); this.cameras.main.flash(160, 120, 0, 30); this.leakedWave = true; if (this.s.lives === 1) this.voice('danger', 3); break;
       case 'wave': if (e.wave > 1) audio.music('bgm_game', this); break;
       case 'boss': audio.play('sfx_boss', { volume: 0.8 }); this.voice('boss', 3); audio.music('bgm_boss', this); this.banner(e.name, BOSSES.find(b => b.id === e.boss) ? this.bossTip(e.boss) : '', '#FF9BB0'); this.cameras.main.shake(300, 0.006); break;
@@ -431,6 +436,13 @@ export class PlayScene extends Phaser.Scene {
       case 'mine': { const [x0, y0] = this.slotXY(e.slot), [x1, y1] = this.pathXY(e.d); const b = this.add.image(x0, y0, 'bolt').setTint(0xFFA43A).setBlendMode('ADD').setScale(0.6).setDepth(35); this.tweens.add({ targets: b, x: x1, y: y1, duration: 260, ease: 'Quad.easeOut', onComplete: () => b.destroy() }); break; }
       case 'boom': { const [x, y] = this.pathXY(e.d); audio.play('sfx_fire', { volume: 0.5, gap: 60, rate: 0.8 }); const f = this.add.image(x, y, 'glow').setTint(0xFF8A2E).setBlendMode('ADD').setScale(0.4).setDepth(36); this.tweens.add({ targets: f, scale: 2.2, alpha: 0, duration: 340, onComplete: () => f.destroy() }); const r = this.add.image(x, y, 'ring').setTint(0xFFB24A).setBlendMode('ADD').setScale(0.2).setDepth(36); this.tweens.add({ targets: r, scale: 1.2, alpha: 0, duration: 320, onComplete: () => r.destroy() }); this.spark.setParticleTint(0xFFB24A); this.spark.emitParticleAt(x, y, 10); this.cameras.main.shake(80, 0.003); break; }
       case 'telegraph': this.telegraph(e); break;
+      case 'quake': { audio.play('sfx_clank', { volume: 0.4, gap: 200, rate: 0.55 }); this.cameras.main.shake(140, 0.004); for (const en of this.s.enemies) { const v = this.ePool.get(en.id); if (v) { this.hitFlash(v); this.dust(v.x, v.y + 30); } } break; }
+      case 'nova': { audio.play('sfx_awaken', { volume: 0.5, gap: 200, rate: 1.3 }); const [x0, y0] = this.slotXY(e.slot); const r = this.add.image(x0, y0, 'ring').setTint(0xFF9CF0).setBlendMode('ADD').setScale(0.3).setDepth(38); this.tweens.add({ targets: r, scale: 9, alpha: 0, duration: 520, onComplete: () => r.destroy() }); this.cameras.main.flash(120, 255, 180, 240); for (const en of this.s.enemies) { const v = this.ePool.get(en.id); if (v) { this.hitFlash(v); this.spark.setParticleTint(0xFF9CF0); this.spark.emitParticleAt(v.x, v.y, 5); } } this.float(x0, y0 - 70, '초신성!', '#FF9CF0'); break; }
+      case 'split': { const [x, y] = this.pathXY(e.d); this.float(x, y - 80, '갈라졌다!', '#FF9BB0', 34); this.cameras.main.shake(160, 0.005); break; }
+      case 'steal': { audio.play('sfx_leak', { volume: 0.4, rate: 1.4 }); this.float(this.hSp.x + 60, this.hSp.y - 50, `-${e.amt} SP`, '#FF7A8A', 34); this.tweens.add({ targets: this.hSp, scale: 0.85, duration: 90, yoyo: true }); break; }
+      case 'chill': audio.play('sfx_ice', { volume: 0.6, rate: 0.6 }); for (let i = 0; i < SLOTS; i++) if (this.s.board[i]) { const [x, y] = this.slotXY(i); const f = this.add.image(x, y, 'flake').setTint(0xCFF2FF).setBlendMode('ADD').setScale(0.3).setDepth(36); this.tweens.add({ targets: f, scale: 1.2, alpha: 0, angle: 90, duration: 500, onComplete: () => f.destroy() }); } break;
+      case 'blink': audio.play('sfx_silence', { volume: 0.4, rate: 1.5 }); break;
+      case 'ward': { audio.play('sfx_power', { volume: 0.7, rate: 1.2 }); const [x0, y0] = this.slotXY(e.slot), [gx, gy] = this.pathXY(0.99); const h = this.add.image(gx, gy, 'ring').setTint(0x7FE8E0).setBlendMode('ADD').setScale(0.4).setDepth(38); this.tweens.add({ targets: h, scale: 2.4, alpha: 0, duration: 480, onComplete: () => h.destroy() }); this.float(gx, gy - 80, '결계!', '#7FE8E0', 40); this.float(x0, y0 - 60, '막았다!', '#7FE8E0'); break; }
       case 'stun': { const v = this.ePool.get(e.id); if (v) { audio.play('sfx_ice', { volume: 0.35, gap: 120, rate: 1.3 }); const c = this.add.image(v.x, v.y, 'flake').setTint(0xDFF6FF).setBlendMode('ADD').setScale(0.2).setDepth(37); this.tweens.add({ targets: c, scale: 1.1, angle: 90, alpha: 0, duration: 420, onComplete: () => c.destroy() }); if (Math.random() < 0.4) this.float(v.x, v.y - 70, '얼음!', '#BFE9FF', 26); } break; }
       case 'sacrifice': { audio.play('sfx_power', { volume: 0.5, rate: 0.8 }); const [x0, y0] = this.slotXY(e.from); this.float(x0, y0 - 70, '희생!', '#FF6A75'); for (const i of e.slots) { const [x, y] = this.slotXY(i); const b = this.add.image(x0, y0, 'bolt').setTint(0xFF4050).setBlendMode('ADD').setScale(0.7).setDepth(35); this.tweens.add({ targets: b, x, y, duration: 300, ease: 'Quad.easeOut', onComplete: () => { b.destroy(); this.spark.setParticleTint(0xFF5060); this.spark.emitParticleAt(x, y, 6); } }); } break; }
       case 'summonMinion': audio.play('sfx_summon', { volume: 0.4, rate: 0.6 }); break;
@@ -442,14 +454,14 @@ export class PlayScene extends Phaser.Scene {
     audio.play('sfx_silence', { volume: 0.35, rate: 1.6 });
     const ex = T(this, 0, -EN_SIZE.boss / 2 - 40, '!', 72, '#FF5A7A', { w: 900, stroke: '#05061A', thick: 8 }); v.add(ex);
     this.tweens.add({ targets: ex, scale: 1.3, duration: 150, yoyo: true, repeat: 3, onComplete: () => ex.destroy() });
-    const label = { silence: '봉인 준비!', morph: '변신술 준비!', dash: '돌진 준비!', shield: '방패 준비!' }[e.skill];
+    const label = { silence: '봉인 준비!', morph: '변신술 준비!', dash: '돌진 준비!', shield: '방패 준비!', blink: '사라지기 직전!', steal: '도둑질 준비!', chill: '냉기 준비!' }[e.skill];
     this.float(v.x, v.y - EN_SIZE.boss / 2 - 90, label, '#FF9BB0', 34);
-    if (e.skill === 'silence' || e.skill === 'morph') {   // 판 테두리가 붉게 깜빡
-      const g = this.add.graphics().setDepth(9); g.lineStyle(8, e.skill === 'silence' ? 0xFF5A7A : 0xC59BFF, 1).strokeRoundedRect(this.BX - 22, this.BY - 22, BW + 44, BH + 44, 34);
+    if (e.skill === 'silence' || e.skill === 'morph' || e.skill === 'chill') {   // 판 테두리가 붉게 깜빡
+      const g = this.add.graphics().setDepth(9); g.lineStyle(8, e.skill === 'silence' ? 0xFF5A7A : e.skill === 'chill' ? 0x8FD8FF : 0xC59BFF, 1).strokeRoundedRect(this.BX - 22, this.BY - 22, BW + 44, BH + 44, 34);
       this.tweens.add({ targets: g, alpha: 0, duration: 300, yoyo: true, repeat: 1, onComplete: () => g.destroy() });
     }
   }
-  bossTip(id) { return { serpent: '맞을수록 졸개를 불러요', knight: '주사위를 잠시 봉인해요', mage: '주사위 종류를 바꿔요', warden: '주기적으로 무적 방패', rush: '갑자기 돌진해요' }[id]; }
+  bossTip(id) { return { serpent: '맞을수록 졸개를 불러요', knight: '주사위를 잠시 봉인해요', mage: '주사위 종류를 바꿔요', warden: '주기적으로 무적 방패', rush: '갑자기 돌진해요', statue: '안 맞으면 체력을 회복해요', phantom: '잠시 사라져 공격을 피해요', hydra: '쓰러지면 셋으로 갈라져요', thief: 'SP 를 훔쳐가요', frost: '주사위를 얼려 느리게 해요' }[id]; }
   awaken(x, y, col) {
     audio.play('sfx_awaken', { volume: 0.8 }); buzz([40, 30, 80]);
     if (!this.awakened) { this.awakened = true; this.voice('awaken', 4); }

@@ -12,6 +12,8 @@ export const DESC = {
   echo: '눈만 같으면 아무 주사위와 합성돼요', fortune: '합성하면 SP 를 얻어요', sniper: '체력이 가장 많은 적을 노려요', curse: '맞은 적이 받는 피해가 늘어요',
   pierce: '맨 앞 적 뒤로 줄지은 적까지 꿰뚫어요', time: '맞은 적을 길 뒤로 되돌려요', mine: '길 위에 지뢰를 깔아요', crit: '모든 주사위의 치명타 확률을 올려요',
   summoner: '합성하면 주사위가 하나 더 생겨요', freeze: '확률로 적을 얼려 멈춰요', sacrifice: '합성 재료가 되면 옆 주사위들이 이번 판 내내 강해져요', alchemy: '이번 판 합성할수록 강해져요 (최대 4배)',
+  arrow: '빠르고 곧은 한 발', quake: '길 위 모든 적에게 피해', shackle: '보스를 크게 느리게 묶어요', bounty: '맞은 적을 잡으면 SP 를 더 줘요',
+  ward: '새어 나가는 적을 한 번 막아요 (다시 쓰기까지 대기)', twin: '맨 앞 두 적을 동시에 공격', nova: '8번 쏠 때마다 모든 적에게 대폭발', dragon: '웨이브 안에서 쏠수록 뜨거워져요 (최대 4배)',
   growth: '시간이 지나면 눈이 늘어요 (6눈까지)', mirror: '옆에서 가장 센 주사위의 능력을 따라 해요', shift: '합성 결과가 덱에서 가장 높은 등급 룬이 돼요', hammer: '보스 최대 체력에 비례한 피해',
 };
 const hex = n => '#' + n.toString(16).padStart(6, '0');
@@ -31,22 +33,23 @@ export class DeckScene extends Phaser.Scene {
     [0, 1, 2].forEach(i => btn(this, W / 2 - 290 + i * 200, 196, 180, 72, `덱 ${i + 1}`, () => { M.selectDeck(i); this.scene.restart({ slot: this.slot }); }, { style: d.deckIdx === i ? 'gold' : 'ghost', size: 28 }));
     btn(this, W - 150, 196, 200, 72, '조합표', () => this.synergyList(), { style: 'ghost', size: 26 });
     // 덱 5칸: 눌러서 바꿀 자리 고르기
-    const dy = 330;
+    const dy = 318;
     d.deck.forEach((r, i) => {
       const x = W / 2 + (i - 2) * 186, sel = i === this.slot;
       if (sel) { const g = this.add.image(x, dy, 'glow').setTint(0xF5C451).setBlendMode('ADD').setScale(2.2).setAlpha(0.5); this.tweens.add({ targets: g, alpha: 0.25, duration: 700, yoyo: true, repeat: -1 }); }
       const im = this.add.image(x, dy, `die_${r}`).setDisplaySize(sel ? 160 : 140, sel ? 160 : 140).setInteractive({ useHandCursor: true });
       this.add.image(x, dy, `rune_${r}`).setDisplaySize(sel ? 88 : 76, sel ? 88 : 76);
-      T(this, x, dy + 96, `★${d.tiers[r] || 1}`, 24, sel ? C.gold : C.sub, { w: 900 });
+      T(this, x, dy + 90, `★${d.tiers[r] || 1}`, 22, sel ? C.gold : C.sub, { w: 900 });
       im.on('pointerup', () => { this.slot = i; audio.play('sfx_click', { volume: 0.5 }); this.scene.restart({ slot: i }); });
     });
     // 발동 중인 조합
     const sy = synergiesOf(d.deck);
-    T(this, W / 2, 470, sy.length ? `조합 발동  ${sy.map(x => x.name).join(' · ')}` : `${this.slot + 1}번 칸을 골랐어요 · 아래 룬을 누르면 그 자리에 넣어요`, 26, sy.length ? C.gold : C.sub, { w: 900 });
+    T(this, W / 2, 462, `수집 보너스 · 모든 주사위 치명타 피해 ${M.critPct()}%  (등급업할수록 올라요)`, 24, '#FF8FCB', { w: 800 });
+    T(this, W / 2, 500, sy.length ? `조합 발동  ${sy.map(x => x.name).join(' · ')}` : `${this.slot + 1}번 칸을 골랐어요 · 아래 룬을 누르면 그 자리에 넣어요`, 26, sy.length ? C.gold : C.sub, { w: 900 });
     // 24룬 격자 (희귀도 → 보유 순)
     const order = RUNE_ORDER.slice().sort((a, b) => RARITY[a] - RARITY[b]);
-    const cols = 4, gap = 12, cw = (W - 60 - gap * (cols - 1)) / cols, top = 530, rows = Math.ceil(order.length / cols);
-    const ch = Math.max(180, Math.min(250, (H - top - 30) / rows - gap));
+    const cols = 5, gap = 10, cw = (W - 60 - gap * (cols - 1)) / cols, top = 548, rows = Math.ceil(order.length / cols);
+    const ch = Math.max(170, Math.min(240, (H - top - 30) / rows - gap));
     order.forEach((r, i) => {
       const x = 30 + cw / 2 + (i % cols) * (cw + gap), y = top + ch / 2 + Math.floor(i / cols) * (ch + gap);
       this.card(r, x, y, cw, ch);
@@ -61,7 +64,7 @@ export class DeckScene extends Phaser.Scene {
     const s = Math.min(112, ch * 0.5), iy = y - ch * 0.14;
     const ic = this.add.image(x, iy, `die_${r}`).setDisplaySize(s, s), rn = this.add.image(x, iy, `rune_${r}`).setDisplaySize(s * 0.58, s * 0.58);
     if (!own) { ic.setAlpha(0.25); rn.setAlpha(0.25).setTint(0x8890B0); this.add.image(x, iy, 'i_lock').setDisplaySize(34, 34).setAlpha(0.8); }
-    T(this, x, y + ch * 0.2, RUNES[r].name, 28, own ? C.text : C.dim, { w: 900 });
+    T(this, x, y + ch * 0.2, RUNES[r].name, 26, own ? C.text : C.dim, { w: 900 });
     if (own) {
       const have = d.cards[r] || 0, need = M.cardsNeed(r, t), k = Math.min(1, have / need), ready = t < M.MAX_TIER && have >= need;
       const bx = x - cw / 2 + 24, bw = cw - 48, by = y + ch * 0.38;

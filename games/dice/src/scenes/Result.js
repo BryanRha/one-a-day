@@ -16,8 +16,8 @@ export class ResultScene extends Phaser.Scene {
     if (r.newBest) { audio.play('sfx_wave', { volume: 0.8 }); this.time.delayedCall(200, () => this.cameras.main.flash(260, 255, 230, 200)); }
     const cy = top + 470;
     this.add.existing(panel(this, W / 2, cy, 900, 380));
-    [['처치한 적', fmt(r.kills)], ['보스 처치', `${r.bossKills}`], ['최고 주사위', `${r.maxPips}눈${r.maxPips >= 7 ? ' · 각성' : ''}`], ['얻은 수정', `◆ ${r.crystals}`]].forEach(([k, v], i) => {
-      const y = cy - 130 + i * 86; T(this, 150, y, k, 36, C.sub, { ox: 0, w: 800 }); T(this, W - 150, y, v, 42, i === 3 ? '#8FE3FF' : C.text, { ox: 1, w: 900 });
+    [['처치한 적', fmt(r.kills)], ['보스 처치', `${r.bossKills}`], ['최고 주사위', `${r.maxPips}눈${r.maxPips >= 7 ? ' · 각성' : ''}`], ['얻은 수정', `◆ ${r.crystals}`], ['명성 (보상 길)', `+${r.fame || 0}`]].forEach(([k, v], i) => {
+      const y = cy - 150 + i * 74; T(this, 150, y, k, 36, C.sub, { ox: 0, w: 800 }); T(this, W - 150, y, v, 42, i === 3 ? '#8FE3FF' : i === 4 ? C.gold : C.text, { ox: 1, w: 900 });
     });
     if (r.keys) {   // 웨이브 이정표 → 제단 열쇠
       const uy = cy + 300; T(this, W / 2, uy - 30, `웨이브 이정표 달성 · 제단 열쇠 +${r.keys}`, 40, C.gold, { w: 900 });

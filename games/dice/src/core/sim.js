@@ -30,9 +30,17 @@ export const RUNES = {
   shift: { name: '변이', dmg: 14, rate: 1.0, shift: true, color: 0xA8F04A },            // 합성 결과가 덱에서 가장 높은 등급 룬으로
   pierce: { name: '관통', dmg: 22, rate: 0.75, pierce: 0.16, color: 0xFFF0B8 },         // 맨 앞 적 뒤로 줄지은 적을 모두 꿰뚫음
   hammer: { name: '망치', dmg: 15, rate: 0.5, hammer: 0.007, color: 0xD08A4A },         // 보스 최대 체력 비례 피해
+  arrow: { name: '화살', dmg: 18, rate: 1.25, color: 0xF4EEDC },                        // 단순하고 빠른 단일 공격
+  quake: { name: '지진', dmg: 7, rate: 0.45, all: true, color: 0xD9853B },              // 길 위 모든 적에게 피해
+  shackle: { name: '사슬', dmg: 12, rate: 0.9, shackle: 0.3, color: 0x8FA8C8 },         // 보스를 크게 느리게
+  bounty: { name: '현상금', dmg: 12, rate: 1.0, bounty: 1.35, color: 0xFFD54A },          // 맞은 적을 잡으면 SP 더
+  ward: { name: '결계', dmg: 8, rate: 0.6, ward: 45, color: 0x7FE8E0 },                 // 새는 적을 한 번 막음 (재사용 대기)
+  twin: { name: '쌍검', dmg: 13, rate: 1.0, twin: true, color: 0xE08AD8 },              // 맨 앞 두 적을 동시에
+  nova: { name: '초신성', dmg: 10, rate: 0.9, nova: 8, color: 0xFF9CF0 },               // 8번 쏠 때마다 전체 대폭발
+  dragon: { name: '용', dmg: 12, rate: 1.0, dragon: 0.04, color: 0xFF6A3A },            // 웨이브 안에서 쏠수록 뜨거워짐 (최대 4배)
 };
 // 희귀도: 0 일반 · 1 희귀 · 2 영웅 · 3 전설 (뽑기 확률·등급업 재료 수에 쓰임)
-export const RARITY = { flame: 0, frost: 0, storm: 0, venom: 0, gale: 0, iron: 0, light: 0, mana: 0, echo: 1, fortune: 1, sniper: 1, curse: 1, pierce: 1, time: 1, mine: 2, crit: 2, summoner: 2, freeze: 2, sacrifice: 2, alchemy: 2, growth: 3, mirror: 3, shift: 3, hammer: 3 };
+export const RARITY = { flame: 0, frost: 0, storm: 0, venom: 0, gale: 0, iron: 0, light: 0, mana: 0, arrow: 0, echo: 1, fortune: 1, sniper: 1, curse: 1, pierce: 1, time: 1, quake: 1, shackle: 1, bounty: 1, mine: 2, crit: 2, summoner: 2, freeze: 2, sacrifice: 2, alchemy: 2, ward: 2, twin: 2, growth: 3, mirror: 3, shift: 3, hammer: 3, nova: 3, dragon: 3 };
 export const RARITY_NAME = ['일반', '희귀', '영웅', '전설'], RARITY_COLOR = [0xB8C2D8, 0x6FB8FF, 0xC07BFF, 0xFFC94D];
 // 덱 조합: 두 룬을 함께 넣으면 보너스
 export const SYNERGY = [
@@ -45,6 +53,11 @@ export const SYNERGY = [
   { id: 'plague', name: '역병', runes: ['curse', 'venom'], desc: '저주 받는 피해 +10%p' },
   { id: 'stasis', name: '정지장', runes: ['time', 'freeze'], desc: '되돌림 · 멈춤 +50%' },
   { id: 'life', name: '생명 연성', runes: ['growth', 'alchemy'], desc: '성장 속도 +30%' },
+  { id: 'volley', name: '연사', runes: ['arrow', 'twin'], desc: '화살 · 쌍검 공격 속도 +20%' },
+  { id: 'cata', name: '대격변', runes: ['quake', 'nova'], desc: '지진 · 초신성 피해 +30%' },
+  { id: 'jackpot', name: '대박', runes: ['bounty', 'fortune'], desc: '현상금 SP 1.35배 → 1.85배' },
+  { id: 'bulwark', name: '철벽', runes: ['ward', 'shackle'], desc: '결계 대기 시간 -30%' },
+  { id: 'inferno', name: '화룡', runes: ['dragon', 'flame'], desc: '용의 열기가 2배 빨리 오름' },
 ];
 export const synergiesOf = deck => SYNERGY.filter(s => s.runes.every(r => deck.includes(r)));
 export const RUNE_ORDER = Object.keys(RUNES);
@@ -58,6 +71,11 @@ export const BOSSES = [
   { id: 'mage', name: '환술사', hp: 11, speed: 0.6, morph: 7 },                    // 7초마다 주사위 2개 종류 바꿈
   { id: 'warden', name: '수호자', hp: 13, speed: 0.5, shield: 8 },                 // 8초마다 2초 무적
   { id: 'rush', name: '질주자', hp: 10, speed: 0.75, dash: 5 },                    // 5초마다 순간 돌진
+  { id: 'statue', name: '석상 군주', hp: 16, speed: 0.45, regen: 0.025 },           // 1.5초 안 맞으면 체력 회복
+  { id: 'phantom', name: '그림자 망령', hp: 11, speed: 0.6, blink: 7 },             // 7초마다 2초간 사라짐 (공격 안 받음)
+  { id: 'hydra', name: '히드라', hp: 11, speed: 0.55, split: 3 },                  // 쓰러지면 큰 적 3마리로 갈라짐
+  { id: 'thief', name: '금화 도둑', hp: 11, speed: 0.65, steal: 6 },               // 6초마다 SP 를 훔침
+  { id: 'frost', name: '서리 군주', hp: 13, speed: 0.5, chill: 8 },                // 8초마다 모든 주사위 공격 속도 -40% (3초)
 ];
 
 // 길: 판 밖 ㄷ자 (왼쪽 아래 → 위 → 오른쪽 → 아래). 길이는 0~1 진행도로 다룸
@@ -68,7 +86,8 @@ export function setGrow(g) { HP_GROW = g; }
 
 export class Sim {
   // deck: 룬 id 5개, tiers: { 룬id: 영구 등급 1~ } , seed
-  constructor({ deck, tiers = {}, seed = 1, startWave = 1 } = {}) {
+  constructor({ deck, tiers = {}, seed = 1, startWave = 1, critBonus = 0 } = {}) {
+    this.critBonus = critBonus;   // 수집 보너스: 영구 치명타 피해 +
     this.R = rng(seed);
     this.deck = deck.slice(0, 5);
     this.tiers = tiers;
@@ -77,7 +96,7 @@ export class Sim {
     this.enemies = []; this.nextId = 1; this.events = [];
     this.sp = 100; this.summons = 0; this.lives = 3; this.wave = startWave; this.t = 0;
     this.phase = 'wave'; this.waveT = 0; this.spawnT = 0; this.spawned = 0; this.over = false;
-    this.kills = 0; this.bossKills = 0; this.merges = 0; this.maxPips = 1; this.mines = []; this.crits = 0;
+    this.kills = 0; this.bossKills = 0; this.merges = 0; this.maxPips = 1; this.mines = []; this.crits = 0; this.chillT = 0; this.wards = 0;
     this.syn = Object.fromEntries(synergiesOf(this.deck).map(x => [x.id, true]));
     this.setupWave();
   }
@@ -174,12 +193,13 @@ export class Sim {
     if (this.phase === 'boss' && !this.enemies.length) {
       const bonus = 60 + this.wave * 15; this.sp += bonus;
       this.ev('waveClear', { wave: this.wave, sp: bonus });
+      for (const d of this.board) if (d) d.heat = 0;   // 용: 웨이브마다 식음
       this.wave++; this.setupWave();
     }
   }
   dmgOf(d) {
     const R = RUNES[d.type], tier = this.tiers[d.type] || 1;
-    return R.dmg * (1 + 0.15 * (tier - 1)) * (1 + (d.buff || 0)) * (R.alchemy ? Math.min(4, 1 + R.alchemy * this.merges) : 1) * (1 + POWER_BONUS * (this.power[d.type] || 0)) * Math.pow(PIP_MULT, d.pips - 1) * (d.pips >= 7 ? 1.5 : 1);   // 눈이 오를수록 한 발이 크게 강해짐 (7눈 각성 +50%)
+    return R.dmg * (1 + (d.heat || 0)) * (R.all || R.nova ? (this.syn.cata ? 1.3 : 1) : 1) * (1 + 0.15 * (tier - 1)) * (1 + (d.buff || 0)) * (R.alchemy ? Math.min(4, 1 + R.alchemy * this.merges) : 1) * (1 + POWER_BONUS * (this.power[d.type] || 0)) * Math.pow(PIP_MULT, d.pips - 1) * (d.pips >= 7 ? 1.5 : 1);   // 눈이 오를수록 한 발이 크게 강해짐 (7눈 각성 +50%)
   }
   neighbors(i) { const r = Math.floor(i / COLS), c = i % COLS, o = []; for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const y = r + dr, x = c + dc; if (y >= 0 && x >= 0 && y < ROWS && x < COLS) o.push(y * COLS + x); } return o; }
   // 광휘 옆 주사위 공격 속도 +
@@ -191,11 +211,13 @@ export class Sim {
     }
     return Math.min(1.2, a);
   }
-  front() { let best = null; for (const e of this.enemies) if (!best || e.d > best.d) best = e; return best; }
+  front() { let best = null; for (const e of this.enemies) if (!(e.hidden > 0) && e.hp > 0 && (!best || e.d > best.d)) best = e; return best; }
+  front2(x) { let best = null; for (const e of this.enemies) if (e !== x && !(e.hidden > 0) && e.hp > 0 && (!best || e.d > best.d)) best = e; return best; }
   critChance() { let c = 0.05; for (const d of this.board) if (d && d.type === 'crit' && !(d.silenced > 0)) c += RUNES.crit.critBuff * d.pips; return Math.min(0.6, c); }
-  strongest() { let best = null; for (const e of this.enemies) if (e.hp > 0 && (!best || e.hp > best.hp)) best = e; return best; }
+  strongest() { let best = null; for (const e of this.enemies) if (e.hp > 0 && !(e.hidden > 0) && (!best || e.hp > best.hp)) best = e; return best; }
   stepDice(dt) {
     this.crit = this.critChance();
+    if (this.chillT > 0) this.chillT -= dt;
     for (let i = 0; i < SLOTS; i++) {
       const d = this.board[i]; if (!d) continue;
       d.age += dt;
@@ -204,7 +226,8 @@ export class Sim {
       // 성장: 일정 시간이 지나면 눈 +1
       // 성장: 눈이 높을수록 오래 걸리고 6눈까지만 (7눈은 합성으로만)
       if (d.type === 'growth' && d.pips < 6 && d.age * (this.syn.life ? 1.3 : 1) >= RUNES.growth.grow + 8 * d.pips) { d.pips++; d.age = 0; this.maxPips = Math.max(this.maxPips, d.pips); this.ev('grow', { slot: i, die: d }); }
-      d.cd -= dt * RUNES[d.type].rate * (1 + this.auraAt(i));
+      if (d.wardCd > 0) d.wardCd -= dt;
+      d.cd -= dt * RUNES[d.type].rate * (1 + this.auraAt(i)) * (this.chillT > 0 ? 0.6 : 1) * (this.syn.volley && (d.type === 'arrow' || d.type === 'twin') ? 1.2 : 1);
       if (d.cd > 0) continue;
       d.cd = 1;
       const tgt = RUNES[d.type].strongest ? this.strongest() : this.front(); if (!tgt) { d.cd = 0.05; continue; }
@@ -216,8 +239,13 @@ export class Sim {
       // 거울: 옆에서 가장 센 주사위의 종류로 쏨 (눈·강화는 자기 것)
       let as = d;
       if (d.type === 'mirror') { let bn = null; for (const j of this.neighbors(i)) { const o = this.board[j]; if (o && o.type !== 'mirror' && !RUNES[o.type].mine && (!bn || this.dmgOf(o) > this.dmgOf(bn))) bn = o; } if (bn) as = { ...d, type: bn.type, mirrored: true }; }
+      const RR = RUNES[as.type];
+      if (RR.all) { this.ev('quake', { slot: i }); const dm = this.dmgOf(as) * d.pips; for (const e of this.enemies) this.damage(e, dm); continue; }
+      if (RR.nova) { d.charge = (d.charge || 0) + 1; if (d.charge >= RR.nova) { d.charge = 0; this.ev('nova', { slot: i }); const dm = this.dmgOf(as) * d.pips * 3.6; for (const e of this.enemies) this.damage(e, dm); continue; } }
+      if (RR.dragon) d.heat = Math.min(3, (d.heat || 0) + RR.dragon * (this.syn.inferno ? 2 : 1));
       this.ev('shot', { slot: i, die: as, target: tgt.id, n: d.pips });
       for (let k = 0; k < d.pips; k++) this.hit(as, tgt);
+      if (RR.twin) { const t2 = this.front2(tgt); if (t2) { this.ev('shot', { slot: i, die: as, target: t2.id, n: d.pips }); for (let k = 0; k < d.pips; k++) this.hit(as, t2); } }
       if (RUNES[d.type].hammer && tgt.kind === 'boss') this.damage(tgt, tgt.max * RUNES.hammer.hammer * d.pips * (1 + 0.1 * ((this.tiers.hammer || 1) - 1)));
     }
   }
@@ -228,7 +256,9 @@ export class Sim {
     if (R.boss && e.kind === 'boss') dmg *= R.boss;
     if (this.syn.forge && e.kind === 'boss') dmg *= 1.2;
     if (this.syn.super && R.chain && e.slow > 0.05) dmg *= 1.5;
-    if (this.R() < this.crit) { dmg *= this.syn.vital ? 3 : 2.5; this.crits++; e.critT = 0.3; }
+    if (R.shackle && e.kind === 'boss') e.slow = Math.max(e.slow, Math.min(0.55, R.shackle + 0.03 * d.pips));
+    if (R.bounty) e.bounty = R.bounty * (this.syn.jackpot ? 1.375 : 1);
+    if (this.R() < this.crit) { dmg *= (this.syn.vital ? 3 : 2.5) + this.critBonus; this.crits++; e.critT = 0.3; }
     if (R.vuln) { e.vuln = Math.max(e.vuln || 0, R.vuln + 0.03 * d.pips + (this.syn.plague ? 0.1 : 0)); e.vulnT = 3; }
     const st = this.syn.stasis ? 1.5 : 1;
     if (R.push) { const amt = R.push * st * (e.kind === 'boss' ? 0.35 : 1); if ((e.pushed || 0) < 0.12) { e.d = Math.max(0, e.d - amt); e.pushed = (e.pushed || 0) + amt; } }
@@ -242,14 +272,17 @@ export class Sim {
   }
   damage(e, dmg) {
     if (e.hp <= 0) return;
-    if (e.shieldOn > 0) return;
+    if (e.shieldOn > 0 || e.hidden > 0) return;
+    e.lastHit = this.t;
     e.hp -= dmg * (1 + (e.vulnT > 0 ? e.vuln : 0));
     if (e.hp <= 0) this.kill(e);
   }
   kill(e) {
-    this.sp += Math.round(e.sp * (this.syn.rich ? 1.2 : 1)); this.kills++;
+    const gain = Math.round(e.sp * (this.syn.rich ? 1.2 : 1) * (e.bounty || 1)); this.sp += gain; this.kills++;
     if (e.kind === 'boss') this.bossKills++;
-    this.ev('kill', { id: e.id, kind: e.kind, sp: e.sp, d: e.d, boss: e.boss });
+    this.ev('kill', { id: e.id, kind: e.kind, sp: gain, d: e.d, boss: e.boss, bounty: !!e.bounty });
+    // 히드라: 쓰러지면 큰 적으로 갈라짐
+    if (e.kind === 'boss' && e.boss === 'hydra') { for (let k = 0; k < 3; k++) { const m = this.spawnEnemy('big'); m.d = Math.max(0, e.d - 0.015 * k); m.hp = m.max = this.waveHp() * 2.2; } this.ev('split', { id: e.id, d: e.d }); }
   }
   stepEnemies(dt) {
     const B = Object.fromEntries(BOSSES.map(b => [b.id, b]));
@@ -263,15 +296,22 @@ export class Sim {
       if (e.kind === 'boss') {
         const b = B[e.boss]; e.t += dt;
         // 예고: 기술 1.2초 전에 경고 이벤트 (화면이 미리 알려 줌)
-        for (const [k, period] of [['silence', b.silence], ['morph', b.morph], ['dash', b.dash], ['shield', b.shield]]) if (period && (e.t + 1.2) % period < dt) this.ev('telegraph', { id: e.id, skill: k });
+        for (const [k, period] of [['silence', b.silence], ['morph', b.morph], ['dash', b.dash], ['shield', b.shield], ['blink', b.blink], ['steal', b.steal], ['chill', b.chill]]) if (period && (e.t + 1.2) % period < dt) this.ev('telegraph', { id: e.id, skill: k });
         if (b.silence && e.t % b.silence < dt) this.bossSilence();
         if (b.morph && e.t % b.morph < dt) this.bossMorph();
         if (b.shield) { if (e.t % b.shield < dt) { e.shieldOn = 2; this.ev('shield', { id: e.id }); } if (e.shieldOn > 0) e.shieldOn -= dt; }
         if (b.dash && e.t % b.dash < dt) { e.d = Math.min(0.97, e.d + 0.06); this.ev('dash', { id: e.id }); }
+        if (b.regen && this.t - (e.lastHit || 0) > 1.5 && e.hp < e.max) { e.hp = Math.min(e.max, e.hp + e.max * b.regen * dt); e.regenOn = true; } else e.regenOn = false;
+        if (b.blink) { if (e.t % b.blink < dt) { e.hidden = 2; this.ev('blink', { id: e.id }); } if (e.hidden > 0) e.hidden -= dt; }
+        if (b.steal && e.t % b.steal < dt) { const amt = Math.round(Math.min(this.sp * 0.15, 150)); if (amt > 0) { this.sp -= amt; this.ev('steal', { id: e.id, amt }); } }
+        if (b.chill && e.t % b.chill < dt) { this.chillT = 3; this.ev('chill', { id: e.id }); }
         if (b.spawnEvery) { const lost = 1 - e.hp / e.max; if (lost >= e.lastSpawn * b.spawnEvery && e.lastSpawn < 5) { e.lastSpawn++; for (let k = 0; k < 2; k++) { const m = this.spawnEnemy('fast'); m.d = Math.max(0, e.d - 0.02 * (k + 1)); m.hp = m.max = this.waveHp() * 0.5; } this.ev('summonMinion', { id: e.id }); } }
       }
       e.d += sp * dt;
       if (e.d >= PATH_LEN) {
+        // 결계: 대기 시간이 끝난 결계 주사위가 있으면 막음
+        const wi = this.board.findIndex(w => w && w.type === 'ward' && !(w.wardCd > 0) && !(w.silenced > 0));
+        if (wi >= 0) { const w = this.board[wi]; w.wardCd = (RUNES.ward.ward - 4 * w.pips) * (this.syn.bulwark ? 0.7 : 1); e.hp = 0; this.wards++; this.ev('ward', { slot: wi, id: e.id, kind: e.kind }); if (e.kind === 'boss') this.bossKills++; continue; }
         e.hp = 0; const loss = e.kind === 'boss' ? 2 : 1;
         this.lives -= loss; this.ev('leak', { id: e.id, kind: e.kind, loss });
         if (this.lives <= 0) { this.lives = 0; this.over = true; this.ev('over', { wave: this.wave }); }

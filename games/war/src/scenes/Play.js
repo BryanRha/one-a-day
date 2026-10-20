@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.0';
-import { audio } from '../audio.js?v=0.10.0';
-import { load, save } from '../save.js?v=0.10.0';
-import * as M from '../meta.js?v=0.10.0';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.0';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.0';
-import { AI, apply } from '../core/ai.js?v=0.10.0';
-import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.0';
-import { MAPS } from '../core/maps.js?v=0.10.0';
+import { W, H } from '../config.js?v=0.10.1';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.1';
+import { audio } from '../audio.js?v=0.10.1';
+import { load, save } from '../save.js?v=0.10.1';
+import * as M from '../meta.js?v=0.10.1';
+import { inOAD, exitToOAD } from '../oad.js?v=0.10.1';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.1';
+import { AI, apply } from '../core/ai.js?v=0.10.1';
+import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.1';
+import { MAPS } from '../core/maps.js?v=0.10.1';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -358,9 +358,14 @@ export class PlayScene extends Phaser.Scene {
       if (UNITS[u.type].indirect && (v.x !== u.x || v.y !== u.y)) continue;
       for (let dx = -r[1]; dx <= r[1]; dx++) for (let dy = -r[1]; dy <= r[1]; dy++) { const dd = Math.abs(dx) + Math.abs(dy); if (dd >= r[0] && dd <= r[1]) atk.add(`${v.x + dx},${v.y + dy}`); }
     }
-    for (const k of atk) { const [x, y] = k.split(',').map(Number); const e = this.s.unitAt(x, y); if (e && e.p !== u.p && this.s.tile(x, y)) this.mark(x, y, 0xFF5040, 0.5, true); }
+    for (const k of atk) { const [x, y] = k.split(',').map(Number); if (!this.s.tile(x, y)) continue; const e = this.s.unitAt(x, y); if (e && e.p !== u.p) this.mark(x, y, 0xFF5040, 0.5, true); else if (UNITS[u.type].indirect && !this.reach.get(k)) this.mark(x, y, 0xFF5040, 0.16); }
     const sel = this.mark(u.x, u.y, 0xFFE27A, 0, true); this.tweens.add({ targets: sel, alpha: 0.4, duration: 400, yoyo: true, repeat: -1 });
-    this.setActs([['취소', () => this.cancelSel(), 'ghost']]);
+    // 제자리에서 바로 쏠 수 있으면 [공격] 버튼 (원거리 무기는 움직이지 않아야 쏠 수 있음)
+    const here = this.s.targets(u, u.x, u.y, false), list = [];
+    if (here.length) list.push(['공격', () => { this.ghost = [u.x, u.y]; this.toAct(); this.toTarget(); }, 'red']);
+    list.push(['취소', () => this.cancelSel(), 'ghost']);
+    this.setActs(list);
+    if (UNITS[u.type].indirect) toast(this, here.length ? '사거리 안의 적을 바로 공격할 수 있어요' : '원거리 무기는 이동한 턴엔 못 쏴요 · 다음 턴을 위해 자리를 잡아요', C.sub, TOP + 60);
   }
   showEnemyRange(u) {
     this.clearHl(); const r = this.s.rangeOf(u); if (!r) return;
@@ -459,7 +464,7 @@ export class PlayScene extends Phaser.Scene {
   tutorial() {
     const d = load(); d.tips.war = 1; save();
     const p = popup(this, '작전 안내', 940, 900);
-    const lines = ['① 아군 유닛을 누르면 갈 수 있는 칸이 파랗게', '② 칸을 누르면 이동 → 공격 · 점령 · 대기', '③ 공격 전에 정확한 피해와 반격이 보여요', '④ 보병으로 도시를 점령하면 매일 자금 +1000', '⑤ 기지를 누르면 유닛 생산', '적 본부를 점령하거나 적을 모두 무찌르면 승리!'];
+    const lines = ['① 아군 유닛을 누르면 갈 수 있는 칸이 파랗게', '② 칸을 누르면 이동 → 공격 · 점령 · 대기', '③ 공격 전에 정확한 피해와 반격이 보여요', '④ 야포·로켓포: 움직이지 않고 [공격] (사거리 빨간 칸)', '⑤ 보병으로 도시 점령 → 매일 자금 · 기지에서 생산', '적 본부를 점령하거나 적을 모두 무찌르면 승리!'];
     lines.forEach((s, i) => p.content.add(T(this, -390, -250 + i * 78, s, 30, i === 5 ? C.gold : C.text, { ox: 0, w: 800 })));
     if (this.map.tip) p.content.add(T(this, 0, 240, `팁 · ${this.map.tip}`, 26, C.green, { w: 800, wrap: 820 }));
     p.content.add(btn(this, 0, 350, 420, 110, '작전 시작', () => p.close(), { style: 'gold', size: 36 }));

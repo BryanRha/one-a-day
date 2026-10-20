@@ -1,8 +1,8 @@
 // 로딩: manifest 의 그림·이펙트·효과음 + 도로 텍스처(구역별)를 코드로 생성
-import { W, H } from '../config.js?v=0.8.11';
-import { SFX } from '../audio.js?v=0.8.11';
-import { makeTextures } from '../fx.js?v=0.8.11';
-import { ROAD_X } from '../core/race.js?v=0.8.11';
+import { W, H } from '../config.js?v=0.8.12';
+import { SFX } from '../audio.js?v=0.8.12';
+import { makeTextures } from '../fx.js?v=0.8.12';
+import { ROAD_X } from '../core/race.js?v=0.8.12';
 
 // 구역: 아스팔트 색 · 갓길 색 · 연석 무늬 두 색
 export const ZONES = [

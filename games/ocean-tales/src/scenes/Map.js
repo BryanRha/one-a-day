@@ -1,15 +1,15 @@
 // 월드맵: 월드(10레벨씩)를 세로로 이어 붙이고, 레벨 노드를 구불구불한 길로 연결한다. 화면 근처 월드만 그린다.
-import { W, H, TXT, INK, WORLD_COUNT, MAP_THEME } from '../config.js?v=0.8.11';
-import { t } from '../i18n.js?v=0.8.11';
-import { audio } from '../audio.js?v=0.8.11';
-import { load, save, availableStars } from '../save.js?v=0.8.11';
-import { RESTORE_TASKS, taskCost } from '../restore.js?v=0.8.11';
-import { dailyPopup, missionPopup } from '../ui/meta.js?v=0.8.11';
-import { dailyState, claimableCount } from '../missions.js?v=0.8.11';
-import { dexPopup, achPopup } from '../ui/collection.js?v=0.8.11';
-import { dexClaimable, achClaimable } from '../progress.js?v=0.8.11';
-import { LEVELS } from '../core/levels.js?v=0.8.11';
-import { popup, button, iconButton, toast, enableGlow } from '../ui/widgets.js?v=0.8.11';
+import { W, H, TXT, INK, WORLD_COUNT, MAP_THEME } from '../config.js?v=0.8.12';
+import { t } from '../i18n.js?v=0.8.12';
+import { audio } from '../audio.js?v=0.8.12';
+import { load, save, availableStars } from '../save.js?v=0.8.12';
+import { RESTORE_TASKS, taskCost } from '../restore.js?v=0.8.12';
+import { dailyPopup, missionPopup } from '../ui/meta.js?v=0.8.12';
+import { dailyState, claimableCount } from '../missions.js?v=0.8.12';
+import { dexPopup, achPopup } from '../ui/collection.js?v=0.8.12';
+import { dexClaimable, achClaimable } from '../progress.js?v=0.8.12';
+import { LEVELS } from '../core/levels.js?v=0.8.12';
+import { popup, button, iconButton, toast, enableGlow } from '../ui/widgets.js?v=0.8.12';
 
 const WORLD_H = 3840;
 const WORLDS = WORLD_COUNT;

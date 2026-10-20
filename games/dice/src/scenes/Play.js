@@ -1,12 +1,12 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
-import { W, H } from '../config.js?v=0.8.11';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.11';
-import { DESC } from './Deck.js?v=0.8.11';
-import { act } from '../core/ai.js?v=0.8.11';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.11';
-import { audio } from '../audio.js?v=0.8.11';
-import { load, save } from '../save.js?v=0.8.11';
-import * as M from '../meta.js?v=0.8.11';
+import { W, H } from '../config.js?v=0.8.12';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.12';
+import { DESC } from './Deck.js?v=0.8.12';
+import { act } from '../core/ai.js?v=0.8.12';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.12';
+import { audio } from '../audio.js?v=0.8.12';
+import { load, save } from '../save.js?v=0.8.12';
+import * as M from '../meta.js?v=0.8.12';
 
 // 판 크기: 양옆 길 위 몬스터(보스 포함)가 화면 밖으로 잘리지 않게 여백 확보
 const CS = 188, GAP = 14, BW = COLS * CS + (COLS - 1) * GAP, BH = ROWS * CS + (ROWS - 1) * GAP;
@@ -102,6 +102,15 @@ export class PlayScene extends Phaser.Scene {
     c.add([body, rune]);
     const col = RUNES[d.type].color;
     for (const [px, py] of PIPS[d.pips]) { const x = px * CS * 0.25, y = py * CS * 0.25; c.add(this.add.image(x, y, 'pip').setDisplaySize(46, 46).setTint(col).setBlendMode('ADD')); c.add(this.add.circle(x, y, 10, 0xFFFFFF)); }
+    // 등급 장식: 희귀 은은한 빛 · 영웅 도는 마법진 · 전설 회전 빛줄기 + 맴도는 별빛
+    const rar = RARITY[d.type] || 0;
+    if (rar >= 1) { const gl = this.add.image(0, 0, 'glow').setTint(col).setBlendMode('ADD').setScale(1.5 + rar * 0.15).setAlpha(0.18 + rar * 0.08); c.addAt(gl, 0); this.tweens.add({ targets: gl, alpha: gl.alpha * 0.5, duration: 1100 + rar * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
+    if (rar >= 2) { const rg = this.add.image(0, 0, 'ring').setTint(col).setBlendMode('ADD').setScale(CS / 128 * 1.02).setAlpha(rar === 3 ? 0.5 : 0.35); c.addAt(rg, 0); this.tweens.add({ targets: rg, angle: 360, duration: 6000, repeat: -1 }); }
+    if (rar === 3) {
+      const ry = this.add.image(0, 0, 'rays').setTint(col).setBlendMode('ADD').setScale(CS / 512 * 2.1).setAlpha(0.42); c.addAt(ry, 0); this.tweens.add({ targets: ry, angle: -360, duration: 9000, repeat: -1 });
+      const orb = this.add.container(0, 0); for (let q = 0; q < 3; q++) { const a = q * Math.PI * 2 / 3; orb.add(this.add.image(Math.cos(a) * CS * 0.56, Math.sin(a) * CS * 0.56, 'pip').setTint(q ? col : 0xFFFFFF).setBlendMode('ADD').setScale(0.7)); }
+      c.add(orb); this.tweens.add({ targets: orb, angle: 360, duration: 3200, repeat: -1 });
+    }
     if (d.pips >= MAX_PIPS) { const aw = this.add.image(0, 0, 'glow').setTint(col).setBlendMode('ADD').setScale(1.9).setAlpha(0.55); c.addAt(aw, 0); this.tweens.add({ targets: aw, alpha: 0.2, scale: 2.2, duration: 700, yoyo: true, repeat: -1 }); }
     if (d.buff > 0) { const bf = this.add.image(0, 0, 'glow').setTint(0xFF3848).setBlendMode('ADD').setScale(1.3 + d.buff * 0.5).setAlpha(0.35 + d.buff * 0.2); c.addAt(bf, 0); c.add(T(this, CS * 0.32, -CS * 0.36, `+${Math.round(d.buff * 100)}%`, 22, '#FF8A94', { w: 900 })); }
     c.die = d; c.key = `${d.id}_${d.type}_${d.pips}_${Math.round((d.buff || 0) * 10)}`; c.body = body;
@@ -394,63 +403,80 @@ export class PlayScene extends Phaser.Scene {
     const col = RUNES[type].color, cnt = Math.min(n, 3);
     const dv = this.dieViews[slot]; if (dv && !this.drag) { dv.setScale(1.08); this.tweens.add({ targets: dv, scale: 1, duration: 120, ease: 'Quad.easeOut' }); }
     if (this.bolts.length > 45) { this.impact(type, v.x, v.y, target); return; }
+    // 등급이 높을수록 탄이 크고 꼬리가 길고 빛가루를 흘림 (전설은 혜성처럼)
+    const rar = RARITY[type] || 0, busy = this.bolts.length > 30, fx = busy ? Math.min(rar, 1) : rar;
     for (let k = 0; k < cnt; k++) {
-      const b = this.add.image(x0, y0, 'bolt').setTint(col).setBlendMode('ADD').setScale(0.5 + n * 0.04).setDepth(35);
-      const tail = this.add.image(x0, y0, 'bolt').setTint(col).setBlendMode('ADD').setScale(0.3).setAlpha(0.5).setDepth(34);
+      const b = this.add.image(x0, y0, 'bolt').setTint(col).setBlendMode('ADD').setScale(0.5 + n * 0.04 + fx * 0.12).setDepth(35);
+      const tails = [];
+      for (let q = 0; q < 1 + fx; q++) tails.push(this.add.image(x0, y0, 'bolt').setTint(q === 2 ? 0xFFFFFF : col).setBlendMode('ADD').setScale(0.3 + fx * 0.06 - q * 0.05).setAlpha(0.5 - q * 0.1).setDepth(34));
       this.bolts.push(b);
       const tx = v.x + (k - 1) * 10, ty = v.y + (k - 1) * 6, dur = 150 + k * 35;
-      this.tweens.add({ targets: tail, x: tx, y: ty, duration: dur + 40, ease: 'Quad.easeIn', onComplete: () => tail.destroy() });
-      this.tweens.add({ targets: b, x: tx, y: ty, duration: dur, ease: 'Quad.easeIn', onComplete: () => {
+      tails.forEach((tail, q) => this.tweens.add({ targets: tail, x: tx, y: ty, duration: dur + 40 + q * 35, ease: 'Quad.easeIn', onComplete: () => tail.destroy() }));
+      let f = 0;
+      this.tweens.add({ targets: b, x: tx, y: ty, duration: dur, ease: 'Quad.easeIn', onUpdate: () => { if (fx >= 2 && (f++ % (fx === 3 ? 2 : 3)) === 0) { this.spark.setParticleTint(f % 4 ? col : 0xFFFFFF); this.spark.emitParticleAt(b.x, b.y, 1); } }, onComplete: () => {
         b.destroy(); this.bolts.splice(this.bolts.indexOf(b), 1);
         if (k === 0) this.impact(type, tx, ty, target);
       } });
     }
   }
+  // 명중 효과: 고유 연출이 있는 룬은 그대로, 나머지는 능력 유형(연쇄·독·감속·범위·관통·무거운 일격·속사)에 맞춰 룬 색으로
   impact(type, x, y, target) {
-    const col = RUNES[type].color, v = this.ePool.get(target);
+    const col = RUNES[type].color, v = this.ePool.get(target), R0 = RUNES[type], rar = RARITY[type] || 0;
     if (v) this.hitFlash(v);
+    const OWN = ['flame', 'frost', 'storm', 'venom', 'gale', 'iron', 'pierce', 'time', 'hammer'];
+    const kind = OWN.includes(type) ? type : R0.chain ? 'storm' : R0.poison ? 'venom' : (R0.slow || R0.stun) ? 'frost' : R0.splash ? 'flame' : R0.pierce ? 'pierce' : (R0.boss || R0.bigX || R0.dmg >= 30) ? 'iron' : R0.rate >= 1.3 ? 'gale' : (R0.push ? 'time' : 'default');
+    const own = kind === type, tc = fixed => own ? fixed : col;
+    // 등급 연출: 영웅은 불꽃이 더 튀고, 전설은 충격파 + 섬광 (너무 잦지 않게)
+    if (rar >= 2 && this.time.now - (this.rarFxT || 0) > (rar === 3 ? 70 : 110)) {
+      this.rarFxT = this.time.now;
+      this.spark.setParticleTint(col); this.spark.emitParticleAt(x, y, rar === 3 ? 8 : 4);
+      if (rar === 3) {
+        const sw = this.add.image(x, y, 'ring').setTint(col).setBlendMode('ADD').setScale(0.2).setAlpha(1).setDepth(37); this.tweens.add({ targets: sw, scale: 1.5, alpha: 0, duration: 340, ease: 'Cubic.easeOut', onComplete: () => sw.destroy() });
+        const fl = this.add.image(x, y, 'glow').setTint(tc(0xFFFFFF)).setBlendMode('ADD').setScale(0.6).setAlpha(0.9).setDepth(37); this.tweens.add({ targets: fl, scale: 1.4, alpha: 0, duration: 200, onComplete: () => fl.destroy() });
+      }
+    }
     const ring = (sc, a, d) => { const r = this.add.image(x, y, 'ring').setTint(col).setBlendMode('ADD').setScale(0.15).setAlpha(a).setDepth(36); this.tweens.add({ targets: r, scale: sc, alpha: 0, duration: d, onComplete: () => r.destroy() }); };
-    switch (type) {
+    switch (kind) {
       case 'flame': {   // 작은 폭발 + 불꽃 (광역)
         audio.play('sfx_fire', { volume: 0.3, gap: 90 });
-        const f = this.add.image(x, y, 'glow').setTint(0xFF7A2E).setBlendMode('ADD').setScale(0.3).setDepth(36);
+        const f = this.add.image(x, y, 'glow').setTint(tc(0xFF7A2E)).setBlendMode('ADD').setScale(0.3).setDepth(36);
         this.tweens.add({ targets: f, scale: 1.6, alpha: 0, duration: 260, onComplete: () => f.destroy() });
-        ring(0.55, 0.8, 260); this.spark.setParticleTint(0xFFB24A); this.spark.emitParticleAt(x, y, 5); break;
+        ring(0.55, 0.8, 260); this.spark.setParticleTint(tc(0xFFB24A)); this.spark.emitParticleAt(x, y, 5); break;
       }
       case 'frost': {   // 서리 결정이 퍼지고 적이 파래짐
         audio.play('sfx_ice', { volume: 0.28, gap: 100 });
-        for (let k = 0; k < 4; k++) { const sh = this.add.image(x, y, 'flake').setTint(0xBFEFFF).setBlendMode('ADD').setScale(0.35).setDepth(36); const a = k * Math.PI / 2 + Math.random(); this.tweens.add({ targets: sh, x: x + Math.cos(a) * 40, y: y + Math.sin(a) * 40, angle: 120, alpha: 0, duration: 320, onComplete: () => sh.destroy() }); }
+        for (let k = 0; k < 4; k++) { const sh = this.add.image(x, y, 'flake').setTint(tc(0xBFEFFF)).setBlendMode('ADD').setScale(0.35).setDepth(36); const a = k * Math.PI / 2 + Math.random(); this.tweens.add({ targets: sh, x: x + Math.cos(a) * 40, y: y + Math.sin(a) * 40, angle: 120, alpha: 0, duration: 320, onComplete: () => sh.destroy() }); }
         ring(0.4, 0.7, 220); break;
       }
       case 'storm': {   // 근처 적으로 번개 줄기
         audio.play('sfx_zap', { volume: 0.28, gap: 90 });
         const near = [...this.ePool.entries()].filter(([id]) => id !== target).map(([, o]) => o).sort((a, b) => Phaser.Math.Distance.Between(x, y, a.x, a.y) - Phaser.Math.Distance.Between(x, y, b.x, b.y)).slice(0, 2);
         const g = this.add.graphics().setDepth(37).setBlendMode('ADD');
-        const bolt = (x1, y1, x2, y2) => { g.lineStyle(4, 0xFFF4A0, 1); g.beginPath(); g.moveTo(x1, y1); const n = 5; for (let i = 1; i < n; i++) g.lineTo(x1 + (x2 - x1) * i / n + (Math.random() - 0.5) * 26, y1 + (y2 - y1) * i / n + (Math.random() - 0.5) * 26); g.lineTo(x2, y2); g.strokePath(); };
+        const bolt = (x1, y1, x2, y2) => { g.lineStyle(4, tc(0xFFF4A0), 1); g.beginPath(); g.moveTo(x1, y1); const n = 5; for (let i = 1; i < n; i++) g.lineTo(x1 + (x2 - x1) * i / n + (Math.random() - 0.5) * 26, y1 + (y2 - y1) * i / n + (Math.random() - 0.5) * 26); g.lineTo(x2, y2); g.strokePath(); };
         let px = x, py = y; for (const o of near) { bolt(px, py, o.x, o.y); this.hitFlash(o); px = o.x; py = o.y; }
         this.tweens.add({ targets: g, alpha: 0, duration: 180, onComplete: () => g.destroy() });
         ring(0.35, 0.9, 160); break;
       }
       case 'venom': {   // 독 구름
         audio.play('sfx_poison', { volume: 0.25, gap: 110 });
-        for (let k = 0; k < 3; k++) { const c = this.add.image(x + (Math.random() - 0.5) * 30, y + (Math.random() - 0.5) * 20, 'glow').setTint(0x7CE36A).setAlpha(0.55).setScale(0.35).setDepth(36); this.tweens.add({ targets: c, scale: 0.8, y: c.y - 30, alpha: 0, duration: 600, delay: k * 60, onComplete: () => c.destroy() }); }
+        for (let k = 0; k < 3; k++) { const c = this.add.image(x + (Math.random() - 0.5) * 30, y + (Math.random() - 0.5) * 20, 'glow').setTint(tc(0x7CE36A)).setAlpha(0.55).setScale(0.35).setDepth(36); this.tweens.add({ targets: c, scale: 0.8, y: c.y - 30, alpha: 0, duration: 600, delay: k * 60, onComplete: () => c.destroy() }); }
         break;
       }
       case 'gale': {    // 빠른 바람 베기
         audio.play('sfx_hit', { volume: 0.25, gap: 50, rate: 1.4 });
-        const sl = this.add.rectangle(x, y, 70, 5, 0xD8FFF6, 0.9).setAngle(-30 + Math.random() * 60).setBlendMode('ADD').setDepth(37);
+        const sl = this.add.rectangle(x, y, 70, 5, tc(0xD8FFF6), 0.9).setAngle(-30 + Math.random() * 60).setBlendMode('ADD').setDepth(37);
         this.tweens.add({ targets: sl, scaleX: 1.6, alpha: 0, duration: 140, onComplete: () => sl.destroy() }); break;
       }
       case 'iron': {    // 묵직한 타격 · 쇳조각 불꽃
         audio.play('sfx_clank', { volume: 0.35, gap: 90 });
-        ring(0.6, 1, 200); this.spark.setParticleTint(0xFFFFFF); this.spark.emitParticleAt(x, y, 7);
+        ring(0.6, 1, 200); this.spark.setParticleTint(tc(0xFFFFFF)); this.spark.emitParticleAt(x, y, 7);
         if (v && v.kind === 'boss') this.cameras.main.shake(70, 0.002); break;
       }
       case 'pierce': {  // 길을 따라 꿰뚫는 빛줄기
         audio.play('sfx_hit', { volume: 0.28, gap: 60, rate: 1.2 });
-        const behind = this.s.enemies.filter(o => o.id !== target && o.hp > 0 && o.d < (this.s.enemies.find(q => q.id === target) || { d: 0 }).d && (this.s.enemies.find(q => q.id === target).d - o.d) < RUNES.pierce.pierce).map(o => this.ePool.get(o.id)).filter(Boolean);
+        const behind = this.s.enemies.filter(o => o.id !== target && o.hp > 0 && o.d < (this.s.enemies.find(q => q.id === target) || { d: 0 }).d && (this.s.enemies.find(q => q.id === target).d - o.d) < (R0.pierce || 0.1)).map(o => this.ePool.get(o.id)).filter(Boolean);
         const g = this.add.graphics().setDepth(37).setBlendMode('ADD'); let px = x, py = y;
-        for (const o of behind) { g.lineStyle(6, 0xFFF0B8, 0.9).lineBetween(px, py, o.x, o.y); this.hitFlash(o); px = o.x; py = o.y; }
+        for (const o of behind) { g.lineStyle(6, tc(0xFFF0B8), 0.9).lineBetween(px, py, o.x, o.y); this.hitFlash(o); px = o.x; py = o.y; }
         this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() }); ring(0.4, 0.9, 180); break;
       }
       case 'time': {    // 시계 고리가 퍼지며 뒤로 밀어냄
@@ -459,11 +485,19 @@ export class PlayScene extends Phaser.Scene {
       }
       case 'hammer': {  // 무거운 내려찍기
         audio.play('sfx_clank', { volume: 0.4, gap: 120, rate: 0.75 });
-        ring(0.9, 1, 260); this.spark.setParticleTint(0xFFC27A); this.spark.emitParticleAt(x, y, 9);
+        ring(0.9, 1, 260); this.spark.setParticleTint(tc(0xFFC27A)); this.spark.emitParticleAt(x, y, 9);
         if (v && v.kind === 'boss') this.cameras.main.shake(90, 0.003); break;
       }
       default: { audio.play('sfx_hit', { volume: 0.25, gap: 50 }); ring(0.35, 0.8, 200); this.spark.setParticleTint(col); this.spark.emitParticleAt(x, y, 3); }
     }
+  }
+  // 영웅·전설 주사위가 나타날 때 연출
+  rarityPop(x, y, type) {
+    const rar = RARITY[type] || 0, col = RUNES[type].color; if (rar < 2) return;
+    const ry = this.add.image(x, y, 'rays').setTint(col).setBlendMode('ADD').setScale(0.15).setAlpha(rar === 3 ? 0.9 : 0.6).setDepth(37);
+    this.tweens.add({ targets: ry, scale: rar === 3 ? 0.9 : 0.6, angle: 90, alpha: 0, duration: rar === 3 ? 700 : 450, onComplete: () => ry.destroy() });
+    this.spark.setParticleTint(col); this.spark.emitParticleAt(x, y, rar === 3 ? 16 : 8);
+    if (rar === 3 && this.time.now - (this.popT || 0) > 1500) { this.popT = this.time.now; audio.play('sfx_awaken', { volume: 0.4, rate: 1.4, gap: 300 }); this.float(x, y - 80, `전설 · ${RUNES[type].name}`, '#FFD86A', 28); }
   }
   // 맞은 적: 하얗게 번쩍 + 살짝 뒤로 밀림
   hitFlash(v) {
@@ -474,7 +508,7 @@ export class PlayScene extends Phaser.Scene {
   }
   onEvent(e) {
     switch (e.type) {
-      case 'summon': audio.play('sfx_summon', { volume: 0.55, gap: 40 }); if (e.free) { const [x, y] = this.slotXY(e.slot); this.float(x, y - 70, '소환사!', '#9AA6FF'); this.spark.setParticleTint(0x6F7CFF); this.spark.emitParticleAt(x, y, 10); } break;
+      case 'summon': audio.play('sfx_summon', { volume: 0.55, gap: 40 }); { const [sx2, sy2] = this.slotXY(e.slot); this.rarityPop(sx2, sy2, e.die.type); } if (e.free) { const [x, y] = this.slotXY(e.slot); this.float(x, y - 70, '소환사!', '#9AA6FF'); this.spark.setParticleTint(0x6F7CFF); this.spark.emitParticleAt(x, y, 10); } break;
       case 'shot': audio.play('sfx_pew', { volume: 0.22, gap: 55, rate: 0.85 + e.die.pips * 0.06 + Math.random() * 0.1 }); this.shotFx(e.slot, e.target, e.n, e.die.type); break;
       case 'merge': {
         const [x, y] = this.slotXY(e.to), col = RUNES[e.die.type].color;
@@ -483,7 +517,7 @@ export class PlayScene extends Phaser.Scene {
         const ring = this.add.image(x, y, 'ring').setTint(col).setBlendMode('ADD').setScale(0.4).setDepth(36); this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: 380, onComplete: () => ring.destroy() });
         if (e.sp) this.float(x, y - 60, `+${fmt(e.sp)} SP`, C.gold);
         if (e.die.pips >= MAX_PIPS) this.awaken(x, y, col);
-        else if (e.die.pips >= 5) this.voice('merge', 1);
+        else { if (e.die.pips >= 5) this.voice('merge', 1); this.rarityPop(x, y, e.die.type); }
         break;
       }
       case 'grow': { const [x, y] = this.slotXY(e.slot); this.float(x, y - 60, '성장!', C.green); if (e.die.pips >= MAX_PIPS) this.awaken(x, y, RUNES.growth.color); break; }
@@ -597,7 +631,7 @@ export class PlayScene extends Phaser.Scene {
     c.add(T(this, 0, 214, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
     this.paused = true;
     const z = this.add.zone(W / 2, H / 2, W, H).setInteractive().setDepth(96);
-    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.11').then(m => m.save()); });
+    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.12').then(m => m.save()); });
   }
 
   gameOver() {

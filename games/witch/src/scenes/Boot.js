@@ -1,7 +1,7 @@
 // 로딩: manifest.json 에 적힌 그림·이펙트·효과음을 모두 받고 애니메이션을 만든다
-import { W, H } from '../config.js?v=0.8.11';
-import { SFX } from '../audio.js?v=0.8.11';
-import { makeTextures } from '../fx.js?v=0.8.11';
+import { W, H } from '../config.js?v=0.8.12';
+import { SFX } from '../audio.js?v=0.8.12';
+import { makeTextures } from '../fx.js?v=0.8.12';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }

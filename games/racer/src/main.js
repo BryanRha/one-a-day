@@ -1,10 +1,10 @@
-import { W, BASE_H, setH } from './config.js?v=0.8.8';
-import { audio } from './audio.js?v=0.8.8';
-import { WindFX } from './fx.js?v=0.8.8';
-import { BootScene } from './scenes/Boot.js?v=0.8.8';
-import { LobbyScene } from './scenes/Lobby.js?v=0.8.8';
-import { PlayScene } from './scenes/Play.js?v=0.8.8';
-import { ResultScene } from './scenes/Result.js?v=0.8.8';
+import { W, BASE_H, setH } from './config.js?v=0.8.9';
+import { audio } from './audio.js?v=0.8.9';
+import { WindFX } from './fx.js?v=0.8.9';
+import { BootScene } from './scenes/Boot.js?v=0.8.9';
+import { LobbyScene } from './scenes/Lobby.js?v=0.8.9';
+import { PlayScene } from './scenes/Play.js?v=0.8.9';
+import { ResultScene } from './scenes/Result.js?v=0.8.9';
 
 async function start() {
   try { await document.fonts.load('48px Jua'); } catch { /* 기본 폰트 */ }

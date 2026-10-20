@@ -1,9 +1,9 @@
 // 바다 친구 도감 · 업적 팝업 (지도에서 연다)
-import { W, H, TXT } from '../config.js?v=0.8.8';
-import { t } from '../i18n.js?v=0.8.8';
-import { audio } from '../audio.js?v=0.8.8';
-import { popup, button } from './widgets.js?v=0.8.8';
-import { DEX, DEX_COINS, ACH, stat, dexLevel, dexClaimed, claimDex, achDone, achClaimed, claimAch } from '../progress.js?v=0.8.8';
+import { W, H, TXT } from '../config.js?v=0.8.9';
+import { t } from '../i18n.js?v=0.8.9';
+import { audio } from '../audio.js?v=0.8.9';
+import { popup, button } from './widgets.js?v=0.8.9';
+import { DEX, DEX_COINS, ACH, stat, dexLevel, dexClaimed, claimDex, achDone, achClaimed, claimAch } from '../progress.js?v=0.8.9';
 
 const fit = (img, size) => img.setScale(Math.min(size / img.width, size / img.height));
 

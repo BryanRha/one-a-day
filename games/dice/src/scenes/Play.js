@@ -1,12 +1,12 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
-import { W, H } from '../config.js?v=0.8.8';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.8';
-import { DESC } from './Deck.js?v=0.8.8';
-import { act } from '../core/ai.js?v=0.8.8';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.8';
-import { audio } from '../audio.js?v=0.8.8';
-import { load, save } from '../save.js?v=0.8.8';
-import * as M from '../meta.js?v=0.8.8';
+import { W, H } from '../config.js?v=0.8.9';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.9';
+import { DESC } from './Deck.js?v=0.8.9';
+import { act } from '../core/ai.js?v=0.8.9';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.9';
+import { audio } from '../audio.js?v=0.8.9';
+import { load, save } from '../save.js?v=0.8.9';
+import * as M from '../meta.js?v=0.8.9';
 
 // 판 크기: 양옆 길 위 몬스터(보스 포함)가 화면 밖으로 잘리지 않게 여백 확보
 const CS = 188, GAP = 14, BW = COLS * CS + (COLS - 1) * GAP, BH = ROWS * CS + (ROWS - 1) * GAP;
@@ -111,6 +111,8 @@ export class PlayScene extends Phaser.Scene {
       if (v && (!d || v.key !== key)) { if (this.drag && this.drag.v === v) this.drag = null; v.destroy(); this.dieViews[i] = null; }
       if (d && !this.dieViews[i]) { const nv = this.makeDieView(i, d); this.dieViews[i] = nv; nv.setScale(0.5); this.tweens.add({ targets: nv, scale: 1, duration: 200, ease: 'Back.easeOut' }); }
       const cv = this.dieViews[i];
+      // 끌고 있지 않은 주사위는 항상 제자리 (움직이는 연출 중이 아니면)
+      if (cv && (!this.drag || this.drag.v !== cv) && !this.tweens.isTweening(cv)) { const [sx, sy] = this.slotXY(i); if (cv.x !== sx || cv.y !== sy) cv.setPosition(sx, sy).setDepth(10); }
       if (cv) cv.setAlpha(d.silenced > 0 ? 0.35 : this.drag && i !== this.drag.i && !(this.targets || []).includes(i) ? 0.3 : 1);
     }
   }
@@ -249,7 +251,7 @@ export class PlayScene extends Phaser.Scene {
       if (!this.targets.length) this.mergeHelp(i);
     });
     this.input.on('pointermove', p => { if (!this.drag || !p.isDown) return; this.drag.moved = this.drag0moved = true; this.drag.v.setPosition(p.x, p.y - 30); });
-    this.input.on('pointerup', p => {
+    const drop = p => {
       if (!this.drag) return;
       const { i, v, ox, oy } = this.drag; this.drag = null; this.drag0moved = this.drag0moved && v.active;
       (this.hints || []).forEach(h => h.destroy()); this.hints = [];
@@ -263,7 +265,21 @@ export class PlayScene extends Phaser.Scene {
         const k = this.slotAt(v.x, v.y);
         if (this.drag0moved && k >= 0 && k !== i && this.s.board[k]) this.mergeHelp(i, k);
       }
-    });
+    };
+    this.input.on('pointerup', drop);
+    // 손가락이 화면 밖에서 떨어져도 놓은 것으로 (안 그러면 주사위 그림이 엉뚱한 곳에 남아 칸이 비어 보임)
+    this.input.on('pointerupoutside', drop);
+    this.input.on('gameout', () => { if (this.drag && !this.input.activePointer.isDown) drop(this.input.activePointer); });
+    this.game.events.on('blur', this.cancelDrag, this);
+    this.game.events.on('hidden', this.cancelDrag, this);
+    this.events.once('shutdown', () => { this.game.events.off('blur', this.cancelDrag, this); this.game.events.off('hidden', this.cancelDrag, this); });
+  }
+  // 끌던 것 취소: 표시 지우고 주사위는 제자리로
+  cancelDrag() {
+    if (!this.drag) return;
+    const { v, ox, oy } = this.drag; this.drag = null; this.targets = [];
+    (this.hints || []).forEach(h => h.destroy()); this.hints = [];
+    if (v && v.active) { v.setDepth(10).setPosition(ox, oy); }
   }
   // 왜 안 되는지 알려줌
   mergeHelp(i, k) {
@@ -563,7 +579,7 @@ export class PlayScene extends Phaser.Scene {
     c.add(T(this, 0, 128, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
     this.paused = true;
     const z = this.add.zone(W / 2, H / 2, W, H).setInteractive().setDepth(96);
-    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.8').then(m => m.save()); });
+    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.9').then(m => m.save()); });
   }
 
   gameOver() {
@@ -593,6 +609,7 @@ export class PlayScene extends Phaser.Scene {
     });
   }
   pause() {
+    this.cancelDrag();
     if (this.paused || this.ended) return;
     this.paused = true; this.tweens.getTweens().filter(t => t.isPlaying()).forEach(t => { t.pause(); (this.frozen ||= []).push(t); });
     audio.duck(0.1);

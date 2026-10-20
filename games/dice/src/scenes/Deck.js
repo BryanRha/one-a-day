@@ -1,11 +1,11 @@
 // 룬 컬렉션: 덱 3개(프리셋) · 칸 골라 룬 넣기 · 덱 조합 보너스 · 24룬 (희귀도) · 카드+수정으로 등급업
-import { W, H } from '../config.js?v=0.8.9';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.9';
-import { audio } from '../audio.js?v=0.8.9';
-import { load } from '../save.js?v=0.8.9';
-import * as M from '../meta.js?v=0.8.9';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js?v=0.8.9';
-import * as P from '../core/predict.js?v=0.8.9';
+import { W, H } from '../config.js?v=0.8.10';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.10';
+import { audio } from '../audio.js?v=0.8.10';
+import { load } from '../save.js?v=0.8.10';
+import * as M from '../meta.js?v=0.8.10';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js?v=0.8.10';
+import * as P from '../core/predict.js?v=0.8.10';
 
 export const DESC = {
   flame: '맞은 적 주변까지 불태워요', frost: '맞은 적을 느리게 해요', storm: '근처 적 둘에게 번개가 이어져요', venom: '독이 쌓여 계속 피해를 줘요',
@@ -194,7 +194,7 @@ export class DeckScene extends Phaser.Scene {
     const lk = (d.limit || {})[r] || 0, lc = M.limitCost(lk), maxed = t >= M.MAX_TIER;
     c.add(T(this, 0, by - 120, !maxed ? `★${t} → ★${t + 1}   카드 ${have}/${need} · ◆${cost}` : lk >= M.LIMIT_MAX ? `★${t} · 한계 돌파 완료 ✦${lk}` : `한계 돌파 ✦${lk} → ✦${lk + 1}   카드 ${have}/${lc.cards} · ◆${lc.crystals}`, 28, maxed ? C.gold : C.text, { w: 800 }));
     const inDeck = d.deck.includes(r);
-    c.add(btn(this, -200, by, 360, 120, inDeck ? '덱에 있어요' : '덱에 넣기', () => { if (inDeck) return toast(this, '이미 덱에 있어요', C.sub); p.close(); this.time.delayedCall(160, () => this.swapPick(r)); }, { style: inDeck ? 'ghost' : 'gold', size: 32 }));
+    c.add(btn(this, -200, by, 360, 120, inDeck ? '덱에 있어요' : '덱에 넣기', () => { if (inDeck) return toast(this, '이미 덱에 있어요', C.sub); this.swapPick(r); }, { style: inDeck ? 'ghost' : 'gold', size: 32 }));
     if (maxed) {
       const okL = lk < M.LIMIT_MAX && have >= lc.cards && d.crystals >= lc.crystals;
       c.add(btn(this, 200, by, 360, 120, lk >= M.LIMIT_MAX ? '완료' : '한계 돌파', () => {

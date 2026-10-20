@@ -1,10 +1,10 @@
 // 결과: 거리 · 점수(최고 기록) · 코인 · 칼치기 기록 → 다시 달리기 / 차고
-import { W, H } from '../config.js?v=0.11.3';
-import { txt, fmt, fit, button, iconButton } from '../ui.js?v=0.11.3';
-import { audio } from '../audio.js?v=0.11.3';
-import { load } from '../save.js?v=0.11.3';
-import { wind } from '../fx.js?v=0.11.3';
-import { applyRun } from '../meta.js?v=0.11.3';
+import { W, H } from '../config.js?v=0.11.4';
+import { txt, fmt, fit, button, iconButton } from '../ui.js?v=0.11.4';
+import { audio } from '../audio.js?v=0.11.4';
+import { load } from '../save.js?v=0.11.4';
+import { wind } from '../fx.js?v=0.11.4';
+import { applyRun } from '../meta.js?v=0.11.4';
 
 export class ResultScene extends Phaser.Scene {
   constructor() { super('Result'); }

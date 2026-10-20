@@ -1,7 +1,7 @@
 // 군용 UI 키트 (워스토리풍): 올리브 철판 패널 · 리벳 · 카키 버튼 · 선 아이콘 (모두 코드로 그림)
-import { W, H, FONT } from './config.js?v=0.11.3';
-import { audio } from './audio.js?v=0.11.3';
-import { pushBack } from './oad.js?v=0.11.3';
+import { W, H, FONT } from './config.js?v=0.11.4';
+import { audio } from './audio.js?v=0.11.4';
+import { pushBack } from './oad.js?v=0.11.4';
 
 export const C = {
   ink: '#2B2416', text: '#FFF8E6', sub: '#D8CFA8', dim: '#9A9272', gold: '#FFD45A', cyan: '#8FE3FF', pink: '#FF8A7A', green: '#A6E07A', red: '#FF6A55', blue: '#7FB2FF',
@@ -59,6 +59,12 @@ const STY = {
   green: { a: '#B6EE8A', b: '#5FB43A', c: '#2F7418', text: '#14300A' },
   ghost: { a: 'rgba(40,44,22,0.75)', b: 'rgba(30,32,16,0.75)', c: 'rgba(200,190,140,0.45)', text: '#FFF8E6' },
 };
+// 연타 막기: 닫히는 중인 팝업 안의 버튼 · 방금(0.35초 안) 눌린 버튼은 무시
+export function dead(c) {
+  if (c.lastFire != null && c.scene && c.scene.time.now - c.lastFire < 350) return true;
+  for (let o = c; o; o = o.parentContainer) if (o.closing || !o.active) return true;
+  return false;
+}
 export function btn(scene, x, y, w, h, label, onClick, o = {}) {
   const st = STY[o.style || 'gold'], r = o.r ?? h / 2, key = `btn2_${o.style || 'gold'}_${w}_${h}`;
   // 그림자(번짐 18 · 아래 10)가 잘려 모서리에 각진 자국이 남지 않게 여백을 넉넉히 — 버튼 중심은 예전과 같게
@@ -80,7 +86,7 @@ export function btn(scene, x, y, w, h, label, onClick, o = {}) {
   c.setSize(w, h).setInteractive({ useHandCursor: true });
   let down = false;
   c.on('pointerdown', () => { if (c.disabled) return; down = true; c.setScale(0.96); });
-  const up = fire => { if (!down) return; down = false; c.setScale(1); if (fire && !c.disabled) { audio.play('sfx_click', { volume: 0.5 }); onClick && onClick(); } };
+  const up = fire => { if (!down) return; down = false; c.setScale(1); if (fire && !c.disabled && !dead(c)) { c.lastFire = scene.time.now; audio.play('sfx_click', { volume: 0.5 }); onClick && onClick(); } };
   c.on('pointerup', () => up(true)); c.on('pointerout', () => up(false));
   c.setEnabled = on => { c.disabled = !on; c.setAlpha(on ? 1 : 0.45); return c; };
   c.setLabel = s => { t.setText(s); return c; };
@@ -101,7 +107,7 @@ export function iconBtn(scene, x, y, icon, onClick, size = 104) {
   c.setSize(size, size).setInteractive({ useHandCursor: true });
   c.on('pointerdown', () => c.setScale(0.92));
   c.on('pointerout', () => c.setScale(1));
-  c.on('pointerup', () => { c.setScale(1); audio.play('sfx_click', { volume: 0.5 }); onClick && onClick(); });
+  c.on('pointerup', () => { c.setScale(1); if (dead(c)) return; c.lastFire = scene.time.now; audio.play('sfx_click', { volume: 0.5 }); onClick && onClick(); });
   return c;
 }
 

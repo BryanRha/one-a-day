@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.11.3';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.3';
-import { audio } from '../audio.js?v=0.11.3';
-import { load, save } from '../save.js?v=0.11.3';
-import * as M from '../meta.js?v=0.11.3';
-import { inOAD, exitToOAD } from '../oad.js?v=0.11.3';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.11.3';
-import { AI, apply } from '../core/ai.js?v=0.11.3';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from '../core/data.js?v=0.11.3';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.11.3';
+import { W, H } from '../config.js?v=0.11.4';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.4';
+import { audio } from '../audio.js?v=0.11.4';
+import { load, save } from '../save.js?v=0.11.4';
+import * as M from '../meta.js?v=0.11.4';
+import { inOAD, exitToOAD } from '../oad.js?v=0.11.4';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.11.4';
+import { AI, apply } from '../core/ai.js?v=0.11.4';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from '../core/data.js?v=0.11.4';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.11.4';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -22,7 +22,7 @@ export class PlayScene extends Phaser.Scene {
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 쓰므로 지난 판 값이 남으면 끝나지 않거나 멈춤)
-    Object.assign(this, { fogG: null, pendingEvs: null, unloadList: [], ended: false, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
+    Object.assign(this, { fogG: null, pendingEvs: null, unloadList: [], ended: false, ending: false, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
     this.mode = data.mode || 'free';
     this.map = data.custom || MAPS.find(m => m.id === data.mapId) || MAPS[0];
     this.simMap = this.mode === 'campaign' || this.mode === 'daily' ? campaignMap(this.map) : this.map;
@@ -271,6 +271,7 @@ export class PlayScene extends Phaser.Scene {
   }
   nextUnit() {
     if (this.busy || !this.human(this.s.turn)) return;
+    if (this.busy || !this.human(this.s.turn)) return;
     const list = this.s.mine(this.me).filter(u => !u.done && !u.inside).sort((a, b) => a.y - b.y || a.x - b.x);
     if (!list.length) return;
     this.nextIdx = ((this.nextIdx ?? -1) + 1) % list.length;
@@ -341,14 +342,17 @@ export class PlayScene extends Phaser.Scene {
     if (this.busy || !this.human(this.s.turn)) return;
     const left = this.s.mine(this.me).filter(u => !u.done && !u.inside).length;
     if (!left) return this.endTurn();
-    const p = popup(this, '턴 종료', 760, 520);
+    if (this.endAsk && this.endAsk.active && !this.endAsk.closing) return;
+    const p = this.endAsk = popup(this, '턴 종료', 760, 520);
     p.content.add(T(this, 0, -60, `아직 움직이지 않은 유닛이 ${left}기 있어요`, 30, C.sub, { w: 800 }));
     p.content.add(btn(this, -170, 110, 300, 110, '계속 지휘', () => p.close(), { style: 'olive', size: 32 }));
     p.content.add(btn(this, 170, 110, 300, 110, '턴 종료', () => { p.close(); this.endTurn(); }, { style: 'red', size: 32 }));
   }
   async endTurn() {
+    if (this.ending || this.s.over || !this.human(this.s.turn)) return; this.ending = true;   // 연타로 두 번 불리면 적 턴이 겹쳐 멈춤
     this.cancelSel(); this.busy = true; this.setActs(null); this.updateHud();
     this.s.endTurn(); await this.drain();
+    this.ending = false;
     if (this.s.over) return this.finish();
     this.busy = false; this.startTurn();
   }
@@ -471,6 +475,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.busy || !this.human(this.s.turn) || this.s.over || this.paused) return;
     if (p.y < TOP || p.y > H - BOTTOM) return;
     if (this.dragged) { this.dragged = false; return; }
+    if (this.state !== 'idle' && (!this.sel || (this.state !== 'move' && !this.ghost))) this.cancelSel();   // 선택이 꼬였으면 처음으로
     const c = this.cell(p.worldX, p.worldY); if (!c) return;
     const [x, y] = c, s = this.s;
     audio.play('sfx_click', { volume: 0.35 });
@@ -533,10 +538,10 @@ export class PlayScene extends Phaser.Scene {
     const u = this.sel, c = this.views.get(u.id), path = this.s.path(this.reach, x, y);
     // 안개: 길 위에 숨은 적이 있으면 바로 확정 (매복 처리)
     if (this.s.fog && path.slice(1).some(([px, py]) => { const o = this.s.unitAt(px, py); return o && o.p !== u.p; })) { this.ghost = [x, y]; return this.commit(() => {}); }
-    this.clearHl(); this.busy = true;
+    this.clearHl(); this.busy = true; this.acts.removeAll(true);   // 움직이는 동안 [취소]·[공격] 버튼을 누르면 선택이 꼬임
     if (path.length > 1) { audio.play(MOVE_SND[UNITS[u.type].mt], { volume: 0.45 }); for (let i = 1; i < path.length; i++) { const [px, py] = this.xy(...path[i]); this.face(c, u, path[i][0] - path[i - 1][0]); await new Promise(r => this.tweens.add({ targets: c, x: px, y: py, duration: 70, onComplete: r })); } }
     c.setDepth(10 + y * 0.01);
-    this.busy = false; this.ghost = [x, y];
+    this.busy = false; if (this.sel !== u) return; this.ghost = [x, y];
     // 빈 트럭에 올라타기
     const o = this.s.unitAt(x, y);
     if (o && o !== u && this.s.canLoad(u, o)) { this.commit(() => this.s.wait(u.id)); return; }
@@ -544,6 +549,7 @@ export class PlayScene extends Phaser.Scene {
   }
   // 이동한 자리에서 할 수 있는 행동
   toAct() {
+    if (!this.sel || !this.ghost) return this.cancelSel();
     const u = this.sel, [x, y] = this.ghost, s = this.s, moved = x !== u.x || y !== u.y;
     this.state = 'act'; this.clearHl(); this.pending = null;
     this.mark(x, y, 0xFFE27A, 0, true);
@@ -567,6 +573,7 @@ export class PlayScene extends Phaser.Scene {
   }
   // 공격 예상: 정확한 피해 · 반격 (운 없음)
   preview(e) {
+    if (!this.sel || !this.ghost || !e) return this.cancelSel();
     const u = this.sel, [x, y] = this.ghost, f = this.s.forecast(u, x, y, e);
     this.pending = e;
     this.info.removeAll(true);
@@ -582,7 +589,7 @@ export class PlayScene extends Phaser.Scene {
     this.setActs([['공격!', () => this.doAttack(e), 'red'], ['뒤로', () => this.toAct(), 'ghost']]);
     this.clearHl(); for (const t of this.tgts) this.mark(t.x, t.y, 0xFF5040, t === e ? 0.6 : 0.2, t !== e);
   }
-  doAttack(e) { const id = this.sel.id; this.commit(() => this.s.attack(id, e.id)); }
+  doAttack(e) { if (!this.sel) return; const id = this.sel.id; this.commit(() => this.s.attack(id, e.id)); }
   toUnload() { this.unloadList = []; this.nextUnloadSpot(); }
   nextUnloadSpot() {
     const u = this.sel, taken = this.unloadList;
@@ -602,6 +609,7 @@ export class PlayScene extends Phaser.Scene {
   doUnloadAll() { const id = this.sel.id, list = this.unloadList.slice(); this.commit(() => { for (const [x, y] of list) this.s.unload(id, x, y); const t = this.s.unit(id); if (t && !t.done) this.s.wait(id); }); }
   // 이동 확정 + 행동
   async commit(act) {
+    if (this.busy || !this.sel || !this.ghost) return;   // 행동 버튼 연타
     const u = this.sel, [x, y] = this.ghost;
     this.busy = true; this.clearHl(); this.setActs(null);
     const c = this.views.get(u.id), [ox, oy] = this.xy(u.x, u.y); c.setPosition(ox, oy);   // 이동은 이미 보여 줬으므로 기록만
@@ -643,7 +651,7 @@ export class PlayScene extends Phaser.Scene {
     p.content.add(btn(this, 0, 110, 700, 150, `초필살기 · ${co.superp}`, () => { p.close(); this.firePower(2); }, { style: 'red', size: 34 }));
     p.content.add(T(this, 0, 200, co.sdesc, 24, C.sub, { w: 800 }));
   }
-  async firePower(lvl) { this.busy = true; this.s.usePower(lvl); await this.drain(); this.busy = false; this.updateHud(); }
+  async firePower(lvl) { if (this.busy || !this.human(this.s.turn)) return; this.busy = true; this.s.usePower(lvl); await this.drain(); this.busy = false; this.updateHud(); }
   tutorial() {
     const d = load(); d.tips.war = 1; save();
     const p = popup(this, '작전 안내', 940, 900);

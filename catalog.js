@@ -28,5 +28,11 @@ export const GAMES = {
     desc: '조각 3개를 판에 맞춰 가로·세로 줄을 지우는 블록 퍼즐. 최고 기록에 도전하는 클래식, 매주 96레벨로 그림 한 장을 완성하는 어드벤처, 매일 바뀌는 미션까지.',
     path: 'games/blocks/', cover: 'covers/blocks.png', icon: 'covers/blocks_icon.png', time: '3~6분',
   },
+  dice: {
+    title: '룬 다이스', en: 'Rune Dice', genre: '디펜스', color: '#8E6BFF',
+    tagline: '룬 주사위를 소환하고 합성해 제단을 지켜요',
+    desc: '무작위로 소환되는 룬 주사위를 같은 종류·같은 눈끼리 합성해 강하게 키우는 디펜스. 웨이브마다 몰려오는 적과 5종의 보스를 막고 최고 웨이브에 도전하세요. 매일 모두 같은 덱으로 겨루는 오늘의 도전도 있어요.',
+    path: 'games/dice/', cover: 'covers/dice.png', icon: 'covers/dice_icon.png', time: '5~8분',
+  },
 };
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice'];

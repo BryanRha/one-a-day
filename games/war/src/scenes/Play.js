@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.4';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.4';
-import { audio } from '../audio.js?v=0.10.4';
-import { load, save } from '../save.js?v=0.10.4';
-import * as M from '../meta.js?v=0.10.4';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.4';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.4';
-import { AI, apply } from '../core/ai.js?v=0.10.4';
-import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.4';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.10.4';
+import { W, H } from '../config.js?v=0.10.5';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.5';
+import { audio } from '../audio.js?v=0.10.5';
+import { load, save } from '../save.js?v=0.10.5';
+import * as M from '../meta.js?v=0.10.5';
+import { inOAD, exitToOAD } from '../oad.js?v=0.10.5';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.5';
+import { AI, apply } from '../core/ai.js?v=0.10.5';
+import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.5';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.10.5';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -94,7 +94,7 @@ export class PlayScene extends Phaser.Scene {
     const [px, py] = this.xy(u.x, u.y), ts = this.ts, c = this.add.container(px, py).setDepth(10 + u.y * 0.01);
     const ring = this.add.ellipse(0, ts * 0.32, ts * 0.78, ts * 0.24, TEAM[u.p], 0.55);
     const img = this.add.image(0, ts * 0.36, `u_${u.type}_${TEAMS[u.p]}`).setOrigin(0.5, 1);
-    const k = Math.min(ts * 0.98 / img.width, ts * 0.86 / img.height); img.setScale(k); img.base = k;
+    const k = Math.min(ts * 1.06 / img.width, ts * 0.9 / img.height); img.setScale(k); img.base = k;
     const hp = this.add.container(ts * 0.3, ts * 0.3);
     const hpBg = this.add.circle(0, 0, ts * 0.17, 0x111111, 0.85).setStrokeStyle(3, TEAM[u.p]);
     const hpT = T(this, 0, 0, '', Math.round(ts * 0.22), '#FFFFFF', { w: 900, shadow: false });

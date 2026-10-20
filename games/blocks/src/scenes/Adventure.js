@@ -1,11 +1,11 @@
 // 어드벤처: 이번 주 그림(96칸) · 다음 레벨 목표 미리보기 · 깬 직후엔 새 칸이 열리는 연출
-import { W, H } from '../config.js?v=0.10.4';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.10.4';
-import { audio } from '../audio.js?v=0.10.4';
-import { load } from '../save.js?v=0.10.4';
-import * as M from '../meta.js?v=0.10.4';
-import { makeLevel, SEASON_LEVELS } from '../core/levels.js?v=0.10.4';
-import { pictureView } from '../picture.js?v=0.10.4';
+import { W, H } from '../config.js?v=0.10.5';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.10.5';
+import { audio } from '../audio.js?v=0.10.5';
+import { load } from '../save.js?v=0.10.5';
+import * as M from '../meta.js?v=0.10.5';
+import { makeLevel, SEASON_LEVELS } from '../core/levels.js?v=0.10.5';
+import { pictureView } from '../picture.js?v=0.10.5';
 
 export class AdventureScene extends Phaser.Scene {
   constructor() { super('Adventure'); }

@@ -1,5 +1,5 @@
 // 전투 규칙 (화면과 무관): 지도 · 이동 · 공격(운 없음 — 미리 정확히 계산) · 점령 · 생산 · 턴
-import { UNITS, TERRAIN, INCOME, CAPTURE, base, coAtk, coMove, coRange, coCapture, COS } from './data.js?v=0.10.4';
+import { UNITS, TERRAIN, INCOME, CAPTURE, base, coAtk, coMove, coRange, coCapture, COS } from './data.js?v=0.10.5';
 export const TUNE = { dmg: 1.1 };   // 전체 피해 배율 (한 판을 짧게)
 
 // 지도 칸 글자: 앞 글자 = 지형, 뒤 글자 = 주인(0 중립 · 1 파랑 · 2 빨강 · _ 없음)

@@ -1,6 +1,6 @@
 // 진행·재방문: 룬 해금(최고 웨이브) · 수정으로 영구 등급업(확정, 뽑기 없음) · 연속 출석 · 오늘의 미션 · 오늘의 도전
-import { load, save } from './save.js?v=0.8.4';
-import { RUNE_ORDER, RARITY } from './core/sim.js?v=0.8.4';
+import { load, save } from './save.js?v=0.8.5';
+import { RUNE_ORDER, RARITY } from './core/sim.js?v=0.8.5';
 
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -176,16 +176,35 @@ export function dailyChallenge() {
   return { day, seed: h, deck, best: d.daily.best, tries: d.daily.tries };
 }
 
+// ── 아케이드 ──
+export const ARCADE = {
+  rush: { name: '보스 러시', en: 'BOSS RUSH', desc: '보스만 연달아 몰려와요 · 보스를 몇 마리 잡을까', unit: '보스' },
+  arena: { name: '랜덤 아레나', en: 'RANDOM ARENA', desc: '룬 하나로 시작 · 3웨이브마다 셋 중 하나를 골라 덱을 쌓아요', unit: '웨이브' },
+  mono: { name: '단일 룬 시련', en: 'MONO TRIAL', desc: '한 가지 룬만으로 버텨요 · 아직 없는 룬도 써 볼 수 있어요', unit: '웨이브' },
+  abyss: { name: '심연 광산', en: 'ABYSS MINE', desc: '웨이브 10부터 시작 · 하루 3번 · 깊이 갈수록 수정이 많아요', unit: '웨이브' },
+};
+export const ABYSS_TRIES = 3;
+export function abyssLeft() { const d = load(), day = dayKey(); if (d.abyss.date !== day) { d.abyss = { date: day, tries: 0 }; save(); } return ABYSS_TRIES - d.abyss.tries; }
+export function useAbyss() { if (abyssLeft() <= 0) return false; const d = load(); d.abyss.tries++; save(); return true; }
+export const isArcade = m => !!ARCADE[m];
+export function pickChoices(n = 3, exclude = []) {   // 아레나·시련 선택지: 모든 룬 중 무작위 (없는 룬도)
+  const pool = RUNE_ORDER.filter(r => !exclude.includes(r)), out = [];
+  while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  return out;
+}
+
 // 한 판 결과 반영 → 받은 수정 · 새 해금 · 기록 갱신 여부
 export function finishRun(r, mode) {
   const d = load(), prev = d.best;
-  const crystals = r.wave * 3 + r.bossKills * 6 + (mode === 'daily' ? 20 : 0);
-  const fame = r.wave * 10 + r.bossKills * 8 + (mode === 'daily' ? 30 : 0); d.fame += fame;
+  const arc = isArcade(mode), score = mode === 'rush' ? r.bossKills : r.wave;
+  const crystals = mode === 'rush' ? r.bossKills * 9 : mode === 'abyss' ? (r.wave - 9) * 8 + r.bossKills * 6 : r.wave * 3 + r.bossKills * 6 + (mode === 'daily' ? 20 : 0);
+  const prevArc = d.arcade[mode] || 0; if (arc && score > prevArc) d.arcade[mode] = score;
+  const fame = (mode === 'abyss' ? r.wave - 9 : r.wave) * 10 + r.bossKills * 8 + (mode === 'daily' ? 30 : 0); d.fame += fame;
   d.crystals += crystals; d.plays++; d.kills += r.kills; d.bossKills += r.bossKills;
   if (mode === 'daily') { d.daily.best = Math.max(d.daily.best, r.wave); d.daily.tries++; }
-  else if (r.wave > d.best) d.best = r.wave;
+  else if (!arc && r.wave > d.best) d.best = r.wave;
   save();
   track('games'); track('wave', r.wave); track('kills', r.kills); track('boss', r.bossKills); track('pips', r.maxPips); track('merge', r.merges); track('power', r.powers);
   if (mode === 'daily') track('daily');
-  return { crystals, fame, newBest: mode !== 'daily' && r.wave > prev, keys: checkUnlocks() };
+  return { crystals, fame, score, newBest: arc ? score > prevArc : mode !== 'daily' && r.wave > prev, keys: checkUnlocks() };
 }

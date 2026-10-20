@@ -1,11 +1,12 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
-import { W, H } from '../config.js?v=0.8.4';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES , synergiesOf } from '../core/sim.js?v=0.8.4';
-import { act } from '../core/ai.js?v=0.8.4';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.4';
-import { audio } from '../audio.js?v=0.8.4';
-import { load } from '../save.js?v=0.8.4';
-import * as M from '../meta.js?v=0.8.4';
+import { W, H } from '../config.js?v=0.8.5';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.8.5';
+import { DESC } from './Deck.js?v=0.8.5';
+import { act } from '../core/ai.js?v=0.8.5';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.5';
+import { audio } from '../audio.js?v=0.8.5';
+import { load } from '../save.js?v=0.8.5';
+import * as M from '../meta.js?v=0.8.5';
 
 // 판 크기: 양옆 길 위 몬스터(보스 포함)가 화면 밖으로 잘리지 않게 여백 확보
 const CS = 188, GAP = 14, BW = COLS * CS + (COLS - 1) * GAP, BH = ROWS * CS + (ROWS - 1) * GAP;
@@ -27,8 +28,12 @@ export class PlayScene extends Phaser.Scene {
     const d = load(), q = new URLSearchParams(location.search);
     this.bot = q.has('bot');
     this.mode = data.mode || 'run';
-    if (this.mode === 'daily') { const dc = M.dailyChallenge(); this.s = new Sim({ deck: dc.deck, seed: dc.seed }); }
-    else this.s = new Sim({ deck: d.deck, tiers: d.tiers, seed: (Date.now() & 0xffffff) + 1, critBonus: M.critBonus() });
+    const seed = (Date.now() & 0xffffff) + 1, base = { tiers: d.tiers, seed, critBonus: M.critBonus(), mode: this.mode };
+    if (this.mode === 'daily') { const dc = M.dailyChallenge(); this.s = new Sim({ deck: dc.deck, seed: dc.seed, mode: 'daily' }); }
+    else if (this.mode === 'mono') this.s = new Sim({ ...base, deck: Array(5).fill(data.rune) });
+    else if (this.mode === 'arena') this.s = new Sim({ ...base, deck: [data.rune] });
+    else if (this.mode === 'abyss') this.s = new Sim({ ...base, deck: d.deck, startWave: 10 });
+    else this.s = new Sim({ ...base, deck: d.deck });
     this.powers = 0; this.acc = 0; this.paused = false; this.ended = false; this.awakened = false; this.leakedWave = false; this.voT = 0;
 
     const bg = this.add.image(W / 2, H / 2, 'bg_altar'); bg.setScale(Math.max(W / bg.width, H / bg.height));
@@ -45,7 +50,7 @@ export class PlayScene extends Phaser.Scene {
     this.drawPath();
     this.makeBoard();
     this.makeHud();
-    this.makeControls();
+    this.pw = null; this.makeControls();
     this.ePool = new Map(); this.bolts = [];
     this.spark = this.add.particles(0, 0, 'spark', { lifespan: { min: 250, max: 500 }, speed: { min: 120, max: 380 }, scale: { start: 0.45, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', emitting: false }).setDepth(40);
     this.makeInput();
@@ -117,6 +122,8 @@ export class PlayScene extends Phaser.Scene {
     this.hWave = T(this, W / 2, 92, '', 54, C.text, { w: 900, ls: 2 }).setDepth(D);
     this.hSub = T(this, W / 2, 148, '', 26, C.sub, { w: 800 }).setDepth(D);
     this.hearts = [0, 1, 2].map(i => this.add.image(70 + i * 58, 92, 'i_flame').setDisplaySize(46, 46).setTint(0xFF5A7A).setDepth(D));
+    const tag = M.ARCADE[this.mode] ? M.ARCADE[this.mode].name : this.mode === 'daily' ? '오늘의 도전' : null;
+    if (tag) T(this, 44, 146, tag, 24, C.gold, { ox: 0, w: 900 }).setDepth(D);
     this.hBoss = this.add.container(W / 2, 250).setDepth(D).setVisible(false);
     const bb = this.add.graphics(); bb.fillStyle(0x000000, 0.5).fillRoundedRect(-300, -16, 600, 32, 16);
     this.hBossFill = this.add.graphics(); this.hBossName = T(this, 0, -44, '', 30, '#FF9BB0', { w: 900 });
@@ -135,8 +142,15 @@ export class PlayScene extends Phaser.Scene {
     this.sumCost = T(this, ix1 - 170, iy + 62, '', 24, C.sub, { w: 800 }).setDepth(D);
     this.makeBossPreview(iy + 100, this.pathBottom - 60, ix0, ix1);
     // 덱 강화 버튼 5개
-    this.pw = this.s.deck.map((t, i) => {
-      const x = W / 2 + (i - 2) * 196, c = this.add.container(x, y0).setDepth(D);
+    this.makePower();
+  }
+  // 덱 강화 버튼 (덱 종류 수만큼 · 아레나에서 룬이 늘면 다시 그림)
+  makePower() {
+    const D = 50, y0 = this.ctrlY;
+    if (this.pw) this.pw.forEach(p => p.c.destroy());
+    const types = [...new Set(this.s.deck)];
+    this.pw = types.map((t, i) => {
+      const x = W / 2 + (i - (types.length - 1) / 2) * 196, c = this.add.container(x, y0).setDepth(D);
       const g = this.add.graphics(); g.fillStyle(0x0D1230, 0.85).fillRoundedRect(-86, -64, 172, 128, 24).lineStyle(2, RUNES[t].color, 0.6).strokeRoundedRect(-86, -64, 172, 128, 24);
       const ic = this.add.image(-38, -12, `rune_${t}`).setDisplaySize(62, 62);
       const lv = T(this, 34, -26, 'Lv1', 26, C.text, { w: 900 });
@@ -247,7 +261,7 @@ export class PlayScene extends Phaser.Scene {
   render() {
     const s = this.s;
     this.syncBoard();
-    this.hWave.setText(`WAVE ${s.wave}`);
+    this.hWave.setText(this.mode === "rush" ? `BOSS ${s.wave}` : `WAVE ${s.wave}`);
     this.hSub.setText(s.phase === 'boss' ? '보스전' : `남은 적 ${Math.max(0, s.toSpawn - s.spawned) + s.enemies.filter(e => e.kind !== 'boss').length}`);
     this.hSp.setText(s.sp >= 100000 ? `${Math.floor(s.sp / 1000)}k` : fmt(s.sp));
     const cost = s.summonCost(), full = !s.emptySlots().length;
@@ -426,6 +440,7 @@ export class PlayScene extends Phaser.Scene {
         if (!this.leakedWave && e.wave % 5 === 0) { this.voice('perfect', 2); this.banner('PERFECT DEFENSE', `웨이브 ${e.wave} 무피해 · +${e.sp} SP`, '#7CFFB2'); }
         else { this.voice('wave', 2); this.banner(`WAVE ${e.wave} CLEAR`, `+${e.sp} SP`, '#FFE07A'); }
         this.leakedWave = false;
+        if (this.mode === 'arena' && e.wave % 3 === 0 && this.s.deck.length < 5) this.time.delayedCall(900, () => this.arenaPick());
         if (e.wave + 1 > load().best && load().best > 0 && !this.recordSaid && this.mode !== 'daily') { this.recordSaid = true; this.time.delayedCall(1400, () => { this.voice('record', 3); toast(this, '최고 기록 갱신!', C.gold, 300); }); }
         break;
       }
@@ -498,7 +513,7 @@ export class PlayScene extends Phaser.Scene {
     c.add(T(this, 0, 128, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
     this.paused = true;
     const z = this.add.zone(W / 2, H / 2, W, H).setInteractive().setDepth(96);
-    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.4').then(m => m.save()); });
+    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.8.5').then(m => m.save()); });
   }
 
   gameOver() {
@@ -508,6 +523,24 @@ export class PlayScene extends Phaser.Scene {
     const res = M.finishRun(r, this.mode);
     this.cameras.main.fadeOut(1400, 5, 6, 26);
     this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', { ...r, ...res, mode: this.mode }));
+  }
+  // 랜덤 아레나: 셋 중 하나를 골라 덱에 추가 (그동안 멈춤)
+  arenaPick() {
+    if (this.ended || this.s.over) return;
+    this.paused = true;
+    const opts = M.pickChoices(3, this.s.deck), d = load();
+    const pop = popup(this, '룬 하나를 골라요', 960, 820, { closable: false, depth: 2000 });
+    pop.content.add(T(this, 0, -250, `덱 ${this.s.deck.length}/5 · 고른 룬은 바로 소환·합성에 섞여요`, 26, C.sub, { w: 800 }));
+    opts.forEach((r, i) => {
+      const x = (i - 1) * 300, y = 70, col = RARITY_COLOR[RARITY[r]];
+      const g = this.add.graphics(); g.fillStyle(0x10153A, 0.95).fillRoundedRect(x - 135, y - 220, 270, 440, 26).lineStyle(4, col, 0.9).strokeRoundedRect(x - 135, y - 220, 270, 440, 26); pop.content.add(g);
+      pop.content.add(this.add.image(x, y - 100, `die_${r}`).setDisplaySize(150, 150)); pop.content.add(this.add.image(x, y - 100, `rune_${r}`).setDisplaySize(86, 86));
+      pop.content.add(T(this, x, y + 10, RUNES[r].name, 38, C.text, { w: 900 }));
+      pop.content.add(T(this, x, y + 58, `${RARITY_NAME[RARITY[r]]}${d.unlocked[r] ? ` · ★${d.tiers[r] || 1}` : ''}`, 22, '#' + col.toString(16).padStart(6, '0'), { w: 800 }));
+      pop.content.add(T(this, x, y + 130, DESC[r], 22, C.sub, { w: 700, wrap: 240 }));
+      const z = this.add.zone(x, y, 270, 440).setInteractive({ useHandCursor: true }); pop.content.add(z);
+      z.on('pointerup', () => { if (pop.closing) return; this.s.addRune(r); this.makePower(); audio.play('sfx_awaken', { volume: 0.6 }); pop.close(); this.time.delayedCall(160, () => { this.paused = false; const sy = synergiesOf(this.s.deck); this.banner(`${RUNES[r].name} 합류!`, sy.length ? `조합 발동 · ${sy.map(x => x.name).join(' · ')}` : '', '#F5C451'); }); });
+    });
   }
   pause() {
     if (this.paused || this.ended) return;

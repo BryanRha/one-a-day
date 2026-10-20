@@ -86,7 +86,9 @@ export function setGrow(g) { HP_GROW = g; }
 
 export class Sim {
   // deck: 룬 id 5개, tiers: { 룬id: 영구 등급 1~ } , seed
-  constructor({ deck, tiers = {}, seed = 1, startWave = 1, critBonus = 0 } = {}) {
+  // mode: run(생존) · daily · rush(보스만) · mono(한 룬) · arena(웨이브마다 룬 추가) · abyss(웨이브 10부터)
+  constructor({ deck, tiers = {}, seed = 1, startWave = 1, critBonus = 0, mode = 'run' } = {}) {
+    this.mode = mode;
     this.critBonus = critBonus;   // 수집 보너스: 영구 치명타 피해 +
     this.R = rng(seed);
     this.deck = deck.slice(0, 5);
@@ -94,19 +96,23 @@ export class Sim {
     this.board = new Array(SLOTS).fill(null);       // { id, type, pips, cd, silenced, age }
     this.power = Object.fromEntries(this.deck.map(t => [t, 0]));
     this.enemies = []; this.nextId = 1; this.events = [];
-    this.sp = 100; this.summons = 0; this.lives = 3; this.wave = startWave; this.t = 0;
+    this.sp = mode === 'rush' ? 300 : mode === 'abyss' ? 1200 : 100; this.summons = 0; this.lives = 3; this.wave = startWave; this.t = 0;
     this.phase = 'wave'; this.waveT = 0; this.spawnT = 0; this.spawned = 0; this.over = false;
     this.kills = 0; this.bossKills = 0; this.merges = 0; this.maxPips = 1; this.mines = []; this.crits = 0; this.chillT = 0; this.wards = 0;
     this.syn = Object.fromEntries(synergiesOf(this.deck).map(x => [x.id, true]));
+    // 심연 광산: 웨이브 10부터 → 그 정도까지 키운 판을 미리 깔아 줌 (눈 2~3 주사위 12개)
+    if (mode === 'abyss') { for (let i = 0; i < 12; i++) this.board[i] = this.newDie(this.randType(), 2 + (i % 3 === 0 ? 1 : 0)); this.summons = 12; this.sp = 500; this.maxPips = 3; }
     this.setupWave();
   }
   ev(type, d = {}) { this.events.push({ type, ...d }); }
+  // 랜덤 아레나: 판 중간에 덱에 룬 추가
+  addRune(r) { if (this.deck.includes(r) || this.deck.length >= 5) return false; this.deck.push(r); this.power[r] = 0; this.syn = Object.fromEntries(synergiesOf(this.deck).map(x => [x.id, true])); return true; }
 
   // ── 웨이브 ──
   waveHp(w = this.wave) { return Math.round(45 * Math.pow(HP_GROW, w - 1) + 15 * w); }
   setupWave() {
     const w = this.wave;
-    this.toSpawn = 10 + Math.min(14, w);
+    this.toSpawn = this.mode === 'rush' ? 0 : 10 + Math.min(14, w);
     this.spawned = 0; this.spawnT = 0.5; this.waveT = 0; this.phase = 'wave'; this.bossOut = false;
     this.ev('wave', { wave: w });
   }
@@ -118,7 +124,7 @@ export class Sim {
   }
   spawnBoss() {
     const B = BOSSES[(this.wave - 1) % BOSSES.length], base = this.waveHp();
-    const hp = base * B.hp * (1 + this.wave * 0.04);
+    const hp = base * B.hp * (1 + this.wave * 0.04) * (this.mode === 'rush' ? 0.55 : 1);
     const e = { id: this.nextId++, kind: 'boss', boss: B.id, name: B.name, hp, max: hp, speed: B.speed * 0.075, d: 0, slow: 0, poison: 0, sp: 100 + this.wave * 10, t: 0, shield: 0, lastSpawn: 1 };
     this.enemies.push(e); this.bossOut = true;
     this.ev('boss', { boss: B.id, name: B.name });

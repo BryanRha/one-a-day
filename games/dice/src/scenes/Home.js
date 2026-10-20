@@ -1,10 +1,10 @@
 // 홈: 생존 원정 · 오늘의 도전 · 덱 · 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.8.4';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.4';
-import { audio } from '../audio.js?v=0.8.4';
-import { load } from '../save.js?v=0.8.4';
-import * as M from '../meta.js?v=0.8.4';
-import { RUNES } from '../core/sim.js?v=0.8.4';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.8.5';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.5';
+import { audio } from '../audio.js?v=0.8.5';
+import { load } from '../save.js?v=0.8.5';
+import * as M from '../meta.js?v=0.8.5';
+import { RUNES } from '../core/sim.js?v=0.8.5';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -34,14 +34,20 @@ export class HomeScene extends Phaser.Scene {
     btn(this, W - 260, cy + 6, 300, 130, '출정', () => this.go('Play', { mode: 'run' }), { style: 'gold', icon: 'i_play', size: 44 });
     // 오늘의 도전
     const dc = M.dailyChallenge(), dy = cy + 320 + sp;
-    this.add.existing(panel(this, W / 2, dy, 960, 260, { tone: 'gold' }));
-    T(this, 110, dy - 78, 'DAILY CHALLENGE', 24, C.gold, { ox: 0, w: 900, ls: 6 });
-    T(this, 110, dy - 26, '오늘의 도전', 50, C.text, { ox: 0, w: 900 });
-    dc.deck.forEach((r, i) => { const x = 140 + i * 74; this.add.image(x, dy + 54, `die_${r}`).setDisplaySize(64, 64); this.add.image(x, dy + 54, `rune_${r}`).setDisplaySize(36, 36); });
-    T(this, W - 260, dy - 72, dc.tries ? `오늘 기록 웨이브 ${dc.best}` : '모두 같은 덱 · 같은 적', 26, C.sub, { w: 700 });
-    btn(this, W - 260, dy + 20, 300, 116, '도전', () => this.go('Play', { mode: 'daily' }), { style: 'indigo', size: 42 });
+    // 오늘의 도전 (왼쪽) · 아케이드 (오른쪽)
+    const hw = 470, lx = W / 2 - hw / 2 - 10, rx = W / 2 + hw / 2 + 10;
+    this.add.existing(panel(this, lx, dy, hw, 280, { tone: 'gold' }));
+    T(this, lx - hw / 2 + 36, dy - 100, 'DAILY CHALLENGE', 20, C.gold, { ox: 0, w: 900, ls: 4 });
+    T(this, lx - hw / 2 + 36, dy - 54, '오늘의 도전', 42, C.text, { ox: 0, w: 900 });
+    dc.deck.forEach((r, i) => { const x = lx - hw / 2 + 66 + i * 70; this.add.image(x, dy + 12, `die_${r}`).setDisplaySize(60, 60); this.add.image(x, dy + 12, `rune_${r}`).setDisplaySize(34, 34); });
+    btn(this, lx, dy + 92, hw - 70, 92, dc.tries ? `도전 · 기록 ${dc.best}` : '도전', () => this.go('Play', { mode: 'daily' }), { style: 'gold', size: 32 });
+    this.add.existing(panel(this, rx, dy, hw, 280));
+    T(this, rx - hw / 2 + 36, dy - 100, 'ARCADE', 20, '#B59BFF', { ox: 0, w: 900, ls: 4 });
+    T(this, rx - hw / 2 + 36, dy - 54, '아케이드', 42, C.text, { ox: 0, w: 900 });
+    T(this, rx - hw / 2 + 36, dy + 2, '보스 러시 · 랜덤 아레나\n단일 룬 시련 · 심연 광산', 22, C.sub, { ox: 0, w: 800, lh: 6, align: 'left' });
+    btn(this, rx, dy + 92, hw - 70, 92, '입장', () => this.go('Arcade'), { style: 'indigo', size: 34 });
     // 덱 미리보기 + 버튼
-    const ky = dy + 250 + sp;
+    const ky = dy + 268 + sp;
     T(this, 110, ky - 60, '내 덱', 34, C.text, { ox: 0, w: 900 });
     d.deck.forEach((r, i) => { const x = 130 + i * 116; this.add.image(x, ky + 20, `die_${r}`).setDisplaySize(100, 100); this.add.image(x, ky + 20, `rune_${r}`).setDisplaySize(56, 56); T(this, x, ky + 86, `★${d.tiers[r] || 1}`, 22, C.sub, { w: 800 }); });
     const dot = (x, y) => { const c = this.add.circle(x, y, 13, 0xFF5A7A).setStrokeStyle(3, 0x0B1026); this.tweens.add({ targets: c, scale: 1.25, duration: 500, yoyo: true, repeat: -1 }); };

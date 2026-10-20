@@ -1,13 +1,14 @@
-import { W, BASE_H, setH } from './config.js?v=0.8.4';
-import { audio } from './audio.js?v=0.8.4';
-import { WindFX } from './fx.js?v=0.8.4';
-import { BootScene } from './scenes/Boot.js?v=0.8.4';
-import { HomeScene } from './scenes/Home.js?v=0.8.4';
-import { AltarScene } from './scenes/Altar.js?v=0.8.4';
-import { RoadScene } from './scenes/Road.js?v=0.8.4';
-import { DeckScene } from './scenes/Deck.js?v=0.8.4';
-import { PlayScene } from './scenes/Play.js?v=0.8.4';
-import { ResultScene } from './scenes/Result.js?v=0.8.4';
+import { W, BASE_H, setH } from './config.js?v=0.8.5';
+import { audio } from './audio.js?v=0.8.5';
+import { WindFX } from './fx.js?v=0.8.5';
+import { BootScene } from './scenes/Boot.js?v=0.8.5';
+import { HomeScene } from './scenes/Home.js?v=0.8.5';
+import { AltarScene } from './scenes/Altar.js?v=0.8.5';
+import { RoadScene } from './scenes/Road.js?v=0.8.5';
+import { ArcadeScene } from './scenes/Arcade.js?v=0.8.5';
+import { DeckScene } from './scenes/Deck.js?v=0.8.5';
+import { PlayScene } from './scenes/Play.js?v=0.8.5';
+import { ResultScene } from './scenes/Result.js?v=0.8.5';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }
@@ -17,7 +18,7 @@ async function start() {
     render: { antialias: true, powerPreference: 'high-performance' },
     input: { activePointers: 2 }, fps: { target: 60 },
     pipeline: { WindFX },
-    scene: [BootScene, HomeScene, DeckScene, AltarScene, RoadScene, PlayScene, ResultScene],
+    scene: [BootScene, HomeScene, DeckScene, AltarScene, RoadScene, ArcadeScene, PlayScene, ResultScene],
   });
   audio.attach(game);
   setH(game.scale.height);

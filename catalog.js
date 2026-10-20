@@ -34,5 +34,11 @@ export const GAMES = {
     desc: '무작위로 소환되는 룬 주사위를 같은 종류·같은 눈끼리 합성해 강하게 키우는 디펜스. 웨이브마다 몰려오는 적과 5종의 보스를 막고 최고 웨이브에 도전하세요. 매일 모두 같은 덱으로 겨루는 오늘의 도전도 있어요.',
     path: 'games/dice/', cover: 'covers/dice.png', icon: 'covers/dice_icon.png', time: '5~8분',
   },
+  war: {
+    title: '전선 택틱스', en: 'Front Tactics', genre: '전략', color: '#6E8338',
+    tagline: '귀여운 부대를 지휘하는 턴제 전략',
+    desc: '격자 전장에서 소총병·전차·야포·헬기를 지휘해 적 본부를 점령하는 턴제 전략 게임. 공격 전에 정확한 피해와 반격을 미리 보여 줘요. 캠페인, 오늘의 작전, 자유 대전과 지휘관 4명.',
+    path: 'games/war/', cover: 'covers/war.png', icon: 'covers/war_icon.png', time: '10~15분',
+  },
 };
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war'];

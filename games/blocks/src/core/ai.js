@@ -1,5 +1,5 @@
 // 자동 배치 판단 (봇 밸런싱 · 브라우저 자동 테스트 공용)
-import { Board, SHAPES, N } from './board.js?v=0.9.1';
+import { Board, SHAPES, N } from './board.js?v=0.10.0';
 
 const PROBE = ['o3', 'i5', 'l5', 'o2', 'i4', 'r23'].map(n => SHAPES.filter(s => s.name === n)).flat();
 function fitCount(g, s) { let n = 0; for (let r = 0; r <= N - s.h; r++) for (let c = 0; c <= N - s.wd; c++) { let ok = true; for (const [dr, dc] of s.cells) if (g[r + dr][c + dc] >= 0) { ok = false; break; } if (ok) n++; } return n; }

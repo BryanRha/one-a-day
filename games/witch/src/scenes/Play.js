@@ -1,13 +1,13 @@
 // 비행 화면: core/run.js 시뮬레이션을 고정 간격으로 돌리고, 상태(s)와 사건(events)을 그림·소리로 옮긴다.
-import { W, H } from '../config.js?v=0.9.0';
-import { Run, LANE_W, LANES, ITEM_TIME, ZONE_EVERY } from '../core/run.js?v=0.9.0';
-import { decideX } from '../core/ai.js?v=0.9.0';
-import { txt, fmt, fit, iconButton, button, popup } from '../ui.js?v=0.9.0';
-import { audio } from '../audio.js?v=0.9.0';
-import { load, save } from '../save.js?v=0.9.0';
-import { wind, tipOf, ELEMENT } from '../fx.js?v=0.9.0';
-import { ZONES, BOSS_NAME, ITEM_NAME, REVIVE_COST, BOOSTERS, pay } from '../meta.js?v=0.9.0';
-import { inOAD, exitToOAD } from '../oad.js?v=0.9.0';
+import { W, H } from '../config.js?v=0.9.1';
+import { Run, LANE_W, LANES, ITEM_TIME, ZONE_EVERY } from '../core/run.js?v=0.9.1';
+import { decideX } from '../core/ai.js?v=0.9.1';
+import { txt, fmt, fit, iconButton, button, popup } from '../ui.js?v=0.9.1';
+import { audio } from '../audio.js?v=0.9.1';
+import { load, save } from '../save.js?v=0.9.1';
+import { wind, tipOf, ELEMENT } from '../fx.js?v=0.9.1';
+import { ZONES, BOSS_NAME, ITEM_NAME, REVIVE_COST, BOOSTERS, pay } from '../meta.js?v=0.9.1';
+import { inOAD, exitToOAD } from '../oad.js?v=0.9.1';
 
 const DT = 1 / 60;
 const SHOT_KEY = { star: 'bolt_star', fire: 'bolt_fire', ice: 'bolt_ice', bolt: 'bolt_bolt', furball: 'furball' };
@@ -631,7 +631,7 @@ export class PlayScene extends Phaser.Scene {
     this.paused = true;
     this.frozen = this.tweens.getTweens().filter(t => t.isPlaying()); this.frozen.forEach(t => t.pause()); this.anims.pauseAll();
     audio.duck(0.12);
-    const pop = popup(this, '잠시 멈춤', inOAD ? 960 : 820, { closable: false, depth: 2000, onBack: () => resume() });
+    const pop = popup(this, '잠시 멈춤', 820, { closable: false, depth: 2000, onBack: () => resume() });
     const b = pop.box;
     const resume = () => { pop.close(); this.time.delayedCall(160, () => { this.paused = false; (this.frozen || []).forEach(t => t.resume()); this.frozen = null; this.anims.resumeAll(); audio.duck(0.38); }); };
     b.add(button(this, 0, -130, '계속하기', resume, { key: 'btn_gold', w: 520, h: 150 }));
@@ -641,7 +641,6 @@ export class PlayScene extends Phaser.Scene {
     const sfxIc = this.add.image(-130, 194, d.sfx ? 'ico_sound' : 'ico_sound_off').setDisplaySize(96, 96);
     const mus = button(this, 130, 200, '', () => { audio.toggleMusic(); musIc.setTexture(d.music ? 'ico_music' : 'ico_music_off'); if (d.music) audio.duck(0.12); }, { key: 'btn_icon', w: 150, h: 150 });
     const musIc = this.add.image(130, 194, d.music ? 'ico_music' : 'ico_music_off').setDisplaySize(96, 96);
-    if (inOAD) b.add(button(this, 0, 350, '원어데이로', () => exitToOAD(), { key: 'btn_purple', w: 400, h: 100 }));
     b.add([sfx, sfxIc, mus, musIc]);
   }
 }

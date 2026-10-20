@@ -5,7 +5,7 @@ import * as I from './install.js';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.9.0';
+const VERSION = '0.9.1';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -201,8 +201,6 @@ function closeGame() {
   // 첫 게임을 마치고 돌아오면 한 번만 홈 화면 추가를 권함
   if (!I.installed() && !localStorage.getItem('oad_nudged')) { localStorage.setItem('oad_nudged', '1'); setTimeout(() => openSheet(I.env.inApp || !I.canPrompt() ? I.guide() : `<div class="intro"><h2>📲 내일도 쉽게 만나요</h2><p style="color:var(--sub)">홈 화면에 추가하면 매일 새 게임을 한 번에 열 수 있어요.</p><div class="stack"><button class="btn" data-install>홈 화면에 추가</button><button class="btn ghost" data-close>나중에</button></div></div>`), 500); }
 }
-$('#pull').onclick = () => openSheet(`<h2 style="text-align:center">원어데이 홈으로 나갈까요?</h2><p class="note">진행 중인 판은 저장되지 않을 수 있어요</p>
-  <div class="stack"><button class="btn alt" data-close>계속 하기</button><button class="btn ghost" data-exit>홈으로</button></div>`);
 // 뒤로가기: 먼저 게임에게 물어봄 (팝업 닫기 · 이전 화면 · 일시정지) → 게임이 처리하면 다시 막아 두고, 게임 첫 화면이면 원어데이로
 let forceExit = false, backWait = null;
 function exitGame() { forceExit = true; history.back(); }

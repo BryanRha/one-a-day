@@ -1,15 +1,15 @@
 // 게임 화면 (클래식 · 어드벤처 공용): 8×8 판 + 조각 3개 끌어 놓기. 로직은 core/board.js, 여기는 그림·소리·손맛.
-import { W, H } from '../config.js?v=0.9.0';
-import { Board, N, COMBO_KEEP } from '../core/board.js?v=0.9.0';
-import { choose } from '../core/ai.js?v=0.9.0';
-import { makeLevel } from '../core/levels.js?v=0.9.0';
-import { TINT, THEMES } from './Boot.js?v=0.9.0';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.9.0';
-import { audio } from '../audio.js?v=0.9.0';
-import { load, save } from '../save.js?v=0.9.0';
-import * as M from '../meta.js?v=0.9.0';
-import { evaluateMoves, rateMove } from '../core/value.js?v=0.9.0';
-import { inOAD, exitToOAD } from '../oad.js?v=0.9.0';
+import { W, H } from '../config.js?v=0.9.1';
+import { Board, N, COMBO_KEEP } from '../core/board.js?v=0.9.1';
+import { choose } from '../core/ai.js?v=0.9.1';
+import { makeLevel } from '../core/levels.js?v=0.9.1';
+import { TINT, THEMES } from './Boot.js?v=0.9.1';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.9.1';
+import { audio } from '../audio.js?v=0.9.1';
+import { load, save } from '../save.js?v=0.9.1';
+import * as M from '../meta.js?v=0.9.1';
+import { evaluateMoves, rateMove } from '../core/value.js?v=0.9.1';
+import { inOAD, exitToOAD } from '../oad.js?v=0.9.1';
 
 // 성우 대사: 상황별 버전 수 (같은 말이 연달아 나오지 않게 번갈아)
 const VO = { hype: 3, good: 2, great: 2, excellent: 2, amazing: 2, unbelievable: 2, best: 4, allclear: 2, record: 2, levelclear: 2, onfire: 1, unstoppable: 1, comeback: 2 };
@@ -610,13 +610,12 @@ export class PlayScene extends Phaser.Scene {
     this.paused = true;
     this.frozen = this.tweens.getTweens().filter(t => t.isPlaying()); this.frozen.forEach(t => t.pause());
     audio.duck(0.1);
-    const pop = popup(this, '일시정지', 760, inOAD ? 860 : 700, { closable: false, depth: 2000, onBack: () => resume() });
+    const pop = popup(this, '일시정지', 760, 700, { closable: false, depth: 2000, onBack: () => resume() });
     const resume = () => { pop.close(); this.time.delayedCall(160, () => { this.paused = false; (this.frozen || []).forEach(t => t.resume()); this.frozen = null; audio.duck(0.34); }); };
     pop.content.add(btn(this, 0, -120, 500, 130, '계속하기', resume, { style: 'gold', icon: 'i_play', size: 42 }));
     pop.content.add(btn(this, 0, 30, 420, 100, '홈으로', () => { pop.close(); this.paused = false; this.leave('Home'); }, { style: 'ghost', icon: 'i_home', size: 34 }));
     const d = load();
     const sI = iconBtn(this, -90, 190, d.sfx ? 'i_sound' : 'i_sound_off', () => { audio.toggleSfx(); sI.icon.setTexture(load().sfx ? 'i_sound' : 'i_sound_off'); }, 110);
-    if (inOAD) pop.content.add(btn(this, 0, 330, 400, 90, '원어데이로', () => exitToOAD(), { style: 'ghost', size: 30 }));
     const mI = iconBtn(this, 90, 190, d.music ? 'i_music' : 'i_music_off', () => { audio.toggleMusic(); mI.icon.setTexture(load().music ? 'i_music' : 'i_music_off'); if (load().music) audio.duck(0.1); }, 110);
     pop.content.add([sI, mI]);
   }

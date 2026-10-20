@@ -1,5 +1,5 @@
 // 화면 크기: 가로 1080 고정, 세로는 기기 비율에 맞춰 늘어남 (최소 1920)
-export const VERSION = '0.6.2';
+export const VERSION = '0.6.3';
 export const TITLE = '블록 블리스';      // 가제 — 이름이 정해지면 여기와 index.html·catalog 만 바꾸면 됨
 export const TITLE_EN = 'BLOCK BLISS';
 export const W = 1080;

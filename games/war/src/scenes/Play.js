@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.3';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.3';
-import { audio } from '../audio.js?v=0.10.3';
-import { load, save } from '../save.js?v=0.10.3';
-import * as M from '../meta.js?v=0.10.3';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.3';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.3';
-import { AI, apply } from '../core/ai.js?v=0.10.3';
-import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.3';
-import { MAPS } from '../core/maps.js?v=0.10.3';
+import { W, H } from '../config.js?v=0.10.4';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.4';
+import { audio } from '../audio.js?v=0.10.4';
+import { load, save } from '../save.js?v=0.10.4';
+import * as M from '../meta.js?v=0.10.4';
+import { inOAD, exitToOAD } from '../oad.js?v=0.10.4';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.4';
+import { AI, apply } from '../core/ai.js?v=0.10.4';
+import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.4';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.10.4';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -23,10 +23,11 @@ export class PlayScene extends Phaser.Scene {
     const d = load();
     this.mode = data.mode || 'free';
     this.map = MAPS.find(m => m.id === data.mapId) || MAPS[0];
+    this.simMap = this.mode === 'campaign' || this.mode === 'daily' ? campaignMap(this.map) : this.map;
     this.level = data.level || 'normal';
     this.co = data.co || d.co || 'ella';
     this.enemyCo = data.enemyCo || 'scarlet';
-    this.s = new Sim(this.map, [null, this.co, this.enemyCo], { limit: data.limit || this.map.par + 8 });
+    this.s = new Sim(this.simMap, [null, this.co, this.enemyCo], { limit: data.limit || this.map.par + 8 });
     this.resumed = !!data.resume;
     if (data.resume) { this.s.restore(data.resume.sim); this.captures = data.resume.captures || 0; this.powers0 = data.resume.powers || 0; }
     this.ai = new AI(this.level);

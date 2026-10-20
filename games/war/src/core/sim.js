@@ -1,5 +1,5 @@
 // 전투 규칙 (화면과 무관): 지도 · 이동 · 공격(운 없음 — 미리 정확히 계산) · 점령 · 생산 · 턴
-import { UNITS, TERRAIN, INCOME, CAPTURE, base, coAtk, coMove, coRange, coCapture, COS } from './data.js?v=0.10.3';
+import { UNITS, TERRAIN, INCOME, CAPTURE, base, coAtk, coMove, coRange, coCapture, COS } from './data.js?v=0.10.4';
 export const TUNE = { dmg: 1.1 };   // 전체 피해 배율 (한 판을 짧게)
 
 // 지도 칸 글자: 앞 글자 = 지형, 뒤 글자 = 주인(0 중립 · 1 파랑 · 2 빨강 · _ 없음)
@@ -22,6 +22,8 @@ export class Sim {
     this.cos = cos; this.power = [0, 0, 0]; this.powerOn = [false, false, false];
     this.funds = [0, ...(map.funds || [0, 0]).slice(-2)];
     this.limit = opts.limit ?? map.limit ?? 20;
+    this.noBuild = opts.noBuild ?? map.noBuild ?? [];
+    this.incomeMul = opts.incomeMul ?? map.incomeMul ?? [1, 1, 1];   // 판마다 수입 배율 (캠페인 난이도 조절)   // 생산 못 하는 쪽 (원작 초반 작전처럼 적은 배치된 부대만)
     this.turn = 1; this.day = 1; this.over = false; this.winner = 0; this.events = [];
     this.stats = { lost: [0, 0, 0], built: [0, 0, 0], kills: [0, 0, 0], dealt: [0, 0, 0] };
     this.income(1);
@@ -161,7 +163,7 @@ export class Sim {
   finish(u) { u.done = true; u.moved = false; }
   // 생산 (기지: 지상 · 비행장: 공중) — 만든 유닛은 다음 턴부터
   canBuild(x, y, type, p = this.turn) {
-    const t = this.tile(x, y); if (!t || t.owner !== p || this.unitAt(x, y)) return false;
+    const t = this.tile(x, y); if (!t || t.owner !== p || this.unitAt(x, y) || this.noBuild.includes(p)) return false;
     const b = TERRAIN[t.t].builds; if (!b) return false;
     if ((b === 'air') !== !!UNITS[type].air) return false;
     return this.funds[p] >= UNITS[type].cost;
@@ -188,10 +190,10 @@ export class Sim {
     if (this.turn === 1 && this.limit && this.day > this.limit) { const v = p => this.props(p) * 4000 + this.mine(p).reduce((a, u) => a + UNITS[u.type].cost * u.hp / 100, 0); this.over = true; this.winner = v(1) >= v(2) ? 1 : 2; this.ev('win', { p: this.winner, why: 'time' }); return; }
     this.income(this.turn);
     this.ev('turn', { p: this.turn, day: this.day });
-    if (!this.mine().length && !this.tiles.some(t => t.owner === this.turn && TERRAIN[t.t].builds)) { this.over = true; this.winner = this.turn === 1 ? 2 : 1; this.ev('win', { p: this.winner, why: 'rout' }); }
+    if (!this.mine().length) { this.over = true; this.winner = this.turn === 1 ? 2 : 1; this.ev('win', { p: this.winner, why: 'rout' }); }
   }
   income(p) {
-    this.funds[p] += this.props(p) * INCOME;
+    this.funds[p] += Math.round(this.props(p) * INCOME * (this.incomeMul[p] ?? 1) / 500) * 500;
     for (const u of this.mine(p)) {
       u.done = false; u.moved = false;
       const t = this.tile(u.x, u.y);
@@ -203,7 +205,8 @@ export class Sim {
   checkWin() {
     for (const p of [1, 2]) {
       if (this.over) return;
-      if (!this.mine(p).length && !this.tiles.some(t => t.owner === p && TERRAIN[t.t].builds)) { this.over = true; this.winner = p === 1 ? 2 : 1; this.ev('win', { p: this.winner, why: 'rout' }); }
+      if (!this.mine(p).length) { this.over = true;   // 원작 규칙: 유닛이 전멸하면 패배
+        this.winner = p === 1 ? 2 : 1; this.ev('win', { p: this.winner, why: 'rout' }); }
     }
   }
 }

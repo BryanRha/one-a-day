@@ -1,7 +1,7 @@
 // 상대 AI: 다음 행동 하나씩 돌려줌 (화면이 한 동작씩 보여 줄 수 있게)
 // { kind: 'power' } · { kind: 'act', id, to, then: { kind: 'attack'|'capture'|'wait'|'unload', target, at } } · { kind: 'build', x, y, type } · { kind: 'end' }
-import { UNITS, UNIT_ORDER, TERRAIN, base } from './data.js?v=0.10.3';
-import { dist } from './sim.js?v=0.10.3';
+import { UNITS, UNIT_ORDER, TERRAIN, base } from './data.js?v=0.10.4';
+import { dist } from './sim.js?v=0.10.4';
 
 const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.12, threat: 0.45, focus: 1.1 }, hard: { noise: 0, threat: 0.6, focus: 1.3 } };
 
@@ -80,7 +80,7 @@ export class AI {
         let s = UNITS[e.type].cost * f.dmg / 100 * (f.kill ? 1.5 : 1) - val * f.counter / 100 * 1.1;
         const et = sim.tile(e.x, e.y); if (TERRAIN[et.t].prop && UNITS[e.type].capture && et.owner === p) s += 3000 + (et.t === 'hq' ? 15000 : 0);   // 우리 건물 점령 중인 적
         if (f.die) s -= val;
-        consider(stay + s + 400, [v.x, v.y], { kind: 'attack', target: e.id });
+        consider(stay * 0.6 + s * 1.3 + 900, [v.x, v.y], { kind: 'attack', target: e.id });
       }
     }
     // 트럭: 실은 보병 내리기 (점령할 건물 옆이면)
@@ -93,7 +93,7 @@ export class AI {
   // 생산: 상대 구성에 맞는 상성 유닛 (자금 안에서 가장 효율 좋은 것)
   buildPlan(sim, p) {
     const spots = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => o.t.owner === p && TERRAIN[o.t.t].builds && !sim.unitAt(o.x, o.y));
-    if (!spots.length) return null;
+    if (!spots.length || (sim.noBuild || []).includes(p)) return null;
     const enemies = sim.units.filter(e => e.p !== p), mine = sim.mine(p);
     const neutral = sim.tiles.filter(t => TERRAIN[t.t].prop && t.owner === 0).length;
     const caps = mine.filter(u => UNITS[u.type].capture).length;

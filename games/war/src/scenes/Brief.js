@@ -1,12 +1,12 @@
 // 작전 준비: 캠페인 스테이지 고르기 · 지도 미리보기 · 지휘관 고르기 · (자유 대전) 지도·난이도
-import { W, H } from '../config.js?v=0.10.3';
-import { T, C, fmt, panel, btn, iconBtn, toast } from '../pui.js?v=0.10.3';
-import { audio } from '../audio.js?v=0.10.3';
-import { load, save } from '../save.js?v=0.10.3';
-import * as M from '../meta.js?v=0.10.3';
-import { COS, UNITS } from '../core/data.js?v=0.10.3';
-import { MAPS } from '../core/maps.js?v=0.10.3';
-import { Sim } from '../core/sim.js?v=0.10.3';
+import { W, H } from '../config.js?v=0.10.4';
+import { T, C, fmt, panel, btn, iconBtn, toast } from '../pui.js?v=0.10.4';
+import { audio } from '../audio.js?v=0.10.4';
+import { load, save } from '../save.js?v=0.10.4';
+import * as M from '../meta.js?v=0.10.4';
+import { COS, UNITS } from '../core/data.js?v=0.10.4';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.10.4';
+import { Sim } from '../core/sim.js?v=0.10.4';
 
 const LV = { easy: '쉬움', normal: '보통', hard: '어려움' };
 const TCOL = { plain: 0x8DB05A, farm: 0x9BB45A, wheat: 0xD8B85A, forest: 0x3E7A34, mountain: 0x9A8C78, road: 0xC8A878, bridge: 0xB0A090, river: 0x4A9AD8, beach: 0xE8D8A0, sea: 0x2A6AB0, trench: 0x8A7A50 };
@@ -41,10 +41,11 @@ export class BriefScene extends Phaser.Scene {
     this.add.existing(panel(this, W / 2, y + 330, 1000, 640, { tone: 'paper' }));
     T(this, 70, y + 50, `${st.n}. ${map.name}`, 40, '#2B2416', { ox: 0, w: 900, shadow: false });
     T(this, 70, y + 96, map.desc, 24, '#4A3E1E', { ox: 0, w: 800, shadow: false, wrap: 520 });
-    T(this, 70, y + 150, `기준 ${map.par}일 · 기한 ${map.par + 8}일 · 적 ${LV[this.ai]}`, 24, '#7A5A10', { ox: 0, w: 800, shadow: false });
+    T(this, 70, y + 150, `별 ★ 승리 · ★ ${map.par}일 안 · ★ 손실 ${M.lossCap(map.par)}기 이하`, 24, '#7A5A10', { ox: 0, w: 800, shadow: false });
+    T(this, 70, y + 232, `적 ${LV[this.ai]}${this.mode !== 'free' && (map.camp || {}).noBuild ? ' · 적은 생산 못 함' : ''} · 기한 ${map.par + 8}일`, 22, '#6B5A2A', { ox: 0, w: 800, shadow: false });
     if (this.mode === 'campaign') { const best = d.bestDays[map.id]; T(this, 70, y + 190, best ? `최단 승리 ${best}일` : st.unlockCo && !d.cos[st.unlockCo] ? `승리 보상 · 지휘관 ${COS[st.unlockCo].name} 합류` : '', 24, '#2F6A18', { ox: 0, w: 800, shadow: false }); }
     if (this.mode === 'daily') { const op = M.dailyOp(); T(this, 70, y + 190, op.best ? `오늘 최단 ${op.best}일 · ${op.tries}번 도전` : '모두 같은 지도 · 가장 빨리 이겨요', 24, '#2F6A18', { ox: 0, w: 800, shadow: false }); }
-    this.mini(map, W - 270, y + 330, 420, 560);
+    this.mini(this.mode !== 'free' ? campaignMap(map) : map, W - 270, y + 330, 420, 560);
     y += 680;
     // 난이도 (자유 대전)
     if (this.mode === 'free') {

@@ -2,16 +2,19 @@
 import { load, save } from './save.js';
 import { RUNE_ORDER } from './core/sim.js';
 
+
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
 
 // 룬 해금: 최고 웨이브 달성으로 (확정)
-export const UNLOCK = { flame: 0, frost: 0, storm: 0, iron: 0, gale: 0, venom: 6, light: 9, echo: 12, fortune: 15, growth: 18 };
+// 해금 간격: 한 판에 한두 개씩 (처음 한 판에 몰려 열리지 않게). 뒤쪽은 등급업으로 강해져야 닿는 장기 목표
+export const UNLOCK = { flame: 0, frost: 0, storm: 0, iron: 0, gale: 0, venom: 8, light: 11, mana: 13, sniper: 15, echo: 17, curse: 19, crit: 21, fortune: 23, mine: 25, summoner: 27, growth: 30 };
 export const MAX_TIER = 10;
 export const tierCost = t => Math.round(30 * Math.pow(t, 1.5));
 export function checkUnlocks() {
   const d = load(), got = [];
-  for (const r of RUNE_ORDER) if (!d.unlocked[r] && d.best >= UNLOCK[r]) { d.unlocked[r] = 1; got.push(r); }
+  // 한 판에 하나씩만 (수집하는 재미 · 매번 새 룬을 받는 기대감)
+  for (const r of RUNE_ORDER.slice().sort((a, b) => UNLOCK[a] - UNLOCK[b])) if (!d.unlocked[r] && d.best >= UNLOCK[r]) { d.unlocked[r] = 1; got.push(r); break; }
   if (got.length) save();
   return got;
 }

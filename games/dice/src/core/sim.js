@@ -16,6 +16,12 @@ export const RUNES = {
   echo: { name: '메아리', dmg: 12, rate: 1.0, wild: true, color: 0xC59BFF },
   fortune: { name: '행운', dmg: 10, rate: 0.8, sp: 30, color: 0xF5C451 },
   growth: { name: '성장', dmg: 12, rate: 1.0, grow: 16, color: 0x5BE39A },
+  sniper: { name: '저격', dmg: 58, rate: 0.5, strongest: true, color: 0xFF5A6A },     // 체력이 가장 많은 적을 노림
+  curse: { name: '저주', dmg: 9, rate: 1.0, vuln: 0.14, color: 0xD25AFF },            // 맞은 적이 받는 피해 증가
+  mine: { name: '지뢰', dmg: 30, rate: 0.45, mine: true, color: 0xFFA43A },           // 길에 지뢰 설치 → 밟으면 폭발
+  crit: { name: '치명', dmg: 11, rate: 1.0, critBuff: 0.03, color: 0xFF6FB5 },        // 모든 주사위 치명타 확률 +3%/눈
+  summoner: { name: '소환사', dmg: 11, rate: 0.9, summon: true, color: 0x6F7CFF },     // 합성하면 주사위 하나 더 소환
+  mana: { name: '마나', dmg: 8, rate: 0.8, spGen: 2.2, color: 0x5EE3FF },              // 눈마다 초당 SP 생성
 };
 export const RUNE_ORDER = Object.keys(RUNES);
 export const POWER_COST = [100, 200, 400, 700];     // 판 안 강화 (종류별 4단계)
@@ -47,7 +53,7 @@ export class Sim {
     this.enemies = []; this.nextId = 1; this.events = [];
     this.sp = 100; this.summons = 0; this.lives = 3; this.wave = startWave; this.t = 0;
     this.phase = 'wave'; this.waveT = 0; this.spawnT = 0; this.spawned = 0; this.over = false;
-    this.kills = 0; this.bossKills = 0; this.merges = 0; this.maxPips = 1;
+    this.kills = 0; this.bossKills = 0; this.merges = 0; this.maxPips = 1; this.mines = []; this.crits = 0;
     this.setupWave();
   }
   ev(type, d = {}) { this.events.push({ type, ...d }); }
@@ -105,6 +111,8 @@ export class Sim {
     this.sp += Math.round(gainSp);
     this.merges++; this.maxPips = Math.max(this.maxPips, pips);
     this.ev('merge', { from: a, to: b, die: d, sp: Math.round(gainSp) });
+    // 소환사: 합성하면 빈 칸에 주사위 하나 더 (눈 = 합성 전 눈)
+    if (A.type === 'summoner' || B.type === 'summoner') { const empty = this.emptySlots(); if (empty.length) { const slot = empty[Math.floor(this.R() * empty.length)]; const n = this.board[slot] = this.newDie(this.randType(), Math.max(1, B.pips)); this.ev('summon', { slot, die: n, free: true }); } }
     return d;
   }
   powerCost(type) { const lv = this.power[type]; return lv < POWER_COST.length ? POWER_COST[lv] : null; }
@@ -154,18 +162,27 @@ export class Sim {
     return Math.min(1.2, a);
   }
   front() { let best = null; for (const e of this.enemies) if (!best || e.d > best.d) best = e; return best; }
+  critChance() { let c = 0.05; for (const d of this.board) if (d && d.type === 'crit' && !(d.silenced > 0)) c += RUNES.crit.critBuff * d.pips; return Math.min(0.6, c); }
+  strongest() { let best = null; for (const e of this.enemies) if (e.hp > 0 && (!best || e.hp > best.hp)) best = e; return best; }
   stepDice(dt) {
+    this.crit = this.critChance();
     for (let i = 0; i < SLOTS; i++) {
       const d = this.board[i]; if (!d) continue;
       d.age += dt;
       if (d.silenced > 0) { d.silenced -= dt; continue; }
+      if (d.type === 'mana') this.sp += RUNES.mana.spGen * d.pips * dt * (1 + 0.1 * ((this.tiers.mana || 1) - 1));
       // 성장: 일정 시간이 지나면 눈 +1
       // 성장: 눈이 높을수록 오래 걸리고 6눈까지만 (7눈은 합성으로만)
       if (d.type === 'growth' && d.pips < 6 && d.age >= RUNES.growth.grow + 8 * d.pips) { d.pips++; d.age = 0; this.maxPips = Math.max(this.maxPips, d.pips); this.ev('grow', { slot: i, die: d }); }
       d.cd -= dt * RUNES[d.type].rate * (1 + this.auraAt(i));
       if (d.cd > 0) continue;
       d.cd = 1;
-      const tgt = this.front(); if (!tgt) { d.cd = 0.05; continue; }
+      const tgt = RUNES[d.type].strongest ? this.strongest() : this.front(); if (!tgt) { d.cd = 0.05; continue; }
+      if (RUNES[d.type].mine) {   // 지뢰: 맨 앞 적보다 조금 앞에 설치 (최대 6개)
+        const at = Math.min(0.97, tgt.d + 0.05 + this.R() * 0.06);
+        if (this.mines.length < 6) { this.mines.push({ id: this.nextId++, d: at, dmg: this.dmgOf(d) * d.pips * 1.6 }); this.ev('mine', { slot: i, d: at }); }
+        continue;
+      }
       this.ev('shot', { slot: i, die: d, target: tgt.id, n: d.pips });
       for (let k = 0; k < d.pips; k++) this.hit(d, tgt);
     }
@@ -174,6 +191,8 @@ export class Sim {
     const R = RUNES[d.type];
     let dmg = this.dmgOf(d);
     if (R.boss && e.kind === 'boss') dmg *= R.boss;
+    if (this.R() < this.crit) { dmg *= 2.5; this.crits++; e.critT = 0.3; }
+    if (R.vuln) { e.vuln = Math.max(e.vuln || 0, R.vuln + 0.03 * d.pips); e.vulnT = 3; }
     this.damage(e, dmg);
     if (R.splash) for (const o of this.enemies) if (o !== e && Math.abs(o.d - e.d) < 0.06) this.damage(o, dmg * R.splash);
     if (R.slow) e.slow = Math.max(e.slow, Math.min(0.6, R.slow + 0.03 * d.pips));
@@ -183,7 +202,7 @@ export class Sim {
   damage(e, dmg) {
     if (e.hp <= 0) return;
     if (e.shieldOn > 0) return;
-    e.hp -= dmg;
+    e.hp -= dmg * (1 + (e.vulnT > 0 ? e.vuln : 0));
     if (e.hp <= 0) this.kill(e);
   }
   kill(e) {
@@ -197,9 +216,12 @@ export class Sim {
       if (e.hp <= 0) continue;
       if (e.poison > 0) { const p = e.poison * dt; e.poison = Math.max(0, e.poison - p * 0.15); this.damage(e, p); if (e.hp <= 0) continue; }
       if (e.slow > 0) e.slow = Math.max(0, e.slow - dt * 0.15);
+      if (e.vulnT > 0) e.vulnT -= dt;
       let sp = e.speed * (1 - e.slow);
       if (e.kind === 'boss') {
         const b = B[e.boss]; e.t += dt;
+        // 예고: 기술 1.2초 전에 경고 이벤트 (화면이 미리 알려 줌)
+        for (const [k, period] of [['silence', b.silence], ['morph', b.morph], ['dash', b.dash], ['shield', b.shield]]) if (period && (e.t + 1.2) % period < dt) this.ev('telegraph', { id: e.id, skill: k });
         if (b.silence && e.t % b.silence < dt) this.bossSilence();
         if (b.morph && e.t % b.morph < dt) this.bossMorph();
         if (b.shield) { if (e.t % b.shield < dt) { e.shieldOn = 2; this.ev('shield', { id: e.id }); } if (e.shieldOn > 0) e.shieldOn -= dt; }
@@ -212,6 +234,14 @@ export class Sim {
         this.lives -= loss; this.ev('leak', { id: e.id, kind: e.kind, loss });
         if (this.lives <= 0) { this.lives = 0; this.over = true; this.ev('over', { wave: this.wave }); }
       }
+    }
+    // 지뢰: 적이 지나가면 폭발 (근처 적에게도 피해)
+    if (this.mines.length) {
+      for (const m of this.mines) {
+        const hit = this.enemies.find(e => e.hp > 0 && Math.abs(e.d - m.d) < 0.012);
+        if (hit) { m.done = true; for (const e of this.enemies) if (e.hp > 0 && Math.abs(e.d - m.d) < 0.04) this.damage(e, m.dmg * (e === hit ? 1 : 0.5)); this.ev('boom', { id: m.id, d: m.d }); }
+      }
+      this.mines = this.mines.filter(m => !m.done);
     }
     this.enemies = this.enemies.filter(e => e.hp > 0);
   }

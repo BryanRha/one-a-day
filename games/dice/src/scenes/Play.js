@@ -238,6 +238,7 @@ export class PlayScene extends Phaser.Scene {
     let n = 0;
     while (this.acc >= DT && n++ < 6) { this.acc -= DT; this.s.step(DT); for (const e of this.s.events) this.onEvent(e); this.s.events.length = 0; if (this.s.over) break; }
     this.render(); this.drawEnemies(); this.flow(time);
+    if ((this.manaT = (this.manaT || 0) - dms) <= 0) { this.manaT = 1800; for (let i = 0; i < SLOTS; i++) { const d = this.s.board[i]; if (d && d.type === 'mana' && !(d.silenced > 0)) { const [x, y] = this.slotXY(i); this.float(x, y - 60, `+${Math.round(RUNES.mana.spGen * d.pips * 1.8)} SP`, '#8FE3FF', 26); } } }
     if (this.s.over && !this.ended) this.gameOver();
   }
   flow(t) { for (const dt of this.flowDots) { const k = (dt.k + t / 14000) % 1; const [x, y] = this.pathXY(k); dt.setPosition(x, y); } }
@@ -286,7 +287,8 @@ export class PlayScene extends Phaser.Scene {
       v.img.setPosition(0, oy).setScale(v.k * sx * (dx < -0.5 ? -1 : 1), v.k * sy).setRotation(rot);
       v.lit.setPosition(0, oy).setScale(v.img.scaleX, v.img.scaleY).setRotation(rot).setVisible(!(v.flashT > this.time.now));
       v.sh.setScale((e.kind === 'boss' ? 2.2 : 1.1) * (1 + oy / 60), (e.kind === 'boss' ? 0.7 : 0.4) * (1 + oy / 60));
-      if (!(v.flashT > this.time.now)) v.img.setTint(e.shieldOn > 0 ? 0xFFE08A : e.slow > 0.05 ? 0xA8E6FF : e.poison > 1 ? 0xB8FFA8 : 0xFFFFFF);
+      if (!(v.flashT > this.time.now)) v.img.setTint(e.shieldOn > 0 ? 0xFFE08A : e.vulnT > 0 ? 0xF0A8FF : e.slow > 0.05 ? 0xA8E6FF : e.poison > 1 ? 0xB8FFA8 : 0xFFFFFF);
+      if (e.critT > 0) { e.critT = 0; if (Math.random() < 0.5) this.float(x + (Math.random() - 0.5) * 40, y - EN_SIZE[e.kind] / 2 - 20, '치명!', '#FF8FCB', 30); }
       if (e.kind !== 'boss') { const w = 70, k = Math.max(0, e.hp / e.max), hy = -EN_SIZE[e.kind] / 2 - 14 + oy; v.hb.clear(); if (k < 1) v.hb.fillStyle(0x000000, 0.6).fillRoundedRect(-w / 2, hy, w, 8, 4).fillStyle(0xFF5A7A).fillRoundedRect(-w / 2, hy, w * k, 8, 4); }
       else boss = e;
       if (e.kind === 'boss' && e.shieldOn > 0) v.aura.setTint(0xFFE08A).setAlpha(0.7); else if (e.kind === 'boss') v.aura.setTint(0xFF4A6A).setAlpha(0.3 + Math.sin(t * 3) * 0.1);
@@ -299,6 +301,10 @@ export class PlayScene extends Phaser.Scene {
       this.tweens.add({ targets: v, alpha: 0, duration: 160, delay: 80, onComplete: () => v.destroy() });
       this.spark.setParticleTint(v.kind === 'boss' ? 0xFFD27A : 0xC9A6FF); this.spark.emitParticleAt(v.x, v.y, v.kind === 'big' ? 12 : 7);
     }
+    // 지뢰
+    this.minePool ||= new Map(); const ms = new Set();
+    for (const m of s.mines) { ms.add(m.id); let o = this.minePool.get(m.id); if (!o) { const [mx, my] = this.pathXY(m.d); o = this.add.image(mx, my, 'rune_mine').setDisplaySize(68, 68).setDepth(15); o.setScale(0.01); this.tweens.add({ targets: o, scale: 68 / o.width, duration: 220, ease: 'Back.easeOut' }); this.minePool.set(m.id, o); } o.setAngle(t * 60); }
+    for (const [id, o] of this.minePool) if (!ms.has(id)) { this.minePool.delete(id); o.destroy(); }
     this.hBoss.setVisible(!!boss);
     if (boss) { this.hBossName.setText(boss.name + (boss.shieldOn > 0 ? '  · 방패' : '')); this.hBossFill.clear().fillStyle(0xFF5A7A).fillRoundedRect(-296, -12, 592 * Math.max(0, boss.hp / boss.max), 24, 12); }
   }
@@ -374,7 +380,7 @@ export class PlayScene extends Phaser.Scene {
   }
   onEvent(e) {
     switch (e.type) {
-      case 'summon': audio.play('sfx_summon', { volume: 0.55, gap: 40 }); break;
+      case 'summon': audio.play('sfx_summon', { volume: 0.55, gap: 40 }); if (e.free) { const [x, y] = this.slotXY(e.slot); this.float(x, y - 70, '소환사!', '#9AA6FF'); this.spark.setParticleTint(0x6F7CFF); this.spark.emitParticleAt(x, y, 10); } break;
       case 'shot': audio.play('sfx_pew', { volume: 0.22, gap: 55, rate: 0.85 + e.die.pips * 0.06 + Math.random() * 0.1 }); this.shotFx(e.slot, e.target, e.n, e.die.type); break;
       case 'merge': {
         const [x, y] = this.slotXY(e.to), col = RUNES[e.die.type].color;
@@ -404,7 +410,23 @@ export class PlayScene extends Phaser.Scene {
       case 'morph': audio.play('sfx_silence', { volume: 0.5, rate: 1.25 }); for (const i of e.slots) { const [x, y] = this.slotXY(i); this.float(x, y, '변신!', '#C9A6FF'); } break;
       case 'shield': audio.play('sfx_power', { volume: 0.4, rate: 0.7 }); break;
       case 'dash': this.cameras.main.shake(120, 0.004); break;
+      case 'mine': { const [x0, y0] = this.slotXY(e.slot), [x1, y1] = this.pathXY(e.d); const b = this.add.image(x0, y0, 'bolt').setTint(0xFFA43A).setBlendMode('ADD').setScale(0.6).setDepth(35); this.tweens.add({ targets: b, x: x1, y: y1, duration: 260, ease: 'Quad.easeOut', onComplete: () => b.destroy() }); break; }
+      case 'boom': { const [x, y] = this.pathXY(e.d); audio.play('sfx_fire', { volume: 0.5, gap: 60, rate: 0.8 }); const f = this.add.image(x, y, 'glow').setTint(0xFF8A2E).setBlendMode('ADD').setScale(0.4).setDepth(36); this.tweens.add({ targets: f, scale: 2.2, alpha: 0, duration: 340, onComplete: () => f.destroy() }); const r = this.add.image(x, y, 'ring').setTint(0xFFB24A).setBlendMode('ADD').setScale(0.2).setDepth(36); this.tweens.add({ targets: r, scale: 1.2, alpha: 0, duration: 320, onComplete: () => r.destroy() }); this.spark.setParticleTint(0xFFB24A); this.spark.emitParticleAt(x, y, 10); this.cameras.main.shake(80, 0.003); break; }
+      case 'telegraph': this.telegraph(e); break;
       case 'summonMinion': audio.play('sfx_summon', { volume: 0.4, rate: 0.6 }); break;
+    }
+  }
+  // 보스 기술 예고 (1.2초 전): 보스 위 느낌표 + 대상 쪽 경고
+  telegraph(e) {
+    const v = this.ePool.get(e.id); if (!v) return;
+    audio.play('sfx_silence', { volume: 0.35, rate: 1.6 });
+    const ex = T(this, 0, -EN_SIZE.boss / 2 - 40, '!', 72, '#FF5A7A', { w: 900, stroke: '#05061A', thick: 8 }); v.add(ex);
+    this.tweens.add({ targets: ex, scale: 1.3, duration: 150, yoyo: true, repeat: 3, onComplete: () => ex.destroy() });
+    const label = { silence: '봉인 준비!', morph: '변신술 준비!', dash: '돌진 준비!', shield: '방패 준비!' }[e.skill];
+    this.float(v.x, v.y - EN_SIZE.boss / 2 - 90, label, '#FF9BB0', 34);
+    if (e.skill === 'silence' || e.skill === 'morph') {   // 판 테두리가 붉게 깜빡
+      const g = this.add.graphics().setDepth(9); g.lineStyle(8, e.skill === 'silence' ? 0xFF5A7A : 0xC59BFF, 1).strokeRoundedRect(this.BX - 22, this.BY - 22, BW + 44, BH + 44, 34);
+      this.tweens.add({ targets: g, alpha: 0, duration: 300, yoyo: true, repeat: 1, onComplete: () => g.destroy() });
     }
   }
   bossTip(id) { return { serpent: '맞을수록 졸개를 불러요', knight: '주사위를 잠시 봉인해요', mage: '주사위 종류를 바꿔요', warden: '주기적으로 무적 방패', rush: '갑자기 돌진해요' }[id]; }

@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.6';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.6';
-import { audio } from '../audio.js?v=0.10.6';
-import { load, save } from '../save.js?v=0.10.6';
-import * as M from '../meta.js?v=0.10.6';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.6';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.6';
-import { AI, apply } from '../core/ai.js?v=0.10.6';
-import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.6';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.10.6';
+import { W, H } from '../config.js?v=0.10.7';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.7';
+import { audio } from '../audio.js?v=0.10.7';
+import { load, save } from '../save.js?v=0.10.7';
+import * as M from '../meta.js?v=0.10.7';
+import { inOAD, exitToOAD } from '../oad.js?v=0.10.7';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.7';
+import { AI, apply } from '../core/ai.js?v=0.10.7';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, base } from '../core/data.js?v=0.10.7';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.10.7';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -35,21 +35,40 @@ export class PlayScene extends Phaser.Scene {
     this.state = 'idle'; this.sel = null; this.busy = false; this.speed = 1; this.powers = this.powers0 || 0; this.captures = this.captures || 0; this.danger = false;
     // 지도 크기: 위 정보 · 아래 패널 사이에 맞춤
     const availH = H - TOP - BOTTOM - 20;
-    this.ts = Math.floor(Math.min(W / this.s.w, availH / this.s.h));
+    this.ts = Math.floor(W / this.s.w);                     // 가로를 꽉 채움 (칸이 커짐)
     this.ox = Math.round((W - this.ts * this.s.w) / 2);
-    this.oy = Math.round(TOP + 10 + (availH - this.ts * this.s.h) / 2);
+    const mapH = this.ts * this.s.h;
+    this.oy = mapH <= availH ? Math.round(TOP + 10 + (availH - mapH) / 2) : TOP + 10;
+    this.maxScroll = Math.max(0, mapH - availH);            // 넘치는 만큼 위아래로 끌어서 봄
     this.add.rectangle(W / 2, H / 2, W, H, 0x262A14);
     this.drawMap();
     this.hl = this.add.layer().setDepth(20);       // 이동·공격 범위 칸
     this.views = new Map();
     for (const u of this.s.units) this.makeUnit(u);
+    this.add.rectangle(W / 2, TOP / 2, W, TOP, 0x262A14).setDepth(48);
+    this.add.rectangle(W / 2, H - BOTTOM / 2 + 4, W, BOTTOM + 8, 0x262A14).setDepth(48);
     this.makeHud(); this.makePanel();
     this.input.on('pointerup', p => { if (this.holdFast) { this.holdFast = false; if (this.s.turn === 2 && this.speed < 14) this.speed = 2; } this.tap(p); });
-    this.input.on('pointerdown', () => { if (this.s.turn === 2 && this.busy && this.speed < 14) { this.holdFast = true; this.speed = 5; } });
+    this.input.on('pointerdown', p => { if (this.s.turn === 2 && this.busy && this.speed < 14) { this.holdFast = true; this.speed = 5; } this.dragFrom = this.maxScroll && p.y > TOP && p.y < H - BOTTOM ? { y: p.y, s: this.cameras.main.scrollY } : null; this.dragged = false; });
+    this.input.on('pointermove', p => { if (!this.dragFrom || !p.isDown) return; const dy = p.y - this.dragFrom.y; if (Math.abs(dy) > 14) this.dragged = true; if (this.dragged) this.cameras.main.scrollY = Phaser.Math.Clamp(this.dragFrom.s - dy, 0, this.maxScroll); });
     audio.music('bgm_battle', this);
     this.cameras.main.fadeIn(300, 20, 22, 10);
     window.__play = this;
+    const hq = this.s.tiles.findIndex(t => t.t === 'hq' && t.owner === 1); if (hq >= 0) this.follow(hq % this.s.w, (hq / this.s.w) | 0, true);
     this.time.delayedCall(350, () => this.startTurn());
+  }
+
+  // 화면 고정: 위·아래 정보칸과 팝업은 지도를 끌어도 그대로
+  update() {
+    for (const o of this.children.list) if (!o.__sf) { o.__sf = 1; if ((o.depth >= 48 && o.depth <= 50) || o.depth >= 800) o.setScrollFactor(0); }
+  }
+  // 칸이 화면 밖이면 그 칸이 보이게 지도를 옮김
+  follow(x, y, now) {
+    if (!this.maxScroll) return;
+    const cam = this.cameras.main, [, py] = this.xy(x, y), top = cam.scrollY + TOP + this.ts * 0.6, bot = cam.scrollY + H - BOTTOM - this.ts * 0.6;
+    if (py >= top && py <= bot) return;
+    const to = Phaser.Math.Clamp(py - (TOP + (H - BOTTOM)) / 2, 0, this.maxScroll);
+    if (now) cam.scrollY = to; else this.tweens.add({ targets: cam, scrollY: to, duration: 220 / this.speed, ease: 'Sine.easeInOut' });
   }
 
   // ── 지도 ──
@@ -85,8 +104,10 @@ export class PlayScene extends Phaser.Scene {
     const t = this.s.tile(x, y), [px, py] = this.xy(x, y), ts = this.ts;
     const key = `b_${BLD[t.t]}_${t.owner === 1 ? 'b' : t.owner === 2 ? 'r' : 'n'}`;
     let v = this.bld.get(`${x},${y}`);
-    if (!v) { v = this.add.container(px, py).setDepth(4 + y * 0.01); v.img = this.add.image(0, ts * 0.42, key).setOrigin(0.5, 1); v.bar = this.add.graphics().setPosition(px, py).setDepth(30); v.add([v.img]); this.bld.set(`${x},${y}`, v); }
-    v.img.setTexture(key); const sc = ts * 1.05 / Math.max(v.img.width, v.img.height * 0.9); v.img.setScale(sc);
+    if (!v) { v = this.add.container(px, py).setDepth(4 + y * 0.01); v.plate = this.add.graphics(); v.img = this.add.image(0, ts * 0.4, key).setOrigin(0.5, 1); v.bar = this.add.graphics().setPosition(px, py).setDepth(30); v.add([v.plate, v.img]); this.bld.set(`${x},${y}`, v); }
+    v.img.setTexture(key); const sc = ts * 0.92 / Math.max(v.img.width, v.img.height * 0.95); v.img.setScale(sc);
+    const pc = t.owner === 1 ? TEAM[1] : t.owner === 2 ? TEAM[2] : 0x8C8C78;
+    v.plate.clear().fillStyle(pc, t.owner ? 0.55 : 0.35).fillRoundedRect(-ts * 0.46, -ts * 0.46, ts * 0.92, ts * 0.92, ts * 0.14).lineStyle(4, pc, t.owner ? 0.95 : 0.5).strokeRoundedRect(-ts * 0.46, -ts * 0.46, ts * 0.92, ts * 0.92, ts * 0.14);
     v.bar.clear();
     if (t.cap < 20) { const w = ts * 0.8; v.bar.fillStyle(0x000000, 0.6).fillRoundedRect(-w / 2, -ts * 0.48, w, 12, 6).fillStyle(0xFFD45A, 1).fillRoundedRect(-w / 2, -ts * 0.48, w * (1 - t.cap / 20), 12, 6); }
   }
@@ -136,17 +157,17 @@ export class PlayScene extends Phaser.Scene {
     this.add.existing(panel(this, W / 2, 96, W - 24, 176, { r: 26 })).setDepth(D - 1);
     const co = COS[this.co];
     const face = this.add.image(96, 96, `co_${this.co}`).setDepth(D); face.setScale(130 / Math.max(face.width, face.height));
-    const fm = this.make.graphics(); fm.fillCircle(96, 96, 62); face.setMask(fm.createGeometryMask());
+    const fm = this.make.graphics().setScrollFactor(0); fm.fillCircle(96, 96, 62); face.setMask(fm.createGeometryMask());
     this.add.circle(96, 96, 64).setStrokeStyle(5, TEAM[1]).setDepth(D);
     T(this, 176, 58, co.name, 32, C.text, { ox: 0, w: 900 }).setDepth(D);
     this.pwBarBg = this.add.graphics().setDepth(D); this.pwBar = this.add.graphics().setDepth(D);
-    this.pwT = T(this, 176, 132, '', 22, C.sub, { ox: 0, w: 800 }).setDepth(D);
+    this.pwT = T(this, 176, 132, '', 24, C.sub, { ox: 0, w: 800 }).setDepth(D);
     this.pwBtn = btn(this, 330, 132, 170, 64, '필살기', () => this.usePower(), { style: 'gold', size: 24 }).setDepth(D).setVisible(false);
     this.dayT = T(this, W / 2 + 70, 60, '', 40, C.text, { w: 900, ls: 1 }).setDepth(D);
     this.turnT = T(this, W / 2 + 70, 112, '', 26, C.gold, { w: 900 }).setDepth(D);
     this.fundT = T(this, W - 140, 60, '', 34, C.gold, { ox: 1, w: 900 }).setDepth(D);
     this.add.image(W - 290, 60, 'i_star').setDisplaySize(34, 34).setTint(0xFFD45A).setDepth(D).setVisible(false);
-    this.enT = T(this, W - 140, 112, '', 22, C.sub, { ox: 1, w: 800 }).setDepth(D);
+    this.enT = T(this, W - 140, 112, '', 24, C.sub, { ox: 1, w: 800 }).setDepth(D);
     iconBtn(this, W - 72, 96, 'i_pause', () => this.pause(), 92).setDepth(D);
   }
   updateHud() {
@@ -189,15 +210,23 @@ export class PlayScene extends Phaser.Scene {
     const ti = this.add.image(ix + 56, y0 + 56, tk); ti.setScale(104 / Math.max(ti.width, ti.height)); this.info.add(ti);
     this.info.add(T(this, ix + 124, y0 + 22, tr.name, 30, C.text, { ox: 0, w: 900 }));
     for (let k = 0; k < 4; k++) this.info.add(T(this, ix + 124 + k * 30, y0 + 62, '★', 28, k < tr.def ? C.gold : '#4A4A30', { ox: 0, w: 900, shadow: false }));
-    this.info.add(T(this, ix + 250, y0 + 62, `방어 ${tr.def}`, 22, C.sub, { ox: 0, w: 800 }));
-    if (tr.prop) this.info.add(T(this, ix + 124, y0 + 98, `${t.owner === 1 ? '아군' : t.owner === 2 ? '적군' : '중립'}${t.cap < 20 ? ` · 점령 ${20 - t.cap}/20` : ''}`, 22, t.owner === 1 ? C.blue : t.owner === 2 ? C.red : C.sub, { ox: 0, w: 800 }));
+    this.info.add(T(this, ix + 250, y0 + 62, `방어 ${tr.def}`, 24, C.sub, { ox: 0, w: 800 }));
+    if (tr.prop) this.info.add(T(this, ix + 124, y0 + 98, `${t.owner === 1 ? '아군' : t.owner === 2 ? '적군' : '중립'}${t.cap < 20 ? ` · 점령 ${20 - t.cap}/20` : ''}`, 24, t.owner === 1 ? C.blue : t.owner === 2 ? C.red : C.sub, { ox: 0, w: 800 }));
     // 유닛
     if (u) {
       const U = UNITS[u.type], ux = 400;
-      const ui = this.add.image(ux + 50, y0 + 56, `u_${u.type}_${TEAMS[u.p]}`); ui.setScale(100 / Math.max(ui.width, ui.height)); this.info.add(ui);
-      this.info.add(T(this, ux + 112, y0 + 22, `${U.name}`, 30, u.p === 1 ? C.blue : C.red, { ox: 0, w: 900 }));
-      this.info.add(T(this, ux + 112, y0 + 62, `HP ${hpOf(u)}/10 · 이동 ${this.s.moveOf(u)}${U.range ? ` · 사거리 ${this.s.rangeOf(u).join('~')}` : ''}`, 22, C.text, { ox: 0, w: 800 }));
-      this.info.add(T(this, ux + 112, y0 + 98, U.desc, 20, C.sub, { ox: 0, w: 700 }));
+      const ui = this.add.image(ux + 60, y0 + 60, `u_${u.type}_${TEAMS[u.p]}`); ui.setScale(124 / Math.max(ui.width, ui.height)); this.info.add(ui);
+      this.info.add(T(this, ux + 132, y0 + 20, `${U.name}`, 32, u.p === 1 ? C.blue : C.red, { ox: 0, w: 900 }));
+      const n = hpOf(u), hb = this.add.graphics(); hb.fillStyle(0x000000, 0.5).fillRoundedRect(ux + 132, y0 + 46, 260, 18, 9).fillStyle(n <= 3 ? 0xD9301E : n <= 6 ? 0xE8A21C : 0x6FCB4A, 1).fillRoundedRect(ux + 132, y0 + 46, Math.max(18, 26 * n), 18, 9); this.info.add(hb);
+      this.info.add(T(this, ux + 402, y0 + 55, `${n}/10`, 24, C.text, { ox: 0, w: 900 }));
+      this.info.add(T(this, ux + 132, y0 + 92, `이동 ${this.s.moveOf(u)}${U.range ? ` · 사거리 ${this.s.rangeOf(u).join('~')}` : ' · 수송'}`, 24, C.text, { ox: 0, w: 800 }));
+      // 상성: 강한 상대 · 조심할 상대 (각 2종)
+      const others = UNIT_ORDER.filter(t => t !== 'truck');
+      const strong = others.slice().sort((a, b) => base(u.type, b) - base(u.type, a)).slice(0, 2).filter(t => base(u.type, t) >= 55);
+      const weak = others.slice().sort((a, b) => base(b, u.type) - base(a, u.type)).slice(0, 2).filter(t => base(t, u.type) >= 55);
+      let cx = 48;
+      const chip = (label, list, col) => { if (!list.length) return; this.info.add(T(this, cx, y0 + 140, label, 22, col, { ox: 0, w: 900 })); cx += 88; for (const t of list) { const im = this.add.image(cx + 26, y0 + 138, `u_${t}_${u.p === 1 ? 'r' : 'b'}`); im.setScale(52 / Math.max(im.width, im.height)); this.info.add(im); this.info.add(T(this, cx + 58, y0 + 140, UNITS[t].name, 22, C.text, { ox: 0, w: 800 })); cx += 70 + UNITS[t].name.length * 22; } cx += 20; };
+      chip('강함 ▲', strong, '#9BE07A'); chip('조심 ▼', weak, '#FF8A7A');
     }
   }
   setActs(list) {
@@ -221,7 +250,7 @@ export class PlayScene extends Phaser.Scene {
     const list = this.s.mine(1).filter(u => !u.done && !u.inside).sort((a, b) => a.y - b.y || a.x - b.x);
     if (!list.length) return;
     this.nextIdx = ((this.nextIdx ?? -1) + 1) % list.length;
-    const u = list[this.nextIdx]; this.showInfo(u.x, u.y); this.select(u);
+    const u = list[this.nextIdx]; this.follow(u.x, u.y); this.showInfo(u.x, u.y); this.select(u);
     const c = this.views.get(u.id); if (c) this.tweens.add({ targets: c, scale: 1.18, duration: 120, yoyo: true });
   }
   toggleDanger() { this.danger = !this.danger; this.dangerBtn.setLabel(this.danger ? '위험 지역 끄기' : '위험 지역'); this.drawDanger(); }
@@ -312,6 +341,7 @@ export class PlayScene extends Phaser.Scene {
     const sp = this.speed;
     if (e.type === 'move') {
       const c = this.views.get(e.id), u = this.s.unit(e.id); if (!c || e.path.length < 2) return;
+      if (u && u.p === 2) { this.follow(...e.path[e.path.length - 1]); await sleep(this, 120 / this.speed); }
       audio.play(MOVE_SND[UNITS[u.type].mt], { volume: 0.45, gap: 200 });
       for (let i = 1; i < e.path.length; i++) {
         const [x, y] = e.path[i], [px, py] = this.xy(x, y); this.face(c, u, x - e.path[i - 1][0]);
@@ -342,6 +372,7 @@ export class PlayScene extends Phaser.Scene {
   async fight(aid, did, dmg, counter) {
     const a = this.views.get(aid), d = this.views.get(did), au = this.s.unit(aid) || { type: 'inf', p: 1 }, du = this.s.unit(did);
     if (!a || !d) return;
+    if (du) this.follow(du.x, du.y);
     const sp = this.speed, U = UNITS[au.type];
     this.face(a, au, d.x - a.x);
     audio.play(SND[au.type], { volume: 0.6 });
@@ -388,7 +419,8 @@ export class PlayScene extends Phaser.Scene {
   tap(p) {
     if (this.busy || this.s.turn !== 1 || this.s.over || this.paused) return;
     if (p.y < TOP || p.y > H - BOTTOM) return;
-    const c = this.cell(p.x, p.y); if (!c) return;
+    if (this.dragged) { this.dragged = false; return; }
+    const c = this.cell(p.worldX, p.worldY); if (!c) return;
     const [x, y] = c, s = this.s;
     audio.play('sfx_click', { volume: 0.35 });
     if (this.state === 'idle') {

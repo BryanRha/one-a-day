@@ -6,7 +6,7 @@ function fresh() {
     v: 1, sfx: true, music: true, tips: {},
     best: 0, plays: 0, kills: 0, bossKills: 0, crystals: 0,
     deck: ['flame', 'frost', 'storm', 'iron', 'gale'], unlocked: { flame: 1, frost: 1, storm: 1, iron: 1, gale: 1 }, tiers: {},
-    cards: {}, keys: 1, legendTix: 0, fame: 0, roadClaimed: {}, shop: { date: '', bought: [] }, pity: 0, pulls: 0, freeDraw: '', milestones: {}, decks: null, deckIdx: 0,
+    cards: {}, newRunes: {}, keys: 1, legendTix: 0, fame: 0, roadClaimed: {}, shop: { date: '', bought: [] }, pity: 0, pulls: 0, freeDraw: '', milestones: {}, decks: null, deckIdx: 0,
     streak: { last: '', count: 0 }, missions: { date: '', list: [] }, daily: { date: '', best: 0, tries: 0 },
   };
 }

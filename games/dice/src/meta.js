@@ -1,6 +1,6 @@
 // 진행·재방문: 룬 해금(최고 웨이브) · 수정으로 영구 등급업(확정, 뽑기 없음) · 연속 출석 · 오늘의 미션 · 오늘의 도전
-import { load, save } from './save.js';
-import { RUNE_ORDER, RARITY } from './core/sim.js';
+import { load, save } from './save.js?v=0.8.4';
+import { RUNE_ORDER, RARITY } from './core/sim.js?v=0.8.4';
 
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -16,6 +16,8 @@ export const tierCost = t => Math.round(20 * Math.pow(t, 1.5));
 export const cardsNeed = (r, t) => Math.max(1, Math.round(t * [2, 1.5, 1, 0.5][RARITY[r]]));
 export const freeToday = () => load().freeDraw !== dayKey();
 export const ownedCount = () => Object.keys(load().unlocked).length;
+export const hasNew = () => Object.keys(load().newRunes || {}).length > 0;
+export function seen(r) { const d = load(); if (d.newRunes[r]) { delete d.newRunes[r]; save(); } }
 function drawOne(d, floor) {
   d.pulls++; d.pity++;
   let rar;
@@ -28,7 +30,7 @@ function drawOne(d, floor) {
   const fresh = pool.filter(r => !d.unlocked[r]);
   const r = fresh.length && Math.random() < 0.5 ? fresh[Math.floor(Math.random() * fresh.length)] : pool[Math.floor(Math.random() * pool.length)];
   const isNew = !d.unlocked[r];
-  if (isNew) d.unlocked[r] = 1; else d.cards[r] = (d.cards[r] || 0) + 1;
+  if (isNew) { d.unlocked[r] = 1; d.newRunes[r] = 1; } else d.cards[r] = (d.cards[r] || 0) + 1;
   return { r, rar, isNew };
 }
 // how: 'free' | 'key' | 'one' | 'ten' → 결과 배열 (실패면 null)

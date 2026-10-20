@@ -1,12 +1,12 @@
 // 비행 화면: core/run.js 시뮬레이션을 고정 간격으로 돌리고, 상태(s)와 사건(events)을 그림·소리로 옮긴다.
-import { W, H } from '../config.js';
-import { Run, LANE_W, LANES, ITEM_TIME, ZONE_EVERY } from '../core/run.js';
-import { decideX } from '../core/ai.js';
-import { txt, fmt, fit, iconButton, button, popup } from '../ui.js';
-import { audio } from '../audio.js';
-import { load, save } from '../save.js';
-import { wind, tipOf, ELEMENT } from '../fx.js';
-import { ZONES, BOSS_NAME, ITEM_NAME, REVIVE_COST, BOOSTERS, pay } from '../meta.js';
+import { W, H } from '../config.js?v=0.8.4';
+import { Run, LANE_W, LANES, ITEM_TIME, ZONE_EVERY } from '../core/run.js?v=0.8.4';
+import { decideX } from '../core/ai.js?v=0.8.4';
+import { txt, fmt, fit, iconButton, button, popup } from '../ui.js?v=0.8.4';
+import { audio } from '../audio.js?v=0.8.4';
+import { load, save } from '../save.js?v=0.8.4';
+import { wind, tipOf, ELEMENT } from '../fx.js?v=0.8.4';
+import { ZONES, BOSS_NAME, ITEM_NAME, REVIVE_COST, BOOSTERS, pay } from '../meta.js?v=0.8.4';
 
 const DT = 1 / 60;
 const SHOT_KEY = { star: 'bolt_star', fire: 'bolt_fire', ice: 'bolt_ice', bolt: 'bolt_bolt', furball: 'furball' };

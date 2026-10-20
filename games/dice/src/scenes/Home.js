@@ -1,10 +1,10 @@
 // 홈: 생존 원정 · 오늘의 도전 · 덱 · 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js';
-import { audio } from '../audio.js';
-import { load } from '../save.js';
-import * as M from '../meta.js';
-import { RUNES } from '../core/sim.js';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.8.4';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.4';
+import { audio } from '../audio.js?v=0.8.4';
+import { load } from '../save.js?v=0.8.4';
+import * as M from '../meta.js?v=0.8.4';
+import { RUNES } from '../core/sim.js?v=0.8.4';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -46,6 +46,7 @@ export class HomeScene extends Phaser.Scene {
     d.deck.forEach((r, i) => { const x = 130 + i * 116; this.add.image(x, ky + 20, `die_${r}`).setDisplaySize(100, 100); this.add.image(x, ky + 20, `rune_${r}`).setDisplaySize(56, 56); T(this, x, ky + 86, `★${d.tiers[r] || 1}`, 22, C.sub, { w: 800 }); });
     const dot = (x, y) => { const c = this.add.circle(x, y, 13, 0xFF5A7A).setStrokeStyle(3, 0x0B1026); this.tweens.add({ targets: c, scale: 1.25, duration: 500, yoyo: true, repeat: -1 }); };
     btn(this, W - 180, ky - 62, 260, 84, '룬 컬렉션', () => this.go('Deck'), { style: 'ghost', icon: 'i_grid', size: 28 });
+    if (M.hasNew()) dot(W - 62, ky - 90);
     btn(this, W - 180, ky + 30, 260, 84, '룬 제단', () => this.go('Altar'), { style: 'indigo', icon: 'i_star', size: 30 });
     if (M.freeToday() || d.keys > 0 || d.legendTix > 0) dot(W - 62, ky + 2);
     btn(this, W - 180, ky + 122, 260, 84, `보상 길 ${M.road().level}`, () => this.go('Road'), { style: 'gold', icon: 'i_crown', size: 28 });

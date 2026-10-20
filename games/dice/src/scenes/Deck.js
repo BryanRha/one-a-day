@@ -1,10 +1,10 @@
 // 룬 컬렉션: 덱 3개(프리셋) · 칸 골라 룬 넣기 · 덱 조합 보너스 · 24룬 (희귀도) · 카드+수정으로 등급업
-import { W, H } from '../config.js';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js';
-import { audio } from '../audio.js';
-import { load } from '../save.js';
-import * as M from '../meta.js';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js';
+import { W, H } from '../config.js?v=0.8.4';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.4';
+import { audio } from '../audio.js?v=0.8.4';
+import { load } from '../save.js?v=0.8.4';
+import * as M from '../meta.js?v=0.8.4';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js?v=0.8.4';
 
 export const DESC = {
   flame: '맞은 적 주변까지 불태워요', frost: '맞은 적을 느리게 해요', storm: '근처 적 둘에게 번개가 이어져요', venom: '독이 쌓여 계속 피해를 줘요',
@@ -72,12 +72,14 @@ export class DeckScene extends Phaser.Scene {
       T(this, x - cw / 2 + 16, y - ch / 2 + 32, `★${t}`, 22, inDeck ? C.gold : C.sub, { ox: 0, w: 900 });
       if (ready) { const up = T(this, x + cw / 2 - 18, y - ch / 2 + 32, '▲', 24, C.green, { ox: 1, w: 900 }); this.tweens.add({ targets: up, y: up.y - 6, duration: 500, yoyo: true, repeat: -1 }); }
     } else T(this, x, y + ch * 0.38, RARITY_NAME[rar], 20, hex(col), { w: 800 });
+    if (d.newRunes[r]) { const tg = this.add.graphics(); tg.fillStyle(0xFF5A9A, 1).fillRoundedRect(x + cw / 2 - 76, y - ch / 2 + 16, 64, 30, 15); const nt = T(this, x + cw / 2 - 44, y - ch / 2 + 31, 'NEW', 18, '#FFFFFF', { w: 900, shadow: false }); this.tweens.add({ targets: [tg, nt], alpha: 0.55, duration: 600, yoyo: true, repeat: -1 }); }
     const z = this.add.zone(x, y, cw, ch).setInteractive({ useHandCursor: true });
     z.on('pointerup', () => { audio.play('sfx_click', { volume: 0.5 }); this.detail(r); });
   }
   detail(r) {
+    const wasNew = !!load().newRunes[r]; M.seen(r);
     const d = load(), own = d.unlocked[r], t = d.tiers[r] || 1, rar = RARITY[r], col = RARITY_COLOR[rar];
-    const p = popup(this, null, 860, 980), c = p.content;
+    const p = popup(this, null, 860, 980, wasNew ? { onClose: () => this.scene.restart({ slot: this.slot }) } : {}), c = p.content;
     const glow = this.add.image(0, -300, 'glow').setTint(RUNES[r].color).setBlendMode('ADD').setScale(3).setAlpha(0.45); c.add(glow);
     c.add(this.add.image(0, -300, `die_${r}`).setDisplaySize(220, 220).setAlpha(own ? 1 : 0.4));
     c.add(this.add.image(0, -300, `rune_${r}`).setDisplaySize(128, 128).setAlpha(own ? 1 : 0.4));

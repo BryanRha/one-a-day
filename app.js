@@ -5,7 +5,7 @@ import * as I from './install.js';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.8.3';
+const VERSION = '0.8.4';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -187,7 +187,7 @@ function play(id) {
   R.recordPlay(id);
   frame = document.createElement('iframe');
   frame.id = 'frame'; frame.title = G(id).title; frame.allow = 'autoplay; fullscreen; vibrate';
-  frame.src = G(id).path;
+  frame.src = `${G(id).path}${G(id).path.includes('?') ? '&' : '?'}v=${VERSION}`;
   player.prepend(frame);
   player.hidden = false;
   document.body.style.overflow = 'hidden';

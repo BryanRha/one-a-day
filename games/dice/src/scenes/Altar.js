@@ -1,10 +1,10 @@
 // 룬 제단 (뽑기): 게임에서 번 수정·열쇠·매일 무료 1회로만 · 확률 공개 · 천장 · 10회 영웅 보장 · 중복은 등급업 카드
-import { W, H } from '../config.js';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js';
-import { audio } from '../audio.js';
-import { load } from '../save.js';
-import * as M from '../meta.js';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js';
+import { W, H } from '../config.js?v=0.8.4';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.8.4';
+import { audio } from '../audio.js?v=0.8.4';
+import { load } from '../save.js?v=0.8.4';
+import * as M from '../meta.js?v=0.8.4';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.8.4';
 
 const hex = n => '#' + n.toString(16).padStart(6, '0');
 
@@ -96,7 +96,8 @@ export class AltarScene extends Phaser.Scene {
       const ey = top + (n === 1 ? chh / 2 + 90 : chh * 1.5 + 30 + 90);
       if (best === 3) L.add(T(this, W / 2, ey, '전설 룬!', 56, C.gold, { w: 900, ls: 4 }));
       else if (nw) L.add(T(this, W / 2, ey, `새 룬 ${nw}개!`, 48, C.gold, { w: 900 }));
-      const ok = btn(this, W / 2, ey + 150, 460, 130, '확인', () => { L.destroy(); this.busy = false; this.refresh(); }, { style: 'gold', size: 42 }); L.add(ok);
+      const ok = btn(this, nw ? W / 2 - 240 : W / 2, ey + 150, 440, 130, '확인', () => { L.destroy(); this.busy = false; this.refresh(); }, { style: nw ? 'ghost' : 'gold', size: 40 }); L.add(ok);
+      if (nw) L.add(btn(this, W / 2 + 240, ey + 150, 440, 130, '덱에 넣으러', () => this.go('Deck'), { style: 'gold', icon: 'i_grid', size: 36 }));
     });
   }
   shop() {

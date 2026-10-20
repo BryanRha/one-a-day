@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.10.1';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.1';
-import { audio } from '../audio.js?v=0.10.1';
-import { load, save } from '../save.js?v=0.10.1';
-import * as M from '../meta.js?v=0.10.1';
-import { inOAD, exitToOAD } from '../oad.js?v=0.10.1';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.1';
-import { AI, apply } from '../core/ai.js?v=0.10.1';
-import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.1';
-import { MAPS } from '../core/maps.js?v=0.10.1';
+import { W, H } from '../config.js?v=0.10.2';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.10.2';
+import { audio } from '../audio.js?v=0.10.2';
+import { load, save } from '../save.js?v=0.10.2';
+import * as M from '../meta.js?v=0.10.2';
+import { inOAD, exitToOAD } from '../oad.js?v=0.10.2';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.10.2';
+import { AI, apply } from '../core/ai.js?v=0.10.2';
+import { UNITS, UNIT_ORDER, TERRAIN, COS } from '../core/data.js?v=0.10.2';
+import { MAPS } from '../core/maps.js?v=0.10.2';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -358,14 +358,16 @@ export class PlayScene extends Phaser.Scene {
       if (UNITS[u.type].indirect && (v.x !== u.x || v.y !== u.y)) continue;
       for (let dx = -r[1]; dx <= r[1]; dx++) for (let dy = -r[1]; dy <= r[1]; dy++) { const dd = Math.abs(dx) + Math.abs(dy); if (dd >= r[0] && dd <= r[1]) atk.add(`${v.x + dx},${v.y + dy}`); }
     }
-    for (const k of atk) { const [x, y] = k.split(',').map(Number); if (!this.s.tile(x, y)) continue; const e = this.s.unitAt(x, y); if (e && e.p !== u.p) this.mark(x, y, 0xFF5040, 0.5, true); else if (UNITS[u.type].indirect && !this.reach.get(k)) this.mark(x, y, 0xFF5040, 0.16); }
+    for (const k of atk) { const [x, y] = k.split(',').map(Number); if (!this.s.tile(x, y)) continue; const e = this.s.unitAt(x, y); if (e && e.p !== u.p) this.mark(x, y, 0xFF5040, 0.5, true); else if (UNITS[u.type].indirect) { const r = this.mark(x, y, 0xFF5040, 0, true); r.setStrokeStyle(3, 0xFF5040, 0.6); } }
     const sel = this.mark(u.x, u.y, 0xFFE27A, 0, true); this.tweens.add({ targets: sel, alpha: 0.4, duration: 400, yoyo: true, repeat: -1 });
     // 제자리에서 바로 쏠 수 있으면 [공격] 버튼 (원거리 무기는 움직이지 않아야 쏠 수 있음)
     const here = this.s.targets(u, u.x, u.y, false), list = [];
+    const R0 = this.s.rangeOf(u);
     if (here.length) list.push(['공격', () => { this.ghost = [u.x, u.y]; this.toAct(); this.toTarget(); }, 'red']);
+    else if (UNITS[u.type].indirect) list.push(['공격', () => toast(this, `사거리 ${R0[0]}~${R0[1]}칸 안에 적이 없어요 · 빨간 테두리 칸에 적이 오면 쏠 수 있어요`, C.sub, TOP + 60), 'ghost']);
     list.push(['취소', () => this.cancelSel(), 'ghost']);
     this.setActs(list);
-    if (UNITS[u.type].indirect) toast(this, here.length ? '사거리 안의 적을 바로 공격할 수 있어요' : '원거리 무기는 이동한 턴엔 못 쏴요 · 다음 턴을 위해 자리를 잡아요', C.sub, TOP + 60);
+    if (UNITS[u.type].indirect) toast(this, here.length ? '[공격]을 누르면 바로 포격해요' : '빨간 테두리 = 사거리 · 움직이면 이번 턴엔 못 쏴요', C.sub, TOP + 60);
   }
   showEnemyRange(u) {
     this.clearHl(); const r = this.s.rangeOf(u); if (!r) return;

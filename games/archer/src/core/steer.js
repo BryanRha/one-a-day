@@ -1,5 +1,5 @@
 // 자동 조종 (봇·브라우저 자동 시험 공용)
-import { AW, AH, CELL } from './sim.js?v=0.17.6';
+import { AW, AH, CELL } from './sim.js?v=0.17.7';
 // 칸 단위 길찾기 (BFS) → 다음 칸 중심 방향
 export function pathTo(s, p, tx, ty) {
   const C0 = [Math.floor(p.x / CELL), Math.floor(p.y / CELL)], W = s.grid[0].length, H = s.grid.length, prev = new Map(), q = [[tx, ty]], key = (x, y) => x + ',' + y;

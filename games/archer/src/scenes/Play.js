@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.6';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.6';
-import { audio } from '../audio.js?v=0.17.6';
-import { load, save } from '../save.js?v=0.17.6';
-import { pushBack } from '../oad.js?v=0.17.6';
-import * as M from '../meta.js?v=0.17.6';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.6';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.6';
+import { W, H } from '../config.js?v=0.17.7';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.7';
+import { audio } from '../audio.js?v=0.17.7';
+import { load, save } from '../save.js?v=0.17.7';
+import { pushBack } from '../oad.js?v=0.17.7';
+import * as M from '../meta.js?v=0.17.7';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.7';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.7';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -140,9 +140,9 @@ export class PlayScene extends Phaser.Scene {
     else this.npcV = null;
     // 영웅
     if (!this.heroV) {
-      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 80, 26, 0x000000, 0.35); const im = this.add.image(0, -18, `hd_${this.heroK}_4`).setOrigin(0.5, 0.5); im.setScale(132 / im.height); im.base = im.scale;
-      const ring = this.add.ellipse(0, 6, 92, 32, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
-      const hpB = this.add.rectangle(-55, -105, 110, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-55, -105, 110, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -128, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); const aura = this.add.circle(0, 6, 480 * this.k, 0x8AF07A, 0.05).setStrokeStyle(3, 0x8AF07A, 0.25).setVisible(!!s.fx['fang.armor']); const shd = this.add.circle(0, -18, 78, 0xFF8A3A, 0.18).setStrokeStyle(5, 0xFFB050, 0.8).setVisible(false); hv.add([aura, sh, ring, im, shd, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT, shd }); this.heroV = hv;
+      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 68, 22, 0x000000, 0.35); const im = this.add.image(0, -18, `hd_${this.heroK}_4`).setOrigin(0.5, 0.5); im.setScale(108 / im.height); im.base = im.scale;
+      const ring = this.add.ellipse(0, 6, 80, 28, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
+      const hpB = this.add.rectangle(-50, -92, 100, 12, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-50, -92, 100, 12, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -112, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); const aura = this.add.circle(0, 6, 480 * this.k, 0x8AF07A, 0.05).setStrokeStyle(3, 0x8AF07A, 0.25).setVisible(!!s.fx['fang.armor']); const shd = this.add.circle(0, -18, 78, 0xFF8A3A, 0.18).setStrokeStyle(5, 0xFFB050, 0.8).setVisible(false); hv.add([aura, sh, ring, im, shd, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT, shd }); this.heroV = hv;
     }
     if (!this.dropL || !this.dropL.active) this.dropL = this.add.container(0, 0); this.world.add(this.dropL); this.world.add(this.heroV); if (!this.arrowL || !this.arrowL.active) this.arrowL = this.add.container(0, 0); this.world.add(this.arrowL); this.world.bringToTop(this.arrowL); this.world.add(this.fxL); this.world.bringToTop(this.fxL);
     for (const m of s.mons) this.monView(m);
@@ -150,7 +150,7 @@ export class PlayScene extends Phaser.Scene {
   }
   monView(m) {
     const B = m.boss ? BOSSES[m.type] : MONS[m.type], v = this.add.container(m.x * this.k, m.y * this.k);
-    const sz = (m.boss ? B.sz * 0.95 : B.sz * (m.sz || 1) * 0.95) * this.k;
+    const sz = (m.boss ? B.sz * 0.95 : B.sz * (m.sz || 1) * 0.88) * this.k;   // 원작 비율: 일반 몬스터 ≈ 영웅 크기 · 보스 ≈ 영웅 3배
     const sh = this.add.ellipse(0, sz * 0.36, sz * 0.7, sz * 0.2, 0x000000, 0.35);
     const im = this.add.image(0, 0, m.boss ? B.key.replace('b_', 'bt_') : B.key); im.setScale(sz / Math.max(im.width, im.height));
     const w0 = sz * 0.7, hp = this.add.container(-w0 / 2, -sz * 0.6).setVisible(false); hp.add([this.add.rectangle(0, 0, w0, 10, 0x000000, 0.6).setOrigin(0, 0.5), this.add.rectangle(0, 0, w0, 10, 0xFF5A4A).setOrigin(0, 0.5)]); hp.w0 = w0;
@@ -187,19 +187,21 @@ export class PlayScene extends Phaser.Scene {
     const fx = Math.cos(hv.ang), fy = Math.sin(hv.ang), th = Math.atan2(fy, Math.abs(fx)), raw = (Math.PI / 2 - th) / (Math.PI / 4);
     let di = hv.di ?? 0; if (Math.abs(raw - di) > 0.62) di = Math.round(raw);   // 경계에서 깜빡이지 않게 여유
     const flip = di === 0 || di === 4 ? hv.im.flipX : fx < 0;
-    if (di !== hv.di) { hv.di = di; hv.im.setTexture(`hd_${this.heroK}_${di}`); hv.im.base = 132 / hv.im.height; }
+    // 움직이면 그 방향 달리기 6장(초당 12장) · 멈추면 겨누는 그림
+    hv.di = di; const run = p.moving, key = run ? `hr_${this.heroK}_${di}_${Math.floor(this.time.now / 83) % 6}` : `hd_${this.heroK}_${di}`;
+    if (hv.im.texture.key !== key) { hv.im.setTexture(key); hv.im.base = (run ? 114 : 108) / hv.im.height; }
     if (flip !== hv.im.flipX) hv.im.setFlipX(flip);
     hv.im.setAlpha(p.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.45 : 1);
     // 걷기: 통통 튀지 않게 — 아주 작은 상하(1.5px)와 좌우 흔들림만 · 쏠 때 반동
     hv.walk = Phaser.Math.Linear(hv.walk || 0, p.moving ? 1 : 0, Math.min(1, dt * 10)); const ph = this.time.now / 110;
-    hv.im.y = -18 - Math.abs(Math.sin(ph)) * 1.5 * hv.walk; hv.im.rotation = Math.sin(ph) * 0.05 * hv.walk;
+    hv.im.y = -18; hv.im.rotation = 0;
     hv.im.scaleX = hv.im.base * (1 - (hv.recoil || 0) * 0.06); hv.im.scaleY = hv.im.base * (1 + (hv.recoil || 0) * 0.04);
     hv.recoil = Math.max(0, (hv.recoil || 0) - dt * 8);
     if (p.moving && (this.dustT = (this.dustT || 0) - dt) <= 0) { this.dustT = 0.12; const d = this.add.image(p.x * k, p.y * k + 18, 'glow').setTint(0xC8C0A8).setAlpha(0.35).setScale(0.25).setDepth(p.y - 2); this.world.add(d); this.tweens.add({ targets: d, alpha: 0, scale: 0.5, duration: 380, onComplete: () => d.destroy() }); }
     if (this.spikeV && this.spikeV.length) { const key = s.spikeUp ? 'spk2' : s.spikeWarn && Math.floor(this.time.now / 120) % 2 ? 'spk1' : 'spk0'; if (this.spikeV[0].texture.key !== key) this.spikeV.forEach(im => im.setTexture(key)); }
     hv.ring.setStrokeStyle(4, s.mons.length ? 0xFF8A70 : 0x8AE8FF, 0.8); hv.shd.setVisible(s.shield > 0);
     if (hv.lastHp !== p.hp) { hv.lastHp = p.hp; hv.hpT.setText(`${Math.ceil(p.hp)}`); }
-    hv.hp.width = Math.max(2, 110 * p.hp / p.maxHp); hv.hp.fillColor = p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A;
+    hv.hp.width = Math.max(2, 100 * p.hp / p.maxHp); hv.hp.fillColor = p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A;
     // 몬스터
     for (const m of s.mons) {
       let v = this.views.get(m.id); if (!v) v = this.monView(m);

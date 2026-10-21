@@ -1,7 +1,7 @@
 // 사진관 UI: 크림색 인화지 패널 · 짙은 나무색 · 금박 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.19.0';
-import { audio } from './audio.js?v=0.19.0';
-import { pushBack } from './oad.js?v=0.19.0';
+import { W, H } from './config.js?v=0.19.1';
+import { audio } from './audio.js?v=0.19.1';
+import { pushBack } from './oad.js?v=0.19.1';
 
 export const C = { ink: '#2B1E14', text: '#FFF8EC', cream: '#F6EBD6', paper: '#FBF4E6', brown: '#5A3E2B', sub: '#B9A58C', dim: '#8A7966', gold: '#E9B44C', red: '#D9573B', green: '#6FAE5A', blue: '#4E86C6' };
 export const FONT = 'Pretendard, sans-serif';

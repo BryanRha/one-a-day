@@ -1,10 +1,10 @@
 // 사진관: 오늘의 손님(오늘의 사진) · 사진 벽(앨범) · 연속 방문 · 별 · 물건 도감
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.19.0';
-import { T, C, btn, iconBtn, panel, popup, stars, toast } from '../ui.js?v=0.19.0';
-import { audio } from '../audio.js?v=0.19.0';
-import { load, save } from '../save.js?v=0.19.0';
-import { SCENES } from '../content.js?v=0.19.0';
-import * as M from '../meta.js?v=0.19.0';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.19.1';
+import { T, C, btn, iconBtn, panel, popup, stars, toast } from '../ui.js?v=0.19.1';
+import { audio } from '../audio.js?v=0.19.1';
+import { load, save } from '../save.js?v=0.19.1';
+import { SCENES } from '../content.js?v=0.19.1';
+import * as M from '../meta.js?v=0.19.1';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -21,7 +21,7 @@ export class HomeScene extends Phaser.Scene {
     // 오늘의 손님 카드
     const cy = H * 0.5 + 40, ch = 700;
     this.add.existing(panel(this, W / 2, cy, 940, ch));
-    T(this, W / 2, cy - ch / 2 + 60, '오늘의 손님', 28, C.dim, { w: 800, ls: 4 });
+    T(this, W / 2, cy - ch / 2 + 60, rec ? '다시 보고 싶은 사진' : '기다리는 손님', 28, C.dim, { w: 800, ls: 4 });
     // 사진 미리보기 (액자)
     const pw = today.kind === 'ho' ? 300 : 420, ph = pw * today.h / today.w, px = W / 2 - 230, py = cy - 40;
     this.add.rectangle(px, py, pw + 24, ph + 24, 0xFFFFFF).setStrokeStyle(2, 0xB39A78);
@@ -39,7 +39,7 @@ export class HomeScene extends Phaser.Scene {
     const by = H - 150;
     btn(this, W / 2 - 230, by, 420, 120, `사진 벽 ${Object.keys(d.done).length}/${SCENES.length}`, () => this.wall(), { style: 'brown', size: 34 });
     btn(this, W / 2 + 230, by, 420, 120, `물건 도감 ${M.foundCount()}`, () => this.dex(), { style: 'brown', size: 34 });
-    T(this, W / 2, by - 110, n < SCENES.length ? `내일 새 손님이 찾아와요 · 지금까지 ${n}장` : '모든 손님을 만났어요 · 별을 모아보세요', 24, C.cream, { w: 700, shadow: true });
+    T(this, W / 2, by - 110, n < SCENES.length ? `사진을 풀면 다음 손님이 바로 와요 · 지금까지 ${n}장` : '모든 손님을 만났어요 · 별을 모아보세요', 24, C.cream, { w: 700, shadow: true });
     this.cameras.main.fadeIn(300, 20, 12, 6); window.__home = this;
   }
   open(sc) { audio.play('sfx_page', { volume: 0.6 }); this.cameras.main.fadeOut(220, 20, 12, 6); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Guest', { id: sc.id })); }

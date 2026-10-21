@@ -1,9 +1,9 @@
 // 숨은물건 찾기 (June's Journey 방식): 목록 10개 · 시간 제한 없음 · 콤보 점수 · 30초마다 무료 힌트 · 연타 방지
-import { W, H } from '../config.js?v=0.19.0';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.19.0';
-import { audio } from '../audio.js?v=0.19.0';
-import { Viewer } from '../viewer.js?v=0.19.0';
-import * as M from '../meta.js?v=0.19.0';
+import { W, H } from '../config.js?v=0.19.1';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.19.1';
+import { audio } from '../audio.js?v=0.19.1';
+import { Viewer } from '../viewer.js?v=0.19.1';
+import * as M from '../meta.js?v=0.19.1';
 
 export const RULE = { per: 100, comboWin: 4, comboMax: 3, miss: 20, hintEvery: 30, star3: 1800, star2: 1200, spamN: 3, spamT: 2, lockT: 3 };
 

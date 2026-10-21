@@ -1,9 +1,9 @@
 // 틀린그림 찾기 (Guru 방식): 위 원본 · 아래 복원본 · 다른 곳 5개 · 제한 시간 · 빗나가면 -5초 · 힌트 충전 · 시간 다 되면 30초 한 번 더
-import { W, H } from '../config.js?v=0.19.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.19.0';
-import { audio } from '../audio.js?v=0.19.0';
-import { Viewer } from '../viewer.js?v=0.19.0';
-import * as M from '../meta.js?v=0.19.0';
+import { W, H } from '../config.js?v=0.19.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.19.1';
+import { audio } from '../audio.js?v=0.19.1';
+import { Viewer } from '../viewer.js?v=0.19.1';
+import * as M from '../meta.js?v=0.19.1';
 
 export const RULE = { time: 120, miss: 5, hintEvery: 40, extra: 30, star3: 0.5, star2: 0.2, spamN: 3, spamT: 2, lockT: 3 };
 

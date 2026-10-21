@@ -1,6 +1,6 @@
 // 진행: 오늘의 사진(처음 연 날부터 하루 한 장씩 열림) · 별 · 연속 방문 · 물건 도감
-import { load, save } from './save.js?v=0.19.0';
-import { SCENES } from './content.js?v=0.19.0';
+import { load, save } from './save.js?v=0.19.1';
+import { SCENES } from './content.js?v=0.19.1';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const dayNum = k => Math.floor(new Date(k + 'T00:00:00').getTime() / 86400000);
@@ -9,9 +9,13 @@ const dayNum = k => Math.floor(new Date(k + 'T00:00:00').getTime() / 86400000);
 export function unlocked() {
   const d = load(), today = dayKey(); if (!d.start) { d.start = today; save(); }
   if (new URLSearchParams(location.search).has('all')) return SCENES.length;
-  return Math.min(SCENES.length, dayNum(today) - dayNum(d.start) + 1);
+  // 하루 한 장 + 푼 사진 수만큼 다음 손님이 바로 와요 (한 판 끝나면 이어서 계속)
+  const cleared = SCENES.filter(s => d.done[s.id]).length;
+  return Math.min(SCENES.length, Math.max(dayNum(today) - dayNum(d.start) + 1, cleared + 1));
 }
-export const todayScene = () => SCENES[(unlocked() - 1) % SCENES.length];
+// 지금 맞이할 손님: 열린 사진 중 아직 안 푼 첫 사진 (다 풀었으면 별이 가장 적은 사진)
+export const todayScene = () => { const n = unlocked(), open = SCENES.slice(0, n), d = load(); return open.find(s => !d.done[s.id]) || [...open].sort((a, b) => d.done[a.id].stars - d.done[b.id].stars)[0]; };
+export const nextScene = id => { const d = load(); return SCENES.slice(0, unlocked()).find(s => s.id !== id && !d.done[s.id]) || null; };
 export const sceneById = id => SCENES.find(s => s.id === id);
 export const record = id => load().done[id] || null;
 

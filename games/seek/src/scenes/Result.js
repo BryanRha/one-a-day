@@ -1,8 +1,8 @@
 // 결과: 사진이 액자에 담김 · 별 · 점수 · 손님 인사 · 다시/사진관
-import { W, H } from '../config.js?v=0.19.0';
-import { T, C, btn, panel, stars } from '../ui.js?v=0.19.0';
-import { audio } from '../audio.js?v=0.19.0';
-import * as M from '../meta.js?v=0.19.0';
+import { W, H } from '../config.js?v=0.19.1';
+import { T, C, btn, panel, stars } from '../ui.js?v=0.19.1';
+import { audio } from '../audio.js?v=0.19.1';
+import * as M from '../meta.js?v=0.19.1';
 
 const PRAISE = ['완벽해요!', '눈썰미가 대단해요!', '멋지게 찾아냈어요!'];
 export class ResultScene extends Phaser.Scene {
@@ -25,8 +25,16 @@ export class ResultScene extends Phaser.Scene {
     T(this, 110, py + 110, sc.guest, 30, C.brown, { ox: 0, w: 900 });
     T(this, 110, py + 160, sc.bye, 28, C.ink, { ox: 0, oy: 0, w: 700, wrap: 840 });
     const by = Math.min(H - 130, py + 370);
-    btn(this, W / 2 + 160, by, 560, 130, '사진관으로', () => this.go('Home'), { style: 'gold', size: 40 });
-    btn(this, W / 2 - 300, by, 220, 130, '다시', () => this.go(sc.kind === 'ho' ? 'Hidden' : 'Diff', { id: sc.id }), { style: 'cream', size: 36 });
+    const nx = M.nextScene(sc.id);
+    if (nx) {
+      T(this, W / 2, by - 105, `${nx.guest}이(가) 사진을 들고 기다리고 있어요`, 26, C.cream, { w: 800, shadow: true });
+      const nb = btn(this, W / 2 + 120, by, 600, 130, '다음 손님 맞이하기', () => this.go('Guest', { id: nx.id }), { style: 'gold', size: 40 });
+      this.tweens.add({ targets: nb, scale: 1.04, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      btn(this, W / 2 - 330, by, 220, 130, '사진관', () => this.go('Home'), { style: 'cream', size: 34 });
+    } else {
+      btn(this, W / 2 + 160, by, 560, 130, '사진관으로', () => this.go('Home'), { style: 'gold', size: 40 });
+      btn(this, W / 2 - 300, by, 220, 130, '다시', () => this.go(sc.kind === 'ho' ? 'Hidden' : 'Diff', { id: sc.id }), { style: 'cream', size: 36 });
+    }
     this.cameras.main.fadeIn(300, 20, 12, 6); window.__result = r;
   }
   go(k, d) { this.cameras.main.fadeOut(220, 20, 12, 6); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(k, d)); }

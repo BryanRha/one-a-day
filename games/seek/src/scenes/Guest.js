@@ -1,12 +1,13 @@
 // 손님 도착: 사진을 건네며 짧은 이야기 (탭하면 다음 줄) → 게임 시작
-import { W, H } from '../config.js?v=0.19.0';
-import { T, C, btn, panel } from '../ui.js?v=0.19.0';
-import { audio } from '../audio.js?v=0.19.0';
-import * as M from '../meta.js?v=0.19.0';
+import { W, H } from '../config.js?v=0.19.1';
+import { T, C, btn, panel } from '../ui.js?v=0.19.1';
+import { audio } from '../audio.js?v=0.19.1';
+import * as M from '../meta.js?v=0.19.1';
 
 export class GuestScene extends Phaser.Scene {
   constructor() { super('Guest'); }
   create(data) {
+    this.going = false;   // 같은 화면 객체를 다시 쓰므로 매번 초기화
     const sc = this.scn = M.sceneById(data.id), first = !M.record(sc.id);
     const bg = this.add.image(W / 2, H / 2, 'studio'); bg.setScale(Math.max(W / bg.width, H / bg.height)).setTint(0x8A7A6A);
     // 사진이 카운터 위에 놓임

@@ -1,8 +1,8 @@
 // 로딩: 장면 사진 · 사진관 배경 · 효과음 · 코드 텍스처
-import { W, H, TITLE } from '../config.js?v=0.19.0';
-import { SFX } from '../audio.js?v=0.19.0';
-import { SCENES } from '../content.js?v=0.19.0';
-import { makeTextures } from '../ui.js?v=0.19.0';
+import { W, H, TITLE } from '../config.js?v=0.19.1';
+import { SFX } from '../audio.js?v=0.19.1';
+import { SCENES } from '../content.js?v=0.19.1';
+import { makeTextures } from '../ui.js?v=0.19.1';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }

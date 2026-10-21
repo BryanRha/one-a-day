@@ -1,12 +1,12 @@
-import { W, BASE_H, setH } from './config.js?v=0.19.0';
-import { audio } from './audio.js?v=0.19.0';
-import { BootScene } from './scenes/Boot.js?v=0.19.0';
-import { HomeScene } from './scenes/Home.js?v=0.19.0';
-import { GuestScene } from './scenes/Guest.js?v=0.19.0';
-import { HiddenScene } from './scenes/Hidden.js?v=0.19.0';
-import { DiffScene } from './scenes/Diff.js?v=0.19.0';
-import { ResultScene } from './scenes/Result.js?v=0.19.0';
-import { installBack } from './oad.js?v=0.19.0';
+import { W, BASE_H, setH } from './config.js?v=0.19.1';
+import { audio } from './audio.js?v=0.19.1';
+import { BootScene } from './scenes/Boot.js?v=0.19.1';
+import { HomeScene } from './scenes/Home.js?v=0.19.1';
+import { GuestScene } from './scenes/Guest.js?v=0.19.1';
+import { HiddenScene } from './scenes/Hidden.js?v=0.19.1';
+import { DiffScene } from './scenes/Diff.js?v=0.19.1';
+import { ResultScene } from './scenes/Result.js?v=0.19.1';
+import { installBack } from './oad.js?v=0.19.1';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* */ }

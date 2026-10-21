@@ -1,6 +1,6 @@
 // 성장 · 재방문: 장비(6칸 · 등급 11 · 칸 강화 · 대장간 합성) · 은/흑요석 상자(확률 공개 · 천장) · 재능 · 영웅 해금 · 출석 · 오늘의 미션 · 오늘의 던전
-import { load, save } from './save.js?v=0.17.8';
-import { SLOTS, TIERS, MERGE, gearStats as gearStats0, expectedGear, powerOf, upCost, HEROES, CHAPTERS } from './core/data.js?v=0.17.8';
+import { load, save } from './save.js?v=0.17.9';
+import { SLOTS, TIERS, MERGE, gearStats as gearStats0, expectedGear, powerOf, upCost, HEROES, CHAPTERS } from './core/data.js?v=0.17.9';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };

@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.8';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.8';
-import { audio } from '../audio.js?v=0.17.8';
-import { load, save } from '../save.js?v=0.17.8';
-import { pushBack } from '../oad.js?v=0.17.8';
-import * as M from '../meta.js?v=0.17.8';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.8';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.8';
+import { W, H } from '../config.js?v=0.17.9';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.9';
+import { audio } from '../audio.js?v=0.17.9';
+import { load, save } from '../save.js?v=0.17.9';
+import { pushBack } from '../oad.js?v=0.17.9';
+import * as M from '../meta.js?v=0.17.9';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.9';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.9';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -17,7 +17,7 @@ export class PlayScene extends Phaser.Scene {
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 씀)
-    Object.assign(this, { heroV: null, arrowL: null, dropL: null, floorRT: null, fxN: 0, zapN: 0, warnG: null, nums: null, npcV: null, skSig: null, scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
+    Object.assign(this, { cine: 0, heroV: null, arrowL: null, dropL: null, floorRT: null, fxN: 0, zapN: 0, warnG: null, nums: null, npcV: null, skSig: null, scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
     this.daily = !!data.daily;
     const dr = this.daily ? M.dailyRun() : null;
     this.chapter = dr ? dr.chapter : data.chapter || 1;
@@ -26,8 +26,8 @@ export class PlayScene extends Phaser.Scene {
     this.ch = CHAPTERS[this.chapter - 1];
     // 방 크기를 화면 너비에 맞춤 (세로가 넘치면 카메라가 영웅을 따라감)
     // 원작 비율: 경기장 = 화면 폭의 88% (양옆 벽이 보임) · 한 화면에 다 들어옴
-    this.k = Math.min(W * 0.88 / AW, (H - TOP - 90) / AH); this.ox = Math.round((W - AW * this.k) / 2); this.oy = TOP + 40;
-    this.heroH = AW * this.k * 0.105;   // 영웅 키 = 경기장 폭의 10.5%
+    this.k = W * 0.96 / AW; this.ox = Math.round((W - AW * this.k) / 2); this.oy = TOP + 20;   // 원작 1처럼 가깝게: 경기장이 화면 폭을 거의 채우고 세로는 영웅을 따라 움직임
+    this.heroH = W * 0.14;   // 영웅 키 = 화면 폭의 14% (원작 1 비율)
     this.add.rectangle(W / 2, H / 2, W, H * 3, 0x0B0D1E).setScrollFactor(0).setDepth(-10);
     // 경기장 밖 풍경: 같은 바닥을 어둡게 깔아 빈 곳이 없게 (원작은 벽 너머 정원·문이 보임)
     this.add.tileSprite(W / 2, H / 2, W, H * 3, this.ch.tiles[0]).setTileScale(CELL * 0.88 * 1.1 / 256).setTint(0x4A4A5E).setScrollFactor(0).setDepth(-9);
@@ -158,7 +158,7 @@ export class PlayScene extends Phaser.Scene {
   }
   monView(m) {
     const B = m.boss ? BOSSES[m.type] : MONS[m.type], v = this.add.container(m.x * this.k, m.y * this.k);
-    const sz = (m.boss ? B.sz * 0.95 : B.sz * (m.sz || 1) * 0.88) * this.k;   // 원작 비율: 일반 몬스터 ≈ 영웅 크기 · 보스 ≈ 영웅 3배
+    const sz = (m.boss ? B.sz * 1.15 : B.sz * (m.sz || 1) * 1.25) * this.k;   // 원작 1 비율: 일반 몬스터 ≈ 화면 폭 11~13%   // 원작 비율: 일반 몬스터 ≈ 영웅 크기 · 보스 ≈ 영웅 3배
     const sh = this.add.ellipse(0, sz * 0.36, sz * 0.7, sz * 0.2, 0x000000, 0.35);
     const im = this.add.image(0, 0, m.boss ? B.key.replace('b_', 'bt_') : B.key); im.setScale(sz / Math.max(im.width, im.height));
     const w0 = sz * 0.7, hp = this.add.container(-w0 / 2, -sz * 0.6).setVisible(false); hp.add([this.add.rectangle(0, 0, w0, 10, 0x000000, 0.6).setOrigin(0, 0.5), this.add.rectangle(0, 0, w0, 10, 0xFF5A4A).setOrigin(0, 0.5)]); hp.w0 = w0;
@@ -180,6 +180,7 @@ export class PlayScene extends Phaser.Scene {
   update(time, delta) {
     if (this.paused || this.picking || this.ended) return;
     let dt = Math.min(0.05, delta / 1000);
+    if (this.cine > 0) { this.cine -= dt; return; }   // 보스 등장 연출 중엔 멈춤
     if (this.hitStop > 0) { this.hitStop -= dt; dt *= 0.15; }
     const s = this.s, j = this.joy;
     s.step(dt, j ? { mx: j.dx, my: j.dy } : { mx: 0, my: 0 });
@@ -232,6 +233,7 @@ export class PlayScene extends Phaser.Scene {
     for (const w of s.warns || []) {
       const f = 1 - w.t / w.T;
       if (w.k === 'line') { const a = Math.atan2(w.y2 - w.y1, w.x2 - w.x1), L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), m = s.mons.find(o => o.id === w.id); const x1 = (m ? m.x : w.x1) * k, y1 = (m ? m.y : w.y1) * k; wg.fillStyle(0xFF2A2A, 0.18 + f * 0.25); wg.lineStyle(3, 0xFF4A3A, 0.8); const hw = w.w * k / 2, c = Math.cos(a), sn = Math.sin(a), pts = [[x1 - sn * hw, y1 + c * hw], [x1 + c * L * k - sn * hw, y1 + sn * L * k + c * hw], [x1 + c * L * k + sn * hw, y1 + sn * L * k - c * hw], [x1 + sn * hw, y1 - c * hw]]; wg.fillPoints(pts.map(([x, y]) => ({ x, y })), true); wg.lineBetween(x1, y1, x1 + c * L * k, y1 + sn * L * k); }
+      else if (w.k === 'spawn') { const x = w.x * k, y = w.y * k, r = w.r * k * (0.7 + 0.3 * Math.sin(f * Math.PI * 4)); wg.fillStyle(0xFF2A2A, 0.25 + f * 0.3).fillCircle(x, y, r).lineStyle(4, 0xFF5A3A, 0.9).strokeCircle(x, y, w.r * k); wg.fillStyle(0xFFFFFF, 0.9).fillCircle(x, y - 4, r * 0.42).fillRect(x - r * 0.22, y + r * 0.1, r * 0.44, r * 0.26).fillStyle(0x6A0A0A, 1).fillCircle(x - r * 0.16, y - 6, r * 0.11).fillCircle(x + r * 0.16, y - 6, r * 0.11); }   // 해골 표시
       else { wg.fillStyle(0xFF2A2A, 0.15).fillCircle(w.x * k, w.y * k, w.r * k).fillStyle(0xFF3A2A, 0.35).fillCircle(w.x * k, w.y * k, w.r * k * f).lineStyle(4, 0xFF5A3A, 0.9).strokeCircle(w.x * k, w.y * k, w.r * k); }
     }
     // 화살 (풀링)
@@ -276,7 +278,7 @@ export class PlayScene extends Phaser.Scene {
         this.burst(e.x * k, e.y * k, e.boss ? 40 : 14, 0xFFE8A0);
         audio.play('sfx_kill', { volume: 0.5, gap: 50 });
         if (e.boss) { this.cameras.main.shake(400, 0.012); this.cameras.main.flash(200, 255, 240, 200); this.hitStop = 0.4; }
-      } else if (e.type === 'shoot') { audio.play('sfx_shoot', { volume: 0.25, gap: 70 }); this.heroV.recoil = 1; }
+      } else if (e.type === 'shoot') { audio.play('sfx_shoot', { volume: 0.32, gap: 90, detune: (Math.random() - 0.5) * 240 }); this.heroV.recoil = 1; }
       else if (e.type === 'boom') { audio.play('sfx_fire', { volume: 0.6 }); this.cameras.main.shake(180, 0.01); this.burst(e.x * k, e.y * k, 26, 0xFF8A3A); const r = this.add.circle(e.x * k, e.y * k, e.r * k, 0xFFB050, 0.5).setDepth(3800); this.world.add(r); this.tweens.add({ targets: r, alpha: 0, scale: 1.2, duration: 300, onComplete: () => r.destroy() }); }
       else if (e.type === 'loot') { audio.play('sfx_chest', { volume: 0.5 }); const sc = e.kind === 'scroll', col = sc ? 0x8AE8FF : TIERS[e.t].col, lb = T(this, e.x * k, e.y * k - 80, sc ? `강화 두루마리 +${e.n}` : `${TIERS[e.t].name} · ${itemName(e)}`, 28, '#' + col.toString(16).padStart(6, '0'), { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4100); this.world.add(lb); this.tweens.add({ targets: lb, y: lb.y - 50, alpha: 0, delay: 900, duration: 700, onComplete: () => lb.destroy() }); }
       else if (e.type === 'blast') { if ((this.fxN || 0) < 60) { const r = this.add.circle(e.x * k, e.y * k, e.r * k, e.plain ? 0x9AE8FF : 0xFFA040, 0.28).setStrokeStyle(5, e.plain ? 0xCFF4FF : 0xFFD080, 0.9); this.fxL.add(r); r.setScale(0.4); this.tweens.add({ targets: r, scale: 1, alpha: 0, duration: 260, onComplete: () => r.destroy() }); this.burst(e.x * k, e.y * k, 6, e.plain ? 0x9AE8FF : 0xFF8A3A); } audio.play('sfx_fire', { volume: 0.25, gap: 90 }); }
@@ -292,7 +294,7 @@ export class PlayScene extends Phaser.Scene {
       else if (e.type === 'levelup') { this.pending.push(['levelup', e.lvl]); }
       else if (e.type === 'cleared') { /* 원작 2: 능력은 레벨 업 때만 (방을 깰 때는 없음) */ }
       else if (e.type === 'room') this.onRoom(e);
-      else if (e.type === 'boss') { audio.play('sfx_boss', { volume: 0.8 }); if (!e.mid) audio.music('bgm_boss'); this.banner(e.mid ? '우두머리 등장' : '보스 등장', e.name, '#FF8A70'); }
+      else if (e.type === 'boss') { audio.play('sfx_boss', { volume: 0.8 }); if (!e.mid) { audio.music('bgm_boss'); this.bossIntro(e.name); } else this.banner('우두머리 등장', e.name, '#FF8A70'); }
       else if (e.type === 'bossatk') { const b = s.mons.find(m => m.boss); const v = b && this.views.get(b.id); if (v) this.tweens.add({ targets: v.im, scale: v.im.scale * 1.12, duration: 120, yoyo: true }); if (e.pat === 'slam') this.cameras.main.shake(200, 0.01); }
       else if (e.type === 'dead') this.onDead();
       else if (e.type === 'clear') this.onClear();
@@ -340,6 +342,18 @@ export class PlayScene extends Phaser.Scene {
   float(x, y, s, col) { const t = T(this, x, y, s, 34, col, { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4000); this.world.add(t); this.tweens.add({ targets: t, y: y - 60, alpha: 0, duration: 800, onComplete: () => t.destroy() }); }
   burst(x, y, n, col) { this.fxN ||= 0; n = Math.min(n, Math.max(0, 70 - this.fxN)); if (n > 16) n = 16 + Math.floor((n - 16) / 2); for (let i = 0; i < n; i++) { this.fxN++; const p = this.add.image(x, y, i % 2 ? 'spark' : 'glow').setTint(col).setBlendMode('ADD').setScale(0.3 + Math.random() * 0.3).setDepth(3900); this.fxL.add(p); const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 90; this.tweens.add({ targets: p, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, alpha: 0, scale: 0, duration: 350 + Math.random() * 250, onComplete: () => { p.destroy(); this.fxN--; } }); } }
   zap(x1, y1, x2, y2) { this.zapN ||= 0; if (this.zapN >= 4) return; this.zapN++; audio.play('sfx_zap', { volume: 0.3, gap: 80 }); const g = this.add.graphics().setDepth(3950); this.fxL.add(g); g.lineStyle(5, 0xFFF06A, 1).beginPath(); g.moveTo(x1, y1); for (let i = 1; i < 6; i++) g.lineTo(x1 + (x2 - x1) * i / 6 + (Math.random() - 0.5) * 30, y1 + (y2 - y1) * i / 6 + (Math.random() - 0.5) * 30); g.lineTo(x2, y2); g.strokePath(); this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => { g.destroy(); this.zapN--; } }); }
+  // 보스 등장: 어둡게 · 위아래 빨간 WARNING 띠가 흐름 · 보스 그림과 이름이 들어옴 (2초, 그동안 전투 멈춤)
+  bossIntro(name) {
+    this.cine = 2.1; this.joyUp(); const B = BOSSES[this.ch.boss], root = this.add.container(0, 0).setDepth(940).setScrollFactor(0);
+    const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x05040C, 0.7); root.add(dim);
+    for (const [y, dir] of [[H * 0.22, 1], [H * 0.66, -1]]) { const band = this.add.container(0, y); band.add(this.add.rectangle(W / 2, 0, W * 3, 90, 0xC81E1E, 0.92)); for (let i = -6; i < 12; i++) band.add(T(this, i * 330, 0, 'WARNING', 44, '#FFE0D0', { w: 900, ls: 8 })); root.add(band); this.tweens.add({ targets: band, x: dir * 330, duration: 2100 }); }
+    const im = this.add.image(W + 400, H * 0.44, B.key); im.setScale(Math.min(620 / im.width, 620 / im.height)); root.add(im);
+    this.tweens.add({ targets: im, x: W / 2, duration: 420, ease: 'Back.easeOut' });
+    const tag = T(this, W / 2, H * 0.6 - 30, 'BOSS', 34, '#FF8A70', { w: 900, ls: 14 }), nm = T(this, W / 2, H * 0.6 + 30, name, 68, '#FFFFFF', { w: 900, stroke: '#3A0A0A', thick: 12 });
+    root.add([tag, nm]); tag.setAlpha(0); nm.setAlpha(0).setScale(1.4); this.tweens.add({ targets: [tag, nm], alpha: 1, scale: 1, duration: 300, delay: 300 });
+    this.cameras.main.shake(300, 0.006);
+    this.time.delayedCall(1750, () => this.tweens.add({ targets: root, alpha: 0, duration: 350, onComplete: () => root.destroy() }));
+  }
   banner(title, sub, col, hold = 900) {
     const c = this.add.container(W / 2, H * 0.4).setDepth(900).setScrollFactor(0).setAlpha(0);
     c.add([this.add.rectangle(0, 0, W, 170, 0x0B0D1E, 0.75), T(this, 0, -16, title, 62, C.text, { w: 900, ls: 2, stroke: '#14102A', thick: 8 }), T(this, 0, 50, sub, 28, col, { w: 800 })]);

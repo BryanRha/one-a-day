@@ -1,12 +1,12 @@
 // 로비: 마녀 선택·강화 · 고양이(입양/성장/장착/산책) · 부스터 · 미션 · 출석 · 업적 · 주간 랭킹 · 상점 · 설정 → 출발
-import { W, H } from '../config.js?v=0.17.8';
-import { txt, fmt, fit, button, iconButton, currencyBar, popup, toast, rewardText, scrollArea } from '../ui.js?v=0.17.8';
-import { audio } from '../audio.js?v=0.17.8';
-import { load, save, reset } from '../save.js?v=0.17.8';
-import { CATS } from '../core/run.js?v=0.17.8';
-import * as M from '../meta.js?v=0.17.8';
-import { wind, ELEMENT } from '../fx.js?v=0.17.8';
-import { WITCHES } from '../core/run.js?v=0.17.8';
+import { W, H } from '../config.js?v=0.17.9';
+import { txt, fmt, fit, button, iconButton, currencyBar, popup, toast, rewardText, scrollArea } from '../ui.js?v=0.17.9';
+import { audio } from '../audio.js?v=0.17.9';
+import { load, save, reset } from '../save.js?v=0.17.9';
+import { CATS } from '../core/run.js?v=0.17.9';
+import * as M from '../meta.js?v=0.17.9';
+import { wind, ELEMENT } from '../fx.js?v=0.17.9';
+import { WITCHES } from '../core/run.js?v=0.17.9';
 
 export class LobbyScene extends Phaser.Scene {
   constructor() { super('Lobby'); }

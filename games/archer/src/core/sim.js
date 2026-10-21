@@ -1,9 +1,9 @@
 // 전투 규칙 (화면과 무관): 방 · 영웅 이동/자동 사격 · 화살 · 몬스터 AI · 적 탄 · 능력 · 레벨업
 // 좌표는 방 안의 픽셀 (가로 AW × 세로 AH). 한 칸 = CELL.
-import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.8';
+import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.9';
 
 // 밸런스 조절값 (봇으로 찾음): 장 안에서 방마다 몬스터 체력 증가 · 9번 방 이후 공격 증가 · 보스 체력 배율
-export const TUNE = { hpRamp: 0.08, dmgLate: 0.03, boss: [5, 6, 7] };
+export const TUNE = { hpRamp: 0.08, dmgLate: 0.03, boss: [4, 5.4, 6.2] };
 export const CELL = 120, COLS = 9, ROWS = 16, AW = CELL * COLS, AH = CELL * ROWS;   // 세로 화면에 맞춘 방 (9 × 16)
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const d2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
@@ -55,7 +55,7 @@ export class Sim {
     this.sk = {};   // 능력 이름 → 중첩 수
     if (o.hero === 'theo') this.sk.fire = 1;
     if (o.hero === 'yuna') this.sk.frost = 1;
-    this.p = { x: AW / 2, y: AH - CELL * 1.5, r: 30, hp: this.base.hp, maxHp: this.base.hp, inv: 0, cd: 0, moving: false, face: -Math.PI / 2 };
+    this.p = { x: AW / 2, y: AH - CELL * 1.5, r: 38, hp: this.base.hp, maxHp: this.base.hp, inv: 0, cd: 0, moving: false, face: -Math.PI / 2 };
     this.lvl = 1; this.xp = 0; this.gold = 0; this.gems = 0; this.room = 0; this.kills = 0; this.over = false; this.win = false;
     this.events = []; this.t = 0;
     this.nextRoom();
@@ -74,7 +74,7 @@ export class Sim {
     this.room++;
     if (this.room > ROOMS) { this.over = true; this.win = true; this.ev('clear'); return; }
     const kind = roomKind(this.room), R = this.R;
-    this.kind = kind; this.cleared = false; this.doorOpen = false; this.waves = 1; this.wave = 1; this.waveT = 0; this.mons = []; this.shots = []; this.foes = []; this.drops = []; this.npc = null;
+    this.kind = kind; this.cleared = false; this.doorOpen = false; this.waves = 1; this.wave = 1; this.waveT = 0; this.warns = []; this.pendingSp = []; this.mons = []; this.shots = []; this.foes = []; this.drops = []; this.npc = null;
     // 지형
     this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));   // 0 바닥 · 1 막힘(장애물) · 2 구덩이(화살은 지나감)
     const map = kind === 'fight' ? MAPS[Math.floor(R() * MAPS.length)] : kind === 'special' ? ARENAS[0].map(r => r.replace(/[#^]/g, '.')) : ARENAS[Math.floor(R() * ARENAS.length)];
@@ -89,7 +89,7 @@ export class Sim {
     if (kind === 'special') { this.npc = { type: this.room === 5 ? 'angel' : 'devil', x: AW / 2, y: AH * 0.4, used: false }; this.cleared = true; this.doorOpen = true; }
     else if (kind === 'boss' || kind === 'mid') this.spawnBoss(kind);
     else { this.waves = this.room < 4 ? 2 : 3; this.wave = 0; this.nextWave(); }
-    this.warns = []; this.ev('room', { n: this.room, kind });
+    this.ev('room', { n: this.room, kind });
   }
   flowMap() {
     const D = Array.from({ length: ROWS }, () => Array(COLS).fill(1e9)), sx = Math.floor(this.p.x / CELL), sy = Math.floor(this.p.y / CELL), q = [[sx, sy]];
@@ -122,21 +122,22 @@ export class Sim {
       let x, y;
       if (spots.length) { const j = Math.floor(this.R() * spots.length), sp = spots[j]; used.add((rng ? 'R' : 'M') + this.spots[rng ? 'R' : 'M'].indexOf(sp)); x = sp.x + (this.R() - 0.5) * 40; y = sp.y + (this.R() - 0.5) * 40; }
       else { let k = 0; do { x = CELL * (0.7 + this.R() * (COLS - 1.4)); y = CELL * (1 + this.R() * (ROWS * 0.6)); k++; } while ((!this.free(x, y) || d2({ x, y }, this.p) < 500 ** 2) && k < 40); }
-      this.addMon(type, x, y);
+      // 원작처럼 등장 자리에 빨간 표시가 먼저 뜨고 0.8초 뒤 나타남
+      this.pendingSp.push({ type, x, y, t: 0.8 }); this.warns.push({ k: 'spawn', x, y, r: 60, t: 0.8, T: 0.8 });
     }
   }
   // 막힌 칸이면 가장 가까운 빈 칸 가운데로
   unstick(o) { if (this.free(o.x, o.y)) return; let best = null; for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) { if (this.grid[y][x]) continue; const c = { x: x * CELL + CELL / 2, y: y * CELL + CELL / 2 }, d = d2(c, o); if (!best || d < best.d) best = { ...c, d }; } if (best) { o.x = best.x; o.y = best.y; } }
   addMon(type, x, y, hpMul = 1) {
     const M = MONS[type], scale = this.ch.hpMul * (1 + (this.room - 1) * TUNE.hpRamp);
-    const m = { id: Math.random().toString(36).slice(2, 8), type, x, y, r: M.r, hp: M.hp * scale * hpMul, maxHp: M.hp * scale * hpMul, cd: 0.8 + this.R() * 1.2, st: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0, boss: false };
+    const m = { id: Math.random().toString(36).slice(2, 8), type, x, y, r: M.r * 1.3, hp: M.hp * scale * hpMul, maxHp: M.hp * scale * hpMul, cd: 0.8 + this.R() * 1.2, st: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0, boss: false };
     if (!MONS[type].fly) this.unstick(m);
     this.mons.push(m); this.ev('spawn', { id: m.id, mt: type }); return m;
   }
   spawnBoss(kind) {
     if (kind === 'mid') { const m = this.addMon(this.ch.mid, AW / 2, AH * 0.3, 6); m.r *= 1.4; m.mid = true; m.sz = 1.5; this.ev('boss', { name: `우두머리 ${MONS[this.ch.mid].name}`, mid: true }); return; }
     const B = BOSSES[this.ch.boss];
-    const bh = B.hp * TUNE.boss[this.ch.id - 1], m = { id: 'boss', type: this.ch.boss, boss: true, x: AW / 2, y: AH * 0.28, r: B.r, hp: bh, maxHp: bh, cd: 1.6, st: 0, pat: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0 };
+    const bh = B.hp * TUNE.boss[this.ch.id - 1], m = { id: 'boss', type: this.ch.boss, boss: true, x: AW / 2, y: AH * 0.28, r: B.r * 1.15, hp: bh, maxHp: bh, cd: 1.6, st: 0, pat: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0 };
     this.mons.push(m); this.ev('boss', { name: B.name });
   }
   // ── 능력 고르기 ──
@@ -196,6 +197,8 @@ export class Sim {
     this.orbs = orbs;
     for (const m of this.mons) m.orbCd = (m.orbCd || 0) - dt;
     for (const o of orbs) for (const m of this.mons) if (m.orbCd <= 0 && d2(o, m) < (m.r + 26) ** 2) { m.orbCd = 0.5; this.hurt(m, this.atk * 1.25, false, o.ice ? 'ice' : 'fire'); if (o.ice) m.slow = 1.2; else m.burn = Math.max(m.burn, 1.5); }
+    for (const sp of this.pendingSp) if ((sp.t -= dt) <= 0) this.addMon(sp.type, sp.x, sp.y);
+    this.pendingSp = this.pendingSp.filter(sp => sp.t > 0);
     this.setTick(dt);
     // 가시 함정: 3초마다 0.8초 경고 후 1초 솟음 · 솟은 가시 위에 서 있으면 피해
     if (this.spikes.length) { this.spikeT = (this.spikeT + dt) % 3; this.spikeUp = this.spikeT >= 2; this.spikeWarn = this.spikeT >= 1.2 && this.spikeT < 2;
@@ -210,9 +213,9 @@ export class Sim {
     this.drops = this.drops.filter(d => !d.got);
     // 방 끝
     // 웨이브: 다 쓰러뜨리거나 시간이 다 되면 다음 웨이브
-    if (!this.cleared && this.kind === 'fight' && this.wave < this.waves) { this.waveT -= dt; if (!this.mons.length || this.waveT <= 0) this.nextWave(); }
+    if (!this.cleared && this.kind === 'fight' && this.wave < this.waves) { this.waveT -= dt; if ((!this.mons.length && !this.pendingSp.length) || this.waveT <= 0) this.nextWave(); }
     for (const w of this.warns) w.t -= dt; this.warns = this.warns.filter(w => w.t > 0);
-    if (!this.cleared && !this.mons.length && this.wave >= this.waves) { this.cleared = true; this.foes = []; this.mines = [];
+    if (!this.cleared && !this.mons.length && !this.pendingSp.length && this.wave >= this.waves) { this.cleared = true; this.foes = []; this.mines = [];
       const ns = this.kind === 'boss' ? 3 : this.kind === 'mid' ? 2 : this.R() < 0.35 ? 1 : 0; if (ns) this.drop({ kind: 'scroll', n: ns }, p); this.ev('cleared', { kind: this.kind }); if (this.kind === 'boss') { this.over = true; this.win = true; this.ev('clear'); } else this.doorOpen = true; }
   }
   // 겨냥: 장애물에 가리지 않은 적 중 가장 가까운 적 (없으면 그냥 가장 가까운 적)

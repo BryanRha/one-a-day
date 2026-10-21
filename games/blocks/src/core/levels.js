@@ -1,7 +1,7 @@
 // 어드벤처 레벨: 미리 놓인 블록 그림(8×8) + 그 속에 박힌 보석 → 보석을 모으거나 점수 목표 달성
 // 레벨 번호만으로 늘 같은 판이 나오도록 결정적으로 만든다 (모든 유저가 같은 레벨).
-import { N, rng } from './board.js?v=0.18.0';
-import { TUNE } from './levels_tuning.js?v=0.18.0';
+import { N, rng } from './board.js?v=0.19.0';
+import { TUNE } from './levels_tuning.js?v=0.19.0';
 
 // 블록 그림: 숫자 = 색(0빨 1주 2노 3초 4하늘 5파 6보라), '.' = 빈칸
 export const PATTERNS = {

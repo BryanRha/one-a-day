@@ -46,6 +46,12 @@ export const GAMES = {
     desc: '끌어서 움직이고 멈추면 자동으로 쏴요. 방을 깰 때마다 능력 3개 중 하나를 골라 매번 다른 궁수를 만들어요. 숲·사막·얼음 동굴 3개 장, 장마다 방 20개와 보스. 영웅 4명, 장비 강화·합성, 오늘의 던전까지.',
     path: 'games/archer/', logo: true, cover: 'covers/archer.png', icon: 'covers/archer_icon.png', time: '5~10분',
   },
+  seek: {
+    title: '추억 사진관', en: 'Memory Studio', genre: '숨은그림', color: '#8A5A2E',
+    tagline: '오래된 사진 속 추억을 찾아드려요',
+    desc: '동네 사진관에 매일 손님이 오래된 사진을 들고 찾아와요. 사진 속 추억의 물건을 찾고(숨은 물건), 원본과 복원본의 다른 곳을 찾아(틀린 그림) 사진을 되살려 주세요. 문방구·목욕탕·시장·교실·김장하는 날 — 숨은 물건은 시간 제한 없이 편안하게, 별 3개에 도전해요.',
+    path: 'games/seek/', logo: true, cover: 'covers/seek.png', icon: 'covers/seek_icon.png', time: '3~6분',
+  },
 };
 // 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek'];

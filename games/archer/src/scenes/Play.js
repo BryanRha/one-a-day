@@ -1,23 +1,23 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.3';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.3';
-import { audio } from '../audio.js?v=0.17.3';
-import { load, save } from '../save.js?v=0.17.3';
-import { pushBack } from '../oad.js?v=0.17.3';
-import * as M from '../meta.js?v=0.17.3';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.3';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.3';
+import { W, H } from '../config.js?v=0.17.4';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.4';
+import { audio } from '../audio.js?v=0.17.4';
+import { load, save } from '../save.js?v=0.17.4';
+import { pushBack } from '../oad.js?v=0.17.4';
+import * as M from '../meta.js?v=0.17.4';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.4';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.4';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
-const ELC = { fire: 0xFF8A3A, ice: 0x9AE8FF, poison: 0x8CE05A, bolt: 0xFFE14D };
+const ELC = { fire: 0xFF8A3A, ice: 0x9AE8FF, poison: 0x8CE05A, bolt: 0xFFE14D, boom: 0xFFA040, wave: 0x9AE8FF };
 
 export class PlayScene extends Phaser.Scene {
   constructor() { super('Play'); }
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 씀)
-    Object.assign(this, { heroV: null, arrowL: null, floorRT: null, fxN: 0, zapN: 0, warnG: null, nums: null, npcV: null, skSig: null, scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
+    Object.assign(this, { heroV: null, arrowL: null, dropL: null, floorRT: null, fxN: 0, zapN: 0, warnG: null, nums: null, npcV: null, skSig: null, scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
     this.daily = !!data.daily;
     const dr = this.daily ? M.dailyRun() : null;
     this.chapter = dr ? dr.chapter : data.chapter || 1;
@@ -68,6 +68,7 @@ export class PlayScene extends Phaser.Scene {
     const bg = this.add.graphics().setDepth(D - 1).setScrollFactor(0); bg.fillStyle(0x0B0D1E, 0.92).fillRect(0, 0, W, TOP); for (let i = 0; i < 12; i++) bg.fillStyle(0x0B0D1E, 0.92 * (1 - i / 12)).fillRect(0, TOP + i * 3, W, 3);
     u.room = T(this, 40, 54, '', 34, C.text, { ox: 0, w: 900 }).setDepth(D).setScrollFactor(0);
     u.wave = T(this, W / 2, 62, '', 28, '#FFB0A0', { w: 900 }).setDepth(D).setScrollFactor(0);
+    u.combo = T(this, W - 40, 112, '', 26, C.gold, { ox: 1, w: 900 }).setDepth(D).setScrollFactor(0);
     u.chap = T(this, 40, 98, this.daily ? '오늘의 던전' : `${this.chapter}장 · ${this.ch.name}`, 24, C.sub, { ox: 0, w: 800 }).setDepth(D).setScrollFactor(0);
     u.gold = T(this, W - 150, 54, '', 32, C.gold, { ox: 1, w: 900 }).setDepth(D).setScrollFactor(0);
     this.add.image(W - 150 - 10, 54, 'i_gold').setDisplaySize(44, 44).setOrigin(1.2, 0.5).setDepth(D).setScrollFactor(0);
@@ -93,6 +94,7 @@ export class PlayScene extends Phaser.Scene {
     const s = this.s, u = this.ui, k = s.xp / s.xpNeed();
     const xsig = `${s.lvl}:${Math.round(k * 200)}:${s.gold}:${s.room}`; if (u.xsig !== xsig) { u.xsig = xsig; u.xpG.clear().fillStyle(0x000000, 0.5).fillRoundedRect(40, 124, W - 80, 20, 10).fillStyle(0x6AD8FF, 1).fillRoundedRect(40, 124, Math.max(20, (W - 80) * k), 20, 10);
     u.lvl.setText(`Lv ${s.lvl}`); u.room.setText(`방 ${Math.min(s.room, ROOMS)} / ${ROOMS}`); u.gold.setText(fmt(s.gold)); }
+    const ctxt = Object.keys(s.fx).some(f => f.startsWith('neb')) && s.combo ? `콤보 ${s.combo}` : ''; if (u.combo.text !== ctxt) u.combo.setText(ctxt);
     const wtxt = s.kind === 'fight' && !s.cleared ? `웨이브 ${s.wave}/${s.waves}${s.wave < s.waves ? ` · ${Math.max(0, Math.ceil(s.waveT))}초` : ''}` : ''; if (u.wave.text !== wtxt) u.wave.setText(wtxt);
     const ks = Object.keys(s.sk).filter(k2 => SKILLS[k2] && s.sk[k2] > 0);
     if (ks.join() + ks.map(k2 => s.sk[k2]).join() !== this.skSig) {
@@ -110,7 +112,7 @@ export class PlayScene extends Phaser.Scene {
   drawRoom() {
     const s = this.s, k = this.k, cs = CELL * k, [tf, tb, tp] = this.ch.tiles;
     this.floorL.removeAll(true);
-    for (const v of this.views.values()) v.destroy(); this.views.clear();
+    for (const v of this.views.values()) { this.tweens.killTweensOf(v.im); this.tweens.killTweensOf(v); v.destroy(); } this.views.clear();
     for (const a of [...this.arrows, ...this.foeV, ...this.dropV]) a.destroy(); this.arrows = []; this.foeV = []; this.dropV = [];
     // 바닥 (타일 · 살짝 어둡게) + 테두리 벽
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
@@ -137,9 +139,9 @@ export class PlayScene extends Phaser.Scene {
     if (!this.heroV) {
       const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 80, 26, 0x000000, 0.35); const im = this.add.image(0, -18, `ht_${this.heroK}`).setOrigin(0.5, 0.5); im.setScale(130 / Math.max(im.width, im.height)); im.base = im.scale;
       const ring = this.add.ellipse(0, 6, 92, 32, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
-      const hpB = this.add.rectangle(-55, -105, 110, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-55, -105, 110, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -128, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); hv.add([sh, ring, im, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT }); this.heroV = hv;
+      const hpB = this.add.rectangle(-55, -105, 110, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-55, -105, 110, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -128, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); const aura = this.add.circle(0, 6, 480 * this.k, 0x8AF07A, 0.05).setStrokeStyle(3, 0x8AF07A, 0.25).setVisible(!!s.fx['fang.armor']); const shd = this.add.circle(0, -18, 78, 0xFF8A3A, 0.18).setStrokeStyle(5, 0xFFB050, 0.8).setVisible(false); hv.add([aura, sh, ring, im, shd, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT, shd }); this.heroV = hv;
     }
-    this.world.add(this.heroV); if (!this.arrowL || !this.arrowL.active) this.arrowL = this.add.container(0, 0); this.world.add(this.arrowL); this.world.bringToTop(this.arrowL); this.world.add(this.fxL); this.world.bringToTop(this.fxL);
+    if (!this.dropL || !this.dropL.active) this.dropL = this.add.container(0, 0); this.world.add(this.dropL); this.world.add(this.heroV); if (!this.arrowL || !this.arrowL.active) this.arrowL = this.add.container(0, 0); this.world.add(this.arrowL); this.world.bringToTop(this.arrowL); this.world.add(this.fxL); this.world.bringToTop(this.fxL);
     for (const m of s.mons) this.monView(m);
     this.syncCam(true);
   }
@@ -187,7 +189,7 @@ export class PlayScene extends Phaser.Scene {
     hv.im.y = -18 - Math.abs(bob) * 7; hv.im.scaleX = hv.im.base * (1 + (p.moving ? Math.abs(bob) * 0.05 : 0) - (hv.recoil || 0) * 0.08); hv.im.scaleY = hv.im.base * (1 - (p.moving ? Math.abs(bob) * 0.04 : 0) + (hv.recoil || 0) * 0.05);
     hv.recoil = Math.max(0, (hv.recoil || 0) - dt * 8);
     if (p.moving && (this.dustT = (this.dustT || 0) - dt) <= 0) { this.dustT = 0.12; const d = this.add.image(p.x * k, p.y * k + 18, 'glow').setTint(0xC8C0A8).setAlpha(0.35).setScale(0.25).setDepth(p.y - 2); this.world.add(d); this.tweens.add({ targets: d, alpha: 0, scale: 0.5, duration: 380, onComplete: () => d.destroy() }); }
-    hv.ring.setStrokeStyle(4, s.mons.length ? 0xFF8A70 : 0x8AE8FF, 0.8);
+    hv.ring.setStrokeStyle(4, s.mons.length ? 0xFF8A70 : 0x8AE8FF, 0.8); hv.shd.setVisible(s.shield > 0);
     if (hv.lastHp !== p.hp) { hv.lastHp = p.hp; hv.hpT.setText(`${Math.ceil(p.hp)}`); }
     hv.hp.width = Math.max(2, 110 * p.hp / p.maxHp); hv.hp.fillColor = p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A;
     // 몬스터
@@ -226,8 +228,8 @@ export class PlayScene extends Phaser.Scene {
     this.foeV.forEach((c, i) => { const f = fs[i]; c.setVisible(!!f); if (f) { c.setPosition(f.x * k, f.y * k); const key = this.foeTex(f.kind === 'ice'); if (c.texture.key !== key) c.setTexture(key); } });
     // 떨어진 금화·경험치
     const ds = s.drops;
-    while (this.dropV.length < ds.length) { const im = this.add.image(0, 0, 'i_gold').setDisplaySize(40, 40); this.world.add(im); this.dropV.push(im); }
-    this.dropV.forEach((im, i) => { const d = ds[i]; im.setVisible(!!d); if (d) { im.setPosition(d.x * k, d.y * k).setDepth(d.y - 1); if (d.k === 'xp') im.setTexture('glow').setTint(0x6AF0FF).setDisplaySize(44, 44).setBlendMode('ADD'); else im.setTexture('i_gold').clearTint().setDisplaySize(40, 40).setBlendMode('NORMAL'); } });
+    while (this.dropV.length < ds.length) { const im = this.add.image(0, 0, 'i_gold').setDisplaySize(44, 44); this.dropL.add(im); this.dropV.push(im); }
+    this.dropV.forEach((im, i) => { const d = ds[i]; im.setVisible(!!d); if (d) im.setPosition(d.x * k, d.y * k); });
     // 구슬 · 정령
     const os = s.orbs || [];
     while (this.orbV.length < os.length) { const im = this.add.image(0, 0, 'glow').setScale(0.75).setBlendMode('ADD'); this.world.add(im); this.orbV.push(im); }
@@ -247,18 +249,20 @@ export class PlayScene extends Phaser.Scene {
     for (const e of s.events.splice(0)) {
       if (e.type === 'dmg') {
         const v = this.views.get(e.id); if (v && !(v.flashCd > 0)) { v.flashT = 0.05; v.flashCd = 0.18; }   // 계속 맞아도 하얗게 굳지 않게 번쩍임 간격 둠
-        this.num(e.x * k, e.y * k, e.v, e.crit, e.el);
+        if (e.el !== 'aura') this.num(e.x * k, e.y * k, e.v, e.crit, e.el);
         audio.play(e.crit ? 'sfx_crit' : 'sfx_hit', { volume: e.el ? 0.2 : 0.35, gap: 60 });
         if (e.crit) this.hitStop = Math.max(this.hitStop, 0.04);
       } else if (e.type === 'kill') {
         const v = this.views.get(e.id); this.views.delete(e.id);
-        if (v) this.tweens.add({ targets: v, scale: 1.3, alpha: 0, duration: 220, onComplete: () => v.destroy() });
+        if (v) { this.tweens.killTweensOf(v.im); this.tweens.killTweensOf(v); this.tweens.add({ targets: v, scale: 1.3, alpha: 0, duration: 220, onComplete: () => v.destroy() }); }   // 꿈틀 반복 애니메이션도 같이 끔 (안 끄면 계속 쌓임)
         this.burst(e.x * k, e.y * k, e.boss ? 40 : 14, 0xFFE8A0);
         audio.play('sfx_kill', { volume: 0.5, gap: 50 });
         if (e.boss) { this.cameras.main.shake(400, 0.012); this.cameras.main.flash(200, 255, 240, 200); this.hitStop = 0.4; }
       } else if (e.type === 'shoot') { audio.play('sfx_shoot', { volume: 0.25, gap: 70 }); this.heroV.recoil = 1; }
       else if (e.type === 'boom') { audio.play('sfx_fire', { volume: 0.6 }); this.cameras.main.shake(180, 0.01); this.burst(e.x * k, e.y * k, 26, 0xFF8A3A); const r = this.add.circle(e.x * k, e.y * k, e.r * k, 0xFFB050, 0.5).setDepth(3800); this.world.add(r); this.tweens.add({ targets: r, alpha: 0, scale: 1.2, duration: 300, onComplete: () => r.destroy() }); }
-      else if (e.type === 'loot') { audio.play('sfx_chest', { volume: 0.5 }); const lb = T(this, e.x * k, e.y * k - 80, `${RAR[e.r].name} · ${GEAR[e.slot].name}`, 28, '#' + RAR[e.r].col.toString(16).padStart(6, '0'), { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4100); this.world.add(lb); this.tweens.add({ targets: lb, y: lb.y - 50, alpha: 0, delay: 900, duration: 700, onComplete: () => lb.destroy() }); }
+      else if (e.type === 'loot') { audio.play('sfx_chest', { volume: 0.5 }); const sc = e.kind === 'scroll', col = sc ? 0x8AE8FF : TIERS[e.t].col, lb = T(this, e.x * k, e.y * k - 80, sc ? `강화 두루마리 +${e.n}` : `${TIERS[e.t].name} · ${itemName(e)}`, 28, '#' + col.toString(16).padStart(6, '0'), { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4100); this.world.add(lb); this.tweens.add({ targets: lb, y: lb.y - 50, alpha: 0, delay: 900, duration: 700, onComplete: () => lb.destroy() }); }
+      else if (e.type === 'blast') { if ((this.fxN || 0) < 60) { const r = this.add.circle(e.x * k, e.y * k, e.r * k, e.plain ? 0x9AE8FF : 0xFFA040, 0.28).setStrokeStyle(5, e.plain ? 0xCFF4FF : 0xFFD080, 0.9); this.fxL.add(r); r.setScale(0.4); this.tweens.add({ targets: r, scale: 1, alpha: 0, duration: 260, onComplete: () => r.destroy() }); this.burst(e.x * k, e.y * k, 6, e.plain ? 0x9AE8FF : 0xFF8A3A); } audio.play('sfx_fire', { volume: 0.25, gap: 90 }); }
+      else if (e.type === 'shield') { if (!e.on) this.cameras.main.shake(120, 0.006); }
       else if (e.type === 'wave' && e.n > 1) this.banner(`웨이브 ${e.n} / ${e.of}`, '', '#FFB0A0', 400);
       else if (e.type === 'enemyshot') audio.play('sfx_enemyshot', { volume: 0.18, gap: 120 });
       else if (e.type === 'hurt') { audio.play('sfx_hurt', { volume: 0.6 }); this.cameras.main.shake(140, 0.008); this.num(s.p.x * k, (s.p.y - 120) * k, e.v, false, 'hurt'); this.cameras.main.flash(80, 255, 60, 60); }
@@ -344,7 +348,7 @@ export class PlayScene extends Phaser.Scene {
       c.add(T(this, 0, 30, S.name, 32, C.text, { w: 900, wrap: cw - 30 }));
       c.add(T(this, 0, 110, S.desc, 23, C.sub, { w: 800, wrap: cw - 40 }));
       const rb = this.add.graphics(); rb.fillStyle(kc, 1).fillRoundedRect(-70, -246, 140, 40, 20); c.add(rb); c.add(T(this, 0, -226, R.name, 22, '#FFFFFF', { w: 900, shadow: false }));
-      if (S.rar === 3) { const sh = this.add.image(0, -100, 'rays').setTint(0xFFD45A).setScale(0.9).setAlpha(0.5).setBlendMode('ADD'); c.addAt(sh, 2); this.tweens.add({ targets: sh, angle: 360, duration: 5000, repeat: -1 }); }
+      if (S.rar === 4) { const sh = this.add.image(0, -100, 'rays').setTint(0xFFD45A).setScale(0.9).setAlpha(0.5).setBlendMode('ADD'); c.addAt(sh, 2); this.tweens.add({ targets: sh, angle: 360, duration: 5000, repeat: -1 }); }
       if (has) c.add(T(this, 0, 196, `보유 ${has}`, 22, '#9AD0FF', { w: 800 }));
       this.tweens.add({ targets: c, alpha: 1, y, duration: 260, delay: 120 + i * 90, ease: 'Back.easeOut' });
       const z = this.add.zone(0, 0, cw, 460).setInteractive({ useHandCursor: true }); c.add(z);

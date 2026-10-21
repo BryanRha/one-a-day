@@ -1,7 +1,9 @@
 // 전투 규칙 (화면과 무관): 방 · 영웅 이동/자동 사격 · 화살 · 몬스터 AI · 적 탄 · 능력 · 레벨업
 // 좌표는 방 안의 픽셀 (가로 AW × 세로 AH). 한 칸 = CELL.
-import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR } from './data.js?v=0.17.3';
+import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.4';
 
+// 밸런스 조절값 (봇으로 찾음): 장 안에서 방마다 몬스터 체력 증가 · 9번 방 이후 공격 증가 · 보스 체력 배율
+export const TUNE = { hpRamp: 0.12, dmgLate: 0.03, boss: [1.4, 1.5, 1.6] };
 export const CELL = 120, COLS = 9, ROWS = 16, AW = CELL * COLS, AH = CELL * ROWS;   // 세로 화면에 맞춘 방 (9 × 16)
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const d2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
@@ -29,9 +31,14 @@ export class Sim {
   constructor(o = {}) {
     this.R = rng(o.seed || 7);
     this.ch = CHAPTERS[(o.chapter || 1) - 1];
-    const H = HEROES[o.hero || 'arin'], gear = o.gear || {};
+    const H = HEROES[o.hero || 'arin'];
+    // 장비 능력치 (data.gearStats 결과) · fx = 세트 효과 { '세트.칸': 1 영웅 | 2 신화 }
+    const g = this.g = { atk: 0, hp: 0, atkPct: 0, hpPct: 0, crit: 0, critDmg: 0, dodge: 0, projRed: 0, healPct: 0, fx: {}, wsub: null, ...(o.gear || {}) };
+    this.fx = g.fx || {};
     this.hero = o.hero || 'arin';
-    this.base = { hp: Math.round(H.hp + (gear.hp || 0)), atk: H.atk + (gear.atk || 0), aspd: H.aspd, crit: 0.05 + (gear.crit || 0) / 100, spd: 340 * (o.hero === 'mir' ? 1.15 : 1) };
+    this.base = { hp: Math.round((H.hp + g.hp) * (1 + g.hpPct)), atk: H.atk + g.atk, atkPct: g.atkPct, aspd: H.aspd, crit: 0.05 + g.crit, critDmg: 2 + g.critDmg, spd: 340 * (o.hero === 'mir' ? 1.15 : 1) };
+    // 세트 효과 상태: 콤보 · 다음 피해 2배 · 다음 대각 화살 · 불꽃 방패 · 다음 공격 폭발 · 지뢰
+    Object.assign(this, { combo: 0, comboT: 0, dbl: false, nextDiag: 0, shield: 0, shieldCd: 0, nextBoom: false, boomT: 5, amT: 2, auraT: 0, mines: [] });
     this.sk = {};   // 능력 이름 → 중첩 수
     if (o.hero === 'theo') this.sk.fire = 1;
     if (o.hero === 'yuna') this.sk.frost = 1;
@@ -42,10 +49,11 @@ export class Sim {
   }
   ev(type, d = {}) { this.events.push({ type, ...d }); }
   // ── 능력치 계산 ──
-  get atk() { return this.base.atk * (1 + 0.25 * (this.sk.atk || 0)) * (this.hero === 'theo' ? 1.12 : 1); }
-  get aspd() { return this.base.aspd * (1 + 0.2 * (this.sk.aspd || 0)); }
-  get crit() { return this.base.crit + 0.12 * (this.sk.crit || 0); }
-  get dodge() { return 1 - Math.pow(0.85, this.sk.dodge || 0) + (this.hero === 'mir' ? 0.08 : 0); }
+  // 원작 2 피해 공식: 공격력 = (영웅 + 장비) × (1 + 공격% 합) · 화살 피해 = 공격력 × 화살 배율 × 치명타
+  get atk() { return this.base.atk * (1 + this.base.atkPct + 0.25 * (this.sk.atk || 0)); }
+  get aspd() { const f = this.fx['neb.ring']; return this.base.aspd * (1 + 0.2 * (this.sk.aspd || 0) + (f ? Math.min(f === 2 ? 0.16 : 0.08, Math.floor(this.combo / 5) * (f === 2 ? 0.04 : 0.02)) : 0)); }
+  get crit() { return this.base.crit + 0.1 * (this.sk.crit || 0); }
+  get dodge() { return 1 - Math.pow(0.88, this.sk.dodge || 0) + (this.hero === 'mir' ? 0.08 : 0) + this.g.dodge + (this.fx['blaze.boots'] === 2 ? 0.1 : 0); }
   xpNeed() { return Math.round(60 + this.lvl * 45); }
 
   // ── 방 ──
@@ -80,7 +88,7 @@ export class Sim {
   // 막힌 칸이면 가장 가까운 빈 칸 가운데로
   unstick(o) { if (this.free(o.x, o.y)) return; let best = null; for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) { if (this.grid[y][x]) continue; const c = { x: x * CELL + CELL / 2, y: y * CELL + CELL / 2 }, d = d2(c, o); if (!best || d < best.d) best = { ...c, d }; } if (best) { o.x = best.x; o.y = best.y; } }
   addMon(type, x, y, hpMul = 1) {
-    const M = MONS[type], scale = this.ch.hpMul * (1 + (this.room - 1) * 0.045);
+    const M = MONS[type], scale = this.ch.hpMul * (1 + (this.room - 1) * TUNE.hpRamp);
     const m = { id: Math.random().toString(36).slice(2, 8), type, x, y, r: M.r, hp: M.hp * scale * hpMul, maxHp: M.hp * scale * hpMul, cd: 0.8 + this.R() * 1.2, st: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0, boss: false };
     if (!MONS[type].fly) this.unstick(m);
     this.mons.push(m); this.ev('spawn', { id: m.id, mt: type }); return m;
@@ -88,7 +96,7 @@ export class Sim {
   spawnBoss(kind) {
     if (kind === 'mid') { const m = this.addMon(this.ch.mid, AW / 2, AH * 0.3, 6); m.r *= 1.4; m.mid = true; m.sz = 1.5; this.ev('boss', { name: `우두머리 ${MONS[this.ch.mid].name}`, mid: true }); return; }
     const B = BOSSES[this.ch.boss];
-    const m = { id: 'boss', type: this.ch.boss, boss: true, x: AW / 2, y: AH * 0.28, r: B.r, hp: B.hp, maxHp: B.hp, cd: 1.6, st: 0, pat: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0 };
+    const bh = B.hp * TUNE.boss[this.ch.id - 1], m = { id: 'boss', type: this.ch.boss, boss: true, x: AW / 2, y: AH * 0.28, r: B.r, hp: bh, maxHp: bh, cd: 1.6, st: 0, pat: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0 };
     this.mons.push(m); this.ev('boss', { name: B.name });
   }
   // ── 능력 고르기 ──
@@ -106,10 +114,10 @@ export class Sim {
     const S = SKILLS[k]; if (!S) return;
     if (k === 'heal') { this.healBy(this.p.maxHp * 0.4); }
     else this.sk[k] = (this.sk[k] || 0) + 1;
-    if (k === 'hpup') { const add = Math.round(this.base.hp * 0.2); this.p.maxHp += add; this.p.hp += add; }
+    if (k === 'hpup' || k === 'star') { const add = Math.round(this.base.hp * (k === 'star' ? 0.15 : 0.2)); this.p.maxHp += add; this.p.hp += add; }
     this.ev('skill', { k });
   }
-  healBy(v) { const b = this.p.hp; this.p.hp = Math.min(this.p.maxHp, this.p.hp + v); if (this.p.hp > b) this.ev('heal', { v: Math.round(this.p.hp - b) }); }
+  healBy(v) { v *= 1 + this.g.healPct; const b = this.p.hp; this.p.hp = Math.min(this.p.maxHp, this.p.hp + v); if (this.p.hp > b) this.ev('heal', { v: Math.round(this.p.hp - b) }); }
   // 특수 방: 천사 = 회복 또는 능력 · 악마 = 최대 체력 줄이고 좋은 능력
   useNpc(choice) {
     const n = this.npc; if (!n || n.used) return; n.used = true;
@@ -136,16 +144,19 @@ export class Sim {
     // 자동 사격: 멈춰 있을 때만, 가장 가까운 적에게
     p.cd -= dt;
     const target = this.nearest(p);
-    if (!p.moving && target && p.cd <= 0) { this.fire(target); p.cd = 1 / (1.2 * this.aspd); }
+    if (!p.moving && target && p.cd <= 0) { this.fire(target); p.cd = 1 / (1.2 * this.aspd) + 0.133 * (this.sk.multi || 0); }   // 연속 사격: 공격 간격 +8프레임 (원작)
     if (target && !p.moving) p.face = Math.atan2(target.y - p.y, target.x - p.x);
     // 정령 친구
-    for (let i = 0; i < (this.sk.spirit || 0); i++) { const k = `sp${i}`; this[k] = (this[k] || 0) - dt; if (this[k] <= 0 && target) { this[k] = 1.1; const sx = p.x + (i ? 70 : -70), sy = p.y - 50; this.arrow(sx, sy, Math.atan2(target.y - sy, target.x - sx), 0.45, 'spirit'); } }
+    for (let i = 0; i < (this.sk.spirit || 0); i++) { const k = `sp${i}`; this[k] = (this[k] || 0) - dt; if (this[k] <= 0 && target) { this[k] = 1.1; const sx = p.x + (i ? 70 : -70), sy = p.y - 50; this.arrow(sx, sy, Math.atan2(target.y - sy, target.x - sx), 0.5, 'spirit'); } }
     // 구슬 (몸 주위를 돎)
     this.orbA += dt * 3.2;
-    const orbs = []; const no = (this.sk.orbfire || 0) + (this.sk.orbice || 0);
-    for (let i = 0; i < no; i++) { const a = this.orbA + i * Math.PI * 2 / no; orbs.push({ x: p.x + Math.cos(a) * 130, y: p.y + Math.sin(a) * 130, ice: i >= (this.sk.orbfire || 0) }); }
+    // 구슬: 능력 하나에 2개 (원작) · 닿으면 공격 1.25배 (같은 적은 0.5초에 한 번)
+    const orbs = []; const nf = 2 * (this.sk.orbfire || 0), no = nf + 2 * (this.sk.orbice || 0);
+    for (let i = 0; i < no; i++) { const a = this.orbA + i * Math.PI * 2 / no; orbs.push({ x: p.x + Math.cos(a) * 130, y: p.y + Math.sin(a) * 130, ice: i >= nf }); }
     this.orbs = orbs;
-    for (const o of orbs) for (const m of this.mons) if (d2(o, m) < (m.r + 26) ** 2) { m.orbCd = (m.orbCd || 0) - dt; if (m.orbCd <= 0) { m.orbCd = 0.35; this.hurt(m, this.atk * 0.45, false, o.ice ? 'ice' : 'fire'); if (o.ice) m.slow = 1.2; } }
+    for (const m of this.mons) m.orbCd = (m.orbCd || 0) - dt;
+    for (const o of orbs) for (const m of this.mons) if (m.orbCd <= 0 && d2(o, m) < (m.r + 26) ** 2) { m.orbCd = 0.5; this.hurt(m, this.atk * 1.25, false, o.ice ? 'ice' : 'fire'); if (o.ice) m.slow = 1.2; else m.burn = Math.max(m.burn, 1.5); }
+    this.setTick(dt);
     this.moveShots(dt);
     this.moveMons(dt);
     this.moveFoes(dt);
@@ -156,7 +167,8 @@ export class Sim {
     // 웨이브: 다 쓰러뜨리거나 시간이 다 되면 다음 웨이브
     if (!this.cleared && this.kind === 'fight' && this.wave < this.waves) { this.waveT -= dt; if (!this.mons.length || this.waveT <= 0) this.nextWave(); }
     for (const w of this.warns) w.t -= dt; this.warns = this.warns.filter(w => w.t > 0);
-    if (!this.cleared && !this.mons.length && this.wave >= this.waves) { this.cleared = true; this.foes = []; this.ev('cleared', { kind: this.kind }); if (this.kind === 'boss') { this.over = true; this.win = true; this.ev('clear'); } else this.doorOpen = true; }
+    if (!this.cleared && !this.mons.length && this.wave >= this.waves) { this.cleared = true; this.foes = []; this.mines = [];
+      const ns = this.kind === 'boss' ? 3 : this.kind === 'mid' ? 2 : this.R() < 0.35 ? 1 : 0; if (ns) this.drop({ kind: 'scroll', n: ns }, p); this.ev('cleared', { kind: this.kind }); if (this.kind === 'boss') { this.over = true; this.win = true; this.ev('clear'); } else this.doorOpen = true; }
   }
   // 겨냥: 장애물에 가리지 않은 적 중 가장 가까운 적 (없으면 그냥 가장 가까운 적)
   los(a, b) { const L = Math.sqrt(d2(a, b)), n = Math.ceil(L / 12), ox = -(b.y - a.y) / (L || 1) * 12, oy = (b.x - a.x) / (L || 1) * 12; for (let i = 1; i < n; i++) for (const k of [-1, 0, 1]) { const x = a.x + (b.x - a.x) * i / n + ox * k, y = a.y + (b.y - a.y) * i / n + oy * k, cx = Math.floor(x / CELL), cy = Math.floor(y / CELL); if (this.grid[cy] && this.grid[cy][cx] === 1) return false; } return true; }
@@ -164,7 +176,9 @@ export class Sim {
   // 화살 쏘기: 능력에 따라 여러 방향 · 연속
   fire(t) {
     const p = this.p, a0 = Math.atan2(t.y - p.y, t.x - p.x), sk = this.sk;
-    const nf = 1 + (sk.front || 0), dmgMul = (nf > 1 ? Math.pow(0.75, nf - 1) : 1) * ((sk.multi || 0) ? Math.pow(0.9, sk.multi) : 1);   // 앞쪽 화살 -25% · 연속 사격 -10% (원작 규칙)
+    const nf = 1 + (sk.front || 0), dmgMul = Math.max(0.3, 1 - 0.15 * (nf - 1));   // 앞쪽 화살 1개마다 화살 위력 -15% (원작 2)
+    const xd = this.nextDiag; this.nextDiag = 0;   // 성운 갑옷: 콤보 보너스 대각 화살
+    for (let k = 0; k < xd; k++) for (const s of [-1, 1]) this.arrow(p.x, p.y, a0 + s * (Math.PI / 5 + k * 0.1), dmgMul);
     const vol = () => {
       for (let i = 0; i < nf; i++) { const off = (i - (nf - 1) / 2) * 26; this.arrow(p.x + Math.cos(a0 + Math.PI / 2) * off, p.y + Math.sin(a0 + Math.PI / 2) * off, a0, dmgMul); }
       for (let k = 0; k < (sk.diag || 0); k++) for (const s of [-1, 1]) this.arrow(p.x, p.y, a0 + s * (Math.PI / 4 + k * 0.12), dmgMul);
@@ -176,7 +190,7 @@ export class Sim {
     this.ev('shoot');
   }
   later = [];
-  arrow(x, y, a, mul, kind = 'arrow') { this.shots.push({ x, y, vx: Math.cos(a) * 1500, vy: Math.sin(a) * 1500, a, mul, kind, hit: new Set(), bounce: 2 * (this.sk.ricochet || 0), wall: this.sk.wall ? 2 : 0, life: 1.6 }); }
+  arrow(x, y, a, mul, kind = 'arrow') { this.shots.push({ x, y, vx: Math.cos(a) * 1500, vy: Math.sin(a) * 1500, a, mul, kind, hit: new Set(), bounce: this.sk.ricochet || 0, wall: this.sk.wall || 0, life: 1.6 }); }
   moveShots(dt) {
     for (const l of this.later.filter(l => l.at <= this.t)) l.fn(); this.later = this.later.filter(l => l.at > this.t);
     for (const s of this.shots) {
@@ -192,24 +206,66 @@ export class Sim {
         for (const m of this.mons) {
           if (s.hit.has(m.id) || d2(s, m) > (m.r + 10) ** 2) continue;
           s.hit.add(m.id); this.hitBy(m, s);
-          if (s.bounce > 0) { s.bounce--; s.mul *= 0.7; const nx = this.mons.filter(o => o !== m && !s.hit.has(o.id)).sort((a, b) => d2(a, m) - d2(b, m))[0]; if (nx) { const a = Math.atan2(nx.y - m.y, nx.x - m.x); s.vx = Math.cos(a) * 1500; s.vy = Math.sin(a) * 1500; s.a = a; s.x = m.x; s.y = m.y; continue; } }
+          if (s.bounce > 0) { s.bounce--; s.mul *= 0.6; const nx = this.mons.filter(o => o !== m && !s.hit.has(o.id)).sort((a, b) => d2(a, m) - d2(b, m))[0]; if (nx) { const a = Math.atan2(nx.y - m.y, nx.x - m.x); s.vx = Math.cos(a) * 1500; s.vy = Math.sin(a) * 1500; s.a = a; s.x = m.x; s.y = m.y; continue; } }
           if (!this.sk.pierce || s.kind === 'spirit') { s.life = 0; break; }
-          s.mul *= 0.67;
         }
       }
     }
     this.shots = this.shots.filter(s => s.life > 0);
   }
   hitBy(m, s) {
-    let dmg = this.atk * s.mul; const crit = this.R() < this.crit;
-    if (crit) dmg *= 2;
-    if (this.sk.head && !m.boss && !m.mid && this.R() < 0.03) { dmg = m.hp + 1; this.ev('head', { x: m.x, y: m.y }); }
-    this.hurt(m, dmg, crit);
+    const p = this.p, fx = this.fx, sk = this.sk, main = s.kind === 'arrow';
+    // 송곳니: 가까울수록 · 주변 적이 많을수록
+    const cf = clamp((1200 - Math.sqrt(d2(p, m))) / 800, 0, 1);
+    let near = 0; if (fx['fang.ring'] || fx['fang.boots']) for (const o of this.mons) if (d2(o, p) < 520 ** 2) near++;
+    near = Math.min(3, near);
+    let crit = this.crit, cd = this.base.critDmg, mul = 1;
+    if (fx['neb.weapon']) crit += Math.min(fx['neb.weapon'] === 2 ? 0.16 : 0.08, Math.floor(this.combo / 5) * (fx['neb.weapon'] === 2 ? 0.04 : 0.02));
+    if (fx['fang.weapon']) crit += cf * (fx['fang.weapon'] === 2 ? 0.3 : 0.15);
+    if (fx['fang.ring']) crit += near * (fx['fang.ring'] === 2 ? 0.06 : 0.03);
+    if (fx['neb.boots'] && this.combo > (fx['neb.boots'] === 2 ? 20 : 30)) cd += fx['neb.boots'] === 2 ? 0.48 : 0.32;
+    if (fx['fang.helm']) cd += cf * (fx['fang.helm'] === 2 ? 0.72 : 0.36);
+    if (fx['fang.boots']) cd += near * (fx['fang.boots'] === 2 ? 0.24 : 0.12);
+    if (main && this.g.wsub === 'neb') mul *= 1 + Math.min(0.1, this.combo * 0.005);
+    if (main && this.g.wsub === 'fang') mul *= 1 + 0.2 * cf;
+    const isCrit = this.R() < crit;
+    let dmg = this.atk * s.mul * mul * (isCrit ? cd : 1);
+    if (this.dbl) { dmg *= 2; this.dbl = false; }   // 성운 목걸이
+    if (sk.head && !m.boss && !m.mid && this.R() < 0.03) { dmg = m.hp + 1; this.ev('head', { x: m.x, y: m.y }); }
+    this.hurt(m, dmg, isCrit);
+    if (main) this.addCombo(isCrit && fx['neb.helm'] ? (fx['neb.helm'] === 2 ? 3 : 2) : 1);
     if (!m.boss && m.hp > 0) { const l = Math.hypot(s.vx, s.vy) || 1, kb = m.mid ? 6 : 16, nx = m.x + s.vx / l * kb, ny = m.y + s.vy / l * kb, mg = m.r * 0.6; if (this.free(nx - mg, ny - mg) && this.free(nx + mg, ny + mg) && this.free(nx - mg, ny + mg) && this.free(nx + mg, ny - mg)) { m.x = nx; m.y = ny; } }
-    if (this.sk.fire) m.burn = 2;
-    if (this.sk.frost) m.slow = 2;
-    if (this.sk.poison) m.poison = Math.min(5, m.poison + 1);
-    if (this.sk.bolt) { for (const o of this.mons.filter(o => o !== m).sort((a, b) => d2(a, m) - d2(b, m)).slice(0, 2)) { if (d2(o, m) > 420 ** 2) break; this.hurt(o, this.atk * 0.35, false, 'bolt'); this.ev('bolt', { x1: m.x, y1: m.y, x2: o.x, y2: o.y }); } }
+    // 속성 (원작 2 수치)
+    if (sk.fire) { this.hurt(m, this.atk * 0.2, false, 'fire'); m.burn = 3; }
+    if (sk.poison && !(m.pcd > 0)) { m.pcd = 0.4; this.hurt(m, this.atk * 0.5, false, 'poison'); m.poison = 1; }
+    if (sk.frost && !(m.frzCd > 0)) { m.frzCd = 10; m.frz = m.boss ? 0.5 : 1.5; this.hurt(m, this.atk, false, 'ice'); }
+    if (sk.bolt) { let n = 0; for (const o of this.mons) { if (o === m || n >= 4 || d2(o, m) > 420 ** 2) continue; n++; this.hurt(o, this.atk * 0.3, false, 'bolt'); this.ev('bolt', { x1: m.x, y1: m.y, x2: o.x, y2: o.y }); } }
+    // 화염 세트
+    if (main && this.g.wsub === 'blaze' && this.R() < (fx['blaze.weapon'] === 2 ? 0.45 : 0.3)) this.blast(m.x, m.y, 120, 0.35);
+    if (main && fx['blaze.ring'] && this.R() < (fx['blaze.ring'] === 2 ? 0.24 : 0.12)) this.mines.push({ x: m.x, y: m.y, t: 0.8 });
+    if (main && this.nextBoom) { this.nextBoom = false; this.boomT = 5; this.blast(m.x, m.y, 170, 0.8, false, fx['blaze.helm'] === 2); }
+  }
+  // 폭발: 반지름 안 모든 적에게 공격 k배 (화염 활 영웅이면 +200%)
+  blast(x, y, r, k, plain = false, ignite = false) {
+    const dmg = this.atk * k * (!plain && this.fx['blaze.weapon'] ? 2 : 1);
+    for (const o of [...this.mons]) if (d2(o, { x, y }) < (r + o.r) ** 2) { this.hurt(o, dmg, false, plain ? 'wave' : 'boom'); if (ignite) o.burn = 3; }
+    this.ev('blast', { x, y, r, plain });
+  }
+  addCombo(n) {
+    const fx = this.fx, b = this.combo; this.combo += n; this.comboT = 2.5;
+    const st = fx['neb.amulet'] === 2 ? 3 : 5; if (fx['neb.amulet'] && Math.floor(b / st) < Math.floor(this.combo / st)) this.dbl = true;
+    if (fx['neb.armor'] && Math.floor(b / 5) < Math.floor(this.combo / 5)) this.nextDiag = fx['neb.armor'] === 2 ? 2 : 1;
+  }
+  // 세트 효과 시간 처리
+  setTick(dt) {
+    const fx = this.fx, p = this.p;
+    if ((this.comboT -= dt) <= 0) this.combo = 0;
+    if (fx['blaze.helm'] && !this.nextBoom && (this.boomT -= dt) <= 0) this.nextBoom = true;
+    if (fx['blaze.amulet'] && this.mons.length && (this.amT -= dt) <= 0) { this.amT = 3; const ms = [...this.mons].sort(() => this.R() - 0.5).slice(0, fx['blaze.amulet'] === 2 ? 4 : 2); for (const m of ms) this.blast(m.x, m.y, 110, 0.5); }
+    for (const mi of this.mines) if ((mi.t -= dt) <= 0) this.blast(mi.x, mi.y, 150, 0.6);
+    this.mines = this.mines.filter(mi => mi.t > 0);
+    if (fx['fang.armor'] && (this.auraT -= dt) <= 0) { this.auraT = 0.3; for (const m of [...this.mons]) if (d2(m, p) < 480 ** 2) this.hurt(m, this.atk * (fx['fang.armor'] === 2 ? 0.6 : 0.3), false, 'aura'); }
+    this.shieldCd -= dt; if (this.shield > 0) { this.shield -= dt; if (fx['blaze.armor'] === 2) this.healBy(p.maxHp * 0.01 * dt); }
   }
   hurt(m, dmg, crit = false, el = null) {
     if (m.hp <= 0) return;
@@ -219,23 +275,32 @@ export class Sim {
   killMon(m) {
     this.mons = this.mons.filter(o => o !== m); this.kills++;
     const M = m.boss ? BOSSES[m.type] : MONS[m.type], g = Math.round((M.gold || 3) * (m.mid ? 8 : 1) * (1 + this.room * 0.05));
-    for (let i = 0; i < Math.min(6, Math.ceil(g / 3)); i++) this.drops.push({ k: 'gold', v: Math.ceil(g / Math.min(6, Math.ceil(g / 3))), x: m.x + (this.R() - 0.5) * 60, y: m.y + (this.R() - 0.5) * 60 });
-    this.drops.push({ k: 'xp', v: m.boss ? 400 : m.mid ? 120 : 12 + this.room, x: m.x, y: m.y });
-    if (m.boss || m.mid || this.R() < 0.02) { const slots = Object.keys(GEAR), slot = slots[Math.floor(this.R() * slots.length)], r = m.boss ? (this.R() < 0.3 ? 2 : 1) : m.mid ? 1 : (this.R() < 0.1 ? 1 : 0); (this.loot ||= []).push({ slot, r }); this.ev('loot', { slot, r, x: m.x, y: m.y }); }
-    if (this.sk.blood) this.healBy(this.p.maxHp * 0.015 * this.sk.blood * (m.boss || m.mid ? 6 : 1));
+    // 성능: 금화는 적 하나에 1개 (많이 쌓였으면 가까운 금화에 합침) · 경험치는 바로 들어옴
+    const near = this.drops.length > 40 && this.drops.find(o => Math.abs(o.x - m.x) < 160 && Math.abs(o.y - m.y) < 160);
+    if (near) near.v += g; else this.drops.push({ k: 'gold', v: g, x: m.x, y: m.y });
+    this.addXp(m.boss ? 400 : m.mid ? 120 : 12 + this.room); this.ev('xp', { x: m.x, y: m.y });
+    // 전투 중 장비 (원작 2): 보스 = 세트 고급·희귀 · 우두머리 = 고급 · 일반 적 = 가끔 기본 장비
+    const SETR = () => ['neb', 'fang', 'blaze'][Math.floor(this.R() * 3)];
+    if (m.boss) this.drop({ kind: 'gear', set: SETR(), t: this.R() < 0.3 ? 2 : 1 }, m);
+    else if (m.mid) this.drop({ kind: 'gear', set: this.R() < 0.5 ? 'basic' : SETR(), t: 1 }, m);
+    else if (this.R() < 0.015) this.drop({ kind: 'gear', set: 'basic', t: this.R() < 0.2 ? 1 : 0 }, m);
+    if (this.sk.blood && this.R() < 0.25) this.healBy(this.p.maxHp * 0.04 * this.sk.blood);
+    if (this.fx['blaze.helm']) this.nextBoom = true;
     if (!m.boss && MONS[m.type].split && !m.mid) for (const s of [-1, 1]) { const c = this.addMon(MONS[m.type].split, m.x + s * 30, m.y); c.cd = 0.6; }
     this.ev('kill', { id: m.id, mt: m.type, x: m.x, y: m.y, boss: m.boss || m.mid });
   }
+  drop(it, at) { it.slot = SLOTS[Math.floor(this.R() * SLOTS.length)]; (this.loot ||= []).push(it); this.ev('loot', { ...it, x: at.x, y: at.y }); }
   addXp(v) { this.xp += v; while (this.xp >= this.xpNeed()) { this.xp -= this.xpNeed(); this.lvl++; this.ev('levelup', { lvl: this.lvl }); } }
   // ── 몬스터 행동 ──
   moveMons(dt) {
-    const p = this.p, dmgMul = this.ch.dmgMul * (0.6 + 0.4 * Math.min(1, (this.room - 1) / 8));   // 장 초반 방은 공격이 약하다가 9번 방부터 제 세기
+    const p = this.p, dmgMul = this.dmgMulNow();   // 장 초반 방은 공격이 약하다가 9번 방부터 제 세기
     for (const m of [...this.mons]) {
       const M = m.boss ? BOSSES[m.type] : MONS[m.type], slow = m.slow > 0 ? 0.5 : 1;
-      m.slow = Math.max(0, m.slow - dt);
-      if (m.burn > 0) { m.burn -= dt; m.bt = (m.bt || 0) - dt; if (m.bt <= 0) { m.bt = 0.5; this.hurt(m, this.atk * 0.18, false, 'fire'); } }
-      if (m.poison > 0) { m.pt = (m.pt || 0) - dt; if (m.pt <= 0) { m.pt = 0.6; this.hurt(m, this.atk * 0.08 * m.poison, false, 'poison'); } }
+      m.slow = Math.max(0, m.slow - dt); m.pcd = (m.pcd || 0) - dt; m.frzCd = (m.frzCd || 0) - dt;
+      if (m.burn > 0) { m.burn -= dt; m.bt = (m.bt || 0) - dt; if (m.bt <= 0) { m.bt = 0.5; this.hurt(m, this.atk * 0.15, false, 'fire'); } }
+      if (m.poison > 0) { m.pt = (m.pt || 0) - dt; if (m.pt <= 0) { m.pt = 1; this.hurt(m, this.atk * 0.25, false, 'poison'); } }
       if (m.hp <= 0) continue;
+      if (m.frz > 0) { m.frz -= dt; continue; }   // 얼면 멈춤 (공격·이동 없음)
       m.cd -= dt * slow;
       const dx = p.x - m.x, dy = p.y - m.y, dl = Math.hypot(dx, dy) || 1, sp = (M.spd || 0) * slow;
       const fly = M.fly || M.ai === 'fly', mg = m.r * 0.6, fr = (x, y) => fly || (this.free(x - mg, y - mg) && this.free(x + mg, y - mg) && this.free(x - mg, y + mg) && this.free(x + mg, y + mg));
@@ -257,8 +322,9 @@ export class Sim {
       if (d2(m, p) < (m.r + p.r - 6) ** 2) this.hit((m.boss ? M.dmg : M.dmg) * dmgMul * (m.mid ? 1.4 : 1));
     }
   }
+  dmgMulNow() { return this.ch.dmgMul * (0.45 + 0.55 * Math.min(1, (this.room - 1) / 8)) * (1 + Math.max(0, this.room - 9) * TUNE.dmgLate); }
   bossAct(m, B, dt, dx, dy, dl, slow) {
-    const p = this.p, dm = B.dmg * (this.ch.dmgMul);
+    const p = this.p, dm = B.dmg * this.dmgMulNow();
     if (m.st > 0) { m.st -= dt; const nx = m.x + m.vx * dt, ny = m.y + m.vy * dt; if (nx > m.r && nx < AW - m.r) m.x = nx; else m.st = 0; if (ny > m.r && ny < AH - m.r) m.y = ny; else m.st = 0; return; }
     m.x += dx / dl * B.spd * slow * dt * 0.6; m.y += clamp(dy / dl * B.spd * slow * dt * 0.6, -99, m.y > AH * 0.55 ? 0 : 99);
     if (m.cd > 0) return;
@@ -286,9 +352,13 @@ export class Sim {
     this.foes = this.foes.filter(f => f.life > 0);
   }
   hit(dmg) {
-    const p = this.p; if (p.inv > 0 || this.over) return;
-    if (this.R() < this.dodge) { p.inv = 0.4; this.ev('dodge'); return; }
-    p.hp -= Math.round(dmg); p.inv = this.sk.star ? 1 : 0.7; this.ev('hurt', { v: Math.round(dmg), src: this.src || 'body' });
+    const p = this.p, fx = this.fx; if (p.inv > 0 || this.over) return;
+    if (this.R() < this.dodge) { p.inv = 0.4; this.ev('dodge'); if (fx['blaze.boots']) this.blast(p.x, p.y, 220, 1); return; }
+    if (this.shield > 0) { this.shield = 0; p.inv = 0.5; this.ev('shield', { on: false }); this.blast(p.x, p.y, 220, 1); return; }   // 화염 갑옷: 불꽃 방패
+    if (this.src === 'shot') dmg *= 1 - this.g.projRed;
+    p.hp -= Math.round(dmg); p.inv = this.sk.star ? 2 : 0.7; this.combo = Math.floor(this.combo / 2); this.ev('hurt', { v: Math.round(dmg), src: this.src || 'body' });
+    if (fx['fang.amulet']) this.blast(p.x, p.y, 480, fx['fang.amulet'] === 2 ? 6 : 3, true);
+    if (fx['blaze.armor'] && this.shieldCd <= 0 && p.hp > 0) { this.shield = 10; this.shieldCd = 10; this.ev('shield', { on: true }); }
     if (p.hp <= 0) { p.hp = 0; this.over = true; this.win = false; this.ev('dead'); }
   }
   // 되살리기 (한 판에 한 번): 체력 절반, 주변 적 탄 지움

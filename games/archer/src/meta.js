@@ -1,64 +1,69 @@
-// 성장 · 재방문: 금화로 재능 · 보석 상자(확률 공개 · 천장) · 같은 장비 3개 합성 · 영웅 해금 · 출석 · 오늘의 미션 · 오늘의 던전
-import { load, save } from './save.js?v=0.17.3';
-import { GEAR, RAR, gearVal, gearCost, GEAR_MAXLV, HEROES, CHAPTERS } from './core/data.js?v=0.17.3';
+// 성장 · 재방문: 장비(6칸 · 등급 11 · 칸 강화 · 대장간 합성) · 은/흑요석 상자(확률 공개 · 천장) · 재능 · 영웅 해금 · 출석 · 오늘의 미션 · 오늘의 던전
+import { load, save } from './save.js?v=0.17.4';
+import { SLOTS, TIERS, MERGE, gearStats as gearStats0, expectedGear, powerOf, upCost, HEROES, CHAPTERS } from './core/data.js?v=0.17.4';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
 
-// ── 장비 능력치 합 → 전투에 넘김 ──
-export function gearStats() {
-  const d = load(), o = { atk: 0, hp: 0, crit: 0 };
-  for (const slot of Object.keys(GEAR)) { const g = d.gear[slot]; if (g) o[GEAR[slot].stat] += gearVal(slot, g); }
-  // 재능: 레벨당 체력 +30 · 공격 +4
-  o.hp += d.talents.hp * 30; o.atk += d.talents.atk * 4;
-  return o;
+// ── 장비 (원작 2 구조) ──
+const byId = id => load().items.find(it => it.id === id);
+export const equipped = () => { const d = load(), o = {}; for (const sl of SLOTS) { const it = d.eq[sl] && byId(d.eq[sl]); if (it) o[sl] = it; } return o; };
+export const isEquipped = it => load().eq[it.slot] === it.id;
+export function gearStats() { const d = load(); return gearStats0(equipped(), d.lv, d.talents); }
+export const power = () => powerOf(gearStats());
+// 권장 전투력: 그 장을 깰 만한 장비 (밸런스 기준과 같음)
+export const recommended = ch => powerOf(expectedGear(CHAPTERS[ch - 1].stage));
+export function equip(id) { const d = load(), it = byId(id); if (!it) return false; d.eq[it.slot] = id; save(); return true; }
+// 칸 강화: 금화 + 그 칸 두루마리 · 레벨 상한 = 장착한 장비 등급
+export const slotMax = sl => { const it = equipped()[sl]; return it ? TIERS[it.t].max : 10; };
+export function upgrade(sl) {
+  const d = load(), lv = d.lv[sl] || 1, c = upCost(lv);
+  if (lv >= slotMax(sl)) return 'max';
+  if (d.gold < c.gold) return 'gold';
+  if ((d.scroll[sl] || 0) < c.scroll) return 'scroll';
+  d.gold -= c.gold; d.scroll[sl] -= c.scroll; d.lv[sl] = lv + 1; save(); return 'ok';
 }
-export const power = () => { const s = gearStats(); return Math.round(s.atk * 10 + s.hp * 0.8 + s.crit * 30); };
-// 장비 강화
-export function upgrade(slot) {
-  const d = load(), g = d.gear[slot]; if (!g || g.lv >= GEAR_MAXLV(g.r)) return false;
-  const c = gearCost(g); if (d.gold < c) return false;
-  d.gold -= c; g.lv++; save(); return true;
+// ── 대장간 합성 (원작 규칙: MERGE) ──
+// 재료 후보: 장착하지 않은 장비 중 규칙에 맞는 것 (낮은 id 먼저)
+export function fodder(it) {
+  const d = load(), R = MERGE[it.t]; if (!R) return { need: 0, list: [], max: true };
+  const list = d.items.filter(o => o.id !== it.id && !isEquipped(o) && o.slot === it.slot && (R.dup ? o.set === it.set && o.t === it.t : o.t === R.ft));
+  return { need: R.n, list: list.slice(0, R.n), ok: list.length >= R.n, rule: R };
 }
-// 재능: 금화로 영구 강화 (점점 비싸짐)
-export const talentCost = k => Math.round(150 * Math.pow(1.28, load().talents[k]));
-export function talentUp(k) { const d = load(), c = talentCost(k); if (d.gold < c) return false; d.gold -= c; d.talents[k]++; save(); return true; }
+export function merge(id) {
+  const d = load(), it = byId(id); if (!it) return false; const f = fodder(it); if (!f.ok) return false;
+  const ids = f.list.map(o => o.id); d.items = d.items.filter(o => !ids.includes(o.id)); it.t++; save(); return true;
+}
+// 모두 합성: 똑같은 장비끼리 (일반→고급→희귀→영웅) 만 자동으로 · 장착한 것을 먼저 올림
+export function autoMerge() {
+  const d = load(); let n = 0, again = true;
+  while (again) { again = false; const list = [...d.items].sort((a, b) => (isEquipped(b) - isEquipped(a)) || b.t - a.t || a.id - b.id); for (const it of list) if (it.t < 3 && d.items.includes(it) && fodder(it).ok) { merge(it.id); n++; again = true; break; } }
+  return n;
+}
+export const mergeable = () => load().items.some(it => it.t < 3 && fodder(it).ok);
+// 더 좋은 장비가 있으면 빈 칸에 자동 장착
+function autoEquip(it) { const d = load(), cur = equipped()[it.slot]; if (!cur || it.t > cur.t) { d.eq[it.slot] = it.id; return true; } return false; }
+export function addItem(set, slot, t) { const d = load(), it = { id: d.nextId++, set, slot, t }; d.items.push(it); it.equipped = autoEquip(it); return it; }
 
-// ── 보석 상자: 확률 공개 · 10번 안에 영웅 이상 확정(천장) · 중복은 합성 재료 ──
-export const CHEST = { cost: 30, odds: [0.62, 0.30, 0.07, 0.01], pity: 10 };
-export function openChest(rnd = Math.random) {
-  const d = load(); if (d.gems < CHEST.cost) return null;
-  d.gems -= CHEST.cost; d.pity++;
-  let r = 0, x = rnd(); for (let i = 3; i >= 0; i--) { const cut = CHEST.odds.slice(i).reduce((a, b) => a + b, 0); if (x < cut) { r = i; break; } }
-  if (d.pity >= CHEST.pity && r < 2) r = 2;
-  if (r >= 2) d.pity = 0;
-  const slots = Object.keys(GEAR), slot = slots[Math.floor(rnd() * slots.length)];
-  const item = { slot, r, lv: 1 };
-  // 칸이 비었거나 더 좋으면 바로 장착, 아니면 보관함
-  const cur = d.gear[slot];
-  if (!cur || r > cur.r) { if (cur) d.bag.push({ slot, r: cur.r, lv: 1 }); d.gear[slot] = { r, lv: cur && r === cur.r ? cur.lv : 1 }; item.equipped = true; }
-  else d.bag.push(item);
-  save(); return item;
-}
-// 같은 칸·같은 등급 3개 → 다음 등급 1개 (장착 중인 것도 재료로 쓰면 등급이 오름)
-export function mergeable() {
-  const d = load(), out = [];
-  for (const slot of Object.keys(GEAR)) for (let r = 0; r < 3; r++) {
-    const n = d.bag.filter(b => b.slot === slot && b.r === r).length + (d.gear[slot] && d.gear[slot].r === r ? 1 : 0);
-    if (n >= 3) out.push({ slot, r });
+// ── 상자 (원작 확률) ──
+// 은 상자: 일반 66.67% · 고급 33.33% (기본 장비) · 흑요석 상자: 고급 56% · 희귀 40% · 영웅 4% (세트 장비) · 30번 안에 영웅 확정
+export const CHESTS = {
+  silver: { name: '은 상자', key: 'silver', gold: 300, odds: [[0, 0.6667], [1, 0.3333]], sets: ['basic'], icon: 'i_chest_silver', keyIcon: 'i_key_silver' },
+  obs: { name: '흑요석 상자', key: 'obs', gems: 60, odds: [[1, 0.56], [2, 0.40], [3, 0.04]], sets: ['neb', 'fang', 'blaze'], pity: 30, icon: 'i_chest_obs', keyIcon: 'i_key_obs' },
+};
+// n번 열기: 열쇠가 있으면 열쇠, 없으면 금화(은)/보석(흑요석) · 10번은 보석 10% 할인
+export function chestPrice(k, n) { const C = CHESTS[k], d = load(), keys = Math.min(n, d.keys[k] || 0), rest = n - keys; return { keys, gold: C.gold ? rest * C.gold : 0, gems: C.gems ? Math.round(rest * C.gems * (n >= 10 ? 0.9 : 1)) : 0 }; }
+export function openChest(k, n = 1, rnd = Math.random) {
+  const C = CHESTS[k], d = load(), pr = chestPrice(k, n);
+  if (d.gold < pr.gold || d.gems < pr.gems) return null;
+  d.keys[k] -= pr.keys; d.gold -= pr.gold; d.gems -= pr.gems;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    let x = rnd(), t = C.odds[0][0]; for (const [tt, p] of C.odds) { if (x < p) { t = tt; break; } x -= p; }
+    if (C.pity) { d.pityObs++; if (d.pityObs >= C.pity && t < 3) t = 3; if (t >= 3) d.pityObs = 0; }
+    out.push(addItem(C.sets[Math.floor(rnd() * C.sets.length)], SLOTS[Math.floor(rnd() * SLOTS.length)], t));
   }
-  return out;
-}
-export function merge(slot, r) {
-  const d = load(); let need = 3;
-  const eq = d.gear[slot] && d.gear[slot].r === r;
-  if (eq) need--;
-  const idx = []; d.bag.forEach((b, i) => { if (idx.length < need && b.slot === slot && b.r === r) idx.push(i); });
-  if (idx.length < need) return false;
-  d.bag = d.bag.filter((_, i) => !idx.includes(i));
-  if (eq || !d.gear[slot] || d.gear[slot].r < r + 1) { const lv = eq ? Math.min(d.gear[slot].lv, GEAR_MAXLV(r + 1)) : 1; if (!eq && d.gear[slot]) d.bag.push({ slot, r: d.gear[slot].r, lv: 1 }); d.gear[slot] = { r: r + 1, lv }; }
-  else d.bag.push({ slot, r: r + 1, lv: 1 });
-  save(); return true;
+  save(); return out;
 }
 // 영웅 해금 (금화)
 export function buyHero(k) { const d = load(), c = HEROES[k].cost; if (d.heroes[k] || d.gold < c) return false; d.gold -= c; d.heroes[k] = 1; save(); return true; }
@@ -89,6 +94,7 @@ const POOL = [
   { id: 'gold500', kind: 'gold', goal: 500, text: '금화 500 모으기', reward: 10 },
   { id: 'daily', kind: 'daily', goal: 1, text: '오늘의 던전 도전', reward: 15 },
   { id: 'up2', kind: 'upgrade', goal: 2, text: '장비 2번 강화', reward: 10 },
+  { id: 'chest3', kind: 'chest', goal: 3, text: '상자 3번 열기', reward: 10 },
 ];
 function pick(day) { let h = 0; for (const c of day) h = (h * 31 + c.charCodeAt(0)) >>> 0; const out = []; for (let i = 0; out.length < 3 && i < 40; i++) { const m = POOL[(h + i * 3) % POOL.length]; if (!out.some(o => o.id === m.id)) out.push({ id: m.id, prog: 0, claimed: false }); } return out; }
 export function missions() { const d = load(), day = dayKey(); if (d.missions.date !== day) { d.missions = { date: day, list: pick(day) }; save(); } return d.missions.list.map(m => ({ ...POOL.find(p => p.id === m.id), ...m, done: m.prog >= POOL.find(p => p.id === m.id).goal })); }
@@ -105,9 +111,13 @@ export function finish(r) {
   if (!r.daily) { if ((d.best[r.chapter] || 0) < r.room) { d.best[r.chapter] = r.room; newBest = true; } if (r.win && !d.cleared[r.chapter]) { d.cleared[r.chapter] = 1; gems += 50; unlocked = CHAPTERS[r.chapter] ? r.chapter + 1 : null; } }
   else { d.daily.tries++; if (r.room > d.daily.best) { d.daily.best = r.room; newBest = true; } }
   gems += Math.floor(r.room / 5) * 2; d.gems += gems;
-  for (const it of r.loot || []) d.bag.push({ slot: it.slot, r: it.r, lv: 1 });
+  // 전투에서 얻은 장비·두루마리 · 처음 도달 보상(원작 진행 보상): 방 10 = 흑요석 열쇠 1 · 클리어 = 흑요석 열쇠 2 · 방 5 이상 = 은 열쇠 1
+  const got = { items: [], scroll: {}, keys: { silver: 0, obs: 0 } };
+  for (const it of r.loot || []) { if (it.kind === 'scroll') { const sl = SLOTS[Math.floor(Math.random() * SLOTS.length)]; for (let i = 0; i < it.n; i++) { const s2 = SLOTS[(SLOTS.indexOf(sl) + i) % 6]; d.scroll[s2]++; got.scroll[s2] = (got.scroll[s2] || 0) + 1; } } else got.items.push(addItem(it.set, it.slot, it.t)); }
+  if (!r.daily) { const ms = d.milestones[r.chapter] ||= {}; if (r.room >= 10 && !ms.r10) { ms.r10 = 1; got.keys.obs += 1; } if (r.win && !ms.clear) { ms.clear = 1; got.keys.obs += 2; } }
+  if (r.room >= 5) got.keys.silver += r.daily ? 2 : 1;
+  d.keys.silver += got.keys.silver; d.keys.obs += got.keys.obs;
   save();
   track('room', r.room); track('kill', r.kills); track('boss', r.bosses || 0); track('skill', r.skills); track('gold', gold); if (r.daily) track('daily');
-  return { gold, gems, newBest, unlocked };
+  return { gold, gems, newBest, unlocked, got };
 }
-export { RAR };

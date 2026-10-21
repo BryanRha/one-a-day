@@ -1,8 +1,9 @@
 // 결과: 승리/도전 · 도달 방 · 얻은 금화·보석 · 고른 능력 · 다시/홈
-import { W, H } from '../config.js?v=0.17.3';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.17.3';
-import { audio } from '../audio.js?v=0.17.3';
-import { CHAPTERS, SKILLS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.3';
+import { W, H } from '../config.js?v=0.17.4';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.17.4';
+import { audio } from '../audio.js?v=0.17.4';
+import { CHAPTERS, SKILLS, ROOMS } from '../core/data.js?v=0.17.4';
+import { itemBox } from '../gearui.js?v=0.17.4';
 
 const PRAISE = ['대단해요!', '완벽한 모험!', '별빛이 함께했어요!'];
 export class ResultScene extends Phaser.Scene {
@@ -20,14 +21,19 @@ export class ResultScene extends Phaser.Scene {
     T(this, W / 2, by + 60, `방 ${r.room} / ${ROOMS} · Lv ${r.lvl} · 처치 ${r.kills}`, 26, C.sub, { w: 800 });
     // 보상
     const py = by + 220;
-    this.add.existing(panel(this, W / 2, py, 900, 200));
-    this.add.image(W / 2 - 230, py - 20, 'i_gold').setDisplaySize(80, 80); T(this, W / 2 - 230, py + 50, `+${fmt(r.gold)}`, 40, C.gold, { w: 900 });
-    this.add.image(W / 2 + 230, py - 20, 'i_gem').setDisplaySize(80, 80); T(this, W / 2 + 230, py + 50, `+${r.gems}`, 40, '#D8B0FF', { w: 900 });
-    (r.loot || []).slice(0, 6).forEach((it, i, a) => { const x = W / 2 + (i - (a.length - 1) / 2) * 120, y = py - 170; const g = this.add.graphics(); g.fillStyle(RAR[it.r].col, 0.3).fillRoundedRect(x - 50, y - 50, 100, 100, 16).lineStyle(4, RAR[it.r].col, 1).strokeRoundedRect(x - 50, y - 50, 100, 100, 16); const im = this.add.image(x, y, GEAR[it.slot].icons[it.r]); im.setScale(80 / Math.max(im.width, im.height)); });
-    if (r.unlocked) T(this, W / 2, py + 160, `${r.unlocked}장이 열렸어요!`, 36, C.gold, { w: 900 });
+    this.add.existing(panel(this, W / 2, py + 60, 900, 340));
+    this.add.image(W / 2 - 230, py - 50, 'i_gold').setDisplaySize(72, 72); T(this, W / 2 - 230, py + 10, `+${fmt(r.gold)}`, 40, C.gold, { w: 900 });
+    this.add.image(W / 2 + 230, py - 50, 'i_gem').setDisplaySize(72, 72); T(this, W / 2 + 230, py + 10, `+${r.gems}`, 40, '#D8B0FF', { w: 900 });
+    // 얻은 장비 · 두루마리 · 열쇠
+    const got = r.got || { items: [], scroll: {}, keys: {} }, nsc = Object.values(got.scroll).reduce((x, y) => x + y, 0), extra = [];
+    if (nsc) extra.push(['i_scroll', `+${nsc}`]); if (got.keys.silver) extra.push(['i_key_silver', `+${got.keys.silver}`]); if (got.keys.obs) extra.push(['i_key_obs', `+${got.keys.obs}`]);
+    const cells = got.items.length + extra.length;
+    got.items.slice(0, 6).forEach((it, i) => { const x = W / 2 + (i - (Math.min(cells, 8) - 1) / 2) * 120; itemBox(this, x, py + 120, it, 104); });
+    extra.forEach(([ic, t], j) => { const x = W / 2 + (Math.min(got.items.length, 6) + j - (Math.min(cells, 8) - 1) / 2) * 120; this.add.image(x, py + 110, ic).setDisplaySize(84, 84); T(this, x, py + 170, t, 26, C.text, { w: 900, stroke: '#14102A', thick: 5 }); });
+    if (r.unlocked) T(this, W / 2, py + 260, `${r.unlocked}장이 열렸어요!`, 36, C.gold, { w: 900 });
     // 고른 능력
     const ks = Object.keys(r.sk || {}).filter(k => SKILLS[k]);
-    const sy = py + 240; T(this, W / 2, sy, '이번 판 능력', 28, C.text, { w: 900 });
+    const sy = py + 330; T(this, W / 2, sy, '이번 판 능력', 28, C.text, { w: 900 });
     ks.slice(0, 16).forEach((k, i) => { const x = W / 2 + ((i % 8) - 3.5) * 104, y = sy + 90 + Math.floor(i / 8) * 104; const im = this.add.image(x, y, SKILLS[k].icon).setDisplaySize(92, 92); im.setScale(0); this.tweens.add({ targets: im, displayWidth: 92, displayHeight: 92, duration: 200, delay: 600 + i * 50 }); });
     const bt = Math.min(H - 140, sy + 340);
     btn(this, W / 2 + 90, bt, 560, 140, r.daily ? '다시 도전' : win && CHAPTERS[r.chapter] ? '다음 장' : '다시 모험', () => this.go('Play', r.daily ? { daily: true } : { chapter: win && CHAPTERS[r.chapter] ? r.chapter + 1 : r.chapter, hero: r.hero }), { style: 'gold', icon: 'i_play', size: 42 });

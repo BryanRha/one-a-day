@@ -47,4 +47,5 @@ export const GAMES = {
     path: 'games/archer/', logo: true, cover: 'covers/archer.png', icon: 'covers/archer_icon.png', time: '5~10분',
   },
 };
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'archer'];
+// 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war'];

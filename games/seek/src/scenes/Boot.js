@@ -1,8 +1,8 @@
 // 로딩: 장면 사진 · 사진관 배경 · 효과음 · 코드 텍스처
-import { W, H, TITLE } from '../config.js?v=0.19.1';
-import { SFX } from '../audio.js?v=0.19.1';
-import { SCENES } from '../content.js?v=0.19.1';
-import { makeTextures } from '../ui.js?v=0.19.1';
+import { W, H, TITLE } from '../config.js?v=0.20.0';
+import { SFX } from '../audio.js?v=0.20.0';
+import { SCENES } from '../content.js?v=0.20.0';
+import { makeTextures } from '../ui.js?v=0.20.0';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -13,6 +13,8 @@ export class BootScene extends Phaser.Scene {
     this.load.on('progress', v => { bar.width = 480 * v; });
     this.load.image('studio', 'assets/ui/studio.webp');
     for (const s of SCENES) { this.load.image(s.img, `assets/scenes/${s.img}.webp`); if (s.sets) for (const st of s.sets) this.load.image(st.img, `assets/scenes/${st.img}.webp`); }
+    for (const s of SCENES) this.load.image(`g_${s.id}`, `assets/guests/g_${s.id}.png`);
+    this.load.image('g_owner', 'assets/guests/g_owner.png'); this.load.image('g_cat', 'assets/guests/g_cat.png');
     for (const n of SFX) this.load.audio(n, [`assets/audio/${n}.m4a`]);
     this.load.on('loaderror', () => {});
   }

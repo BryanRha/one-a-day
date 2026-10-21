@@ -1,10 +1,10 @@
 // 사진관: 오늘의 손님(오늘의 사진) · 사진 벽(앨범) · 연속 방문 · 별 · 물건 도감
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.19.1';
-import { T, C, btn, iconBtn, panel, popup, stars, toast } from '../ui.js?v=0.19.1';
-import { audio } from '../audio.js?v=0.19.1';
-import { load, save } from '../save.js?v=0.19.1';
-import { SCENES } from '../content.js?v=0.19.1';
-import * as M from '../meta.js?v=0.19.1';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.20.0';
+import { T, C, btn, iconBtn, panel, popup, stars, toast } from '../ui.js?v=0.20.0';
+import { audio } from '../audio.js?v=0.20.0';
+import { load, save } from '../save.js?v=0.20.0';
+import { SCENES } from '../content.js?v=0.20.0';
+import * as M from '../meta.js?v=0.20.0';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -17,7 +17,7 @@ export class HomeScene extends Phaser.Scene {
     // 위: 제목 · 별 · 연속
     T(this, W / 2, 120, TITLE, 92, C.cream, { w: 900, shadow: true }); T(this, W / 2, 196, TITLE_EN, 26, C.gold, { w: 800, ls: 12 });
     T(this, 60, 270, `★ ${M.totalStars()}`, 32, C.gold, { ox: 0, w: 900, shadow: true }); T(this, W - 60, 270, `${d.streak.count || 1}일째 방문`, 28, C.cream, { ox: 1, w: 800, shadow: true });
-    iconBtn(this, W - 70, 70, '⚙', () => this.settings(), 84, { dark: true });
+    iconBtn(this, W - 70, 70, 'gear', () => this.settings(), 88, { dark: true });
     // 오늘의 손님 카드
     const cy = H * 0.5 + 40, ch = 700;
     this.add.existing(panel(this, W / 2, cy, 940, ch));
@@ -27,7 +27,7 @@ export class HomeScene extends Phaser.Scene {
     this.add.rectangle(px, py, pw + 24, ph + 24, 0xFFFFFF).setStrokeStyle(2, 0xB39A78);
     const im = this.add.image(px, py, today.img); im.setScale(Math.min(pw / im.width, ph / im.height)); if (rec) {} else im.setTint(0xD9C8A8);
     this.add.rectangle(px, py, pw, ph).setStrokeStyle(1, 0x000000, 0.2);
-    const tx = W / 2 - 230 + pw / 2 + 50;
+    const tx = W / 2 - 230 + pw / 2 + 50; const face = this.add.image(W / 2 + 360, cy - ch / 2 + 40, `g_${today.id}`).setOrigin(0.5, 0); face.setScale(200 / face.height);
     T(this, tx, cy - 200, today.guest, 48, C.ink, { ox: 0, w: 900 });
     T(this, tx, cy - 145, today.who, 24, C.dim, { ox: 0, w: 700, wrap: 420 });
     T(this, tx, cy - 80, `「${today.title}」`, 32, C.brown, { ox: 0, w: 800 }); T(this, tx, cy - 35, `${today.year}년`, 26, C.dim, { ox: 0, w: 700 });

@@ -1,8 +1,8 @@
 // 결과: 사진이 액자에 담김 · 별 · 점수 · 손님 인사 · 다시/사진관
-import { W, H } from '../config.js?v=0.19.1';
-import { T, C, btn, panel, stars } from '../ui.js?v=0.19.1';
-import { audio } from '../audio.js?v=0.19.1';
-import * as M from '../meta.js?v=0.19.1';
+import { W, H } from '../config.js?v=0.20.0';
+import { T, C, btn, panel, stars } from '../ui.js?v=0.20.0';
+import { audio } from '../audio.js?v=0.20.0';
+import * as M from '../meta.js?v=0.20.0';
 
 const PRAISE = ['완벽해요!', '눈썰미가 대단해요!', '멋지게 찾아냈어요!'];
 export class ResultScene extends Phaser.Scene {
@@ -22,12 +22,13 @@ export class ResultScene extends Phaser.Scene {
     const py = H * 0.4 + ph / 2 + 190;
     T(this, W / 2, py, `점수 ${r.score.toLocaleString()}${r.newBest && !r.first ? '  · 최고 기록!' : ''}  ·  ${Math.floor(r.time / 60)}분 ${Math.floor(r.time % 60)}초`, 30, C.cream, { w: 800, shadow: true });
     this.add.existing(panel(this, W / 2, py + 170, 940, 200));
-    T(this, 110, py + 110, sc.guest, 30, C.brown, { ox: 0, w: 900 });
-    T(this, 110, py + 160, sc.bye, 28, C.ink, { ox: 0, oy: 0, w: 700, wrap: 840 });
-    const by = Math.min(H - 130, py + 370);
+    const fc = this.add.image(170, py + 170, `g_${sc.id}`); fc.setScale(180 / fc.height);
+    T(this, 290, py + 110, sc.guest, 30, C.brown, { ox: 0, w: 900 });
+    T(this, 290, py + 150, sc.bye, 28, C.ink, { ox: 0, oy: 0, w: 700, wrap: 680, lh: 10, align: 'left' });
+    const by = Math.min(H - 120, py + 440);
     const nx = M.nextScene(sc.id);
     if (nx) {
-      T(this, W / 2, by - 105, `${nx.guest}이(가) 사진을 들고 기다리고 있어요`, 26, C.cream, { w: 800, shadow: true });
+      T(this, W / 2, by - 100, `다음 손님 · ${nx.guest}  「${nx.title}」`, 26, C.cream, { w: 800, shadow: true });
       const nb = btn(this, W / 2 + 120, by, 600, 130, '다음 손님 맞이하기', () => this.go('Guest', { id: nx.id }), { style: 'gold', size: 40 });
       this.tweens.add({ targets: nb, scale: 1.04, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       btn(this, W / 2 - 330, by, 220, 130, '사진관', () => this.go('Home'), { style: 'cream', size: 34 });

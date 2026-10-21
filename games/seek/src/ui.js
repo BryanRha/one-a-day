@@ -1,7 +1,7 @@
 // 사진관 UI: 크림색 인화지 패널 · 짙은 나무색 · 금박 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.19.1';
-import { audio } from './audio.js?v=0.19.1';
-import { pushBack } from './oad.js?v=0.19.1';
+import { W, H } from './config.js?v=0.20.0';
+import { audio } from './audio.js?v=0.20.0';
+import { pushBack } from './oad.js?v=0.20.0';
 
 export const C = { ink: '#2B1E14', text: '#FFF8EC', cream: '#F6EBD6', paper: '#FBF4E6', brown: '#5A3E2B', sub: '#B9A58C', dim: '#8A7966', gold: '#E9B44C', red: '#D9573B', green: '#6FAE5A', blue: '#4E86C6' };
 export const FONT = 'Pretendard, sans-serif';
@@ -49,7 +49,14 @@ export function btn(sc, x, y, w, h, label, onClick, o = {}) {
 export function iconBtn(sc, x, y, glyph, onClick, size = 96, o = {}) {
   const key = `ib_${size}_${o.dark ? 'd' : 'l'}`;
   tex(sc, key, size + 20, size + 24, g => { g.translate(10, 8); g.shadowColor = 'rgba(30,15,5,0.4)'; g.shadowBlur = 10; g.shadowOffsetY = 5; g.beginPath(); g.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2); g.fillStyle = o.dark ? 'rgba(40,28,20,0.85)' : '#FFF8EC'; g.fill(); g.shadowColor = 'transparent'; g.lineWidth = 3; g.strokeStyle = o.dark ? 'rgba(233,180,76,0.6)' : 'rgba(150,110,70,0.4)'; g.stroke(); });
-  const c = sc.add.container(x, y); c.add([sc.add.image(0, 0, key), T(sc, 0, -2, glyph, size * 0.42, o.dark ? C.gold : C.brown, { w: 900 })]);
+  const c = sc.add.container(x, y), col = o.dark ? '#E9B44C' : '#5A3E2B', ik = `ic_${glyph}_${size}_${o.dark ? 'd' : 'l'}`;
+  // 선 아이콘 (글자 대신 그림): back · hint(돋보기) · gear
+  const drawn = ['back', 'hint', 'gear'].includes(glyph);
+  if (drawn) tex(sc, ik, size, size, g => { const u = size / 100; g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 9 * u; g.lineCap = 'round'; g.lineJoin = 'round';
+    if (glyph === 'back') { g.beginPath(); g.moveTo(58 * u, 28 * u); g.lineTo(36 * u, 50 * u); g.lineTo(58 * u, 72 * u); g.stroke(); }
+    if (glyph === 'hint') { g.beginPath(); g.arc(44 * u, 44 * u, 20 * u, 0, Math.PI * 2); g.stroke(); g.lineWidth = 12 * u; g.beginPath(); g.moveTo(59 * u, 59 * u); g.lineTo(74 * u, 74 * u); g.stroke(); g.fillStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.arc(38 * u, 38 * u, 6 * u, 0, Math.PI * 2); g.fill(); }
+    if (glyph === 'gear') { g.lineWidth = 8 * u; g.beginPath(); g.arc(50 * u, 50 * u, 14 * u, 0, Math.PI * 2); g.stroke(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.beginPath(); g.moveTo(50 * u + Math.cos(a) * 22 * u, 50 * u + Math.sin(a) * 22 * u); g.lineTo(50 * u + Math.cos(a) * 31 * u, 50 * u + Math.sin(a) * 31 * u); g.stroke(); } } });
+  c.add([sc.add.image(0, 0, key), drawn ? sc.add.image(0, 0, ik) : T(sc, 0, -2, glyph, size * 0.42, col, { w: 900 })]);
   c.setSize(size, size).setInteractive({ useHandCursor: true }).on('pointerup', () => { audio.play('sfx_click', { volume: 0.4 }); onClick(); });
   return c;
 }

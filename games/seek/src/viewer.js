@@ -12,6 +12,7 @@ export class Viewer {
     this.img = sc.add.image(0, 0, key).setOrigin(0.5);
     this.layer = sc.add.container(0, 0);   // 사진 좌표에 붙는 표시들 (정답 원 등)
     this.root.add([this.img, this.layer]);
+    if (o.faded) this.addCover(key);
     const m = sc.make.graphics({ add: false }); m.fillStyle(0xffffff).fillRect(x, y, w, h); this.root.setMask(m.createGeometryMask());
     this.zone = sc.add.zone(x + w / 2, y + h / 2, w, h).setInteractive();
     this.ptrs = new Map(); this.apply();
@@ -20,6 +21,26 @@ export class Viewer {
     sc.input.on('pointerup', this.up_ = p => this.up(p));
     sc.events.once('shutdown', () => { sc.input.off('pointermove', this.mv); sc.input.off('pointerup', this.up_); });
   }
+  // 빛바랜 사진 덮개: 세피아·흐린 사본을 위에 깔고, 찾을 때마다 그 둘레를 지워 원래 색이 드러나게
+  addCover(key) {
+    const sc = this.sc, sk = key + '_sep';
+    if (!sc.textures.exists(sk)) {
+      const src = sc.textures.get(key).getSourceImage(), c = sc.textures.createCanvas(sk, src.width, src.height), g = c.getContext();
+      g.filter = 'sepia(0.85) saturate(0.55) brightness(1.04) contrast(0.82)'; g.drawImage(src, 0, 0); g.filter = 'none';
+      g.fillStyle = 'rgba(240,222,190,0.22)'; g.fillRect(0, 0, src.width, src.height);   // 바랜 종이빛
+      const vg = g.createRadialGradient(src.width / 2, src.height / 2, Math.min(src.width, src.height) * 0.3, src.width / 2, src.height / 2, Math.max(src.width, src.height) * 0.75); vg.addColorStop(0, 'rgba(60,35,10,0)'); vg.addColorStop(1, 'rgba(60,35,10,0.35)'); g.fillStyle = vg; g.fillRect(0, 0, src.width, src.height);
+      c.refresh();
+    }
+    if (!sc.textures.exists('brush')) { const c = sc.textures.createCanvas('brush', 256, 256), g = c.getContext(), gr = g.createRadialGradient(128, 128, 60, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); c.refresh(); }
+    this.cover = sc.add.renderTexture(0, 0, this.iw, this.ih).setOrigin(0.5); this.cover.draw(sk, 0, 0);
+    this.root.addAt(this.cover, 1); this.brush = sc.make.image({ key: 'brush', add: false });
+  }
+  // (x,y) 둘레 반지름 r 을 원래 색으로 (조금씩 넓어지며)
+  restore(x, y, r) {
+    if (!this.cover) return; const o = { k: 0.3 };
+    this.sc.tweens.add({ targets: o, k: 1, duration: 450, ease: 'Cubic.easeOut', onUpdate: () => { this.brush.setScale(r * 3.2 * o.k / 256); this.cover.erase(this.brush, x, y); } });
+  }
+  restoreAll() { if (this.cover) this.sc.tweens.add({ targets: this.cover, alpha: 0, duration: 900, ease: 'Sine.easeIn' }); }
   get s() { return this.base * this.zoom; }
   clamp() {
     const s = this.s, hw = this.w / 2 / s, hh = this.h / 2 / s;
@@ -29,6 +50,7 @@ export class Viewer {
   apply(from) {
     this.clamp(); const s = this.s;
     this.img.setScale(s).setPosition(this.x + this.w / 2 + (this.iw / 2 - this.cx) * s, this.y + this.h / 2 + (this.ih / 2 - this.cy) * s);
+    if (this.cover) this.cover.setScale(s).setPosition(this.img.x, this.img.y);
     this.layer.setScale(s).setPosition(this.x + this.w / 2 - this.cx * s, this.y + this.h / 2 - this.cy * s);
     for (const v of this.links) if (v !== from) { v.zoom = this.zoom; v.cx = this.cx; v.cy = this.cy; v.apply(this); }
   }

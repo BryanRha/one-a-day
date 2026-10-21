@@ -1,9 +1,9 @@
 // 틀린그림 찾기 (Guru 방식): 위 원본 · 아래 복원본 · 다른 곳 5개 · 제한 시간 · 빗나가면 -5초 · 힌트 충전 · 시간 다 되면 30초 한 번 더
-import { W, H } from '../config.js?v=0.19.1';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.19.1';
-import { audio } from '../audio.js?v=0.19.1';
-import { Viewer } from '../viewer.js?v=0.19.1';
-import * as M from '../meta.js?v=0.19.1';
+import { W, H } from '../config.js?v=0.20.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.20.0';
+import { audio } from '../audio.js?v=0.20.0';
+import { Viewer } from '../viewer.js?v=0.20.0';
+import * as M from '../meta.js?v=0.20.0';
 
 export const RULE = { time: 120, miss: 5, hintEvery: 40, extra: 30, star3: 0.5, star2: 0.2, spamN: 3, spamT: 2, lockT: 3 };
 
@@ -11,10 +11,12 @@ export class DiffScene extends Phaser.Scene {
   constructor() { super('Diff'); }
   create(data) {
     const sc = this.scn = M.sceneById(data.id), set = this.set = sc.sets[data.set ?? M.diffSet(sc)];
-    Object.assign(this, { left: RULE.time, found: 0, misses: [], lock: 0, hints: 1, hintT: RULE.hintEvery, ended: false, extraUsed: false, paused: false, t: 0 });
+    this.limit = Math.round(M.LV(sc, 120, 80));   // 뒤 사진일수록 짧게
+    Object.assign(this, { left: this.limit, found: 0, misses: [], lock: 0, hints: 1, hintT: RULE.hintEvery, ended: false, extraUsed: false, paused: false, t: 0 });
     this.add.rectangle(W / 2, H / 2, W, H, 0x1A120C);
-    iconBtn(this, 70, 72, '‹', () => this.leave(), 84, { dark: true });
-    T(this, W / 2, 50, sc.title, 34, C.cream, { w: 900 }); T(this, W / 2, 96, `${sc.year} · ${sc.guest}의 사진`, 22, C.sub, { w: 700 });
+    const bar = this.add.graphics(); bar.fillStyle(0x2B1E14, 1).fillRect(0, 0, W, 150); bar.fillStyle(0xE9B44C, 0.5).fillRect(0, 147, W, 3);
+    iconBtn(this, 72, 76, 'back', () => this.leave(), 88, { dark: true });
+    T(this, W / 2, 56, sc.title, 38, C.cream, { w: 900 }); T(this, W / 2, 104, `${sc.guest}의 ${sc.year}년 사진 · 다른 곳 ${set.spots.length}개`, 22, C.sub, { w: 700 });
     this.timeG = this.add.graphics(); this.timeT = T(this, W - 50, 60, '', 40, C.cream, { ox: 1, w: 900 });
     // 두 사진: 화면 높이에 맞게 (가로 꽉 · 4:3)
     const top = 150, bottom = 190, gap = 14, avail = H - top - bottom - gap, vh = Math.min(avail / 2, W * 0.75);
@@ -25,7 +27,7 @@ export class DiffScene extends Phaser.Scene {
     T(this, 24, y1 + 26, '원본', 22, C.cream, { ox: 0, w: 800, shadow: true }); T(this, 24, y2 + 26, '복원본', 22, C.cream, { ox: 0, w: 800, shadow: true });
     // 아래: 찾은 개수 동그라미 · 힌트
     const by = H - bottom / 2; this.dots = set.spots.map((_, i) => this.add.circle(W / 2 - (set.spots.length - 1) * 38 + i * 76, by, 24, 0x000000, 0.35).setStrokeStyle(4, 0xE9B44C, 0.8));
-    this.hintB = iconBtn(this, W - 100, by, '?', () => this.hint(), 104); this.hintN = T(this, W - 60, by - 44, '1', 26, C.gold, { w: 900 });
+    this.hintB = iconBtn(this, W - 100, by, 'hint', () => this.hint(), 112); this.hintN = T(this, W - 60, by - 44, '1', 26, C.gold, { w: 900 });
     this.cameras.main.fadeIn(300, 20, 12, 6); window.__diff = this;
   }
   update(time, delta) {
@@ -34,7 +36,7 @@ export class DiffScene extends Phaser.Scene {
     if (this.lock > 0) { this.lock -= dt; if (this.lock <= 0 && this.blur) this.blur.destroy(); }
     this.hintT -= dt; if (this.hintT <= 0) { this.hintT = RULE.hintEvery; this.hints++; this.tweens.add({ targets: this.hintB, scale: 1.15, duration: 200, yoyo: true }); }
     this.hintN.setText(this.hints); this.hintB.setAlpha(this.hints ? 1 : 0.55);
-    const k = this.left / RULE.time, x = W - 300; this.timeG.clear().fillStyle(0x000000, 0.4).fillRoundedRect(x, 104, 250, 16, 8).fillStyle(k > 0.25 ? 0xE9B44C : 0xD9573B, 1).fillRoundedRect(x, 104, Math.max(16, 250 * Math.min(1, k)), 16, 8);
+    const k = this.left / this.limit, x = W - 300; this.timeG.clear().fillStyle(0x000000, 0.4).fillRoundedRect(x, 104, 250, 16, 8).fillStyle(k > 0.25 ? 0xE9B44C : 0xD9573B, 1).fillRoundedRect(x, 104, Math.max(16, 250 * Math.min(1, k)), 16, 8);
     this.timeT.setText(`${Math.floor(this.left / 60)}:${String(Math.floor(this.left % 60)).padStart(2, '0')}`).setColor(k > 0.25 ? C.cream : '#FF8A6A');
     if (this.left <= 10 && Math.floor(this.left) !== this.lastTick) { this.lastTick = Math.floor(this.left); audio.play('sfx_tick', { volume: 0.4 }); }
     if (this.left <= 0) this.timeUp();
@@ -84,7 +86,7 @@ export class DiffScene extends Phaser.Scene {
     p.content.add(btn(this, 0, 220, 400, 100, '사진관으로', () => this.scene.start('Home'), { style: 'cream', size: 30 }));
   }
   win() {
-    this.ended = true; const k = this.left / RULE.time, stars = k >= RULE.star3 ? 3 : k >= RULE.star2 ? 2 : 1, score = Math.round(1000 + this.left * 20);
+    this.ended = true; const k = this.left / this.limit, stars = k >= RULE.star3 ? 3 : k >= RULE.star2 ? 2 : 1, score = Math.round(1000 + this.left * 20);
     const res = M.finish(this.scn.id, { score, stars });
     audio.play('sfx_shutter', { volume: 0.8 }); this.cameras.main.flash(250, 255, 245, 220);
     this.time.delayedCall(600, () => this.scene.start('Result', { id: this.scn.id, kind: 'sd', score, stars, time: this.t, ...res }));

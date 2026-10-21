@@ -1,6 +1,6 @@
 // 진행: 오늘의 사진(처음 연 날부터 하루 한 장씩 열림) · 별 · 연속 방문 · 물건 도감
-import { load, save } from './save.js?v=0.19.1';
-import { SCENES } from './content.js?v=0.19.1';
+import { load, save } from './save.js?v=0.20.0';
+import { SCENES } from './content.js?v=0.20.0';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const dayNum = k => Math.floor(new Date(k + 'T00:00:00').getTime() / 86400000);
@@ -36,11 +36,18 @@ export function finish(id, r) {
 }
 export const totalStars = () => Object.values(load().done).reduce((a, r) => a + r.stars, 0);
 export const foundCount = () => Object.values(load().done).reduce((a, r) => a + Object.keys(r.found || {}).length, 0);
-// 숨은물건: 이번 판에 낼 물건 10개 — 아직 덜 찾아본 물건 먼저 (다시 할수록 새 물건이 섞임)
-export function pickItems(sc, n = 10) {
-  const rec = record(sc.id), seen = rec ? rec.found : {}, R = Math.random;
-  const fresh = sc.items.filter(i => !seen[i.n]).sort(() => R() - 0.5), old = sc.items.filter(i => seen[i.n]).sort(() => R() - 0.5);
+// 난이도 단계: 같은 종류 안에서 몇 번째 사진인지 (0 = 첫 사진) — 뒤로 갈수록 작은 물건 · 많은 개수 · 짧은 시간
+export const level = sc => SCENES.filter(s => s.kind === sc.kind).indexOf(sc);
+export const LV = (sc, a, b) => { const k = Math.min(1, level(sc) / 6); return a + (b - a) * k; };
+// 숨은물건: 이번 판 물건 — 단계가 오를수록 작은 물건 쪽에서 · 그 안에서 아직 덜 찾아본 물건 먼저
+export function pickItems(sc) {
+  const n = Math.round(LV(sc, 8, 12)), rec = record(sc.id), seen = rec ? rec.found : {}, R = Math.random;
+  const bySize = [...sc.items].sort((a, b) => b.r - a.r), win = Math.min(bySize.length, n + 6), off = Math.round((bySize.length - win) * Math.min(1, level(sc) / 6));
+  const pool = bySize.slice(off, off + win);
+  const fresh = pool.filter(i => !seen[i.n]).sort(() => R() - 0.5), old = pool.filter(i => seen[i.n]).sort(() => R() - 0.5);
   return [...fresh, ...old].slice(0, n);
 }
+// 숨은물건 별 기준 (초): 물건 하나당 ★3 7초 · ★2 13초, 빗나감 한 번에 +3초
+export const hoTarget = n => ({ t3: n * 7, t2: n * 13 });
 // 틀린그림: 몇 번째 세트인지 (판마다 번갈아)
 export const diffSet = sc => (record(sc.id)?.plays || 0) % sc.sets.length;

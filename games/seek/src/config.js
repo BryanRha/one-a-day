@@ -1,5 +1,5 @@
 // 화면: 가로 1080 고정, 세로는 기기 비율대로 (최소 1920)
-export const VERSION = '0.1.1';
+export const VERSION = '0.2.0';
 export const TITLE = '추억 사진관';
 export const TITLE_EN = 'MEMORY STUDIO';
 export const W = 1080;

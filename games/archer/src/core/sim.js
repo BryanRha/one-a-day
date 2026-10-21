@@ -1,6 +1,6 @@
 // 전투 규칙 (화면과 무관): 방 · 영웅 이동/자동 사격 · 화살 · 몬스터 AI · 적 탄 · 능력 · 레벨업
 // 좌표는 방 안의 픽셀 (가로 AW × 세로 AH). 한 칸 = CELL.
-import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.10';
+import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.11';
 
 // 밸런스 조절값 (봇으로 찾음): 장 안에서 방마다 몬스터 체력 증가 · 9번 방 이후 공격 증가 · 보스 체력 배율
 export const TUNE = { hpRamp: 0.08, dmgLate: 0.03, boss: [4, 5.4, 6.2] };

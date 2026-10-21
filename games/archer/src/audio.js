@@ -1,5 +1,5 @@
 // 효과음 / 배경음. 배경음은 처음 틀 때 받아 온다 (첫 로딩을 가볍게).
-import { load, save } from './save.js?v=0.17.10';
+import { load, save } from './save.js?v=0.17.11';
 
 export const SFX = ['sfx_shoot', 'sfx_hit', 'sfx_crit', 'sfx_kill', 'sfx_hurt', 'sfx_coin', 'sfx_levelup', 'sfx_pick', 'sfx_door', 'sfx_boss', 'sfx_fire', 'sfx_ice', 'sfx_zap', 'sfx_heal', 'sfx_win', 'sfx_lose', 'sfx_click', 'sfx_enemyshot', 'sfx_chest'];
 export const HAVE_BGM = [];   // 받은 배경음 (Pixabay 허락 후 추가)

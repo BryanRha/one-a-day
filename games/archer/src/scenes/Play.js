@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.10';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.10';
-import { audio } from '../audio.js?v=0.17.10';
-import { load, save } from '../save.js?v=0.17.10';
-import { pushBack } from '../oad.js?v=0.17.10';
-import * as M from '../meta.js?v=0.17.10';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.10';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.10';
+import { W, H } from '../config.js?v=0.17.11';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.11';
+import { audio } from '../audio.js?v=0.17.11';
+import { load, save } from '../save.js?v=0.17.11';
+import { pushBack } from '../oad.js?v=0.17.11';
+import * as M from '../meta.js?v=0.17.11';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.11';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.11';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -148,7 +148,7 @@ export class PlayScene extends Phaser.Scene {
     else this.npcV = null;
     // 영웅
     if (!this.heroV) {
-      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 68, 22, 0x000000, 0.35); const im = this.add.image(0, -18, `hd_${this.heroK}_4`).setOrigin(0.5, 0.5); im.setScale(this.heroH / im.height); im.base = im.scale;
+      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 68, 22, 0x000000, 0.35); const im = this.add.image(0, -18, `hd_${this.heroK}_4`).setOrigin(0.5, 0.5); im.setScale(this.heroScale(im.texture.key)); im.base = im.scale;
       const ring = this.add.ellipse(0, 6, 80, 28, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
       const hpB = this.add.rectangle(-60, -this.heroH * 0.9, 120, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-60, -this.heroH * 0.9, 120, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -this.heroH * 0.9 - 24, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); const aura = this.add.circle(0, 6, 480 * this.k, 0x8AF07A, 0.05).setStrokeStyle(3, 0x8AF07A, 0.25).setVisible(!!s.fx['fang.armor']); const shd = this.add.circle(0, -18, 78, 0xFF8A3A, 0.18).setStrokeStyle(5, 0xFFB050, 0.8).setVisible(false); hv.add([aura, sh, ring, im, shd, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT, shd }); this.heroV = hv;
     }
@@ -198,7 +198,7 @@ export class PlayScene extends Phaser.Scene {
     const flip = di === 0 || di === 4 ? hv.im.flipX : fx < 0;
     // 움직이면 그 방향 달리기 6장(초당 12장) · 멈추면 겨누는 그림
     hv.di = di; const run = p.moving, key = run ? `hr_${this.heroK}_${di}_${Math.floor(this.time.now / 83) % 6}` : `hd_${this.heroK}_${di}`;
-    if (hv.im.texture.key !== key) { hv.im.setTexture(key); hv.im.base = this.heroH * (run ? 1.05 : 1) / hv.im.height; }
+    if (hv.im.texture.key !== key) { hv.im.setTexture(key); hv.im.base = this.heroScale(key); }
     if (flip !== hv.im.flipX) hv.im.setFlipX(flip);
     hv.im.setAlpha(p.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.45 : 1);
     // 걷기: 통통 튀지 않게 — 아주 작은 상하(1.5px)와 좌우 흔들림만 · 쏠 때 반동
@@ -324,6 +324,12 @@ export class PlayScene extends Phaser.Scene {
     const c = this.textures.createCanvas(key, 64, 64), g = c.getContext(), gr = g.createRadialGradient(32, 32, 8, 32, 32, 32);
     gr.addColorStop(0, ice ? 'rgba(122,216,255,0.9)' : 'rgba(255,90,138,0.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
     g.fillStyle = ice ? '#E0F6FF' : '#FFE0F0'; g.strokeStyle = ice ? '#4AB8FF' : '#FF3A6A'; g.lineWidth = 4; g.beginPath(); g.arc(32, 32, 13, 0, Math.PI * 2); g.fill(); g.stroke(); c.refresh(); return key;
+  }
+  // 영웅 그림 크기: 그림마다 키·여백이 달라 "키"로 맞추면 달릴 때 몸이 얇아 보임 → 불투명 픽셀 넓이(몸 부피)로 맞춤
+  heroScale(key) {
+    const C = PlayScene.areaCache ||= new Map();
+    if (!C.has(key)) { const src = this.textures.get(key).getSourceImage(), w = src.width, h = src.height, c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(src, 0, 0); const d = g.getImageData(0, 0, w, h).data; let n = 0; for (let i = 3; i < d.length; i += 16) if (d[i] > 128) n++; C.set(key, Math.sqrt(n * 4)); }
+    return this.heroH * 0.62 / C.get(key);   // 몸 부피 기준 (앞모습 서 있는 그림이 키 ≈ heroH 가 되게)
   }
   digits() {
     if (this.textures.exists('dg_0')) return;

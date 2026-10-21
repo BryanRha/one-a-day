@@ -1,5 +1,5 @@
 // 화면 크기: 가로 1080 고정, 세로는 기기 비율에 맞춰 늘어남 (최소 1920)
-export const VERSION = '0.6.0';
+export const VERSION = '0.6.2';
 export const TITLE = '별빛 궁수';
 export const TITLE_EN = 'STAR ARCHER';
 export const W = 1080;

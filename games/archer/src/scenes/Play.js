@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.5';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.5';
-import { audio } from '../audio.js?v=0.17.5';
-import { load, save } from '../save.js?v=0.17.5';
-import { pushBack } from '../oad.js?v=0.17.5';
-import * as M from '../meta.js?v=0.17.5';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.5';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.5';
+import { W, H } from '../config.js?v=0.17.6';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.6';
+import { audio } from '../audio.js?v=0.17.6';
+import { load, save } from '../save.js?v=0.17.6';
+import { pushBack } from '../oad.js?v=0.17.6';
+import * as M from '../meta.js?v=0.17.6';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.6';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.6';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -189,10 +189,11 @@ export class PlayScene extends Phaser.Scene {
     const flip = di === 0 || di === 4 ? hv.im.flipX : fx < 0;
     if (di !== hv.di) { hv.di = di; hv.im.setTexture(`hd_${this.heroK}_${di}`); hv.im.base = 132 / hv.im.height; }
     if (flip !== hv.im.flipX) hv.im.setFlipX(flip);
-    hv.im.rotation = 0;
     hv.im.setAlpha(p.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.45 : 1);
-    const bob = p.moving ? Math.sin(this.time.now / 70) : 0;
-    hv.im.y = -18 - Math.abs(bob) * 7; hv.im.scaleX = hv.im.base * (1 + (p.moving ? Math.abs(bob) * 0.05 : 0) - (hv.recoil || 0) * 0.08); hv.im.scaleY = hv.im.base * (1 - (p.moving ? Math.abs(bob) * 0.04 : 0) + (hv.recoil || 0) * 0.05);
+    // 걷기: 통통 튀지 않게 — 아주 작은 상하(1.5px)와 좌우 흔들림만 · 쏠 때 반동
+    hv.walk = Phaser.Math.Linear(hv.walk || 0, p.moving ? 1 : 0, Math.min(1, dt * 10)); const ph = this.time.now / 110;
+    hv.im.y = -18 - Math.abs(Math.sin(ph)) * 1.5 * hv.walk; hv.im.rotation = Math.sin(ph) * 0.05 * hv.walk;
+    hv.im.scaleX = hv.im.base * (1 - (hv.recoil || 0) * 0.06); hv.im.scaleY = hv.im.base * (1 + (hv.recoil || 0) * 0.04);
     hv.recoil = Math.max(0, (hv.recoil || 0) - dt * 8);
     if (p.moving && (this.dustT = (this.dustT || 0) - dt) <= 0) { this.dustT = 0.12; const d = this.add.image(p.x * k, p.y * k + 18, 'glow').setTint(0xC8C0A8).setAlpha(0.35).setScale(0.25).setDepth(p.y - 2); this.world.add(d); this.tweens.add({ targets: d, alpha: 0, scale: 0.5, duration: 380, onComplete: () => d.destroy() }); }
     if (this.spikeV && this.spikeV.length) { const key = s.spikeUp ? 'spk2' : s.spikeWarn && Math.floor(this.time.now / 120) % 2 ? 'spk1' : 'spk0'; if (this.spikeV[0].texture.key !== key) this.spikeV.forEach(im => im.setTexture(key)); }

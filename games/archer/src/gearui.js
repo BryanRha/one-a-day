@@ -1,6 +1,6 @@
 // 장비 그림 칸 · 등급 효과 설명 (홈 · 결과 화면이 같이 씀)
-import { T } from './pui.js?v=0.17.5';
-import { SLOT, SETS, TIERS, MERGE, itemName, itemIcon, slotMain } from './core/data.js?v=0.17.5';
+import { T } from './pui.js?v=0.17.6';
+import { SLOT, SETS, TIERS, MERGE, itemName, itemIcon, slotMain } from './core/data.js?v=0.17.6';
 
 export const hex = c => '#' + c.toString(16).padStart(6, '0');
 // 등급 색 테두리 + 그림 + (+1 같은 단계 표시)

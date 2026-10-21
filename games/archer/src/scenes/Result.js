@@ -1,9 +1,9 @@
 // 결과: 승리/도전 · 도달 방 · 얻은 금화·보석 · 고른 능력 · 다시/홈
-import { W, H } from '../config.js?v=0.17.5';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.17.5';
-import { audio } from '../audio.js?v=0.17.5';
-import { CHAPTERS, SKILLS, ROOMS } from '../core/data.js?v=0.17.5';
-import { itemBox } from '../gearui.js?v=0.17.5';
+import { W, H } from '../config.js?v=0.17.6';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.17.6';
+import { audio } from '../audio.js?v=0.17.6';
+import { CHAPTERS, SKILLS, ROOMS } from '../core/data.js?v=0.17.6';
+import { itemBox } from '../gearui.js?v=0.17.6';
 
 const PRAISE = ['대단해요!', '완벽한 모험!', '별빛이 함께했어요!'];
 export class ResultScene extends Phaser.Scene {

@@ -1,7 +1,7 @@
 // 상대 AI: 다음 행동 하나씩 돌려줌 (화면이 한 동작씩 보여 줄 수 있게)
 // { kind: 'power' } · { kind: 'act', id, to, then: { kind: 'attack'|'capture'|'wait'|'unload', target, at } } · { kind: 'build', x, y, type } · { kind: 'end' }
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base, repairsAt } from './data.js?v=0.14.0';
-import { dist } from './sim.js?v=0.14.0';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base, repairsAt } from './data.js?v=0.14.1';
+import { dist } from './sim.js?v=0.14.1';
 
 const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.12, threat: 0.45, focus: 1.1 }, hard: { noise: 0, threat: 0.6, focus: 1.3 } };
 
@@ -131,7 +131,7 @@ export class AI {
       // 우리 기지·비행장 위에 서 있으면 생산이 막힘
       if (TERRAIN[t.t].builds && t.owner === p) pos -= 2500;
       // 점령 못 하는 유닛이 적 본부·건물 위에 서 있으면 보병이 점령을 못 함
-      if (!U.capture && TERRAIN[t.t].prop && t.owner !== p) pos -= t.t === 'hq' ? 9000 : 2500;
+      if (!U.capture && TERRAIN[t.t].prop && t.owner !== p) pos -= t.t === 'hq' ? 12000 : mates.some(o => UNITS[o.type].capture && dist(o.x, o.y, v.x, v.y) <= 4) ? 7000 : 2500;
       const stay = pos + goal;
       consider(stay, [v.x, v.y], { kind: 'wait' });
       // 점령
@@ -236,11 +236,12 @@ export class AI {
       const ft = UNIT_ORDER.find(t => ferries(t) && UNITS[t].dom === kind);
       if (ft) {
         const str = mine.filter(u => fits(ft, u) && stranded(sim, u)).length, have = mine.filter(u => u.type === ft).length;
-        if (str && have < Math.min(2, Math.ceil(str / UNITS[ft].carry.n))) { if (funds >= sim.costOf(ft, p)) return { kind: 'build', x: o.x, y: o.y, type: ft }; if (kind === 'sea') continue; }
+        if (str && have < Math.min(3, Math.ceil(str / UNITS[ft].carry.n))) { if (funds >= sim.costOf(ft, p)) return { kind: 'build', x: o.x, y: o.y, type: ft }; if (kind === 'sea') continue; }
       }
       // 갇힌 땅의 기지: 이미 많이 쌓였으면 수송비를 모음
-      if (kind === 'ground') { const fake = { type: 'inf', p, x: o.x, y: o.y }; if (stranded(sim, fake) && mine.filter(u => stranded(sim, u)).length >= 4) continue; }
-      const opts = UNIT_ORDER.filter(t => UNITS[t].dom === kind && sim.costOf(t, p) <= funds && UNITS[t].range && (t !== 'piper' || sim.pipeBase(o.x, o.y)));
+      let islandBase = false;
+      if (kind === 'ground') { const fake = { type: 'inf', p, x: o.x, y: o.y }; islandBase = stranded(sim, fake); if (islandBase && mine.filter(u => stranded(sim, u)).length >= 4) continue; }
+      const opts = UNIT_ORDER.filter(t => UNITS[t].dom === kind && sim.costOf(t, p) <= funds && UNITS[t].range && (t !== 'piper' || sim.pipeBase(o.x, o.y)) && (!islandBase || FOOT.includes(t) || t === 'ltank'));   // 섬에 갇힌 기지: 실어 나르기 좋은 유닛만
       if (!opts.length) continue;
       let pick = null, bs = -1e9;
       const needCap = (caps < Math.min(4, neutral + 2) && sim.day < 10) || caps < 2;

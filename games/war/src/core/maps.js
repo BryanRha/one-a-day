@@ -232,7 +232,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'battleship', x: 4, y: 0 }, { t: 'cruiser', x: 2, y: 0 }, { t: 'sub', x: 6, y: 0 }, { t: 'inf', x: 0, y: 1 }], 14),
     funds: [14000, 14000], tip: '전함은 멀리서 · 잠수함은 함선에 강해요 · 순양함은 잠수함에 강해요',
-    camp: { funds: [16000, 7000], incomeMul: [1, 1, 0.34] },
+    camp: { funds: [16000, 7000], incomeMul: [1, 1, 0.41] },
   },
   {
     id: 'm15', name: '최후의 결전', desc: '안개 낀 붉은 군단 본진 · 육해공 총력전', par: 20, fog: true,
@@ -403,7 +403,7 @@ export const MAPS = [
 ];
 
 // 캠페인 적 지휘관은 이야기(story.js)에 맞춤
-import { FOES } from '../story.js?v=0.14.0';
+import { FOES } from '../story.js?v=0.14.1';
 for (const m of MAPS) if (FOES[m.id]) m.enemyCo = FOES[m.id];
 
 // 전쟁실: 점수 도전 지도 (속도 · 전력 · 기술 300점 · S~D 등급) — 적은 어려움, 핸디캡 없음

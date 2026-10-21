@@ -1,12 +1,14 @@
 // 작전 결과: 승패 · 별 · 전과 · 경험치 · 계급 · 새 지휘관
-import { W, H } from '../config.js?v=0.14.0';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.14.0';
-import { audio } from '../audio.js?v=0.14.0';
-import { load } from '../save.js?v=0.14.0';
-import * as M from '../meta.js?v=0.14.0';
-import { COS } from '../core/data.js?v=0.14.0';
-import { MAPS } from '../core/maps.js?v=0.14.0';
-import { insignia } from './Home.js?v=0.14.0';
+import { W, H } from '../config.js?v=0.14.1';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.14.1';
+import { audio } from '../audio.js?v=0.14.1';
+import { load } from '../save.js?v=0.14.1';
+import * as M from '../meta.js?v=0.14.1';
+import { COS } from '../core/data.js?v=0.14.1';
+import { MAPS } from '../core/maps.js?v=0.14.1';
+import { insignia } from './Home.js?v=0.14.1';
+import { rankOn } from '../rank.js?v=0.14.1';
+import { rankPopup, postScore } from '../rankui.js?v=0.14.1';
 
 const PRAISE = ['완벽한 작전!', '훌륭한 지휘였어요!', '전선이 무너졌어요, 대승!', '역시 명지휘관!'];
 export class ResultScene extends Phaser.Scene {
@@ -34,6 +36,7 @@ export class ResultScene extends Phaser.Scene {
     if (r.unlocked) { const im = this.add.image(W / 2 - 220, y + 20, `co_${r.unlocked}`); im.setScale(140 / im.height); T(this, W / 2 - 120, y + 20, `지휘관 ${COS[r.unlocked].name} 합류!`, 40, C.gold, { ox: 0, w: 900 }); y += 160; }
     const by = Math.min(H - 130, y + 90);
     const next = win && r.mode === 'campaign' ? M.STAGES[M.STAGES.findIndex(s => s.id === r.mapId) + 1] : null;
+    if (rankOn() && r.mode === 'daily') { const board = `daily:${M.dayKey()}`; if (win) postScore(board, -(r.day * 100 + r.lost), { day: r.day, lost: r.lost, co: r.co }); btn(this, W / 2, Math.min(H - 70, by + 150), 420, 96, '오늘의 순위', () => rankPopup(this, board, '오늘의 작전 순위', x => `${x.extra.day}일 · 손실 ${x.extra.lost}`), { style: 'blue', size: 30 }); }
     btn(this, W / 2 + 90, by, 560, 140, next ? '다음 작전' : '다시 도전', () => this.go('Brief', { mode: r.mode, mapId: next ? next.id : r.mapId }), { style: 'gold', icon: 'i_play', size: 42 });
     iconBtn(this, W / 2 - 300, by, 'i_home', () => this.go('Home'), 130);
     this.cameras.main.fadeIn(300, 20, 22, 10);
@@ -77,8 +80,9 @@ export class ResultScene extends Phaser.Scene {
       T(this, W / 2, y + 340, `합계 ${w.total} / 300${r.warPrev && r.warPrev.total >= w.total ? ` · 최고 ${r.warPrev.total} (${r.warPrev.rank})` : ' · 새 최고 기록!'}`, 32, r.warPrev && r.warPrev.total >= w.total ? '#4A3E1E' : '#2F6A18', { w: 900, shadow: false });
       y += 400;
     }
-    const by = Math.min(H - 130, y + 120);
+    const by = Math.min(H - 290, y + 120);
     btn(this, W / 2 + 90, by, 560, 140, '다시 도전', () => this.go('Brief', { mode: 'war', mapId: r.mapId }), { style: 'gold', icon: 'i_play', size: 42 });
+    if (rankOn()) { const board = `war:${r.mapId}`, see = () => rankPopup(this, board, `${m.name} 순위`, x => `${x.score}점 ${x.extra && x.extra.rank ? x.extra.rank : ''}`); btn(this, W / 2, by + 150, 420, 96, '순위표 보기', see, { style: 'blue', size: 30 }); if (w) postScore(board, w.total, { rank: w.rank, day: r.day, co: r.co }); }
     iconBtn(this, W / 2 - 300, by, 'i_home', () => this.go('Home'), 130);
     this.cameras.main.fadeIn(300, 20, 22, 10);
     window.__result = r;

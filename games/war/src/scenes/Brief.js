@@ -1,13 +1,15 @@
 // 작전 준비: 캠페인 작전 고르기 · 지도 미리보기 · 지휘관 고르기 · (자유 대전) 지도·난이도·AI/2인 대전·내 지도
-import { W, H } from '../config.js?v=0.14.0';
-import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.14.0';
-import { audio } from '../audio.js?v=0.14.0';
-import { load, save } from '../save.js?v=0.14.0';
-import * as M from '../meta.js?v=0.14.0';
-import { COS, WEATHER } from '../core/data.js?v=0.14.0';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.0';
-import { STORY } from '../story.js?v=0.14.0';
-import { Sim } from '../core/sim.js?v=0.14.0';
+import { W, H } from '../config.js?v=0.14.1';
+import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.14.1';
+import { audio } from '../audio.js?v=0.14.1';
+import { load, save } from '../save.js?v=0.14.1';
+import * as M from '../meta.js?v=0.14.1';
+import { COS, WEATHER } from '../core/data.js?v=0.14.1';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.1';
+import { STORY } from '../story.js?v=0.14.1';
+import { rankOn } from '../rank.js?v=0.14.1';
+import { rankPopup } from '../rankui.js?v=0.14.1';
+import { Sim } from '../core/sim.js?v=0.14.1';
 
 const LV = { easy: '쉬움', normal: '보통', hard: '어려움' };
 const TCOL = { pipe: 0x8A8F96, seam: 0xC8A040, silo: 0x5A5048, silo_e: 0x6A6A5A, plain: 0x8DB05A, farm: 0x9BB45A, wheat: 0xD8B85A, forest: 0x3E7A34, mountain: 0x9A8C78, road: 0xC8A878, bridge: 0xB0A090, river: 0x4A9AD8, beach: 0xE8D8A0, sea: 0x2A6AB0, reef: 0x3A7A90, trench: 0x8A7A50 };
@@ -53,6 +55,7 @@ export class BriefScene extends Phaser.Scene {
     T(this, 70, y + 96, this.custom ? '직접 만든 지도' : map.desc, 23, '#4A3E1E', { ox: 0, w: 800, shadow: false, wrap: 520 });
     const wPlan = map.weather, wName = !wPlan ? '' : Array.isArray(wPlan) ? '날씨 ' + [...new Set(wPlan)].map(w => WEATHER[w].name).join('·') : '날씨 ' + WEATHER[wPlan].name;
     const tags = [map.fog ? '안개 전장' : '', wName, this.mode !== 'free' && map.camp && map.camp.noBuild ? '적은 생산 못 함' : '', this.versus ? '2인 대전' : `적 ${LV[this.ai]}`].filter(Boolean).join(' · ');
+    if (this.mode === 'war' && rankOn()) btn(this, 230, y + 330, 320, 72, '순위표', () => rankPopup(this, `war:${map.id}`, `${map.name} 순위`, x => `${x.score}점 ${x.extra && x.extra.rank ? x.extra.rank : ''}`), { style: 'ghost', size: 24 });
     if (this.mode === 'war') { const b = d.war[map.id]; T(this, 70, y + 150, `점수 = 속도 + 전력 + 기술 (각 100) · 기준 ${map.par}일`, 23, '#7A5A10', { ox: 0, w: 800, shadow: false, wrap: 540 }); T(this, 70, y + 240, b ? `최고 ${b.total}점 · ${b.rank} 등급 (${b.day}일)` : '아직 기록 없음 · S 등급은 270점 이상', 23, '#2F6A18', { ox: 0, w: 800, shadow: false }); }
     else if (this.mode !== 'free') T(this, 70, y + 150, `별 ★ 승리 · ★ ${map.par}일 안 · ★ 손실 ${M.lossCap(map.par)}기 이하`, 23, '#7A5A10', { ox: 0, w: 800, shadow: false, wrap: 540 });
     T(this, 70, y + 196, tags, 23, map.fog ? '#5A3A8A' : '#6B5A2A', { ox: 0, w: 800, shadow: false });

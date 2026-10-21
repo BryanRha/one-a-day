@@ -1,10 +1,12 @@
 // 홈: 계급 · 캠페인 · 오늘의 작전 · 자유 대전 · 지휘관 · 오늘의 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.14.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.0';
-import { audio } from '../audio.js?v=0.14.0';
-import { load } from '../save.js?v=0.14.0';
-import * as M from '../meta.js?v=0.14.0';
-import { COS } from '../core/data.js?v=0.14.0';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.14.1';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.1';
+import { audio } from '../audio.js?v=0.14.1';
+import { load } from '../save.js?v=0.14.1';
+import * as M from '../meta.js?v=0.14.1';
+import { COS } from '../core/data.js?v=0.14.1';
+import { rankOn } from '../rank.js?v=0.14.1';
+import { rankPopup } from '../rankui.js?v=0.14.1';
 
 // 계급장: 이병~병장 갈매기 · 부사관 · 장교 다이아 · 장성 별
 export function insignia(scene, x, y, k, s = 1) {
@@ -67,7 +69,8 @@ export class HomeScene extends Phaser.Scene {
     T(this, 60, y - 96, 'DAILY OPERATION', 20, C.gold, { ox: 0, w: 900, ls: 3 });
     T(this, 60, y - 52, '오늘의 작전', 40, C.text, { ox: 0, w: 900 });
     T(this, 60, y - 4, `${op.map.name} · 어려움`, 24, C.sub, { ox: 0, w: 800 });
-    btn(this, W / 2 - hw / 2 - 6, y + 80, hw - 70, 90, op.best ? `도전 · 최단 ${op.best}일` : '도전', () => this.go('Brief', { mode: 'daily' }), { style: 'gold', size: 30 });
+    btn(this, W / 2 - hw / 2 - 6 - (rankOn() ? 60 : 0), y + 80, hw - 70 - (rankOn() ? 120 : 0), 90, op.best ? `도전 · 최단 ${op.best}일` : '도전', () => this.go('Brief', { mode: 'daily' }), { style: 'gold', size: 30 });
+    if (rankOn()) btn(this, W / 2 - 6 - 80, y + 80, 110, 90, '순위', () => rankPopup(this, `daily:${M.dayKey()}`, '오늘의 작전 순위', x => `${x.extra.day}일 · 손실 ${x.extra.lost}`), { style: 'ghost', size: 24 });
     this.add.existing(panel(this, W / 2 + hw / 2 + 6, y, hw, 270));
     T(this, W / 2 + 36, y - 96, 'SKIRMISH', 20, C.green, { ox: 0, w: 900, ls: 3 });
     T(this, W / 2 + 36, y - 52, '자유 대전', 40, C.text, { ox: 0, w: 900 });
@@ -112,7 +115,7 @@ export class HomeScene extends Phaser.Scene {
     p.content.add(T(this, 40, 36, co.sdesc, 22, C.text, { ox: 0, w: 800, wrap: 380 }));
     const st = M.STAGES.find(s => s.unlockCo === k);
     if (!own) p.content.add(T(this, 40, 130, st ? `캠페인 ${st.n}. ${st.name} 승리로 합류` : '', 26, C.sub, { ox: 0, w: 800, wrap: 380 }));
-    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.14.0').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
+    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.14.1').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
   }
   drawMissions() {
     if (this.mBox) this.mBox.destroy();
@@ -133,7 +136,7 @@ export class HomeScene extends Phaser.Scene {
   settings() {
     const d = load(), pop = popup(this, '설정', 760, 760);
     const row = (y, label, on, fn) => { pop.content.add(T(this, -260, y, label, 40, C.text, { ox: 0 })); const b = btn(this, 200, y, 220, 96, on ? '켜짐' : '꺼짐', () => { fn(); b.setLabel(b.label.text === '켜짐' ? '꺼짐' : '켜짐'); }, { style: on ? 'green' : 'ghost', size: 34 }); pop.content.add(b); };
-    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.14.0').then(m => m.save()); }); row(270, '지휘관 테마곡', d.coTheme !== false, () => { d.coTheme = d.coTheme === false; import('../save.js?v=0.14.0').then(m => m.save()); });
+    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.14.1').then(m => m.save()); }); row(270, '지휘관 테마곡', d.coTheme !== false, () => { d.coTheme = d.coTheme === false; import('../save.js?v=0.14.1').then(m => m.save()); });
   }
   go(k, data) { audio.stopMusic(); this.cameras.main.fadeOut(220, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(k, data)); }
 }

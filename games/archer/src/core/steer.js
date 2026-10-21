@@ -1,5 +1,5 @@
 // 자동 조종 (봇·브라우저 자동 시험 공용)
-import { AW, AH, CELL } from './sim.js?v=0.17.4';
+import { AW, AH, CELL } from './sim.js?v=0.17.5';
 // 칸 단위 길찾기 (BFS) → 다음 칸 중심 방향
 export function pathTo(s, p, tx, ty) {
   const C0 = [Math.floor(p.x / CELL), Math.floor(p.y / CELL)], W = s.grid[0].length, H = s.grid.length, prev = new Map(), q = [[tx, ty]], key = (x, y) => x + ',' + y;
@@ -14,6 +14,9 @@ export function steer(s, SKILL = 0.55) {
       else {
         if (Math.random() < SKILL) for (const f of s.foes) { const dx = p.x - f.x, dy = p.y - f.y, d = Math.hypot(dx, dy); if (d < 260) { const dot = (f.vx * dx + f.vy * dy) / (Math.hypot(f.vx, f.vy) * d); if (dot > 0.6) { mx += -f.vy / 300 * Math.sign(f.vx * dy - f.vy * dx); my += f.vx / 300 * Math.sign(f.vx * dy - f.vy * dx); } } }
         for (const m of s.mons) { const dx = p.x - m.x, dy = p.y - m.y, d = Math.hypot(dx, dy); if (d < m.r + 170) { mx += dx / d; my += dy / d; } }
+        // 경고(빨간 선·원) 피하기 · 가시 함정 피하기 (실력만큼)
+        if (Math.random() < SKILL) for (const w of s.warns || []) { if (w.k === 'circle') { const dx = p.x - w.x, dy = p.y - w.y, d = Math.hypot(dx, dy) || 1; if (d < w.r + 40) { mx += dx / d * 2; my += dy / d * 2; } } else { const lx = w.x2 - w.x1, ly = w.y2 - w.y1, L = Math.hypot(lx, ly) || 1, t = ((p.x - w.x1) * lx + (p.y - w.y1) * ly) / (L * L); if (t > 0 && t < 1) { const px = w.x1 + lx * t, py = w.y1 + ly * t, dd = Math.hypot(p.x - px, p.y - py); if (dd < w.w / 2 + 50) { mx += (p.x - px) / (dd || 1) * 2; my += (p.y - py) / (dd || 1) * 2; } } } }
+        if ((s.spikeWarn || s.spikeUp) && Math.random() < SKILL) { const cx = Math.floor(p.x / CELL), cy = Math.floor(p.y / CELL); if ((s.spikes || []).some(k => k.cx === cx && k.cy === cy)) { const sp = s.spikes.find(k => k.cx === cx && k.cy === cy); mx += (p.x - (cx + 0.5) * CELL) / 40 || 1; my += 1.5; } }
         if (Math.hypot(mx, my) > 0.3) { mx += (AW / 2 - p.x) / AW * 1.6; my += (AH * 0.6 - p.y) / AH * 1.6; }   // 구석으로 몰리지 않게
         const tg = s.nearest(p);
         if (Math.hypot(mx, my) < 0.3) {

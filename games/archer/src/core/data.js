@@ -67,9 +67,9 @@ export const BOSSES = {
 
 // 장: 방 20개 (5·15방 = 특수 방 · 10방 = 중간 보스 · 20방 = 보스) · tile: 바닥·장애물·구덩이 그림
 export const CHAPTERS = [
-  { id: 1, stage: 0, name: '속삭이는 숲', tiles: ['t_grass', 't_rock', 't_water'], mons: ['slime', 'shroom', 'wolf', 'bat'], boss: 'golem', mid: 'wolf', hpMul: 1.2, dmgMul: 1.65, bg: 0x1E3A24 },
-  { id: 2, stage: 1, name: '잊힌 사막 유적', tiles: ['t_sand', 't_pillar', 't_pit'], mons: ['mummy', 'skel', 'scorp', 'wisp'], boss: 'sphinx', mid: 'mummy', hpMul: 3.3, dmgMul: 4.8, bg: 0x4A3418 },
-  { id: 3, stage: 2, name: '얼어붙은 동굴', tiles: ['t_ice', 't_crystal', 't_chasm'], mons: ['iceslime', 'ghost', 'icemage', 'yeti'], boss: 'dragon', mid: 'yeti', hpMul: 4.4, dmgMul: 6.0, bg: 0x1A2E4A },
+  { id: 1, stage: 0, name: '속삭이는 숲', tiles: ['t_grass', 't_rock', 't_water'], mons: ['slime', 'shroom', 'wolf', 'bat'], boss: 'golem', mid: 'wolf', hpMul: 0.95, dmgMul: 1.3, bg: 0x1E3A24 },
+  { id: 2, stage: 1, name: '잊힌 사막 유적', tiles: ['t_sand', 't_pillar', 't_pit'], mons: ['mummy', 'skel', 'scorp', 'wisp'], boss: 'sphinx', mid: 'mummy', hpMul: 1.9, dmgMul: 2.7, bg: 0x4A3418 },
+  { id: 3, stage: 2, name: '얼어붙은 동굴', tiles: ['t_ice', 't_crystal', 't_chasm'], mons: ['iceslime', 'ghost', 'icemage', 'yeti'], boss: 'dragon', mid: 'yeti', hpMul: 2.4, dmgMul: 3.4, bg: 0x1A2E4A },
 ];
 export const ROOMS = 20;
 

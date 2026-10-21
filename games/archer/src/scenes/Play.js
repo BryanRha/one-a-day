@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.4';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.4';
-import { audio } from '../audio.js?v=0.17.4';
-import { load, save } from '../save.js?v=0.17.4';
-import { pushBack } from '../oad.js?v=0.17.4';
-import * as M from '../meta.js?v=0.17.4';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.4';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.4';
+import { W, H } from '../config.js?v=0.17.5';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.5';
+import { audio } from '../audio.js?v=0.17.5';
+import { load, save } from '../save.js?v=0.17.5';
+import { pushBack } from '../oad.js?v=0.17.5';
+import * as M from '../meta.js?v=0.17.5';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.5';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.5';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -126,6 +126,9 @@ export class PlayScene extends Phaser.Scene {
     shade.lineStyle(14, this.ch.bg, 1).strokeRect(-7, -7, AW * k + 14, AH * k + 14).lineStyle(4, 0xFFFFFF, 0.18).strokeRect(-14, -14, AW * k + 28, AH * k + 28); this.floorL.add(shade);
     // 성능: 움직이지 않는 바닥·장애물·테두리(약 170개)를 한 장으로 구워서 매 프레임 1번만 그림
     { const pad = 20, list = [...this.floorL.list]; if (this.floorRT) this.floorRT.destroy(); const rt = this.add.renderTexture(-pad, -pad, Math.ceil(AW * k) + pad * 2, Math.ceil(AH * k) + pad * 2).setOrigin(0, 0); this.floorL.remove(list); this.world.remove(list); for (const o of list) { rt.draw(o, o.x + pad, o.y + pad); o.destroy(); } this.floorRT = rt; this.floorL.add(rt); }
+    // 가시 함정: 판(숨음) → 빨갛게 깜빡(경고) → 가시 솟음
+    if (!this.textures.exists('spk0')) for (const st of [0, 1, 2]) { const c = this.textures.createCanvas('spk' + st, 120, 120), g = c.getContext(); g.fillStyle = '#2A2A36'; g.fillRect(8, 8, 104, 104); g.strokeStyle = st === 1 ? '#FF4A3A' : '#5A5A6E'; g.lineWidth = 6; g.strokeRect(8, 8, 104, 104); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { const x = 30 + i * 30, y = 30 + j * 30; if (st === 2) { g.fillStyle = '#E8E8F4'; g.beginPath(); g.moveTo(x - 10, y + 10); g.lineTo(x, y - 16); g.lineTo(x + 10, y + 10); g.closePath(); g.fill(); g.fillStyle = '#9A9AB0'; g.beginPath(); g.moveTo(x, y - 16); g.lineTo(x + 10, y + 10); g.lineTo(x, y + 10); g.closePath(); g.fill(); } else { g.fillStyle = st === 1 ? '#FF6A4A' : '#14141C'; g.beginPath(); g.arc(x, y, 6, 0, Math.PI * 2); g.fill(); } } c.refresh(); }
+    this.spikeV = (s.spikes || []).map(sp => { const im = this.add.image((sp.cx + 0.5) * cs, (sp.cy + 0.5) * cs, 'spk0').setDisplaySize(cs, cs); this.floorL.add(im); return im; });
     // 떠다니는 빛가루 (분위기)
     for (let i = 0; i < 14; i++) { const m = this.add.image(Math.random() * AW * k, Math.random() * AH * k, 'glow').setScale(0.15 + Math.random() * 0.2).setAlpha(0.25).setTint(this.chapter === 3 ? 0xBFE8FF : this.chapter === 2 ? 0xFFD88A : 0xC8FF9A).setBlendMode('ADD'); this.floorL.add(m); this.tweens.add({ targets: m, y: m.y - 60 - Math.random() * 80, alpha: 0, duration: 3000 + Math.random() * 3000, repeat: -1, delay: Math.random() * 3000 }); }
     // 문 (위 가운데)
@@ -137,7 +140,7 @@ export class PlayScene extends Phaser.Scene {
     else this.npcV = null;
     // 영웅
     if (!this.heroV) {
-      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 80, 26, 0x000000, 0.35); const im = this.add.image(0, -18, `ht_${this.heroK}`).setOrigin(0.5, 0.5); im.setScale(130 / Math.max(im.width, im.height)); im.base = im.scale;
+      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 80, 26, 0x000000, 0.35); const im = this.add.image(0, -18, `hd_${this.heroK}_4`).setOrigin(0.5, 0.5); im.setScale(132 / im.height); im.base = im.scale;
       const ring = this.add.ellipse(0, 6, 92, 32, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
       const hpB = this.add.rectangle(-55, -105, 110, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-55, -105, 110, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -128, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); const aura = this.add.circle(0, 6, 480 * this.k, 0x8AF07A, 0.05).setStrokeStyle(3, 0x8AF07A, 0.25).setVisible(!!s.fx['fang.armor']); const shd = this.add.circle(0, -18, 78, 0xFF8A3A, 0.18).setStrokeStyle(5, 0xFFB050, 0.8).setVisible(false); hv.add([aura, sh, ring, im, shd, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT, shd }); this.heroV = hv;
     }
@@ -179,16 +182,20 @@ export class PlayScene extends Phaser.Scene {
   render(dt) {
     const s = this.s, k = this.k, p = s.p, hv = this.heroV;
     hv.setPosition(p.x * k, p.y * k); hv.setDepth(p.y);
-    // 원작처럼 겨누는 쪽을 봄: 위쪽이면 뒷모습 · 아래쪽이면 앞모습 · 왼쪽이면 좌우 뒤집기 · 겨누는 쪽으로 살짝 기울임
-    const fx = Math.cos(p.face), fy = Math.sin(p.face), back = hv.back ? fy < 0.25 : fy < -0.15;
-    if (back !== hv.back) { hv.back = back; hv.im.setTexture(`${back ? 'hb' : 'ht'}_${this.heroK}`); hv.im.base = 130 / Math.max(hv.im.width, hv.im.height); }
-    if (Math.abs(fx) > 0.15) hv.im.setFlipX(fx < 0);
-    const want = Phaser.Math.Clamp(fx, -1, 1) * 0.22 * (back ? 1 : -1); hv.im.rotation += (want - hv.im.rotation) * Math.min(1, dt * 14);
+    // 8방향 돌아보기: 보는 각도를 부드럽게 돌리고(짧은 쪽으로) 그 각도에 맞는 그림(앞·앞대각·옆·뒤대각·뒤, 왼쪽은 좌우 반전)
+    hv.ang ??= p.face; const da = Phaser.Math.Angle.Wrap(p.face - hv.ang); hv.ang += Phaser.Math.Clamp(da, -dt * 11, dt * 11);
+    const fx = Math.cos(hv.ang), fy = Math.sin(hv.ang), th = Math.atan2(fy, Math.abs(fx)), raw = (Math.PI / 2 - th) / (Math.PI / 4);
+    let di = hv.di ?? 0; if (Math.abs(raw - di) > 0.62) di = Math.round(raw);   // 경계에서 깜빡이지 않게 여유
+    const flip = di === 0 || di === 4 ? hv.im.flipX : fx < 0;
+    if (di !== hv.di) { hv.di = di; hv.im.setTexture(`hd_${this.heroK}_${di}`); hv.im.base = 132 / hv.im.height; }
+    if (flip !== hv.im.flipX) hv.im.setFlipX(flip);
+    hv.im.rotation = 0;
     hv.im.setAlpha(p.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.45 : 1);
     const bob = p.moving ? Math.sin(this.time.now / 70) : 0;
     hv.im.y = -18 - Math.abs(bob) * 7; hv.im.scaleX = hv.im.base * (1 + (p.moving ? Math.abs(bob) * 0.05 : 0) - (hv.recoil || 0) * 0.08); hv.im.scaleY = hv.im.base * (1 - (p.moving ? Math.abs(bob) * 0.04 : 0) + (hv.recoil || 0) * 0.05);
     hv.recoil = Math.max(0, (hv.recoil || 0) - dt * 8);
     if (p.moving && (this.dustT = (this.dustT || 0) - dt) <= 0) { this.dustT = 0.12; const d = this.add.image(p.x * k, p.y * k + 18, 'glow').setTint(0xC8C0A8).setAlpha(0.35).setScale(0.25).setDepth(p.y - 2); this.world.add(d); this.tweens.add({ targets: d, alpha: 0, scale: 0.5, duration: 380, onComplete: () => d.destroy() }); }
+    if (this.spikeV && this.spikeV.length) { const key = s.spikeUp ? 'spk2' : s.spikeWarn && Math.floor(this.time.now / 120) % 2 ? 'spk1' : 'spk0'; if (this.spikeV[0].texture.key !== key) this.spikeV.forEach(im => im.setTexture(key)); }
     hv.ring.setStrokeStyle(4, s.mons.length ? 0xFF8A70 : 0x8AE8FF, 0.8); hv.shd.setVisible(s.shield > 0);
     if (hv.lastHp !== p.hp) { hv.lastHp = p.hp; hv.hpT.setText(`${Math.ceil(p.hp)}`); }
     hv.hp.width = Math.max(2, 110 * p.hp / p.maxHp); hv.hp.fillColor = p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A;
@@ -272,7 +279,7 @@ export class PlayScene extends Phaser.Scene {
       else if (e.type === 'bolt') this.zap(e.x1 * k, e.y1 * k, e.x2 * k, e.y2 * k);
       else if (e.type === 'head') this.float(e.x * k, e.y * k - 80, '일격!', '#FFD45A');
       else if (e.type === 'levelup') { this.pending.push(['levelup', e.lvl]); }
-      else if (e.type === 'cleared') { if (e.kind !== 'boss' && e.kind !== 'special') this.pending.push(['cleared']); }
+      else if (e.type === 'cleared') { /* 원작 2: 능력은 레벨 업 때만 (방을 깰 때는 없음) */ }
       else if (e.type === 'room') this.onRoom(e);
       else if (e.type === 'boss') { audio.play('sfx_boss', { volume: 0.8 }); if (!e.mid) audio.music('bgm_boss'); this.banner(e.mid ? '우두머리 등장' : '보스 등장', e.name, '#FF8A70'); }
       else if (e.type === 'bossatk') { const b = s.mons.find(m => m.boss); const v = b && this.views.get(b.id); if (v) this.tweens.add({ targets: v.im, scale: v.im.scale * 1.12, duration: 120, yoyo: true }); if (e.pat === 'slam') this.cameras.main.shake(200, 0.01); }

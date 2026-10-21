@@ -1,28 +1,41 @@
 // 전투 규칙 (화면과 무관): 방 · 영웅 이동/자동 사격 · 화살 · 몬스터 AI · 적 탄 · 능력 · 레벨업
 // 좌표는 방 안의 픽셀 (가로 AW × 세로 AH). 한 칸 = CELL.
-import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.4';
+import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.5';
 
 // 밸런스 조절값 (봇으로 찾음): 장 안에서 방마다 몬스터 체력 증가 · 9번 방 이후 공격 증가 · 보스 체력 배율
-export const TUNE = { hpRamp: 0.12, dmgLate: 0.03, boss: [1.4, 1.5, 1.6] };
+export const TUNE = { hpRamp: 0.08, dmgLate: 0.03, boss: [5, 6, 7] };
 export const CELL = 120, COLS = 9, ROWS = 16, AW = CELL * COLS, AH = CELL * ROWS;   // 세로 화면에 맞춘 방 (9 × 16)
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const d2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 export function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
 
-// 방 모양: 장애물(#) · 구덩이(o) 패턴 (영웅은 아래 가운데에서 시작, 문은 위 가운데)
-const LAYOUTS = [
-  [],
-  [[2, 4], [6, 4], [2, 8], [6, 8]],
-  [[1, 5], [2, 5], [6, 5], [7, 5], [4, 8]],
-  [[3, 3], [5, 3], [4, 6], [3, 9], [5, 9]],
-  [[2, 3], [2, 4], [6, 3], [6, 4], [2, 8], [6, 8], [4, 6, 'o']],
-  [[1, 4, 'o'], [7, 4, 'o'], [4, 4], [4, 5], [2, 8], [6, 8]],
-  [[3, 5], [4, 5], [5, 5], [1, 8, 'o'], [7, 8, 'o']],
-  [[2, 2], [6, 2], [4, 4, 'o'], [2, 7], [6, 7], [4, 9]],
-  [[0, 6], [1, 6], [7, 6], [8, 6], [4, 3], [4, 9, 'o']],
-  [[3, 4, 'o'], [5, 4, 'o'], [3, 7, 'o'], [5, 7, 'o']],
-  [[1, 3], [7, 3], [3, 6], [5, 6], [1, 10], [7, 10], [4, 8, 'o']],
-  [[2, 5], [3, 5], [5, 5], [6, 5], [2, 10, 'o'], [6, 10, 'o'], [4, 2]],
+// 방 모양 (원작처럼 손으로 짠 방): # 벽(화살·이동 막음) · ~ 물/구덩이(이동만 막음, 화살은 지나감) · ^ 가시 함정(주기적으로 솟음)
+// R = 원거리 몬스터 자리(물·벽 뒤) · M = 근접 몬스터 자리 · 위 가운데 = 문 · 아래 가운데 = 시작 자리 (16줄 × 9칸)
+const MAPS = [
+  ['.........', '.........', '..R...R..', '.........', '..#...#..', '.........', '...M.M...', '.........', '..#...#..', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '..R...R..', '.........', '~~~~.~~~~', '.........', '.M.....M.', '.........', '.........', '...^^^...', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.R.....R.', '.........', '.##...##.', '.........', '....M....', '...###...', '.........', '.M.....M.', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.........', '.~~R.R~~.', '.~~...~~.', '.........', '.M.....M.', '.........', '##.....##', '.........', '...^.^...', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '....R....', '.........', '#.#...#.#', '.........', '..M...M..', '.........', '.^^...^^.', '.........', '#.#...#.#', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.R.....R.', '.........', '..~~~~~..', '..~...~..', '..~.M.~..', '..~...~..', '.........', '.M.....M.', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.........', 'R.......R', '###...###', '.........', '....M....', '...^^^...', '.........', '###...###', '.........', '.M.....M.', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '..R...R..', '.........', '.#.#.#.#.', '.........', '.M..M..M.', '.........', '.#.#.#.#.', '.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.R.....R.', '~~.....~~', '~~..#..~~', '~~.....~~', '~~.M.M.~~', '~~.....~~', '~~..#..~~', '~~.....~~', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.........', '.R..#..R.', '....#....', '.^..#..^.', '.M.....M.', '.........', '..##.##..', '.........', '....M....', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '..R.R.R..', '.........', '~~~...~~~', '~~~...~~~', '.........', '.M.^.^.M.', '.........', '...#.#...', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.R.....R.', '.#.....#.', '.#..M..#.', '.#.....#.', '.###.###.', '.........', '.........', '.^^...^^.', '.........', '.M.....M.', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.........', '..#R.R#..', '..#...#..', '..##.##..', '.........', 'M.......M', '.........', '.~~...~~.', '.~~...~~.', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', 'R.......R', '.........', '.^.^.^.^.', '.........', '..M...M..', '.........', '#..#.#..#', '.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '...R.R...', '.~.....~.', '.~.###.~.', '.~.....~.', '.~.M.M.~.', '.~.....~.', '.~~...~~.', '.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.R..R..R.', '.........', '##.....##', '...^.^...', '.M.....M.', '.........', '...#.#...', '.........', '##.....##', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.........', '.R.....R.', '.#.....#.', '...#.#...', '.M.....M.', '...#.#...', '.#.....#.', '.........', '.^.....^.', '.........', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '..R...R..', '~~~...~~~', '.........', '.M.....M.', '.........', '~~~...~~~', '.........', '..M...M..', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
+];
+// 보스·우두머리 방: 넓게 · 가장자리에 가시나 기둥 몇 개
+const ARENAS = [
+  ['.........', '.........', '.........', '.........', '.#.....#.', '.........', '.........', '.........', '.........', '.........', '.#.....#.', '.........', '.........', '.........', '.........', '.........'],
+  ['.........', '.........', '.........', '^.......^', '.........', '.........', '.........', '^.......^', '.........', '.........', '.........', '^.......^', '.........', '.........', '.........', '.........'],
+  ['.........', '.........', '.........', '.........', '..#...#..', '.........', '.........', '.........', '.........', '.........', '..#...#..', '.........', '.........', '.........', '.........', '.........'],
 ];
 export const roomKind = n => (n === ROOMS ? 'boss' : n === 10 ? 'mid' : n === 5 || n === 15 ? 'special' : 'fight');
 
@@ -54,7 +67,7 @@ export class Sim {
   get aspd() { const f = this.fx['neb.ring']; return this.base.aspd * (1 + 0.2 * (this.sk.aspd || 0) + (f ? Math.min(f === 2 ? 0.16 : 0.08, Math.floor(this.combo / 5) * (f === 2 ? 0.04 : 0.02)) : 0)); }
   get crit() { return this.base.crit + 0.1 * (this.sk.crit || 0); }
   get dodge() { return 1 - Math.pow(0.88, this.sk.dodge || 0) + (this.hero === 'mir' ? 0.08 : 0) + this.g.dodge + (this.fx['blaze.boots'] === 2 ? 0.1 : 0); }
-  xpNeed() { return Math.round(60 + this.lvl * 45); }
+  xpNeed() { return Math.round(90 + this.lvl * 75); }   // 원작처럼 한 판에 레벨 업 12~14번 정도 (능력은 레벨 업 때만)
 
   // ── 방 ──
   nextRoom() {
@@ -64,9 +77,13 @@ export class Sim {
     this.kind = kind; this.cleared = false; this.doorOpen = false; this.waves = 1; this.wave = 1; this.waveT = 0; this.mons = []; this.shots = []; this.foes = []; this.drops = []; this.npc = null;
     // 지형
     this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));   // 0 바닥 · 1 막힘(장애물) · 2 구덩이(화살은 지나감)
-    const lay = kind === 'fight' ? LAYOUTS[1 + Math.floor(R() * (LAYOUTS.length - 1))] : kind === 'mid' ? LAYOUTS[Math.floor(R() * 3)] : [];
-    const flip = R() < 0.5;
-    for (const [x, y, k] of lay) { const gx = flip ? COLS - 1 - x : x; if (Math.abs(gx - 4) <= 1 && (y <= 3 || y >= ROWS - 3)) continue; this.grid[y][gx] = k === 'o' ? 2 : 1; }   // 문 앞길 · 시작 자리는 비움
+    const map = kind === 'fight' ? MAPS[Math.floor(R() * MAPS.length)] : kind === 'special' ? ARENAS[0].map(r => r.replace(/[#^]/g, '.')) : ARENAS[Math.floor(R() * ARENAS.length)];
+    const flip = R() < 0.5; this.spots = { R: [], M: [] }; this.spikes = [];
+    map.forEach((row, y) => [...row].forEach((ch, x0) => {
+      const x = flip ? COLS - 1 - x0 : x0; if (Math.abs(x - 4) <= 1 && (y <= 1 || y >= ROWS - 3)) return;   // 문 앞길 · 시작 자리는 비움
+      if (ch === '#') this.grid[y][x] = 1; else if (ch === '~') this.grid[y][x] = 2; else if (ch === '^') this.spikes.push({ cx: x, cy: y }); else if (ch === 'R' || ch === 'M') this.spots[ch].push({ x: (x + 0.5) * CELL, y: (y + 0.5) * CELL });
+    }));
+    this.spikeT = 0; this.flowT = 0; this.flow = null;
     this.p.x = AW / 2; this.p.y = AH - CELL * 2.5; this.p.inv = this.sk.star ? 2 : 0.6;
     this.orbA = 0;
     if (kind === 'special') { this.npc = { type: this.room === 5 ? 'angel' : 'devil', x: AW / 2, y: AH * 0.4, used: false }; this.cleared = true; this.doorOpen = true; }
@@ -74,15 +91,38 @@ export class Sim {
     else { this.waves = this.room < 4 ? 2 : 3; this.wave = 0; this.nextWave(); }
     this.warns = []; this.ev('room', { n: this.room, kind });
   }
+  flowMap() {
+    const D = Array.from({ length: ROWS }, () => Array(COLS).fill(1e9)), sx = Math.floor(this.p.x / CELL), sy = Math.floor(this.p.y / CELL), q = [[sx, sy]];
+    if (!D[sy]) return null; D[sy][sx] = 0;
+    for (let h = 0; h < q.length; h++) { const [x, y] = q[h]; for (const [ax, ay] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + ax, ny = y + ay; if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS || this.grid[ny][nx] || D[ny][nx] <= D[y][x] + 1) continue; D[ny][nx] = D[y][x] + 1; q.push([nx, ny]); } }
+    return D;
+  }
+  // 몬스터가 갈 방향: 영웅이 바로 보이면 곧장, 아니면 거리 지도에서 더 가까운 옆 칸 쪽으로
+  toward(m) {
+    const p = this.p, dx = p.x - m.x, dy = p.y - m.y, dl = Math.hypot(dx, dy) || 1, D = this.flow;
+    if (!D || dl < CELL * 1.2 || this.walkLine(m, p)) return [dx / dl, dy / dl];
+    const cx = Math.floor(m.x / CELL), cy = Math.floor(m.y / CELL); if (!D[cy]) return [dx / dl, dy / dl];
+    let best = null, bd = D[cy][cx];
+    for (const [ax, ay] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = cx + ax, ny = cy + ay; if (!D[ny] || D[ny][nx] === undefined || D[ny][nx] >= bd) continue; if (ax && ay && (this.grid[cy][nx] || this.grid[ny][cx])) continue; bd = D[ny][nx]; best = [nx, ny]; }
+    if (!best) return [dx / dl, dy / dl];
+    const tx = (best[0] + 0.5) * CELL - m.x, ty = (best[1] + 0.5) * CELL - m.y, tl = Math.hypot(tx, ty) || 1; return [tx / tl, ty / tl];
+  }
+  walkLine(a, b) { const L = Math.sqrt(d2(a, b)), n = Math.ceil(L / 40); for (let i = 1; i < n; i++) { const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n, g = this.grid[Math.floor(y / CELL)]; if (g && g[Math.floor(x / CELL)]) return false; } return true; }
   free(x, y) { const cx = Math.floor(x / CELL), cy = Math.floor(y / CELL); return cx >= 0 && cy >= 0 && cx < COLS && cy < ROWS && this.grid[cy][cx] === 0; }
   nextWave() { this.wave++; this.waveT = 18; this.spawnWave(); this.ev('wave', { n: this.wave, of: this.waves }); }
   spawnWave() {
     // 원작 2처럼 첫 웨이브부터 여럿이 섞여 나옴 (근접·원거리·돌진) · 뒤쪽 방은 이전과 비슷
     const n = 4 + Math.floor(this.room / 4) + Math.floor(this.R() * 2) + (this.wave > 1 ? 1 : 0), list = this.ch.mons;
     const pool = this.room < 4 ? list.slice(0, 2) : this.room < 8 ? list.slice(0, 3) : list;
+    // 원작처럼 자리 배치: 원거리 몬스터는 R 자리(물·벽 뒤) · 근접은 M 자리 · 자리가 모자라면 영웅과 먼 빈 곳
+    const used = new Set();
     for (let i = 0; i < n; i++) {
-      let x, y, k = 0; do { x = CELL * (0.7 + this.R() * (COLS - 1.4)); y = CELL * (1 + this.R() * (ROWS * 0.6)); k++; } while ((!this.free(x, y) || d2({ x, y }, this.p) < 500 ** 2) && k < 40);
-      this.addMon(this.room < 4 && i === 0 ? list[2] : pool[Math.floor(this.R() * pool.length)], x, y);   // 처음 방들도 세 번째 몬스터 하나 섞음
+      const type = this.room < 4 && i === 0 ? list[2] : pool[Math.floor(this.R() * pool.length)], rng = ['shoot', 'spread', 'ring'].includes(MONS[type].ai);
+      const spots = (this.spots[rng ? 'R' : 'M'] || []).filter((_, j) => !used.has((rng ? 'R' : 'M') + j));
+      let x, y;
+      if (spots.length) { const j = Math.floor(this.R() * spots.length), sp = spots[j]; used.add((rng ? 'R' : 'M') + this.spots[rng ? 'R' : 'M'].indexOf(sp)); x = sp.x + (this.R() - 0.5) * 40; y = sp.y + (this.R() - 0.5) * 40; }
+      else { let k = 0; do { x = CELL * (0.7 + this.R() * (COLS - 1.4)); y = CELL * (1 + this.R() * (ROWS * 0.6)); k++; } while ((!this.free(x, y) || d2({ x, y }, this.p) < 500 ** 2) && k < 40); }
+      this.addMon(type, x, y);
     }
   }
   // 막힌 칸이면 가장 가까운 빈 칸 가운데로
@@ -157,6 +197,11 @@ export class Sim {
     for (const m of this.mons) m.orbCd = (m.orbCd || 0) - dt;
     for (const o of orbs) for (const m of this.mons) if (m.orbCd <= 0 && d2(o, m) < (m.r + 26) ** 2) { m.orbCd = 0.5; this.hurt(m, this.atk * 1.25, false, o.ice ? 'ice' : 'fire'); if (o.ice) m.slow = 1.2; else m.burn = Math.max(m.burn, 1.5); }
     this.setTick(dt);
+    // 가시 함정: 3초마다 0.8초 경고 후 1초 솟음 · 솟은 가시 위에 서 있으면 피해
+    if (this.spikes.length) { this.spikeT = (this.spikeT + dt) % 3; this.spikeUp = this.spikeT >= 2; this.spikeWarn = this.spikeT >= 1.2 && this.spikeT < 2;
+      if (this.spikeUp) { const cx = Math.floor(p.x / CELL), cy = Math.floor(p.y / CELL); if (this.spikes.some(k => k.cx === cx && k.cy === cy)) { this.src = 'trap'; this.hit(p.maxHp * 0.06 + 40 * this.dmgMulNow()); this.src = null; } } }
+    // 길 찾기 지도: 영웅 칸에서 퍼져 나가는 거리 (근접 몬스터가 벽을 돌아서 옴)
+    if ((this.flowT -= dt) <= 0) { this.flowT = 0.3; this.flow = this.flowMap(); }
     this.moveShots(dt);
     this.moveMons(dt);
     this.moveFoes(dt);
@@ -310,10 +355,10 @@ export class Sim {
       for (const o of this.mons) { if (o === m || o.boss) continue; const ox = m.x - o.x, oy = m.y - o.y, dd = ox * ox + oy * oy, rr = (m.r + o.r) * 0.8; if (dd > 0.01 && dd < rr * rr) { const l = Math.sqrt(dd), push = (rr - l) * 0.5; if (fr(m.x + ox / l * push, m.y + oy / l * push)) { m.x += ox / l * push; m.y += oy / l * push; } } }
       if (m.boss) this.bossAct(m, M, dt, dx, dy, dl, slow);
       else switch (M.ai) {
-        case 'chase': go(dx / dl * sp, dy / dl * sp); break;
+        case 'chase': { const [ux, uy] = this.toward(m); go(ux * sp, uy * sp); } break;
         case 'fly': go(dx / dl * sp + Math.sin(this.t * 3 + m.x) * 60, dy / dl * sp); break;
-        case 'hop': if (m.st > 0) { m.st -= dt; go(m.vx, m.vy); } else if (m.cd <= 0) { m.cd = 1.4; m.st = 0.45; m.vx = dx / dl * sp * 3; m.vy = dy / dl * sp * 3; } break;
-        case 'dash': if (m.st > 0) { m.st -= dt; go(m.vx, m.vy); } else if (m.wind > 0) { m.wind -= dt; if (m.wind <= 0) { m.st = 0.5; this.ev('dash', { id: m.id }); } } else if (m.cd <= 0) { m.cd = 2.4; m.wind = 0.6; m.vx = dx / dl * sp * 5; m.vy = dy / dl * sp * 5; this.warns.push({ k: 'line', id: m.id, x1: m.x, y1: m.y, x2: m.x + dx / dl * sp * 2.5, y2: m.y + dy / dl * sp * 2.5, w: m.r * 1.6, t: 0.6, T: 0.6 }); } else go(dx / dl * sp * 0.3, dy / dl * sp * 0.3); break;
+        case 'hop': if (m.st > 0) { m.st -= dt; go(m.vx, m.vy); } else if (m.cd <= 0) { const [ux, uy] = this.toward(m); m.cd = 1.4; m.st = 0.45; m.vx = ux * sp * 3; m.vy = uy * sp * 3; } break;
+        case 'dash': if (m.st > 0) { m.st -= dt; go(m.vx, m.vy); } else if (m.wind > 0) { m.wind -= dt; if (m.wind <= 0) { m.st = 0.5; this.ev('dash', { id: m.id }); } } else if (m.cd <= 0) { m.cd = 2.4; m.wind = 0.6; m.vx = dx / dl * sp * 5; m.vy = dy / dl * sp * 5; this.warns.push({ k: 'line', id: m.id, x1: m.x, y1: m.y, x2: m.x + dx / dl * sp * 2.5, y2: m.y + dy / dl * sp * 2.5, w: m.r * 1.6, t: 0.6, T: 0.6 }); } else { const [ux, uy] = this.toward(m); go(ux * sp * 0.5, uy * sp * 0.5); } break;
         case 'shoot': if (m.wind > 0) { m.wind -= dt; if (m.wind <= 0) this.foe(m.x, m.y, m.aim, 560, M.dmg * dmgMul); } else { if (dl > 500) go(dx / dl * sp, dy / dl * sp); if (m.cd <= 0) { m.cd = 1.7; m.wind = 0.5; m.aim = Math.atan2(dy, dx); this.warns.push({ k: 'line', id: m.id, x1: m.x, y1: m.y, x2: m.x + Math.cos(m.aim) * 1400, y2: m.y + Math.sin(m.aim) * 1400, w: 14, t: 0.55, T: 0.55 }); } } break;
         case 'spread': if (m.cd <= 0) { m.cd = 2.1; const a = Math.atan2(dy, dx); for (const o of [-0.3, 0, 0.3]) this.foe(m.x, m.y, a + o, 500, M.dmg * dmgMul); } if (sp) go(dx / dl * sp * 0.5, dy / dl * sp * 0.5); break;
         case 'ring': go(dx / dl * sp * 0.6 + Math.cos(this.t * 2 + m.y) * 80, dy / dl * sp * 0.6); if (m.cd <= 0) { m.cd = 2.5; for (let i = 0; i < 8; i++) this.foe(m.x, m.y, i * Math.PI / 4 + this.t, 420, M.dmg * dmgMul); } break;

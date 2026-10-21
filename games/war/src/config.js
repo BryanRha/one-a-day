@@ -1,7 +1,7 @@
 // 화면 크기: 가로 1080 고정, 세로는 기기 비율에 맞춰 늘어남 (최소 1920)
-export const VERSION = '0.9.0';
-export const TITLE = '전선 택틱스';      // 가제
-export const TITLE_EN = 'FRONT TACTICS';
+export const VERSION = '0.10.0';
+export const TITLE = '작전명 허스키';
+export const TITLE_EN = 'OPERATION HUSKY';
 export const W = 1080;
 export const BASE_H = 1920;
 export let H = BASE_H;

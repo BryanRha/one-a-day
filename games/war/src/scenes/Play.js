@@ -1,15 +1,16 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.15.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.15.0';
-import { audio } from '../audio.js?v=0.15.0';
-import { load, save } from '../save.js?v=0.15.0';
-import * as M from '../meta.js?v=0.15.0';
-import { inOAD, exitToOAD } from '../oad.js?v=0.15.0';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.15.0';
-import { AI, apply } from '../core/ai.js?v=0.15.0';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.15.0';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.15.0';
-import { STORY } from '../story.js?v=0.15.0';
+import { W, H } from '../config.js?v=0.16.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.16.0';
+import { audio } from '../audio.js?v=0.16.0';
+import { load, save } from '../save.js?v=0.16.0';
+import * as M from '../meta.js?v=0.16.0';
+import { inOAD, exitToOAD, pushBack } from '../oad.js?v=0.16.0';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.16.0';
+import { AI, apply } from '../core/ai.js?v=0.16.0';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.16.0';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.16.0';
+import { STORY } from '../story.js?v=0.16.0';
+import { TALK, RADIO } from '../talk.js?v=0.16.0';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -25,7 +26,7 @@ export class PlayScene extends Phaser.Scene {
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 쓰므로 지난 판 값이 남으면 끝나지 않거나 멈춤)
-    Object.assign(this, { fogG: null, pendingEvs: null, unloadList: [], ended: false, ending: false, tileImg: null, seamT: null, wxLayer: null, wxKind: null, wxParts: null, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
+    Object.assign(this, { fogG: null, pendingEvs: null, unloadList: [], ended: false, ending: false, said: {}, talking: false, tileImg: null, seamT: null, wxLayer: null, wxKind: null, wxParts: null, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
     this.mode = data.mode || 'free';
     this.map = data.custom || MAPS.find(m => m.id === data.mapId) || WAR.find(m => m.id === data.mapId) || MAPS[0];
     this.simMap = ['campaign', 'daily', 'war'].includes(this.mode) ? campaignMap(this.map) : this.map;
@@ -426,8 +427,53 @@ export class PlayScene extends Phaser.Scene {
     if (this.resumed) { this.resumed = false; toast(this, `이어하기 · DAY ${s.day}`, C.gold, TOP + 60); }
     if (this.mode === 'versus') { await this.handoff(); this.syncAll(); }
     else await this.banner(s.turn === 1 ? `DAY ${s.day}` : '적군 턴', s.turn === 1 ? '아군 턴 · 작전을 시작하세요' : COS[this.enemyCo].name + ' 장군이 움직여요', s.turn === 1 ? C.blue : C.red);
+    await this.turnTalk();
     if (!this.human(s.turn)) { this.themeMusic(); this.speed = 2; this.setActs(null); [this.endBtn, this.nextBtn, this.dangerBtn].forEach(b => b.setVisible(false)); this.skipBtn.setVisible(true); await this.enemyTurn(); }
     else { this.themeMusic(); this.speed = 1; this.skipBtn.setVisible(false); this.setActs(null); this.autosave(); this.drawDanger(); if (this.auto) return this.enemyTurn(1); if (!load().tips.war) this.tutorial(); }
+  }
+  // ── 전투 중 대화 (원작처럼 짧은 대사 장면) ──
+  talkOn() { return load().talk !== false && !this.auto && this.speed <= 2; }
+  line(p, key) { const co = this.s.cos[p]; return TALK[co] && TALK[co][key] ? [co, TALK[co][key], p === this.me || (this.mode !== 'versus' && p === 1) ? 'L' : 'R'] : null; }
+  async say(key, ...lines) { if (this.said[key] || !this.talkOn()) return; this.said[key] = 1; lines = lines.filter(Boolean); if (lines.length) await this.talk(lines); }
+  async turnTalk() {
+    const s = this.s, me = this.mode === 'versus' ? 1 : 1, foe = 2;
+    if (s.day === 1 && s.turn === 1) await this.say('intro', this.line(foe, 'intro'), this.line(me, 'intro'));
+    if (s.turn === 1 && s.limit && s.limit - s.day === 3) await this.say('limit', ['radio', RADIO.limit(3), 'L']);
+    // 본부 근처(2칸)에 상대 점령병
+    for (const p of [1, 2]) {
+      const hq = s.tiles.findIndex(t => t.t === 'hq' && t.owner === p); if (hq < 0) continue;
+      const hx = hq % s.w, hy = (hq / s.w) | 0, q = p === 1 ? 2 : 1;
+      if (s.units.some(u => u.p === q && !u.inside && UNITS[u.type].capture && dist(u.x, u.y, hx, hy) <= 2 && s.canSee(p, u))) await this.say('hq' + p, this.line(p, 'hq'));
+    }
+  }
+  // 대사 창: 얼굴 · 이름표 · 글자 하나씩 · 누르면 다음 (안 누르면 잠시 뒤 저절로)
+  talk(lines) {
+    return new Promise(done => {
+      this.talking = true;
+      const root = this.add.container(0, 0).setDepth(940).setScrollFactor(0);
+      const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x0A0C06, 0.35).setInteractive(); root.add(dim);
+      const by = H - BOTTOM - 150, box = this.add.container(0, 0); root.add(box);
+      let i = -1, typing = null, timer = null, full = '';
+      const next = () => {
+        if (timer) timer.remove(); if (typing) { typing.remove(); typing = null; }
+        i++; box.removeAll(true);
+        if (i >= lines.length) { this.tweens.add({ targets: root, alpha: 0, duration: 160, onComplete: () => { root.destroy(); this.talking = false; done(); } }); return; }
+        const [co, text, side] = lines[i], radio = co === 'radio', L = side !== 'R';
+        if (!radio) { const im = this.add.image(L ? 210 : W - 210, by - 60, `co_${co}`).setOrigin(0.5, 1); im.setScale(560 / im.height); if (!L) im.setFlipX(true); im.x += L ? -60 : 60; im.alpha = 0; box.add(im); this.tweens.add({ targets: im, x: L ? 210 : W - 210, alpha: 1, duration: 200, ease: 'Cubic.easeOut' }); }
+        const pnl = panel(this, W / 2, by + 30, W - 60, 240, { r: 30 }); box.add(this.add.existing(pnl));
+        const col = radio ? 0x9AB0C0 : L ? 0x8EC2FF : 0xFF8A70, name = radio ? '사령부 무전' : COS[co].name;
+        const nt = T(this, L ? 90 : W - 90, by - 108, name, 32, '#14160A', { ox: L ? 0 : 1, w: 900, shadow: false }), nw = nt.width + 56, g = this.add.graphics();
+        g.fillStyle(col, 1).fillRoundedRect(L ? 62 : W - 62 - nw, by - 134, nw, 52, 26); box.add([g, nt]);
+        full = radio ? text.replace('사령부 무전: ', '') : text;
+        const tt = T(this, 80, by - 50, '', 36, C.text, { ox: 0, oy: 0, w: 900, wrap: W - 160, shadow: false, align: 'left', lh: 12 }); box.add(tt);
+        let n = 0; typing = this.time.addEvent({ delay: 22, repeat: full.length - 1, callback: () => { n++; tt.setText(full.slice(0, n)); if (n % 3 === 1) audio.play('sfx_talk', { volume: 0.16, gap: 60 }); if (n >= full.length) typing = null; } });
+        timer = this.time.delayedCall(1800 + full.length * 55, next);
+        box.tap = () => { if (typing) { typing.remove(); typing = null; tt.setText(full); return; } next(); };
+      };
+      dim.on('pointerup', () => box.tap && box.tap());
+      const unback = pushBack(() => { box.tap && box.tap(); return true; }); root.once('destroy', unback);
+      next();
+    });
   }
   // 턴마다 그 지휘관의 테마곡 (설정에서 끄면 기본 전투곡)
   themeMusic() { const s = this.s, co = s.cos[s.turn]; if (load().coTheme === false || !co) return audio.music(s.turn === 1 || this.mode === 'versus' ? 'bgm_battle' : 'bgm_enemy', this); audio.music(`bgm_${CO_THEME[co] || 'heroic'}`, this); }
@@ -518,10 +564,12 @@ export class PlayScene extends Phaser.Scene {
       const c = this.views.get(e.id); this.boom(...this.xy(e.x, e.y), 1.4); audio.play('sfx_explode', { volume: 0.7 });
       if (c) { this.views.delete(e.id); this.tweens.add({ targets: c, alpha: 0, scale: 0.6, duration: 300, onComplete: () => c.destroy() }); }
       await sleep(this, 260 / sp);
+      { const v = e.p, k = v === 1 ? 2 : 1; await this.say('lost' + v, this.line(k, 'kill'), this.line(v, 'lost')); if (this.s.mine(v).length > 0 && this.s.mine(v).length <= 2) await this.say('losing' + v, this.line(v, 'losing')); }
     } else if (e.type === 'capture') {
       const [px, py] = this.xy(e.x, e.y);
       audio.play(e.done ? 'sfx_captured' : 'sfx_capture', { volume: 0.7 });
       this.drawBld(e.x, e.y);
+      if (!e.done && this.s.tile(e.x, e.y).t === 'hq') { const v = this.s.tile(e.x, e.y).owner; if (v) await this.say('cap' + v, this.line(v, 'capture')); }
       if (e.done) { const ow = this.s.tile(e.x, e.y).owner; this.float(px, py - this.ts * 0.6, e.t === 'hq' ? '본부 점령!' : '점령 완료!', ow === 1 ? C.gold : C.red, 36); if (ow === 1) this.captures++; this.flash(px, py, 0xFFD45A); }
       else this.float(px, py - this.ts * 0.6, `점령 ${20 - e.left}/20`, C.text, 28);
       await sleep(this, 420 / sp);
@@ -554,7 +602,7 @@ export class PlayScene extends Phaser.Scene {
     else if (e.type === 'lowfuel') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && u && u.p === this.me) { this.float(c.x, c.y - this.ts * 0.5, '연료 부족!', '#FFB54A', 26); if (!this.fuelHint) { this.fuelHint = true; this.time.delayedCall(900, () => toast(this, '연료가 떨어지면 추락·침몰해요 · 비행장·항구·항모로 보급', '#FFB54A', TOP + 60)); } } }
     else if (e.type === 'swap') { audio.play('sfx_swap', { volume: 0.6 }); this.themeMusic(); toast(this, `지휘관 교대 · ${COS[e.co].name}`, C.gold, TOP + 60); this.updateHud(); }
     else if (e.type === 'dive') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && u && u.p === this.me) { audio.play('sfx_dive', { volume: 0.6 }); this.float(c.x, c.y - this.ts * 0.5, e.on ? (u.type === 'sub' ? '잠수!' : '은신!') : (u.type === 'sub' ? '부상' : '출현'), '#BFE6FF', 30); } if (u) this.syncUnit(u); }
-    else if (e.type === 'weather') { this.drawWeather(); const W2 = WEATHER[e.w]; toast(this, e.w === 'clear' ? '날씨가 맑아졌어요' : `날씨: ${W2.name} · ${W2.desc}`, '#BFE6FF', TOP + 60); await sleep(this, 500 / this.speed); }
+    else if (e.type === 'weather') { this.drawWeather(); if (RADIO[e.w]) await this.say('w' + e.w, ['radio', RADIO[e.w], 'L']); const W2 = WEATHER[e.w]; toast(this, e.w === 'clear' ? '날씨가 맑아졌어요' : `날씨: ${W2.name} · ${W2.desc}`, '#BFE6FF', TOP + 60); await sleep(this, 500 / this.speed); }
     else if (e.type === 'repair') { const c = this.views.get(e.id); if (c && c.visible) this.float(c.x, c.y - this.ts * 0.4, '+수리', C.green, 24); }
     this.syncAll();
   }
@@ -595,13 +643,14 @@ export class PlayScene extends Phaser.Scene {
   async powerFx(p, lvl = 1, tag = null) {
     const co = this.s.cos[p], c = this.add.container(0, H / 2).setDepth(950);
     audio.play('sfx_power', { volume: 0.8 }); this.cameras.main.flash(250, 255, 220, 140);
-    const bg = this.add.rectangle(W / 2, 0, W, 300, p === 1 ? 0x1E4C94 : 0x8E2414, 0.92);
+    const bg = this.add.rectangle(W / 2, 0, W, 340, p === 1 ? 0x1E4C94 : 0x8E2414, 0.92);
     const face = this.add.image(-200, 0, `co_${co}`); face.setScale(300 / face.height);
     c.add([bg, face, T(this, W / 2 + 120, -40, lvl === 2 ? COS[co].superp : COS[co].power, 70, C.gold, { w: 900, stroke: '#14160A', thick: 8 }), T(this, W / 2 + 120, 50, lvl === 2 ? COS[co].sdesc : COS[co].pdesc, 28, C.text, { w: 800, wrap: 640 })]);
+    { const q = TALK[co] && TALK[co][lvl === 2 ? 'superp' : 'power']; if (q) c.add(T(this, W / 2 + 120, 112, `“${q}”`, 26, '#FFE9B0', { w: 800, wrap: 640 })); }
     if (lvl === 2) c.add(T(this, W / 2 + 120, -110, tag ? `합동 필살기 · ${COS[tag].name}` : '초필살기', 34, tag ? C.gold : '#FF8A6A', { w: 900, ls: 6 }));
     if (tag) { const f2 = this.add.image(-200, 60, `co_${tag}`); f2.setScale(220 / f2.height); c.addAt(f2, 1); this.tweens.add({ targets: f2, x: 330, duration: 360, delay: 120, ease: 'Back.easeOut' }); }
     this.tweens.add({ targets: face, x: 200, duration: 300, ease: 'Back.easeOut' });
-    await sleep(this, 1500 / this.speed);
+    await sleep(this, 1900 / this.speed);
     await new Promise(r => this.tweens.add({ targets: c, alpha: 0, duration: 250, onComplete: () => { c.destroy(); r(); } }));
     if (p === 1) this.powers++;
     this.drawFog();
@@ -609,6 +658,7 @@ export class PlayScene extends Phaser.Scene {
 
   // ── 플레이어 입력 ──
   tap(p) {
+    if (this.talking) return;
     if (this.busy || !this.human(this.s.turn) || this.s.over || this.paused) return;
     if (p.y < TOP || p.y > H - BOTTOM) return;
     if (this.dragged) { this.dragged = false; return; }
@@ -827,11 +877,12 @@ export class PlayScene extends Phaser.Scene {
   pause() {
     if (this.paused) return; this.paused = true;
     const resume = () => { p.close(); this.time.delayedCall(150, () => { this.paused = false; }); };
-    const p = popup(this, '작전 일시정지', 820, 900, { closable: false, onBack: () => resume() });
+    const p = popup(this, '작전 일시정지', 820, 980, { closable: false, onBack: () => resume() });
     p.content.add(btn(this, 0, -230, 520, 130, '계속하기', resume, { style: 'gold', icon: 'i_play', size: 40 }));
     p.content.add(btn(this, 0, -80, 520, 100, `속도 ${this.speed === 1 ? '보통' : '빠르게'}`, () => { this.speed = this.speed === 1 ? 2 : 1; resume(); toast(this, this.speed === 2 ? '적 턴을 빠르게 보여 줘요' : '보통 속도', C.sub); }, { style: 'olive', size: 32 }));
     const d = load(), cut = btn(this, 0, 50, 520, 100, `전투 장면 ${d.cutscene === false ? '끔' : '켬'}`, () => { d.cutscene = d.cutscene === false; save(); cut.setLabel(`전투 장면 ${d.cutscene === false ? '끔' : '켬'}`); }, { style: 'olive', size: 32 }); p.content.add(cut);
-    p.content.add(btn(this, 0, 180, 420, 96, '항복하고 나가기', () => { p.close(); this.paused = false; this.s.over = true; this.s.winner = this.foe; this.finish(true); }, { style: 'red', size: 30 }));
+    const tk = btn(this, 0, 165, 520, 100, `전투 대사 ${d.talk === false ? '끔' : '켬'}`, () => { d.talk = d.talk === false; save(); tk.setLabel(`전투 대사 ${d.talk === false ? '끔' : '켬'}`); }, { style: 'olive', size: 32 }); p.content.add(tk);
+    p.content.add(btn(this, 0, 300, 420, 96, '항복하고 나가기', () => { p.close(); this.paused = false; this.s.over = true; this.s.winner = this.foe; this.finish(true); }, { style: 'red', size: 30 }));
   }
 
   // ── 전투 장면 (원작처럼 양쪽 부대가 마주 보고 싸우는 컷신) ──

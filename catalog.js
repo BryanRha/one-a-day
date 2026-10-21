@@ -35,9 +35,9 @@ export const GAMES = {
     path: 'games/dice/', cover: 'covers/dice.png', icon: 'covers/dice_icon.png', time: '5~8분',
   },
   war: {
-    title: '전선 택틱스', en: 'Front Tactics', genre: '전략', color: '#6E8338',
+    title: '작전명 허스키', en: 'Operation Husky', genre: '전략', color: '#6E8338',
     tagline: '귀여운 부대를 지휘하는 턴제 전략',
-    desc: '격자 전장에서 소총병·전차·야포·헬기를 지휘해 적 본부를 점령하는 턴제 전략 게임. 공격 전에 정확한 피해와 반격을 미리 보여 줘요. 캠페인, 오늘의 작전, 자유 대전과 지휘관 4명.',
+    desc: '격자 전장에서 보병·전차·전투기·함선을 지휘해 적 본부를 점령하는 턴제 전략 게임. 공격 전에 정확한 피해와 반격을 미리 보여 줘요. 이야기가 있는 캠페인 25작전, 지휘관 16명과 필살기, 안개·날씨·잠수함, 점수를 겨루는 전쟁실, 둘이서 대전과 지도 제작까지.',
     path: 'games/war/', cover: 'covers/war.png', icon: 'covers/war_icon.png', time: '10~15분',
   },
 };

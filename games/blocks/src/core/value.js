@@ -1,6 +1,6 @@
 // 판 가치 함수 (알파고의 '가치망'처럼 수백 판의 봇 대국으로 학습): 판 모양 특징 → 앞으로 살아남을 확률
-import { N, SHAPES, Board } from './board.js?v=0.15.0';
-import { WEIGHTS } from './value_weights.js?v=0.15.0';
+import { N, SHAPES, Board } from './board.js?v=0.16.0';
+import { WEIGHTS } from './value_weights.js?v=0.16.0';
 
 const PROBES = ['o3', 'i5', 'l5', 'r23', 'i4', 'o2', 't4', 'l4', 'i3'].map(n => SHAPES.filter(s => s.name === n));
 function fitCount(g, s) { let n = 0; for (let r = 0; r <= N - s.h; r++) for (let c = 0; c <= N - s.wd; c++) { let ok = true; for (const [dr, dc] of s.cells) if (g[r + dr][c + dc] >= 0) { ok = false; break; } if (ok) n++; } return n; }

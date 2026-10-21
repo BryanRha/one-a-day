@@ -1,16 +1,16 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.16.1';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.16.1';
-import { audio } from '../audio.js?v=0.16.1';
-import { load, save } from '../save.js?v=0.16.1';
-import * as M from '../meta.js?v=0.16.1';
-import { inOAD, exitToOAD, pushBack } from '../oad.js?v=0.16.1';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.16.1';
-import { AI, apply } from '../core/ai.js?v=0.16.1';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.16.1';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.16.1';
-import { STORY } from '../story.js?v=0.16.1';
-import { TALK, RADIO } from '../talk.js?v=0.16.1';
+import { W, H } from '../config.js?v=0.16.2';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.16.2';
+import { audio } from '../audio.js?v=0.16.2';
+import { load, save } from '../save.js?v=0.16.2';
+import * as M from '../meta.js?v=0.16.2';
+import { inOAD, exitToOAD, pushBack } from '../oad.js?v=0.16.2';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.16.2';
+import { AI, apply } from '../core/ai.js?v=0.16.2';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.16.2';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.16.2';
+import { STORY } from '../story.js?v=0.16.2';
+import { TALK, RADIO } from '../talk.js?v=0.16.2';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -427,6 +427,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.resumed) { this.resumed = false; toast(this, `이어하기 · DAY ${s.day}`, C.gold, TOP + 60); }
     if (this.mode === 'versus') { await this.handoff(); this.syncAll(); }
     else await this.banner(s.turn === 1 ? `DAY ${s.day}` : '적군 턴', s.turn === 1 ? '아군 턴 · 작전을 시작하세요' : COS[this.enemyCo].name + ' 장군이 움직여요', s.turn === 1 ? C.blue : C.red);
+    this.themeMusic();
     await this.turnTalk();
     if (!this.human(s.turn)) { this.themeMusic(); this.speed = 2; this.setActs(null); [this.endBtn, this.nextBtn, this.dangerBtn].forEach(b => b.setVisible(false)); this.skipBtn.setVisible(true); await this.enemyTurn(); }
     else { this.themeMusic(); this.speed = 1; this.skipBtn.setVisible(false); this.setActs(null); this.autosave(); this.drawDanger(); if (this.auto) return this.enemyTurn(1); if (!load().tips.war) this.tutorial(); }

@@ -1,6 +1,6 @@
 // 전투 규칙 (화면과 무관): 방 · 영웅 이동/자동 사격 · 화살 · 몬스터 AI · 적 탄 · 능력 · 레벨업
 // 좌표는 방 안의 픽셀 (가로 AW × 세로 AH). 한 칸 = CELL.
-import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.7';
+import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, SLOTS } from './data.js?v=0.17.8';
 
 // 밸런스 조절값 (봇으로 찾음): 장 안에서 방마다 몬스터 체력 증가 · 9번 방 이후 공격 증가 · 보스 체력 배율
 export const TUNE = { hpRamp: 0.08, dmgLate: 0.03, boss: [5, 6, 7] };
@@ -112,7 +112,7 @@ export class Sim {
   nextWave() { this.wave++; this.waveT = 18; this.spawnWave(); this.ev('wave', { n: this.wave, of: this.waves }); }
   spawnWave() {
     // 원작 2처럼 첫 웨이브부터 여럿이 섞여 나옴 (근접·원거리·돌진) · 뒤쪽 방은 이전과 비슷
-    const n = 4 + Math.floor(this.room / 4) + Math.floor(this.R() * 2) + (this.wave > 1 ? 1 : 0), list = this.ch.mons;
+    const n = 5 + Math.floor(this.room / 5) + Math.floor(this.R() * 2) + (this.wave > 1 ? 1 : 0), list = this.ch.mons;
     const pool = this.room < 4 ? list.slice(0, 2) : this.room < 8 ? list.slice(0, 3) : list;
     // 원작처럼 자리 배치: 원거리 몬스터는 R 자리(물·벽 뒤) · 근접은 M 자리 · 자리가 모자라면 영웅과 먼 빈 곳
     const used = new Set();

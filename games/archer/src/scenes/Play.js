@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.7';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.7';
-import { audio } from '../audio.js?v=0.17.7';
-import { load, save } from '../save.js?v=0.17.7';
-import { pushBack } from '../oad.js?v=0.17.7';
-import * as M from '../meta.js?v=0.17.7';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.7';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.7';
+import { W, H } from '../config.js?v=0.17.8';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.8';
+import { audio } from '../audio.js?v=0.17.8';
+import { load, save } from '../save.js?v=0.17.8';
+import { pushBack } from '../oad.js?v=0.17.8';
+import * as M from '../meta.js?v=0.17.8';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.8';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.8';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -25,8 +25,12 @@ export class PlayScene extends Phaser.Scene {
     this.s = new Sim({ seed: dr ? dr.seed : (Date.now() & 0xffffff) + 1, chapter: this.chapter, hero: this.heroK, gear: dr ? { atk: 20, hp: 120, crit: 0 } : M.gearStats() });
     this.ch = CHAPTERS[this.chapter - 1];
     // 방 크기를 화면 너비에 맞춤 (세로가 넘치면 카메라가 영웅을 따라감)
-    this.k = Math.min(W / AW, (H - TOP - 30) / AH); this.ox = Math.round((W - AW * this.k) / 2); this.oy = TOP;
+    // 원작 비율: 경기장 = 화면 폭의 88% (양옆 벽이 보임) · 한 화면에 다 들어옴
+    this.k = Math.min(W * 0.88 / AW, (H - TOP - 90) / AH); this.ox = Math.round((W - AW * this.k) / 2); this.oy = TOP + 40;
+    this.heroH = AW * this.k * 0.105;   // 영웅 키 = 경기장 폭의 10.5%
     this.add.rectangle(W / 2, H / 2, W, H * 3, 0x0B0D1E).setScrollFactor(0).setDepth(-10);
+    // 경기장 밖 풍경: 같은 바닥을 어둡게 깔아 빈 곳이 없게 (원작은 벽 너머 정원·문이 보임)
+    this.add.tileSprite(W / 2, H / 2, W, H * 3, this.ch.tiles[0]).setTileScale(CELL * 0.88 * 1.1 / 256).setTint(0x4A4A5E).setScrollFactor(0).setDepth(-9);
     this.world = this.add.container(this.ox, this.oy);
     this.floorL = this.add.container(0, 0); this.world.add(this.floorL);
     this.fxL = this.add.container(0, 0);
@@ -56,7 +60,7 @@ export class PlayScene extends Phaser.Scene {
   }
   joyMove(p) {
     const j = this.joy; if (!j || p.id !== j.id) return;
-    let dx = p.x - j.x, dy = p.y - j.y; const l = Math.hypot(dx, dy), R = 110;
+    let dx = p.x - j.x, dy = p.y - j.y; const l = Math.hypot(dx, dy), R = 170;
     if (l > R) { j.x += dx * (1 - R / l); j.y += dy * (1 - R / l); dx = p.x - j.x; dy = p.y - j.y; this.ui.jb.setPosition(j.x, j.y); }   // 손가락을 따라 받침도 움직임
     j.dx = dx / R; j.dy = dy / R; this.ui.jk.setPosition(j.x + dx, j.y + dy);
   }
@@ -82,9 +86,9 @@ export class PlayScene extends Phaser.Scene {
     u.boss = this.add.container(W / 2, TOP + 40).setDepth(D).setScrollFactor(0).setVisible(false);
     u.bossG = this.add.graphics(); u.bossT = T(this, 0, -26, '', 28, '#FFB0A0', { w: 900 }); u.boss.add([u.bossG, u.bossT]);
     // 조이스틱
-    u.jb = this.add.circle(0, 0, 110, 0xFFFFFF, 0.08).setStrokeStyle(4, 0xFFFFFF, 0.35).setDepth(D + 5).setScrollFactor(0).setVisible(false);
-    u.jIdle = this.add.container(W / 2, H - 150).setDepth(D + 4).setScrollFactor(0); u.jIdle.add([this.add.circle(0, 0, 90, 0x3A6AFF, 0.1).setStrokeStyle(4, 0x8AB0FF, 0.3), this.add.circle(0, 0, 40, 0x4A7AFF, 0.35).setStrokeStyle(4, 0xBFD4FF, 0.5)]);
-    u.jk = this.add.circle(0, 0, 50, 0xFFFFFF, 0.35).setStrokeStyle(4, 0xFFFFFF, 0.7).setDepth(D + 6).setScrollFactor(0).setVisible(false);
+    u.jb = this.add.circle(0, 0, 190, 0xFFFFFF, 0.08).setStrokeStyle(4, 0xFFFFFF, 0.35).setDepth(D + 5).setScrollFactor(0).setVisible(false);
+    u.jIdle = this.add.container(W / 2, H - 260).setDepth(D + 4).setScrollFactor(0); u.jIdle.add([this.add.circle(0, 0, 170, 0x3A6AFF, 0.1).setStrokeStyle(4, 0x8AB0FF, 0.3), this.add.circle(0, 0, 66, 0x4A7AFF, 0.35).setStrokeStyle(4, 0xBFD4FF, 0.5)]);
+    u.jk = this.add.circle(0, 0, 70, 0xFFFFFF, 0.35).setStrokeStyle(4, 0xFFFFFF, 0.7).setDepth(D + 6).setScrollFactor(0).setVisible(false);
     // 위험(체력 낮음) 가장자리
     u.danger = this.add.graphics().setDepth(D - 2).setScrollFactor(0).setAlpha(0);
     for (let i = 0; i < 30; i++) { u.danger.lineStyle(10, 0xFF2A2A, (1 - i / 30) * 0.35); u.danger.strokeRect(i * 5, i * 5, W - i * 10, H - i * 10); }
@@ -123,9 +127,13 @@ export class PlayScene extends Phaser.Scene {
     if (!this.textures.exists('vign')) { const c = this.textures.createCanvas('vign', 256, 256), g = c.getContext(), gr = g.createRadialGradient(128, 128, 60, 128, 128, 182); gr.addColorStop(0, 'rgba(5,6,15,0)'); gr.addColorStop(1, 'rgba(5,6,15,0.35)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); c.refresh(); }
     this.floorL.add(this.add.image(AW * k / 2, AH * k / 2, 'vign').setDisplaySize(AW * k, AH * k));
     const shade = this.add.graphics();
-    shade.lineStyle(14, this.ch.bg, 1).strokeRect(-7, -7, AW * k + 14, AH * k + 14).lineStyle(4, 0xFFFFFF, 0.18).strokeRect(-14, -14, AW * k + 28, AH * k + 28); this.floorL.add(shade);
+    shade.lineStyle(10, 0x000000, 0.35).strokeRect(-5, -5, AW * k + 10, AH * k + 10); this.floorL.add(shade);
+    // 둘레 벽 (원작처럼 양옆·위·아래 두꺼운 벽 · 위 가운데는 문 자리)
+    const wt = this.ox, aw = AW * k, ah = AH * k, n = Math.ceil(ah / wt), m = Math.ceil(aw / wt) + 2;
+    for (let i = 0; i < n; i++) for (const x of [-wt / 2, aw + wt / 2]) this.floorL.add(this.add.image(x, i * wt + wt / 2, tb).setDisplaySize(wt + 1, wt + 1));
+    for (let i = 0; i < m; i++) { const x = -wt / 2 + i * wt; for (const y of [-wt / 2, ah + wt / 2]) { if (y < 0 && Math.abs(x - aw / 2) < cs * 0.9) continue; this.floorL.add(this.add.image(x, y, tb).setDisplaySize(wt + 1, wt + 1)); } }
     // 성능: 움직이지 않는 바닥·장애물·테두리(약 170개)를 한 장으로 구워서 매 프레임 1번만 그림
-    { const pad = 20, list = [...this.floorL.list]; if (this.floorRT) this.floorRT.destroy(); const rt = this.add.renderTexture(-pad, -pad, Math.ceil(AW * k) + pad * 2, Math.ceil(AH * k) + pad * 2).setOrigin(0, 0); this.floorL.remove(list); this.world.remove(list); for (const o of list) { rt.draw(o, o.x + pad, o.y + pad); o.destroy(); } this.floorRT = rt; this.floorL.add(rt); }
+    { const pad = Math.ceil(this.ox) + 4, list = [...this.floorL.list]; if (this.floorRT) this.floorRT.destroy(); const rt = this.add.renderTexture(-pad, -pad, Math.ceil(AW * k) + pad * 2, Math.ceil(AH * k) + pad * 2).setOrigin(0, 0); this.floorL.remove(list); this.world.remove(list); for (const o of list) { rt.draw(o, o.x + pad, o.y + pad); o.destroy(); } this.floorRT = rt; this.floorL.add(rt); }
     // 가시 함정: 판(숨음) → 빨갛게 깜빡(경고) → 가시 솟음
     if (!this.textures.exists('spk0')) for (const st of [0, 1, 2]) { const c = this.textures.createCanvas('spk' + st, 120, 120), g = c.getContext(); g.fillStyle = '#2A2A36'; g.fillRect(8, 8, 104, 104); g.strokeStyle = st === 1 ? '#FF4A3A' : '#5A5A6E'; g.lineWidth = 6; g.strokeRect(8, 8, 104, 104); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { const x = 30 + i * 30, y = 30 + j * 30; if (st === 2) { g.fillStyle = '#E8E8F4'; g.beginPath(); g.moveTo(x - 10, y + 10); g.lineTo(x, y - 16); g.lineTo(x + 10, y + 10); g.closePath(); g.fill(); g.fillStyle = '#9A9AB0'; g.beginPath(); g.moveTo(x, y - 16); g.lineTo(x + 10, y + 10); g.lineTo(x, y + 10); g.closePath(); g.fill(); } else { g.fillStyle = st === 1 ? '#FF6A4A' : '#14141C'; g.beginPath(); g.arc(x, y, 6, 0, Math.PI * 2); g.fill(); } } c.refresh(); }
     this.spikeV = (s.spikes || []).map(sp => { const im = this.add.image((sp.cx + 0.5) * cs, (sp.cy + 0.5) * cs, 'spk0').setDisplaySize(cs, cs); this.floorL.add(im); return im; });
@@ -140,9 +148,9 @@ export class PlayScene extends Phaser.Scene {
     else this.npcV = null;
     // 영웅
     if (!this.heroV) {
-      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 68, 22, 0x000000, 0.35); const im = this.add.image(0, -18, `hd_${this.heroK}_4`).setOrigin(0.5, 0.5); im.setScale(108 / im.height); im.base = im.scale;
+      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 68, 22, 0x000000, 0.35); const im = this.add.image(0, -18, `hd_${this.heroK}_4`).setOrigin(0.5, 0.5); im.setScale(this.heroH / im.height); im.base = im.scale;
       const ring = this.add.ellipse(0, 6, 80, 28, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
-      const hpB = this.add.rectangle(-50, -92, 100, 12, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-50, -92, 100, 12, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -112, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); const aura = this.add.circle(0, 6, 480 * this.k, 0x8AF07A, 0.05).setStrokeStyle(3, 0x8AF07A, 0.25).setVisible(!!s.fx['fang.armor']); const shd = this.add.circle(0, -18, 78, 0xFF8A3A, 0.18).setStrokeStyle(5, 0xFFB050, 0.8).setVisible(false); hv.add([aura, sh, ring, im, shd, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT, shd }); this.heroV = hv;
+      const hpB = this.add.rectangle(-60, -this.heroH * 0.9, 120, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-60, -this.heroH * 0.9, 120, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -this.heroH * 0.9 - 24, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); const aura = this.add.circle(0, 6, 480 * this.k, 0x8AF07A, 0.05).setStrokeStyle(3, 0x8AF07A, 0.25).setVisible(!!s.fx['fang.armor']); const shd = this.add.circle(0, -18, 78, 0xFF8A3A, 0.18).setStrokeStyle(5, 0xFFB050, 0.8).setVisible(false); hv.add([aura, sh, ring, im, shd, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT, shd }); this.heroV = hv;
     }
     if (!this.dropL || !this.dropL.active) this.dropL = this.add.container(0, 0); this.world.add(this.dropL); this.world.add(this.heroV); if (!this.arrowL || !this.arrowL.active) this.arrowL = this.add.container(0, 0); this.world.add(this.arrowL); this.world.bringToTop(this.arrowL); this.world.add(this.fxL); this.world.bringToTop(this.fxL);
     for (const m of s.mons) this.monView(m);
@@ -189,7 +197,7 @@ export class PlayScene extends Phaser.Scene {
     const flip = di === 0 || di === 4 ? hv.im.flipX : fx < 0;
     // 움직이면 그 방향 달리기 6장(초당 12장) · 멈추면 겨누는 그림
     hv.di = di; const run = p.moving, key = run ? `hr_${this.heroK}_${di}_${Math.floor(this.time.now / 83) % 6}` : `hd_${this.heroK}_${di}`;
-    if (hv.im.texture.key !== key) { hv.im.setTexture(key); hv.im.base = (run ? 114 : 108) / hv.im.height; }
+    if (hv.im.texture.key !== key) { hv.im.setTexture(key); hv.im.base = this.heroH * (run ? 1.05 : 1) / hv.im.height; }
     if (flip !== hv.im.flipX) hv.im.setFlipX(flip);
     hv.im.setAlpha(p.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.45 : 1);
     // 걷기: 통통 튀지 않게 — 아주 작은 상하(1.5px)와 좌우 흔들림만 · 쏠 때 반동
@@ -201,7 +209,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.spikeV && this.spikeV.length) { const key = s.spikeUp ? 'spk2' : s.spikeWarn && Math.floor(this.time.now / 120) % 2 ? 'spk1' : 'spk0'; if (this.spikeV[0].texture.key !== key) this.spikeV.forEach(im => im.setTexture(key)); }
     hv.ring.setStrokeStyle(4, s.mons.length ? 0xFF8A70 : 0x8AE8FF, 0.8); hv.shd.setVisible(s.shield > 0);
     if (hv.lastHp !== p.hp) { hv.lastHp = p.hp; hv.hpT.setText(`${Math.ceil(p.hp)}`); }
-    hv.hp.width = Math.max(2, 100 * p.hp / p.maxHp); hv.hp.fillColor = p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A;
+    hv.hp.width = Math.max(2, 120 * p.hp / p.maxHp); hv.hp.fillColor = p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A;
     // 몬스터
     for (const m of s.mons) {
       let v = this.views.get(m.id); if (!v) v = this.monView(m);

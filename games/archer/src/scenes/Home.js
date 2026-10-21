@@ -1,11 +1,11 @@
 // 홈: 아래 탭 4개 (영웅 · 모험 · 장비 · 상점) — 모험 탭이 첫 화면 (장 고르기 · 출격 · 오늘의 던전 · 미션)
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.17.7';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.7';
-import { audio } from '../audio.js?v=0.17.7';
-import { load, save } from '../save.js?v=0.17.7';
-import * as M from '../meta.js?v=0.17.7';
-import { HEROES, CHAPTERS, BOSSES, SLOTS, SLOT, TIERS, SETS, upCost, itemName } from '../core/data.js?v=0.17.7';
-import { itemBox, effLines, mainText, ruleText, hex } from '../gearui.js?v=0.17.7';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.17.8';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.8';
+import { audio } from '../audio.js?v=0.17.8';
+import { load, save } from '../save.js?v=0.17.8';
+import * as M from '../meta.js?v=0.17.8';
+import { HEROES, CHAPTERS, BOSSES, SLOTS, SLOT, TIERS, SETS, upCost, itemName } from '../core/data.js?v=0.17.8';
+import { itemBox, effLines, mainText, ruleText, hex } from '../gearui.js?v=0.17.8';
 
 const TABS = [['hero', '영웅'], ['play', '모험'], ['gear', '장비'], ['shop', '상점']];
 export class HomeScene extends Phaser.Scene {

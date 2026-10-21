@@ -1,6 +1,6 @@
 // 성장 · 재방문: 금화로 재능 · 보석 상자(확률 공개 · 천장) · 같은 장비 3개 합성 · 영웅 해금 · 출석 · 오늘의 미션 · 오늘의 던전
-import { load, save } from './save.js?v=0.17.0';
-import { GEAR, RAR, gearVal, gearCost, GEAR_MAXLV, HEROES, CHAPTERS } from './core/data.js?v=0.17.0';
+import { load, save } from './save.js?v=0.17.1';
+import { GEAR, RAR, gearVal, gearCost, GEAR_MAXLV, HEROES, CHAPTERS } from './core/data.js?v=0.17.1';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
@@ -105,6 +105,7 @@ export function finish(r) {
   if (!r.daily) { if ((d.best[r.chapter] || 0) < r.room) { d.best[r.chapter] = r.room; newBest = true; } if (r.win && !d.cleared[r.chapter]) { d.cleared[r.chapter] = 1; gems += 50; unlocked = CHAPTERS[r.chapter] ? r.chapter + 1 : null; } }
   else { d.daily.tries++; if (r.room > d.daily.best) { d.daily.best = r.room; newBest = true; } }
   gems += Math.floor(r.room / 5) * 2; d.gems += gems;
+  for (const it of r.loot || []) d.bag.push({ slot: it.slot, r: it.r, lv: 1 });
   save();
   track('room', r.room); track('kill', r.kills); track('boss', r.bosses || 0); track('skill', r.skills); track('gold', gold); if (r.daily) track('daily');
   return { gold, gems, newBest, unlocked };

@@ -1,8 +1,8 @@
 // 결과: 승리/도전 · 도달 방 · 얻은 금화·보석 · 고른 능력 · 다시/홈
-import { W, H } from '../config.js?v=0.17.0';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.17.0';
-import { audio } from '../audio.js?v=0.17.0';
-import { CHAPTERS, SKILLS, ROOMS } from '../core/data.js?v=0.17.0';
+import { W, H } from '../config.js?v=0.17.1';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.17.1';
+import { audio } from '../audio.js?v=0.17.1';
+import { CHAPTERS, SKILLS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.1';
 
 const PRAISE = ['대단해요!', '완벽한 모험!', '별빛이 함께했어요!'];
 export class ResultScene extends Phaser.Scene {
@@ -23,6 +23,7 @@ export class ResultScene extends Phaser.Scene {
     this.add.existing(panel(this, W / 2, py, 900, 200));
     this.add.image(W / 2 - 230, py - 20, 'i_gold').setDisplaySize(80, 80); T(this, W / 2 - 230, py + 50, `+${fmt(r.gold)}`, 40, C.gold, { w: 900 });
     this.add.image(W / 2 + 230, py - 20, 'i_gem').setDisplaySize(80, 80); T(this, W / 2 + 230, py + 50, `+${r.gems}`, 40, '#D8B0FF', { w: 900 });
+    (r.loot || []).slice(0, 6).forEach((it, i, a) => { const x = W / 2 + (i - (a.length - 1) / 2) * 120, y = py - 170; const g = this.add.graphics(); g.fillStyle(RAR[it.r].col, 0.3).fillRoundedRect(x - 50, y - 50, 100, 100, 16).lineStyle(4, RAR[it.r].col, 1).strokeRoundedRect(x - 50, y - 50, 100, 100, 16); const im = this.add.image(x, y, GEAR[it.slot].icons[it.r]); im.setScale(80 / Math.max(im.width, im.height)); });
     if (r.unlocked) T(this, W / 2, py + 160, `${r.unlocked}장이 열렸어요!`, 36, C.gold, { w: 900 });
     // 고른 능력
     const ks = Object.keys(r.sk || {}).filter(k => SKILLS[k]);

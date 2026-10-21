@@ -1,16 +1,16 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.17.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.0';
-import { audio } from '../audio.js?v=0.17.0';
-import { load, save } from '../save.js?v=0.17.0';
-import * as M from '../meta.js?v=0.17.0';
-import { inOAD, exitToOAD, pushBack } from '../oad.js?v=0.17.0';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.17.0';
-import { AI, apply } from '../core/ai.js?v=0.17.0';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.17.0';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.17.0';
-import { STORY } from '../story.js?v=0.17.0';
-import { TALK, RADIO } from '../talk.js?v=0.17.0';
+import { W, H } from '../config.js?v=0.17.1';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.1';
+import { audio } from '../audio.js?v=0.17.1';
+import { load, save } from '../save.js?v=0.17.1';
+import * as M from '../meta.js?v=0.17.1';
+import { inOAD, exitToOAD, pushBack } from '../oad.js?v=0.17.1';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.17.1';
+import { AI, apply } from '../core/ai.js?v=0.17.1';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.17.1';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.17.1';
+import { STORY } from '../story.js?v=0.17.1';
+import { TALK, RADIO } from '../talk.js?v=0.17.1';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };

@@ -1,10 +1,10 @@
 // 홈: 아래 탭 4개 (영웅 · 모험 · 장비 · 상점) — 모험 탭이 첫 화면 (장 고르기 · 출격 · 오늘의 던전 · 미션)
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.17.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.0';
-import { audio } from '../audio.js?v=0.17.0';
-import { load, save } from '../save.js?v=0.17.0';
-import * as M from '../meta.js?v=0.17.0';
-import { HEROES, CHAPTERS, GEAR, RAR, gearVal, gearCost, GEAR_MAXLV, BOSSES } from '../core/data.js?v=0.17.0';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.17.1';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.1';
+import { audio } from '../audio.js?v=0.17.1';
+import { load, save } from '../save.js?v=0.17.1';
+import * as M from '../meta.js?v=0.17.1';
+import { HEROES, CHAPTERS, GEAR, RAR, gearVal, gearCost, GEAR_MAXLV, BOSSES } from '../core/data.js?v=0.17.1';
 
 const TABS = [['hero', '영웅'], ['play', '모험'], ['gear', '장비'], ['shop', '상점']];
 export class HomeScene extends Phaser.Scene {

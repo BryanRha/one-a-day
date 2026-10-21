@@ -11,32 +11,34 @@ export const HEROES = {
 // 능력: 방을 깰 때·레벨 업마다 3개 중 1개 (max: 최대 중첩)
 // kind: 화살 모양(shape) · 능력치(stat) · 속성(elem) · 생존(life) · 특수(spec)
 export const SKILLS = {
-  front:    { name: '앞쪽 화살 +1', desc: '앞으로 나란히 화살 1발 더 (위력 조금 줄어요)', icon: 'sk_front', max: 3, kind: 'shape', w: 10 },
-  diag:     { name: '대각 화살', desc: '양 대각선으로 화살 1발씩 더', icon: 'sk_diag', max: 2, kind: 'shape', w: 9 },
-  side:     { name: '옆쪽 화살', desc: '양옆으로 화살 1발씩 더', icon: 'sk_side', max: 2, kind: 'shape', w: 7 },
-  rear:     { name: '뒤쪽 화살', desc: '뒤로도 화살 1발', icon: 'sk_rear', max: 2, kind: 'shape', w: 6 },
-  multi:    { name: '연속 사격', desc: '한 번에 화살을 연달아 1발 더 (위력 조금 줄어요)', icon: 'sk_multi', max: 3, kind: 'shape', w: 10 },
-  pierce:   { name: '관통', desc: '화살이 적을 뚫고 지나가요', icon: 'sk_pierce', max: 1, kind: 'shape', w: 8 },
-  ricochet: { name: '튕기기', desc: '맞힌 뒤 가까운 적에게 2번 튕겨요', icon: 'sk_ricochet', max: 2, kind: 'shape', w: 8 },
-  wall:     { name: '벽 반사', desc: '화살이 벽에서 2번 튕겨요', icon: 'sk_wall', max: 1, kind: 'shape', w: 6 },
-  atk:      { name: '공격력 강화', desc: '공격 +25%', icon: 'sk_atk', max: 9, kind: 'stat', w: 12 },
-  aspd:     { name: '공격 속도', desc: '공격 속도 +20%', icon: 'sk_aspd', max: 9, kind: 'stat', w: 12 },
-  crit:     { name: '치명타', desc: '치명타 확률 +12% · 치명타는 2배', icon: 'sk_crit', max: 4, kind: 'stat', w: 9 },
-  head:     { name: '일격', desc: '보스가 아닌 적을 3% 확률로 한 방에', icon: 'sk_head', max: 1, kind: 'stat', w: 5 },
-  fire:     { name: '불꽃 화살', desc: '맞으면 불타서 2초 동안 피해', icon: 'sk_fire', max: 1, kind: 'elem', w: 8 },
-  frost:    { name: '냉기 화살', desc: '맞으면 2초 동안 느려져요', icon: 'sk_frost', max: 1, kind: 'elem', w: 8 },
-  poison:   { name: '독 화살', desc: '맞으면 계속 독 피해 (쌓여요)', icon: 'sk_poison', max: 1, kind: 'elem', w: 8 },
-  bolt:     { name: '번개 화살', desc: '맞으면 주변 적 2명에게 번개', icon: 'sk_bolt', max: 1, kind: 'elem', w: 8 },
-  orbfire:  { name: '불꽃 구슬', desc: '몸 주위를 도는 불꽃 구슬', icon: 'sk_orbfire', max: 2, kind: 'spec', w: 6 },
-  orbice:   { name: '얼음 구슬', desc: '몸 주위를 도는 얼음 구슬 (느리게)', icon: 'sk_orbice', max: 2, kind: 'spec', w: 6 },
-  hpup:     { name: '최대 체력', desc: '최대 체력 +20% (그만큼 회복)', icon: 'sk_hpup', max: 9, kind: 'life', w: 9 },
-  heal:     { name: '회복', desc: '체력 40% 회복', icon: 'sk_heal', max: 99, kind: 'life', w: 7, instant: true },
-  blood:    { name: '흡혈', desc: '적을 쓰러뜨리면 체력 조금 회복', icon: 'sk_blood', max: 3, kind: 'life', w: 7 },
-  dodge:    { name: '회피', desc: '공격을 15% 확률로 피해요', icon: 'sk_dodge', max: 3, kind: 'life', w: 7 },
-  star:     { name: '별의 보호', desc: '방에 들어갈 때 2초 무적 · 맞으면 1초 무적', icon: 'sk_star', max: 1, kind: 'life', w: 5 },
-  spirit:   { name: '정령 친구', desc: '함께 다니며 화살을 쏘는 정령', icon: 'sk_spirit', max: 2, kind: 'spec', w: 6 },
+  front:    { name: '앞쪽 화살 +1', desc: '앞으로 나란히 화살 1발 더 (화살 위력 -25%)', icon: 'sk_front', max: 3, rar: 2, kind: 'shape', w: 10 },
+  diag:     { name: '대각 화살', desc: '양 대각선으로 화살 1발씩 더', icon: 'sk_diag', max: 2, rar: 2, kind: 'shape', w: 9 },
+  side:     { name: '옆쪽 화살', desc: '양옆으로 화살 1발씩 더', icon: 'sk_side', max: 2, rar: 1, kind: 'shape', w: 7 },
+  rear:     { name: '뒤쪽 화살', desc: '뒤로도 화살 1발', icon: 'sk_rear', max: 2, rar: 1, kind: 'shape', w: 6 },
+  multi:    { name: '연속 사격', desc: '화살을 연달아 1발 더 (화살 위력 -10%)', icon: 'sk_multi', max: 3, rar: 3, kind: 'shape', w: 10 },
+  pierce:   { name: '관통', desc: '화살이 적을 뚫고 지나가요 (뚫을 때마다 -33%)', icon: 'sk_pierce', max: 1, rar: 3, kind: 'shape', w: 8 },
+  ricochet: { name: '튕기기', desc: '맞힌 뒤 가까운 적에게 2번 튕겨요 (튕길 때마다 -30%)', icon: 'sk_ricochet', max: 2, rar: 3, kind: 'shape', w: 8 },
+  wall:     { name: '벽 반사', desc: '화살이 벽에서 2번 튕겨요', icon: 'sk_wall', max: 1, rar: 2, kind: 'shape', w: 6 },
+  atk:      { name: '공격력 강화', desc: '공격 +25%', icon: 'sk_atk', max: 9, rar: 1, kind: 'stat', w: 12 },
+  aspd:     { name: '공격 속도', desc: '공격 속도 +20%', icon: 'sk_aspd', max: 9, rar: 1, kind: 'stat', w: 12 },
+  crit:     { name: '치명타', desc: '치명타 확률 +12% · 치명타는 2배', icon: 'sk_crit', max: 4, rar: 2, kind: 'stat', w: 9 },
+  head:     { name: '일격', desc: '보스가 아닌 적을 3% 확률로 한 방에', icon: 'sk_head', max: 1, rar: 2, kind: 'stat', w: 5 },
+  fire:     { name: '불꽃 화살', desc: '맞으면 불타서 2초 동안 피해', icon: 'sk_fire', max: 1, rar: 2, kind: 'elem', w: 8 },
+  frost:    { name: '냉기 화살', desc: '맞으면 2초 동안 느려져요', icon: 'sk_frost', max: 1, rar: 2, kind: 'elem', w: 8 },
+  poison:   { name: '독 화살', desc: '맞으면 계속 독 피해 (쌓여요)', icon: 'sk_poison', max: 1, rar: 2, kind: 'elem', w: 8 },
+  bolt:     { name: '번개 화살', desc: '맞으면 주변 적 2명에게 번개', icon: 'sk_bolt', max: 1, rar: 2, kind: 'elem', w: 8 },
+  orbfire:  { name: '불꽃 구슬', desc: '몸 주위를 도는 불꽃 구슬', icon: 'sk_orbfire', max: 2, rar: 2, kind: 'spec', w: 6 },
+  orbice:   { name: '얼음 구슬', desc: '몸 주위를 도는 얼음 구슬 (느리게)', icon: 'sk_orbice', max: 2, rar: 2, kind: 'spec', w: 6 },
+  hpup:     { name: '최대 체력', desc: '최대 체력 +20% (그만큼 회복)', icon: 'sk_hpup', max: 9, rar: 1, kind: 'life', w: 9 },
+  heal:     { name: '회복', desc: '체력 40% 회복', icon: 'sk_heal', max: 99, rar: 1, kind: 'life', w: 7, instant: true },
+  blood:    { name: '흡혈', desc: '적을 쓰러뜨리면 체력 조금 회복', icon: 'sk_blood', max: 3, rar: 2, kind: 'life', w: 7 },
+  dodge:    { name: '회피', desc: '공격을 15% 확률로 피해요', icon: 'sk_dodge', max: 3, rar: 1, kind: 'life', w: 7 },
+  star:     { name: '별의 보호', desc: '방에 들어갈 때 2초 무적 · 맞으면 1초 무적', icon: 'sk_star', max: 1, rar: 3, kind: 'life', w: 5 },
+  spirit:   { name: '정령 친구', desc: '함께 다니며 화살을 쏘는 정령', icon: 'sk_spirit', max: 2, rar: 1, kind: 'spec', w: 6 },
 };
 export const SKILL_KEYS = Object.keys(SKILLS);
+// 능력 등급: 1 희귀 · 2 영웅 · 3 전설 (나올 확률 가중치)
+export const SRAR = [null, { name: '희귀', col: 0x5AA8FF, w: 1 }, { name: '영웅', col: 0xB070FF, w: 0.55 }, { name: '전설', col: 0xFFB030, w: 0.22 }];
 
 // 몬스터: hp(기본 체력 · 장 배율 곱) · spd 이동 · dmg 몸통/탄 피해 · ai 행동 · r 판정 반지름(px) · sz 그림 크기
 // ai: chase 쫓아감 · hop 뛰어서 다가옴 · dash 멈췄다 돌진 · shoot 멀리서 쏨 · spread 부채꼴 탄 · fly 벽 무시 날기 · ring 둥근 탄
@@ -48,7 +50,7 @@ export const MONS = {
   bat:      { name: '보라 박쥐', key: 'm_bat', hp: 110, spd: 140, dmg: 50, ai: 'fly', r: 30, sz: 96, gold: 3 },
   scorp:    { name: '모래 전갈', key: 'm_scorp', hp: 300, spd: 80, dmg: 100, ai: 'dash', r: 38, sz: 112, gold: 6 },
   mummy:    { name: '꼬마 미라', key: 'm_mummy', hp: 380, spd: 60, dmg: 110, ai: 'chase', r: 36, sz: 104, gold: 6 },
-  skel:     { name: '해골 궁수', key: 'm_skel', hp: 240, spd: 40, dmg: 100, ai: 'shoot', r: 34, sz: 104, gold: 6 },
+  skel:     { name: '해골 궁수', key: 'm_skel', hp: 240, spd: 40, dmg: 80, ai: 'shoot', r: 34, sz: 104, gold: 6 },
   wisp:     { name: '불꽃 정령', key: 'm_wisp', hp: 220, spd: 100, dmg: 90, ai: 'ring', r: 32, sz: 96, fly: true, gold: 6 },
   iceslime: { name: '얼음 슬라임', key: 'm_iceslime', hp: 420, spd: 80, dmg: 120, ai: 'hop', r: 36, sz: 100, split: 'iceling', gold: 7 },
   iceling:  { name: '얼음 조각', key: 'm_iceslime', hp: 140, spd: 120, dmg: 70, ai: 'hop', r: 22, sz: 60, gold: 2 },
@@ -58,16 +60,16 @@ export const MONS = {
 };
 // 보스: 공격 패턴 여러 개를 번갈아
 export const BOSSES = {
-  golem:  { name: '고목 골렘', key: 'b_golem', hp: 5200, spd: 45, dmg: 140, r: 90, sz: 300, pats: ['slam', 'spread', 'summon'], summon: 'slime', gold: 80 },
-  sphinx: { name: '황금 스핑크스', key: 'b_sphinx', hp: 9800, spd: 60, dmg: 190, r: 100, sz: 320, pats: ['dash', 'ring', 'spread'], gold: 140 },
-  dragon: { name: '서리 드래곤', key: 'b_dragon', hp: 15000, spd: 55, dmg: 240, r: 105, sz: 340, pats: ['breath', 'ring', 'dash', 'summon'], summon: 'ghost', fly: true, gold: 220 },
+  golem:  { name: '고목 골렘', key: 'b_golem', hp: 5200, spd: 45, dmg: 140, r: 90, sz: 300, pats: ['slam', 'spread', 'meteor', 'summon'], summon: 'slime', gold: 80 },
+  sphinx: { name: '황금 스핑크스', key: 'b_sphinx', hp: 9800, spd: 60, dmg: 190, r: 100, sz: 320, pats: ['dash', 'meteor', 'ring', 'spread'], gold: 140 },
+  dragon: { name: '서리 드래곤', key: 'b_dragon', hp: 15000, spd: 55, dmg: 240, r: 105, sz: 340, pats: ['breath', 'meteor', 'ring', 'dash', 'summon'], summon: 'ghost', fly: true, gold: 220 },
 };
 
 // 장: 방 20개 (5·15방 = 특수 방 · 10방 = 중간 보스 · 20방 = 보스) · tile: 바닥·장애물·구덩이 그림
 export const CHAPTERS = [
-  { id: 1, name: '속삭이는 숲', tiles: ['t_grass', 't_rock', 't_water'], mons: ['slime', 'shroom', 'wolf', 'bat'], boss: 'golem', mid: 'wolf', hpMul: 1, dmgMul: 1, bg: 0x1E3A24 },
-  { id: 2, name: '잊힌 사막 유적', tiles: ['t_sand', 't_pillar', 't_pit'], mons: ['mummy', 'skel', 'scorp', 'wisp'], boss: 'sphinx', mid: 'mummy', hpMul: 1.7, dmgMul: 1.35, bg: 0x4A3418 },
-  { id: 3, name: '얼어붙은 동굴', tiles: ['t_ice', 't_crystal', 't_chasm'], mons: ['iceslime', 'ghost', 'icemage', 'yeti'], boss: 'dragon', mid: 'yeti', hpMul: 2.4, dmgMul: 1.7, bg: 0x1A2E4A },
+  { id: 1, name: '속삭이는 숲', tiles: ['t_grass', 't_rock', 't_water'], mons: ['slime', 'shroom', 'wolf', 'bat'], boss: 'golem', mid: 'wolf', hpMul: 1.2, dmgMul: 1.65, bg: 0x1E3A24 },
+  { id: 2, name: '잊힌 사막 유적', tiles: ['t_sand', 't_pillar', 't_pit'], mons: ['mummy', 'skel', 'scorp', 'wisp'], boss: 'sphinx', mid: 'mummy', hpMul: 1.5, dmgMul: 1.3, bg: 0x4A3418 },
+  { id: 3, name: '얼어붙은 동굴', tiles: ['t_ice', 't_crystal', 't_chasm'], mons: ['iceslime', 'ghost', 'icemage', 'yeti'], boss: 'dragon', mid: 'yeti', hpMul: 1.85, dmgMul: 1.45, bg: 0x1A2E4A },
 ];
 export const ROOMS = 20;
 

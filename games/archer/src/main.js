@@ -1,10 +1,10 @@
-import { W, BASE_H, setH } from './config.js?v=0.17.0';
-import { audio } from './audio.js?v=0.17.0';
-import { BootScene } from './scenes/Boot.js?v=0.17.0';
-import { HomeScene } from './scenes/Home.js?v=0.17.0';
-import { PlayScene } from './scenes/Play.js?v=0.17.0';
-import { ResultScene } from './scenes/Result.js?v=0.17.0';
-import { installBack } from './oad.js?v=0.17.0';
+import { W, BASE_H, setH } from './config.js?v=0.17.1';
+import { audio } from './audio.js?v=0.17.1';
+import { BootScene } from './scenes/Boot.js?v=0.17.1';
+import { HomeScene } from './scenes/Home.js?v=0.17.1';
+import { PlayScene } from './scenes/Play.js?v=0.17.1';
+import { ResultScene } from './scenes/Result.js?v=0.17.1';
+import { installBack } from './oad.js?v=0.17.1';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }

@@ -1,6 +1,6 @@
 // 전투 규칙 (화면과 무관): 방 · 영웅 이동/자동 사격 · 화살 · 몬스터 AI · 적 탄 · 능력 · 레벨업
 // 좌표는 방 안의 픽셀 (가로 AW × 세로 AH). 한 칸 = CELL.
-import { HEROES, SKILLS, SKILL_KEYS, MONS, BOSSES, CHAPTERS, ROOMS } from './data.js?v=0.17.0';
+import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR } from './data.js?v=0.17.1';
 
 export const CELL = 120, COLS = 9, ROWS = 16, AW = CELL * COLS, AH = CELL * ROWS;   // 세로 화면에 맞춘 방 (9 × 16)
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -53,7 +53,7 @@ export class Sim {
     this.room++;
     if (this.room > ROOMS) { this.over = true; this.win = true; this.ev('clear'); return; }
     const kind = roomKind(this.room), R = this.R;
-    this.kind = kind; this.cleared = false; this.doorOpen = false; this.mons = []; this.shots = []; this.foes = []; this.drops = []; this.npc = null;
+    this.kind = kind; this.cleared = false; this.doorOpen = false; this.waves = 1; this.wave = 1; this.waveT = 0; this.mons = []; this.shots = []; this.foes = []; this.drops = []; this.npc = null;
     // 지형
     this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));   // 0 바닥 · 1 막힘(장애물) · 2 구덩이(화살은 지나감)
     const lay = kind === 'fight' ? LAYOUTS[1 + Math.floor(R() * (LAYOUTS.length - 1))] : kind === 'mid' ? LAYOUTS[Math.floor(R() * 3)] : [];
@@ -63,21 +63,25 @@ export class Sim {
     this.orbA = 0;
     if (kind === 'special') { this.npc = { type: this.room === 5 ? 'angel' : 'devil', x: AW / 2, y: AH * 0.4, used: false }; this.cleared = true; this.doorOpen = true; }
     else if (kind === 'boss' || kind === 'mid') this.spawnBoss(kind);
-    else this.spawnWave();
-    this.ev('room', { n: this.room, kind });
+    else { this.waves = this.room < 4 ? 2 : 3; this.wave = 0; this.nextWave(); }
+    this.warns = []; this.ev('room', { n: this.room, kind });
   }
   free(x, y) { const cx = Math.floor(x / CELL), cy = Math.floor(y / CELL); return cx >= 0 && cy >= 0 && cx < COLS && cy < ROWS && this.grid[cy][cx] === 0; }
+  nextWave() { this.wave++; this.waveT = 18; this.spawnWave(); this.ev('wave', { n: this.wave, of: this.waves }); }
   spawnWave() {
-    const n = 3 + Math.floor(this.room / 3) + Math.floor(this.R() * 2), list = this.ch.mons;
+    const n = 3 + Math.floor(this.room / 3) + Math.floor(this.R() * 2) + (this.wave > 1 ? 1 : 0), list = this.ch.mons;
     const pool = this.room < 4 ? list.slice(0, 2) : this.room < 8 ? list.slice(0, 3) : list;
     for (let i = 0; i < n; i++) {
       let x, y, k = 0; do { x = CELL * (0.7 + this.R() * (COLS - 1.4)); y = CELL * (1 + this.R() * (ROWS * 0.6)); k++; } while ((!this.free(x, y) || d2({ x, y }, this.p) < 500 ** 2) && k < 40);
       this.addMon(pool[Math.floor(this.R() * pool.length)], x, y);
     }
   }
+  // 막힌 칸이면 가장 가까운 빈 칸 가운데로
+  unstick(o) { if (this.free(o.x, o.y)) return; let best = null; for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) { if (this.grid[y][x]) continue; const c = { x: x * CELL + CELL / 2, y: y * CELL + CELL / 2 }, d = d2(c, o); if (!best || d < best.d) best = { ...c, d }; } if (best) { o.x = best.x; o.y = best.y; } }
   addMon(type, x, y, hpMul = 1) {
     const M = MONS[type], scale = this.ch.hpMul * (1 + (this.room - 1) * 0.045);
     const m = { id: Math.random().toString(36).slice(2, 8), type, x, y, r: M.r, hp: M.hp * scale * hpMul, maxHp: M.hp * scale * hpMul, cd: 0.8 + this.R() * 1.2, st: 0, vx: 0, vy: 0, burn: 0, slow: 0, poison: 0, boss: false };
+    if (!MONS[type].fly) this.unstick(m);
     this.mons.push(m); this.ev('spawn', { id: m.id, mt: type }); return m;
   }
   spawnBoss(kind) {
@@ -91,8 +95,8 @@ export class Sim {
     const have = this.sk, pool = SKILL_KEYS.filter(k => (have[k] || 0) < SKILLS[k].max && !(k === 'heal' && this.p.hp >= this.p.maxHp * 0.9));
     const out = [];
     while (out.length < n && pool.length) {
-      const tot = pool.reduce((a, k) => a + SKILLS[k].w, 0); let r = this.R() * tot, i = 0;
-      while ((r -= SKILLS[pool[i]].w) > 0) i++;
+      const wt = k => SKILLS[k].w * SRAR[SKILLS[k].rar || 1].w, tot = pool.reduce((a, k) => a + wt(k), 0); let r = this.R() * tot, i = 0;
+      while ((r -= wt(pool[i])) > 0 && i < pool.length - 1) i++;
       out.push(pool.splice(i, 1)[0]);
     }
     return out;
@@ -148,7 +152,10 @@ export class Sim {
     for (const d of this.drops) { const dd = Math.sqrt(d2(d, p)); if (this.cleared || dd < 220) { const s = Math.min(1, dt * (this.cleared ? 9 : 6)); d.x += (p.x - d.x) * s; d.y += (p.y - d.y) * s; } if (dd < 40) { d.got = true; if (d.k === 'gold') this.gold += d.v; else this.addXp(d.v); this.ev('pick', { k: d.k }); } }
     this.drops = this.drops.filter(d => !d.got);
     // 방 끝
-    if (!this.cleared && !this.mons.length) { this.cleared = true; this.foes = []; this.ev('cleared', { kind: this.kind }); if (this.kind === 'boss') { this.over = true; this.win = true; this.ev('clear'); } else this.doorOpen = true; }
+    // 웨이브: 다 쓰러뜨리거나 시간이 다 되면 다음 웨이브
+    if (!this.cleared && this.kind === 'fight' && this.wave < this.waves) { this.waveT -= dt; if (!this.mons.length || this.waveT <= 0) this.nextWave(); }
+    for (const w of this.warns) w.t -= dt; this.warns = this.warns.filter(w => w.t > 0);
+    if (!this.cleared && !this.mons.length && this.wave >= this.waves) { this.cleared = true; this.foes = []; this.ev('cleared', { kind: this.kind }); if (this.kind === 'boss') { this.over = true; this.win = true; this.ev('clear'); } else this.doorOpen = true; }
   }
   // 겨냥: 장애물에 가리지 않은 적 중 가장 가까운 적 (없으면 그냥 가장 가까운 적)
   los(a, b) { const L = Math.sqrt(d2(a, b)), n = Math.ceil(L / 12), ox = -(b.y - a.y) / (L || 1) * 12, oy = (b.x - a.x) / (L || 1) * 12; for (let i = 1; i < n; i++) for (const k of [-1, 0, 1]) { const x = a.x + (b.x - a.x) * i / n + ox * k, y = a.y + (b.y - a.y) * i / n + oy * k, cx = Math.floor(x / CELL), cy = Math.floor(y / CELL); if (this.grid[cy] && this.grid[cy][cx] === 1) return false; } return true; }
@@ -156,7 +163,7 @@ export class Sim {
   // 화살 쏘기: 능력에 따라 여러 방향 · 연속
   fire(t) {
     const p = this.p, a0 = Math.atan2(t.y - p.y, t.x - p.x), sk = this.sk;
-    const nf = 1 + (sk.front || 0), dmgMul = (nf > 1 ? Math.pow(0.88, nf - 1) : 1) * ((sk.multi || 0) ? Math.pow(0.9, sk.multi) : 1);
+    const nf = 1 + (sk.front || 0), dmgMul = (nf > 1 ? Math.pow(0.75, nf - 1) : 1) * ((sk.multi || 0) ? Math.pow(0.9, sk.multi) : 1);   // 앞쪽 화살 -25% · 연속 사격 -10% (원작 규칙)
     const vol = () => {
       for (let i = 0; i < nf; i++) { const off = (i - (nf - 1) / 2) * 26; this.arrow(p.x + Math.cos(a0 + Math.PI / 2) * off, p.y + Math.sin(a0 + Math.PI / 2) * off, a0, dmgMul); }
       for (let k = 0; k < (sk.diag || 0); k++) for (const s of [-1, 1]) this.arrow(p.x, p.y, a0 + s * (Math.PI / 4 + k * 0.12), dmgMul);
@@ -176,7 +183,7 @@ export class Sim {
       for (let k = 0; k < steps && s.life > 0; k++) {
         s.x += s.vx * dt / steps; s.y += s.vy * dt / steps;
         // 벽 · 장애물 (구덩이는 지나감)
-        const cx = Math.floor(s.x / CELL), cy = Math.floor(s.y / CELL), out = s.x < 0 || s.y < 0 || s.x > AW || s.y > AH, blk = !out && this.grid[cy][cx] === 1;
+        const cx = Math.floor(s.x / CELL), cy = Math.floor(s.y / CELL), out = s.x < 0 || s.y < 0 || s.x >= AW || s.y >= AH, blk = !out && this.grid[cy][cx] === 1;
         if (out || blk) {
           if (s.wall > 0) { s.wall--; if (s.x < 0 || s.x > AW || (blk && (Math.floor((s.x - s.vx * dt / steps) / CELL) !== cx))) s.vx = -s.vx; else s.vy = -s.vy; s.x = clamp(s.x, 1, AW - 1); s.y = clamp(s.y, 1, AH - 1); s.a = Math.atan2(s.vy, s.vx); }
           else { s.life = 0; break; }
@@ -184,8 +191,9 @@ export class Sim {
         for (const m of this.mons) {
           if (s.hit.has(m.id) || d2(s, m) > (m.r + 10) ** 2) continue;
           s.hit.add(m.id); this.hitBy(m, s);
-          if (s.bounce > 0) { s.bounce--; const nx = this.mons.filter(o => o !== m && !s.hit.has(o.id)).sort((a, b) => d2(a, m) - d2(b, m))[0]; if (nx) { const a = Math.atan2(nx.y - m.y, nx.x - m.x); s.vx = Math.cos(a) * 1500; s.vy = Math.sin(a) * 1500; s.a = a; s.x = m.x; s.y = m.y; continue; } }
+          if (s.bounce > 0) { s.bounce--; s.mul *= 0.7; const nx = this.mons.filter(o => o !== m && !s.hit.has(o.id)).sort((a, b) => d2(a, m) - d2(b, m))[0]; if (nx) { const a = Math.atan2(nx.y - m.y, nx.x - m.x); s.vx = Math.cos(a) * 1500; s.vy = Math.sin(a) * 1500; s.a = a; s.x = m.x; s.y = m.y; continue; } }
           if (!this.sk.pierce || s.kind === 'spirit') { s.life = 0; break; }
+          s.mul *= 0.67;
         }
       }
     }
@@ -196,6 +204,7 @@ export class Sim {
     if (crit) dmg *= 2;
     if (this.sk.head && !m.boss && !m.mid && this.R() < 0.03) { dmg = m.hp + 1; this.ev('head', { x: m.x, y: m.y }); }
     this.hurt(m, dmg, crit);
+    if (!m.boss && m.hp > 0) { const l = Math.hypot(s.vx, s.vy) || 1, kb = m.mid ? 6 : 16, nx = m.x + s.vx / l * kb, ny = m.y + s.vy / l * kb, mg = m.r * 0.6; if (this.free(nx - mg, ny - mg) && this.free(nx + mg, ny + mg) && this.free(nx - mg, ny + mg) && this.free(nx + mg, ny - mg)) { m.x = nx; m.y = ny; } }
     if (this.sk.fire) m.burn = 2;
     if (this.sk.frost) m.slow = 2;
     if (this.sk.poison) m.poison = Math.min(5, m.poison + 1);
@@ -211,6 +220,7 @@ export class Sim {
     const M = m.boss ? BOSSES[m.type] : MONS[m.type], g = Math.round((M.gold || 3) * (m.mid ? 8 : 1) * (1 + this.room * 0.05));
     for (let i = 0; i < Math.min(6, Math.ceil(g / 3)); i++) this.drops.push({ k: 'gold', v: Math.ceil(g / Math.min(6, Math.ceil(g / 3))), x: m.x + (this.R() - 0.5) * 60, y: m.y + (this.R() - 0.5) * 60 });
     this.drops.push({ k: 'xp', v: m.boss ? 400 : m.mid ? 120 : 12 + this.room, x: m.x, y: m.y });
+    if (m.boss || m.mid || this.R() < 0.02) { const slots = Object.keys(GEAR), slot = slots[Math.floor(this.R() * slots.length)], r = m.boss ? (this.R() < 0.3 ? 2 : 1) : m.mid ? 1 : (this.R() < 0.1 ? 1 : 0); (this.loot ||= []).push({ slot, r }); this.ev('loot', { slot, r, x: m.x, y: m.y }); }
     if (this.sk.blood) this.healBy(this.p.maxHp * 0.015 * this.sk.blood * (m.boss || m.mid ? 6 : 1));
     if (!m.boss && MONS[m.type].split && !m.mid) for (const s of [-1, 1]) { const c = this.addMon(MONS[m.type].split, m.x + s * 30, m.y); c.cd = 0.6; }
     this.ev('kill', { id: m.id, mt: m.type, x: m.x, y: m.y, boss: m.boss || m.mid });
@@ -227,16 +237,20 @@ export class Sim {
       if (m.hp <= 0) continue;
       m.cd -= dt * slow;
       const dx = p.x - m.x, dy = p.y - m.y, dl = Math.hypot(dx, dy) || 1, sp = (M.spd || 0) * slow;
-      const go = (vx, vy) => { const nx = m.x + vx * dt, ny = m.y + vy * dt, fly = M.fly || M.ai === 'fly'; if (nx > m.r && nx < AW - m.r && (fly || this.free(nx, m.y))) m.x = nx; if (ny > m.r && ny < AH - m.r && (fly || this.free(m.x, ny))) m.y = ny; };
+      const fly = M.fly || M.ai === 'fly', mg = m.r * 0.6, fr = (x, y) => fly || (this.free(x - mg, y - mg) && this.free(x + mg, y - mg) && this.free(x - mg, y + mg) && this.free(x + mg, y + mg));
+      const go = (vx, vy) => { const nx = m.x + vx * dt, ny = m.y + vy * dt; if (nx > m.r && nx < AW - m.r && fr(nx, m.y)) m.x = nx; if (ny > m.r && ny < AH - m.r && fr(m.x, ny)) m.y = ny; };
+      if (!fly && !m.boss && !this.free(m.x, m.y)) this.unstick(m);
+      // 서로 겹치지 않게 살짝 밀어냄
+      for (const o of this.mons) { if (o === m || o.boss) continue; const ox = m.x - o.x, oy = m.y - o.y, dd = ox * ox + oy * oy, rr = (m.r + o.r) * 0.8; if (dd > 0.01 && dd < rr * rr) { const l = Math.sqrt(dd), push = (rr - l) * 0.5; if (fr(m.x + ox / l * push, m.y + oy / l * push)) { m.x += ox / l * push; m.y += oy / l * push; } } }
       if (m.boss) this.bossAct(m, M, dt, dx, dy, dl, slow);
       else switch (M.ai) {
         case 'chase': go(dx / dl * sp, dy / dl * sp); break;
         case 'fly': go(dx / dl * sp + Math.sin(this.t * 3 + m.x) * 60, dy / dl * sp); break;
         case 'hop': if (m.st > 0) { m.st -= dt; go(m.vx, m.vy); } else if (m.cd <= 0) { m.cd = 1.4; m.st = 0.45; m.vx = dx / dl * sp * 3; m.vy = dy / dl * sp * 3; } break;
-        case 'dash': if (m.st > 0) { m.st -= dt; go(m.vx, m.vy); } else if (m.cd <= 0) { m.cd = 2.2; m.st = 0.5; m.vx = dx / dl * sp * 5; m.vy = dy / dl * sp * 5; this.ev('dash', { id: m.id }); } else go(dx / dl * sp * 0.3, dy / dl * sp * 0.3); break;
-        case 'shoot': if (dl > 500) go(dx / dl * sp, dy / dl * sp); if (m.cd <= 0) { m.cd = 2; this.foe(m.x, m.y, Math.atan2(dy, dx), 520, M.dmg * dmgMul); } break;
-        case 'spread': if (m.cd <= 0) { m.cd = 2.6; const a = Math.atan2(dy, dx); for (const o of [-0.35, 0, 0.35]) this.foe(m.x, m.y, a + o, 420, M.dmg * dmgMul); } if (sp) go(dx / dl * sp * 0.5, dy / dl * sp * 0.5); break;
-        case 'ring': go(dx / dl * sp * 0.6 + Math.cos(this.t * 2 + m.y) * 80, dy / dl * sp * 0.6); if (m.cd <= 0) { m.cd = 3; for (let i = 0; i < 8; i++) this.foe(m.x, m.y, i * Math.PI / 4 + this.t, 360, M.dmg * dmgMul); } break;
+        case 'dash': if (m.st > 0) { m.st -= dt; go(m.vx, m.vy); } else if (m.wind > 0) { m.wind -= dt; if (m.wind <= 0) { m.st = 0.5; this.ev('dash', { id: m.id }); } } else if (m.cd <= 0) { m.cd = 2.4; m.wind = 0.6; m.vx = dx / dl * sp * 5; m.vy = dy / dl * sp * 5; this.warns.push({ k: 'line', id: m.id, x1: m.x, y1: m.y, x2: m.x + dx / dl * sp * 2.5, y2: m.y + dy / dl * sp * 2.5, w: m.r * 1.6, t: 0.6, T: 0.6 }); } else go(dx / dl * sp * 0.3, dy / dl * sp * 0.3); break;
+        case 'shoot': if (m.wind > 0) { m.wind -= dt; if (m.wind <= 0) this.foe(m.x, m.y, m.aim, 560, M.dmg * dmgMul); } else { if (dl > 500) go(dx / dl * sp, dy / dl * sp); if (m.cd <= 0) { m.cd = 1.7; m.wind = 0.5; m.aim = Math.atan2(dy, dx); this.warns.push({ k: 'line', id: m.id, x1: m.x, y1: m.y, x2: m.x + Math.cos(m.aim) * 1400, y2: m.y + Math.sin(m.aim) * 1400, w: 14, t: 0.55, T: 0.55 }); } } break;
+        case 'spread': if (m.cd <= 0) { m.cd = 2.1; const a = Math.atan2(dy, dx); for (const o of [-0.3, 0, 0.3]) this.foe(m.x, m.y, a + o, 500, M.dmg * dmgMul); } if (sp) go(dx / dl * sp * 0.5, dy / dl * sp * 0.5); break;
+        case 'ring': go(dx / dl * sp * 0.6 + Math.cos(this.t * 2 + m.y) * 80, dy / dl * sp * 0.6); if (m.cd <= 0) { m.cd = 2.5; for (let i = 0; i < 8; i++) this.foe(m.x, m.y, i * Math.PI / 4 + this.t, 420, M.dmg * dmgMul); } break;
       }
       // 몸통 부딪힘
       if (d2(m, p) < (m.r + p.r - 6) ** 2) this.hit((m.boss ? M.dmg : M.dmg) * dmgMul * (m.mid ? 1.4 : 1));
@@ -253,8 +267,9 @@ export class Sim {
     this.ev('bossatk', { pat });
     if (pat === 'spread') for (let i = -3; i <= 3; i++) this.foe(m.x, m.y, a + i * 0.18, 480, dm * 0.6);
     if (pat === 'ring') { const n = enraged ? 20 : 14; for (let i = 0; i < n; i++) this.foe(m.x, m.y, i * Math.PI * 2 / n + (m.pat % 2) * 0.2, 380, dm * 0.55); }
+    if (pat === 'slam' || pat === 'meteor') { const tx = p.x, ty = p.y; this.warns.push({ k: 'circle', x: tx, y: ty, r: 190, t: 0.9, T: 0.9 }); this.later.push({ at: this.t + 0.9, fn: () => { this.ev('boom', { x: tx, y: ty, r: 190 }); if (d2(p, { x: tx, y: ty }) < 190 ** 2) this.hit(dm * 0.9); } }); }
     if (pat === 'slam') { for (let i = 0; i < 12; i++) this.foe(m.x, m.y + 40, i * Math.PI / 6, 300, dm * 0.6); for (let i = 0; i < 12; i++) this.later.push({ at: this.t + 0.4, fn: () => this.foe(m.x, m.y + 40, i * Math.PI / 6 + 0.26, 300, dm * 0.6) }); }
-    if (pat === 'dash') { m.st = 0.7; m.vx = dx / dl * 900; m.vy = dy / dl * 900; }
+    if (pat === 'dash') { m.vx = dx / dl * 900; m.vy = dy / dl * 900; this.warns.push({ k: 'line', id: m.id, x1: m.x, y1: m.y, x2: m.x + dx / dl * 700, y2: m.y + dy / dl * 700, w: m.r * 1.6, t: 0.7, T: 0.7 }); this.later.push({ at: this.t + 0.7, fn: () => { m.st = 0.7; } }); }
     if (pat === 'breath') for (let k = 0; k < 6; k++) this.later.push({ at: this.t + k * 0.12, fn: () => { const aa = Math.atan2(p.y - m.y, p.x - m.x); for (const o of [-0.25, 0, 0.25]) this.foe(m.x, m.y + 40, aa + o, 560, dm * 0.45, 'ice'); } });
     if (pat === 'summon' && this.mons.length < 6) for (const s of [-1, 1]) this.addMon(B.summon, m.x + s * 180, m.y + 80);
   }
@@ -265,14 +280,14 @@ export class Sim {
       f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt;
       const cx = Math.floor(f.x / CELL), cy = Math.floor(f.y / CELL);
       if (f.x < 0 || f.y < 0 || f.x > AW || f.y > AH || (this.grid[cy] && this.grid[cy][cx] === 1)) f.life = 0;
-      if (f.life > 0 && d2(f, p) < (f.r + p.r - 8) ** 2) { f.life = 0; this.hit(f.dmg); }
+      if (f.life > 0 && d2(f, p) < (f.r + p.r - 8) ** 2) { f.life = 0; this.src = 'shot'; this.hit(f.dmg); this.src = null; }
     }
     this.foes = this.foes.filter(f => f.life > 0);
   }
   hit(dmg) {
     const p = this.p; if (p.inv > 0 || this.over) return;
     if (this.R() < this.dodge) { p.inv = 0.4; this.ev('dodge'); return; }
-    p.hp -= Math.round(dmg); p.inv = this.sk.star ? 1 : 0.7; this.ev('hurt', { v: Math.round(dmg) });
+    p.hp -= Math.round(dmg); p.inv = this.sk.star ? 1 : 0.7; this.ev('hurt', { v: Math.round(dmg), src: this.src || 'body' });
     if (p.hp <= 0) { p.hp = 0; this.over = true; this.win = false; this.ev('dead'); }
   }
   // 되살리기 (한 판에 한 번): 체력 절반, 주변 적 탄 지움

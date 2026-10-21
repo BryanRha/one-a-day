@@ -1,11 +1,11 @@
 // 자동 조종 (봇·브라우저 자동 시험 공용)
-import { AW, AH, CELL } from './sim.js?v=0.17.0';
+import { AW, AH, CELL } from './sim.js?v=0.17.1';
 // 칸 단위 길찾기 (BFS) → 다음 칸 중심 방향
 export function pathTo(s, p, tx, ty) {
   const C0 = [Math.floor(p.x / CELL), Math.floor(p.y / CELL)], W = s.grid[0].length, H = s.grid.length, prev = new Map(), q = [[tx, ty]], key = (x, y) => x + ',' + y;
   prev.set(key(tx, ty), null);
   while (q.length) { const [x, y] = q.shift(); if (x === C0[0] && y === C0[1]) break; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || s.grid[ny][nx] || prev.has(key(nx, ny))) continue; prev.set(key(nx, ny), [x, y]); q.push([nx, ny]); } }
-  const nx = prev.get(key(...C0)); if (!nx) return [(tx * CELL + CELL / 2 - p.x) / 200, -1];
+  const nx = prev.get(key(...C0)); if (!nx) return [(tx * CELL + CELL / 2 - p.x) / 200, (ty * CELL + CELL / 2 - p.y) / 200];
   const gx = nx[0] * CELL + CELL / 2, gy = nx[1] * CELL + CELL / 2; return [(gx - p.x) / 60, (gy - p.y) / 60];
 }
 export function steer(s, SKILL = 0.55) {

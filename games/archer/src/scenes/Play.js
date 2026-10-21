@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.0';
-import { audio } from '../audio.js?v=0.17.0';
-import { load, save } from '../save.js?v=0.17.0';
-import { pushBack } from '../oad.js?v=0.17.0';
-import * as M from '../meta.js?v=0.17.0';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.0';
-import { HEROES, SKILLS, MONS, BOSSES, CHAPTERS, ROOMS } from '../core/data.js?v=0.17.0';
+import { W, H } from '../config.js?v=0.17.1';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.1';
+import { audio } from '../audio.js?v=0.17.1';
+import { load, save } from '../save.js?v=0.17.1';
+import { pushBack } from '../oad.js?v=0.17.1';
+import * as M from '../meta.js?v=0.17.1';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.1';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.1';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -67,6 +67,7 @@ export class PlayScene extends Phaser.Scene {
     const D = 500, u = this.ui, s = this.s;
     const bg = this.add.graphics().setDepth(D - 1).setScrollFactor(0); bg.fillStyle(0x0B0D1E, 0.92).fillRect(0, 0, W, TOP); for (let i = 0; i < 12; i++) bg.fillStyle(0x0B0D1E, 0.92 * (1 - i / 12)).fillRect(0, TOP + i * 3, W, 3);
     u.room = T(this, 40, 54, '', 34, C.text, { ox: 0, w: 900 }).setDepth(D).setScrollFactor(0);
+    u.wave = T(this, W / 2, 62, '', 28, '#FFB0A0', { w: 900 }).setDepth(D).setScrollFactor(0);
     u.chap = T(this, 40, 98, this.daily ? '오늘의 던전' : `${this.chapter}장 · ${this.ch.name}`, 24, C.sub, { ox: 0, w: 800 }).setDepth(D).setScrollFactor(0);
     u.gold = T(this, W - 150, 54, '', 32, C.gold, { ox: 1, w: 900 }).setDepth(D).setScrollFactor(0);
     this.add.image(W - 150 - 10, 54, 'i_gold').setDisplaySize(44, 44).setOrigin(1.2, 0.5).setDepth(D).setScrollFactor(0);
@@ -90,9 +91,9 @@ export class PlayScene extends Phaser.Scene {
   }
   updateHud() {
     const s = this.s, u = this.ui, k = s.xp / s.xpNeed();
-    u.room.setText(`방 ${Math.min(s.room, ROOMS)} / ${ROOMS}`); u.gold.setText(fmt(s.gold));
-    u.xpG.clear().fillStyle(0x000000, 0.5).fillRoundedRect(40, 124, W - 80, 20, 10).fillStyle(0x6AD8FF, 1).fillRoundedRect(40, 124, Math.max(20, (W - 80) * k), 20, 10);
-    u.lvl.setText(`Lv ${s.lvl}`);
+    const xsig = `${s.lvl}:${Math.round(k * 200)}:${s.gold}:${s.room}`; if (u.xsig !== xsig) { u.xsig = xsig; u.xpG.clear().fillStyle(0x000000, 0.5).fillRoundedRect(40, 124, W - 80, 20, 10).fillStyle(0x6AD8FF, 1).fillRoundedRect(40, 124, Math.max(20, (W - 80) * k), 20, 10);
+    u.lvl.setText(`Lv ${s.lvl}`); u.room.setText(`방 ${Math.min(s.room, ROOMS)} / ${ROOMS}`); u.gold.setText(fmt(s.gold)); }
+    const wtxt = s.kind === 'fight' && !s.cleared ? `웨이브 ${s.wave}/${s.waves}${s.wave < s.waves ? ` · ${Math.max(0, Math.ceil(s.waveT))}초` : ''}` : ''; if (u.wave.text !== wtxt) u.wave.setText(wtxt);
     const ks = Object.keys(s.sk).filter(k2 => SKILLS[k2] && s.sk[k2] > 0);
     if (ks.join() + ks.map(k2 => s.sk[k2]).join() !== this.skSig) {
       this.skSig = ks.join() + ks.map(k2 => s.sk[k2]).join(); u.skills.removeAll(true);
@@ -100,7 +101,7 @@ export class PlayScene extends Phaser.Scene {
     }
     const b = s.mons.find(m => m.boss || m.mid);
     u.boss.setVisible(!!b);
-    if (b) { const bw = W - 200; u.bossG.clear().fillStyle(0x000000, 0.6).fillRoundedRect(-bw / 2, -6, bw, 28, 14).fillStyle(0xE8402A, 1).fillRoundedRect(-bw / 2, -6, Math.max(28, bw * b.hp / b.maxHp), 28, 14); u.bossT.setText(b.boss ? BOSSES[b.type].name : `우두머리 ${MONS[b.type].name}`); }
+    if (b && u.bsig !== Math.round(b.hp / b.maxHp * 300)) { u.bsig = Math.round(b.hp / b.maxHp * 300); const bw = W - 200; u.bossG.clear().fillStyle(0x000000, 0.6).fillRoundedRect(-bw / 2, -6, bw, 28, 14).fillStyle(0xE8402A, 1).fillRoundedRect(-bw / 2, -6, Math.max(28, bw * b.hp / b.maxHp), 28, 14); u.bossT.setText(b.boss ? BOSSES[b.type].name : `우두머리 ${MONS[b.type].name}`); }
     u.danger.setAlpha(s.p.hp < s.p.maxHp * 0.3 ? 0.6 + Math.sin(this.time.now / 180) * 0.3 : 0);
   }
 
@@ -132,9 +133,9 @@ export class PlayScene extends Phaser.Scene {
     else this.npcV = null;
     // 영웅
     if (!this.heroV) {
-      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 80, 26, 0x000000, 0.35); const im = this.add.image(0, -18, `ht_${this.heroK}`).setOrigin(0.5, 0.5); im.setScale(130 / Math.max(im.width, im.height));
+      const hv = this.add.container(0, 0); const sh = this.add.ellipse(0, 6, 80, 26, 0x000000, 0.35); const im = this.add.image(0, -18, `ht_${this.heroK}`).setOrigin(0.5, 0.5); im.setScale(130 / Math.max(im.width, im.height)); im.base = im.scale;
       const ring = this.add.ellipse(0, 6, 92, 32, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
-      const hp = this.add.graphics(); hv.add([sh, ring, im, hp]); Object.assign(hv, { im, hp, ring }); this.heroV = hv;
+      const hpB = this.add.rectangle(-55, -105, 110, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-55, -105, 110, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -128, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); hv.add([sh, ring, im, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT }); this.heroV = hv;
     }
     this.world.add(this.heroV); this.world.add(this.fxL); this.world.bringToTop(this.fxL);
     for (const m of s.mons) this.monView(m);
@@ -145,12 +146,12 @@ export class PlayScene extends Phaser.Scene {
     const sz = (m.boss ? B.sz * 0.95 : B.sz * (m.sz || 1) * 0.95) * this.k;
     const sh = this.add.ellipse(0, sz * 0.36, sz * 0.7, sz * 0.2, 0x000000, 0.35);
     const im = this.add.image(0, 0, m.boss ? B.key.replace('b_', 'bt_') : B.key); im.setScale(sz / Math.max(im.width, im.height));
-    const hp = this.add.graphics();
+    const w0 = sz * 0.7, hp = this.add.container(-w0 / 2, -sz * 0.6).setVisible(false); hp.add([this.add.rectangle(0, 0, w0, 10, 0x000000, 0.6).setOrigin(0, 0.5), this.add.rectangle(0, 0, w0, 10, 0xFF5A4A).setOrigin(0, 0.5)]); hp.w0 = w0;
     v.add([sh, im, hp]); Object.assign(v, { im, hp, sz, base: im.scale }); this.world.add(v); this.views.set(m.id, v);
     if (m.boss || m.mid) { im.setTint(m.mid ? 0xFFC8C8 : 0xFFFFFF); }
     v.setScale(0.2).setAlpha(0); this.tweens.add({ targets: v, scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' });
     // 둥실 · 꿈틀
-    this.tweens.add({ targets: im, scaleY: im.scale * 1.06, scaleX: im.scale * 0.96, duration: 420 + Math.random() * 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({ targets: im, scaleY: im.scale * 1.07, scaleX: im.scale * 0.95, duration: 380 + Math.random() * 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     return v;
   }
   syncCam(now) {
@@ -174,19 +175,36 @@ export class PlayScene extends Phaser.Scene {
   render(dt) {
     const s = this.s, k = this.k, p = s.p, hv = this.heroV;
     hv.setPosition(p.x * k, p.y * k); hv.setDepth(p.y);
-    hv.im.setFlipX(Math.cos(p.face) < 0);
+    // 그림의 활이 위쪽을 향하므로 겨누는 각도 + 90°. 부드럽게 돌아감
+    const want = p.face + Math.PI / 2; let da = Phaser.Math.Angle.Wrap(want - hv.im.rotation); hv.im.rotation += da * Math.min(1, dt * 18);
     hv.im.setAlpha(p.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.45 : 1);
-    if (p.moving) hv.im.y = -18 - Math.abs(Math.sin(this.time.now / 90)) * 6; else hv.im.y = -18;
+    const bob = p.moving ? Math.sin(this.time.now / 70) : 0;
+    hv.im.y = -18 - Math.abs(bob) * 7; hv.im.scaleX = hv.im.base * (1 + (p.moving ? Math.abs(bob) * 0.05 : 0) - (hv.recoil || 0) * 0.08); hv.im.scaleY = hv.im.base * (1 - (p.moving ? Math.abs(bob) * 0.04 : 0) + (hv.recoil || 0) * 0.05);
+    hv.recoil = Math.max(0, (hv.recoil || 0) - dt * 8);
+    if (p.moving && (this.dustT = (this.dustT || 0) - dt) <= 0) { this.dustT = 0.12; const d = this.add.image(p.x * k, p.y * k + 18, 'glow').setTint(0xC8C0A8).setAlpha(0.35).setScale(0.25).setDepth(p.y - 2); this.world.add(d); this.tweens.add({ targets: d, alpha: 0, scale: 0.5, duration: 380, onComplete: () => d.destroy() }); }
     hv.ring.setStrokeStyle(4, s.mons.length ? 0xFF8A70 : 0x8AE8FF, 0.8);
-    hv.hp.clear().fillStyle(0x000000, 0.6).fillRoundedRect(-55, -105, 110, 14, 7).fillStyle(p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A, 1).fillRoundedRect(-55, -105, Math.max(14, 110 * p.hp / p.maxHp), 14, 7);
+    if (hv.lastHp !== p.hp) { hv.lastHp = p.hp; hv.hpT.setText(`${Math.ceil(p.hp)}`); }
+    hv.hp.width = Math.max(2, 110 * p.hp / p.maxHp); hv.hp.fillColor = p.hp < p.maxHp * 0.3 ? 0xFF4A3A : 0x5AE06A;
     // 몬스터
     for (const m of s.mons) {
       let v = this.views.get(m.id); if (!v) v = this.monView(m);
+      const vx = m.x - (v.px ?? m.x); v.px = m.x;
       v.setPosition(m.x * k, m.y * k); v.setDepth(m.y);
       v.im.setFlipX(p.x < m.x);
+      const hopY = MONS[m.type] && MONS[m.type].ai === 'hop' && m.st > 0 ? -Math.sin((1 - m.st / 0.45) * Math.PI) * 34 : 0;
+      v.im.y = hopY + (m.boss ? Math.sin(this.time.now / 400) * 6 : 0); v.list[0].setScale(1 + hopY / 120);
+      v.im.angle = Phaser.Math.Clamp(vx * 1.6, -14, 14) + (m.wind > 0 ? Math.sin(this.time.now / 25) * 5 : 0);
+      if (m.wind > 0 && !v.windG) { v.windG = this.add.image(0, 0, 'glow').setTint(0xFF4A3A).setBlendMode('ADD').setScale(v.sz / 90); v.addAt(v.windG, 1); }
+      if (v.windG) { v.windG.setVisible(m.wind > 0).setAlpha(0.4 + Math.sin(this.time.now / 40) * 0.25); }
       const tint = m.slow > 0 ? 0xA8E8FF : m.burn > 0 ? 0xFFB080 : m.poison > 0 ? 0xB8F08A : null; if (tint && !v.flash) v.im.setTint(tint); else if (!v.flash && !(m.mid)) v.im.clearTint();
-      if (!m.boss && !m.mid) { const w = v.sz * 0.7; v.hp.clear(); if (m.hp < m.maxHp) v.hp.fillStyle(0x000000, 0.6).fillRoundedRect(-w / 2, -v.sz * 0.6, w, 10, 5).fillStyle(0xFF5A4A, 1).fillRoundedRect(-w / 2, -v.sz * 0.6, Math.max(10, w * m.hp / m.maxHp), 10, 5); }
-      if (m.st > 0 && v.lastSt !== true) { v.lastSt = true; this.tweens.add({ targets: v.im, angle: { from: -6, to: 6 }, duration: 80, yoyo: true, repeat: 2 }); } else if (!(m.st > 0)) v.lastSt = false;
+      if (!m.boss && !m.mid && v.lastHp !== m.hp) { v.lastHp = m.hp; v.hp.setVisible(m.hp < m.maxHp); v.hp.list[1].width = Math.max(2, v.hp.w0 * m.hp / m.maxHp); }
+    }
+    // 경고 표시
+    const wg = this.warnG ||= (() => { const g = this.add.graphics().setDepth(2); this.world.add(g); return g; })(); wg.clear();
+    for (const w of s.warns || []) {
+      const f = 1 - w.t / w.T;
+      if (w.k === 'line') { const a = Math.atan2(w.y2 - w.y1, w.x2 - w.x1), L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), m = s.mons.find(o => o.id === w.id); const x1 = (m ? m.x : w.x1) * k, y1 = (m ? m.y : w.y1) * k; wg.fillStyle(0xFF2A2A, 0.18 + f * 0.25); wg.lineStyle(3, 0xFF4A3A, 0.8); const hw = w.w * k / 2, c = Math.cos(a), sn = Math.sin(a), pts = [[x1 - sn * hw, y1 + c * hw], [x1 + c * L * k - sn * hw, y1 + sn * L * k + c * hw], [x1 + c * L * k + sn * hw, y1 + sn * L * k - c * hw], [x1 + sn * hw, y1 - c * hw]]; wg.fillPoints(pts.map(([x, y]) => ({ x, y })), true); wg.lineBetween(x1, y1, x1 + c * L * k, y1 + sn * L * k); }
+      else { wg.fillStyle(0xFF2A2A, 0.15).fillCircle(w.x * k, w.y * k, w.r * k).fillStyle(0xFF3A2A, 0.35).fillCircle(w.x * k, w.y * k, w.r * k * f).lineStyle(4, 0xFF5A3A, 0.9).strokeCircle(w.x * k, w.y * k, w.r * k); }
     }
     // 화살 (풀링)
     const sh = s.shots;
@@ -228,7 +246,10 @@ export class PlayScene extends Phaser.Scene {
         this.burst(e.x * k, e.y * k, e.boss ? 40 : 14, 0xFFE8A0);
         audio.play('sfx_kill', { volume: 0.5, gap: 50 });
         if (e.boss) { this.cameras.main.shake(400, 0.012); this.cameras.main.flash(200, 255, 240, 200); this.hitStop = 0.4; }
-      } else if (e.type === 'shoot') audio.play('sfx_shoot', { volume: 0.25, gap: 70 });
+      } else if (e.type === 'shoot') { audio.play('sfx_shoot', { volume: 0.25, gap: 70 }); this.heroV.recoil = 1; }
+      else if (e.type === 'boom') { audio.play('sfx_fire', { volume: 0.6 }); this.cameras.main.shake(180, 0.01); this.burst(e.x * k, e.y * k, 26, 0xFF8A3A); const r = this.add.circle(e.x * k, e.y * k, e.r * k, 0xFFB050, 0.5).setDepth(3800); this.world.add(r); this.tweens.add({ targets: r, alpha: 0, scale: 1.2, duration: 300, onComplete: () => r.destroy() }); }
+      else if (e.type === 'loot') { audio.play('sfx_chest', { volume: 0.5 }); const lb = T(this, e.x * k, e.y * k - 80, `${RAR[e.r].name} · ${GEAR[e.slot].name}`, 28, '#' + RAR[e.r].col.toString(16).padStart(6, '0'), { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4100); this.world.add(lb); this.tweens.add({ targets: lb, y: lb.y - 50, alpha: 0, delay: 900, duration: 700, onComplete: () => lb.destroy() }); }
+      else if (e.type === 'wave' && e.n > 1) this.banner(`웨이브 ${e.n} / ${e.of}`, '', '#FFB0A0', 400);
       else if (e.type === 'enemyshot') audio.play('sfx_enemyshot', { volume: 0.18, gap: 120 });
       else if (e.type === 'hurt') { audio.play('sfx_hurt', { volume: 0.6 }); this.cameras.main.shake(140, 0.008); this.num(s.p.x * k, (s.p.y - 120) * k, e.v, false, 'hurt'); this.cameras.main.flash(80, 255, 60, 60); }
       else if (e.type === 'dodge') this.float(s.p.x * k, (s.p.y - 140) * k, '회피!', '#BFF4FF');
@@ -256,11 +277,19 @@ export class PlayScene extends Phaser.Scene {
       if (e.kind !== 'boss') audio.music(['bgm_forest', 'bgm_desert', 'bgm_ice'][this.chapter - 1] || 'bgm_forest');
     });
   }
+  digits() {
+    if (this.textures.exists('dg_0')) return;
+    for (const ch of '0123456789-!') { const c = this.textures.createCanvas('dg_' + ch, 30, 44), g = c.getContext(); g.font = '900 38px Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 7; g.strokeStyle = '#14102A'; g.lineJoin = 'round'; g.strokeText(ch, 15, 23); g.fillStyle = '#FFFFFF'; g.fillText(ch, 15, 23); c.refresh(); }
+  }
   num(x, y, v, crit, el) {
-    const col = el === 'hurt' ? '#FF6A5A' : crit ? '#FFD45A' : el ? '#' + (ELC[el] || 0xFFFFFF).toString(16).padStart(6, '0') : '#FFFFFF';
-    const t = T(this, x + (Math.random() - 0.5) * 30, y, `${el === 'hurt' ? '-' : ''}${v}${crit ? '!' : ''}`, crit ? 44 : el ? 26 : 32, col, { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4000);
-    this.world.add(t); if (crit) t.setScale(1.4);
-    this.tweens.add({ targets: t, y: y - 70, scale: 1, alpha: 0, duration: 650, ease: 'Cubic.easeOut', onComplete: () => t.destroy() });
+    this.digits(); this.nums ||= [];
+    let c = this.nums.find(n => !n.visible);
+    if (!c) { if (this.nums.length >= 40) return; c = this.add.container(0, 0).setDepth(4000); for (let i = 0; i < 7; i++) c.add(this.add.image(0, 0, 'dg_0')); this.world.add(c); this.nums.push(c); }
+    const str = `${el === 'hurt' ? '-' : ''}${v}${crit ? '!' : ''}`.slice(0, 7), col = el === 'hurt' ? 0xFF6A5A : crit ? 0xFFD45A : el ? (ELC[el] || 0xFFFFFF) : 0xFFFFFF, sz = crit ? 1.25 : el ? 0.7 : 0.9;
+    c.list.forEach((im, i) => { const ch = str[i]; im.setVisible(!!ch); if (ch) im.setTexture('dg_' + ch).setTint(col).setPosition((i - (str.length - 1) / 2) * 24, 0); });
+    this.tweens.killTweensOf(c);
+    c.setVisible(true).setAlpha(1).setPosition(x + (Math.random() - 0.5) * 30, y).setScale(sz * (crit ? 1.4 : 1));
+    this.tweens.add({ targets: c, y: y - 70, scale: sz, alpha: 0, duration: 600, ease: 'Cubic.easeOut', onComplete: () => c.setVisible(false) });
   }
   float(x, y, s, col) { const t = T(this, x, y, s, 34, col, { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4000); this.world.add(t); this.tweens.add({ targets: t, y: y - 60, alpha: 0, duration: 800, onComplete: () => t.destroy() }); }
   burst(x, y, n, col) { for (let i = 0; i < n; i++) { const p = this.add.image(x, y, i % 2 ? 'spark' : 'glow').setTint(col).setBlendMode('ADD').setScale(0.3 + Math.random() * 0.3).setDepth(3900); this.world.add(p); const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 90; this.tweens.add({ targets: p, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, alpha: 0, scale: 0, duration: 350 + Math.random() * 250, onComplete: () => p.destroy() }); } }
@@ -283,13 +312,15 @@ export class PlayScene extends Phaser.Scene {
     const cw = 300, gap = 30, x0 = W / 2 - cw - gap;
     opts.forEach((key, i) => {
       const S = SKILLS[key], x = x0 + i * (cw + gap), y = H * 0.5, c = this.add.container(x, y + 60).setAlpha(0); root.add(c);
-      const has = s.sk[key] || 0, kc = { shape: 0x6AC8FF, stat: 0xFFB04A, elem: 0xFF6A9A, life: 0x6AE07A, spec: 0xC08AFF }[S.kind];
+      const has = s.sk[key] || 0, R = SRAR[S.rar || 1], kc = R.col;
       c.add(this.add.existing(panel(this, 0, 0, cw, 460, { r: 30 })));
       const g = this.add.graphics(); g.lineStyle(6, kc, 1).strokeRoundedRect(-cw / 2 + 4, -226, cw - 8, 452, 28); c.add(g);
       const glow = this.add.image(0, -100, 'glow').setTint(kc).setScale(2.2).setBlendMode('ADD').setAlpha(0.5); c.add(glow);
       c.add(this.add.image(0, -100, S.icon).setDisplaySize(170, 170));
       c.add(T(this, 0, 30, S.name, 32, C.text, { w: 900, wrap: cw - 30 }));
       c.add(T(this, 0, 110, S.desc, 23, C.sub, { w: 800, wrap: cw - 40 }));
+      const rb = this.add.graphics(); rb.fillStyle(kc, 1).fillRoundedRect(-70, -246, 140, 40, 20); c.add(rb); c.add(T(this, 0, -226, R.name, 22, '#FFFFFF', { w: 900, shadow: false }));
+      if (S.rar === 3) { const sh = this.add.image(0, -100, 'rays').setTint(0xFFD45A).setScale(0.9).setAlpha(0.5).setBlendMode('ADD'); c.addAt(sh, 2); this.tweens.add({ targets: sh, angle: 360, duration: 5000, repeat: -1 }); }
       if (has) c.add(T(this, 0, 196, `보유 ${has}`, 22, '#9AD0FF', { w: 800 }));
       this.tweens.add({ targets: c, alpha: 1, y, duration: 260, delay: 120 + i * 90, ease: 'Back.easeOut' });
       const z = this.add.zone(0, 0, cw, 460).setInteractive({ useHandCursor: true }); c.add(z);
@@ -354,7 +385,7 @@ export class PlayScene extends Phaser.Scene {
   }
   onClear() { if (this.ended) return; this.ended = true; audio.play('sfx_win', { volume: 0.8 }); this.time.delayedCall(800, () => this.finish(true)); }
   finish(win) {
-    const s = this.s, r = { chapter: this.chapter, room: Math.min(s.room, ROOMS), win, gold: s.gold, kills: s.kills, skills: Object.values(s.sk).reduce((a, b) => a + b, 0), daily: this.daily, bosses: win ? 1 : 0, hero: this.heroK, lvl: s.lvl, sk: { ...s.sk } };
+    const s = this.s, r = { chapter: this.chapter, room: Math.min(s.room, ROOMS), win, gold: s.gold, kills: s.kills, skills: Object.values(s.sk).reduce((a, b) => a + b, 0), daily: this.daily, bosses: win ? 1 : 0, hero: this.heroK, lvl: s.lvl, sk: { ...s.sk }, loot: s.loot || [] };
     const res = M.finish(r);
     this.time.delayedCall(500, () => { this.cameras.main.fadeOut(400, 10, 12, 30); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', { ...r, ...res })); });
   }

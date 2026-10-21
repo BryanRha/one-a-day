@@ -1,10 +1,10 @@
 // 룬 제단 (뽑기): 게임에서 번 수정·열쇠·매일 무료 1회로만 · 확률 공개 · 천장 · 10회 영웅 보장 · 중복은 등급업 카드
-import { W, H } from '../config.js?v=0.16.3';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.16.3';
-import { audio } from '../audio.js?v=0.16.3';
-import { load } from '../save.js?v=0.16.3';
-import * as M from '../meta.js?v=0.16.3';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.16.3';
+import { W, H } from '../config.js?v=0.17.0';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.0';
+import { audio } from '../audio.js?v=0.17.0';
+import { load } from '../save.js?v=0.17.0';
+import * as M from '../meta.js?v=0.17.0';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.17.0';
 
 const hex = n => '#' + n.toString(16).padStart(6, '0');
 

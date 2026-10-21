@@ -40,5 +40,11 @@ export const GAMES = {
     desc: '격자 전장에서 보병·전차·전투기·함선을 지휘해 적 본부를 점령하는 턴제 전략 게임. 공격 전에 정확한 피해와 반격을 미리 보여 줘요. 이야기가 있는 캠페인 25작전, 지휘관 16명과 필살기, 안개·날씨·잠수함, 점수를 겨루는 전쟁실, 둘이서 대전과 지도 제작까지.',
     path: 'games/war/', cover: 'covers/war.png', icon: 'covers/war_icon.png', time: '10~15분',
   },
+  archer: {
+    title: '별빛 궁수', en: 'Star Archer', genre: '액션 RPG', color: '#5B48D8',
+    tagline: '한 손으로 즐기는 던전 액션 RPG',
+    desc: '끌어서 움직이고 멈추면 자동으로 쏴요. 방을 깰 때마다 능력 3개 중 하나를 골라 매번 다른 궁수를 만들어요. 숲·사막·얼음 동굴 3개 장, 장마다 방 20개와 보스. 영웅 4명, 장비 강화·합성, 오늘의 던전까지.',
+    path: 'games/archer/', logo: true, cover: 'covers/archer.png', icon: 'covers/archer_icon.png', time: '5~10분',
+  },
 };
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'archer'];

@@ -1,11 +1,11 @@
 // 아케이드: 보스 러시 · 랜덤 아레나 · 단일 룬 시련 · 심연 광산 (원작 아케이드 모드를 혼자 하는 버전으로)
-import { W, H } from '../config.js?v=0.16.3';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.16.3';
-import { audio } from '../audio.js?v=0.16.3';
-import { load, save } from '../save.js?v=0.16.3';
-import * as M from '../meta.js?v=0.16.3';
-import { RUNES, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.16.3';
-import { DESC } from './Deck.js?v=0.16.3';
+import { W, H } from '../config.js?v=0.17.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.0';
+import { audio } from '../audio.js?v=0.17.0';
+import { load, save } from '../save.js?v=0.17.0';
+import * as M from '../meta.js?v=0.17.0';
+import { RUNES, RARITY, RARITY_NAME, RARITY_COLOR } from '../core/sim.js?v=0.17.0';
+import { DESC } from './Deck.js?v=0.17.0';
 
 const hex = n => '#' + n.toString(16).padStart(6, '0');
 const LOOK = { rush: ['boss_serpent', 0xFF5A7A], arena: ['die_echo', 0xB59BFF], mono: ['die_flame', 0xFF8A3D], abyss: ['boss_statue', 0x5EE3FF] };

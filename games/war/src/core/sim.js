@@ -1,5 +1,5 @@
 // 전투 규칙 (화면과 무관): 지도 · 이동 · 공격(운 없음 — 미리 정확히 계산) · 점령 · 생산 · 수송 · 안개 전장 · 턴
-import { UNITS, TERRAIN, INCOME, CAPTURE, FOOT, base, coAtk, coDef, coMove, coRange, coCapture, coVision, coReveal, coStars, coCost, coInstant, coCounter, coIncome, coFlat, weatherProof, repairsAt, COS, HUNT, SEAM_HP, SILO_DMG, BOMB_DMG } from './data.js?v=0.14.2';
+import { UNITS, TERRAIN, INCOME, CAPTURE, FOOT, base, coAtk, coDef, coMove, coRange, coCapture, coVision, coReveal, coStars, coCost, coInstant, coCounter, coIncome, coFlat, weatherProof, repairsAt, COS, HUNT, SEAM_HP, SILO_DMG, BOMB_DMG } from './data.js?v=0.14.3';
 export const TUNE = { dmg: 1.1 };   // 전체 피해 배율 (한 판을 짧게)
 
 // 지도 칸 글자: 앞 글자 = 지형, 뒤 글자 = 주인(0 중립 · 1 파랑 · 2 빨강)
@@ -66,7 +66,7 @@ export class Sim {
   fVision(p) { const c2 = this.pc(p); return coVision(this.cos[p]) + (c2 ? coVision(c2) : 0); }
   fReveal(p) { const c2 = this.pc(p); return coReveal(this.cos[p], this.lv(p)) || !!(c2 && coReveal(c2, 2)); }
   fStars(p) { const c2 = this.pc(p); return coStars(this.cos[p], this.lv(p)) + (c2 ? coStars(c2, 2) : 0); }
-  fCost(p) { const c2 = this.pc(p); return Math.min(coCost(this.cos[p], this.lv(p)), c2 ? coCost(c2, 2) : 1); }
+  fCost(p) { const c2 = this.pc(p), a = coCost(this.cos[p], this.lv(p)); return c2 ? Math.min(a, coCost(c2, 2)) : a; }   // 타이탄 +20% 도 살아 있게
   fInstant(p) { const c2 = this.pc(p); return coInstant(this.cos[p], this.lv(p)) || !!(c2 && coInstant(c2, 2)); }
   fCounter(p) { const c2 = this.pc(p); return Math.max(coCounter(this.cos[p], this.lv(p)), c2 ? coCounter(c2, 2) : 1); }
   proof(p) { const c2 = this.pc(p); return weatherProof(this.cos[p]) || !!(c2 && weatherProof(c2)); }

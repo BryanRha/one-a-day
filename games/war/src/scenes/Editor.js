@@ -1,10 +1,10 @@
 // 지도 만들기 (원작 디자인 룸): 지형 · 건물 · 유닛을 칠해서 내 지도 3칸에 저장 → 자유 대전(AI·둘이서)에서 플레이
-import { W, H } from '../config.js?v=0.14.2';
-import { T, C, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.2';
-import { audio } from '../audio.js?v=0.14.2';
-import { UNITS, UNIT_ORDER, TERRAIN } from '../core/data.js?v=0.14.2';
-import { TCH } from '../core/sim.js?v=0.14.2';
-import { customMaps } from './Brief.js?v=0.14.2';
+import { W, H } from '../config.js?v=0.14.3';
+import { T, C, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.3';
+import { audio } from '../audio.js?v=0.14.3';
+import { UNITS, UNIT_ORDER, TERRAIN } from '../core/data.js?v=0.14.3';
+import { TCH } from '../core/sim.js?v=0.14.3';
+import { customMaps } from './Brief.js?v=0.14.3';
 
 const CH = Object.fromEntries(Object.entries(TCH).map(([c, t]) => [t, c]));
 const TERR = ['plain', 'forest', 'mountain', 'road', 'river', 'bridge', 'sea', 'reef', 'beach', 'farm', 'wheat', 'trench', 'pipe', 'seam', 'silo'];
@@ -94,7 +94,8 @@ export class EditorScene extends Phaser.Scene {
     for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
       const c = this.grid[y][x], px = this.ox + x * ts + ts / 2, py = this.oy + y * ts + ts / 2;
       const base = TERRAIN[c.t].prop ? (c.t === 'port' ? 't_sea' : 't_plain') : TKEY(c.t);
-      this.layer.add(this.add.image(px, py, base).setDisplaySize(ts + 1, ts + 1));
+      let ang = 0; if (c.t === 'pipe' || c.t === 'seam') { const P = (a, b) => ['pipe', 'seam'].includes((this.grid[b] || [])[a]?.t); const L = P(x - 1, y), R = P(x + 1, y), U = P(x, y - 1), D = P(x, y + 1); if ((U || D) && !(L || R)) ang = 90; }   // 세로 파이프
+      this.layer.add(this.add.image(px, py, base).setDisplaySize(ts + 1, ts + 1).setAngle(ang));
       if (c.t === 'reef') this.layer.add(this.add.circle(px, py, ts * 0.18, 0x8A8E80));
       if (TERRAIN[c.t].prop) { const im = this.add.image(px, py + ts * 0.4, `b_${c.t}_${c.o === 1 ? 'b' : c.o === 2 ? 'r' : 'n'}`).setOrigin(0.5, 1); im.setScale(ts * 0.92 / Math.max(im.width, im.height)); this.layer.add(im); }
     }

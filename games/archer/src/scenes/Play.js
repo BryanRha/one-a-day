@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.2';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.2';
-import { audio } from '../audio.js?v=0.17.2';
-import { load, save } from '../save.js?v=0.17.2';
-import { pushBack } from '../oad.js?v=0.17.2';
-import * as M from '../meta.js?v=0.17.2';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.2';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.2';
+import { W, H } from '../config.js?v=0.17.3';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.3';
+import { audio } from '../audio.js?v=0.17.3';
+import { load, save } from '../save.js?v=0.17.3';
+import { pushBack } from '../oad.js?v=0.17.3';
+import * as M from '../meta.js?v=0.17.3';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.3';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.3';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -17,7 +17,7 @@ export class PlayScene extends Phaser.Scene {
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 씀)
-    Object.assign(this, { heroV: null, warnG: null, nums: null, npcV: null, skSig: null, scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
+    Object.assign(this, { heroV: null, arrowL: null, floorRT: null, fxN: 0, zapN: 0, warnG: null, nums: null, npcV: null, skSig: null, scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
     this.daily = !!data.daily;
     const dr = this.daily ? M.dailyRun() : null;
     this.chapter = dr ? dr.chapter : data.chapter || 1;
@@ -122,6 +122,8 @@ export class PlayScene extends Phaser.Scene {
     this.floorL.add(this.add.image(AW * k / 2, AH * k / 2, 'vign').setDisplaySize(AW * k, AH * k));
     const shade = this.add.graphics();
     shade.lineStyle(14, this.ch.bg, 1).strokeRect(-7, -7, AW * k + 14, AH * k + 14).lineStyle(4, 0xFFFFFF, 0.18).strokeRect(-14, -14, AW * k + 28, AH * k + 28); this.floorL.add(shade);
+    // 성능: 움직이지 않는 바닥·장애물·테두리(약 170개)를 한 장으로 구워서 매 프레임 1번만 그림
+    { const pad = 20, list = [...this.floorL.list]; if (this.floorRT) this.floorRT.destroy(); const rt = this.add.renderTexture(-pad, -pad, Math.ceil(AW * k) + pad * 2, Math.ceil(AH * k) + pad * 2).setOrigin(0, 0); this.floorL.remove(list); this.world.remove(list); for (const o of list) { rt.draw(o, o.x + pad, o.y + pad); o.destroy(); } this.floorRT = rt; this.floorL.add(rt); }
     // 떠다니는 빛가루 (분위기)
     for (let i = 0; i < 14; i++) { const m = this.add.image(Math.random() * AW * k, Math.random() * AH * k, 'glow').setScale(0.15 + Math.random() * 0.2).setAlpha(0.25).setTint(this.chapter === 3 ? 0xBFE8FF : this.chapter === 2 ? 0xFFD88A : 0xC8FF9A).setBlendMode('ADD'); this.floorL.add(m); this.tweens.add({ targets: m, y: m.y - 60 - Math.random() * 80, alpha: 0, duration: 3000 + Math.random() * 3000, repeat: -1, delay: Math.random() * 3000 }); }
     // 문 (위 가운데)
@@ -137,7 +139,7 @@ export class PlayScene extends Phaser.Scene {
       const ring = this.add.ellipse(0, 6, 92, 32, 0x6AD8FF, 0).setStrokeStyle(4, 0x8AE8FF, 0.8);
       const hpB = this.add.rectangle(-55, -105, 110, 14, 0x000000, 0.6).setOrigin(0, 0.5), hp = this.add.rectangle(-55, -105, 110, 14, 0x5AE06A).setOrigin(0, 0.5); const hpT = T(this, 0, -128, '', 22, '#FFFFFF', { w: 900, stroke: '#14102A', thick: 5, shadow: false }); hv.add([sh, ring, im, hpB, hp, hpT]); Object.assign(hv, { im, hp, ring, hpT }); this.heroV = hv;
     }
-    this.world.add(this.heroV); this.world.add(this.fxL); this.world.bringToTop(this.fxL);
+    this.world.add(this.heroV); if (!this.arrowL || !this.arrowL.active) this.arrowL = this.add.container(0, 0); this.world.add(this.arrowL); this.world.bringToTop(this.arrowL); this.world.add(this.fxL); this.world.bringToTop(this.fxL);
     for (const m of s.mons) this.monView(m);
     this.syncCam(true);
   }
@@ -199,7 +201,10 @@ export class PlayScene extends Phaser.Scene {
       v.im.angle = Phaser.Math.Clamp(vx * 1.6, -14, 14) + (m.wind > 0 ? Math.sin(this.time.now / 25) * 5 : 0);
       if (m.wind > 0 && !v.windG) { v.windG = this.add.image(0, 0, 'glow').setTint(0xFF4A3A).setBlendMode('ADD').setScale(v.sz / 90); v.addAt(v.windG, 1); }
       if (v.windG) { v.windG.setVisible(m.wind > 0).setAlpha(0.4 + Math.sin(this.time.now / 40) * 0.25); }
-      const tint = m.slow > 0 ? 0xA8E8FF : m.burn > 0 ? 0xFFB080 : m.poison > 0 ? 0xB8F08A : null; if (tint && !v.flash) v.im.setTint(tint); else if (!v.flash && !(m.mid)) v.im.clearTint();
+      if (v.flashT > 0) v.flashT -= dt; if (v.flashCd > 0) v.flashCd -= dt; const fl = v.flashT > 0;
+      const tint = m.slow > 0 ? 0xA8E8FF : m.burn > 0 ? 0xFFB080 : m.poison > 0 ? 0xB8F08A : null, tk = fl ? 'f' : tint || (m.mid ? 'm' : 0);
+      if (v.tk !== tk) { v.tk = tk; if (fl) v.im.setTintFill(0xFFFFFF); else if (tint) v.im.setTint(tint); else if (m.mid) v.im.setTint(0xFFC8C8); else v.im.clearTint(); }
+      if (v.alpha >= 1) v.setScale(fl ? 0.93 : 1);
       if (!m.boss && !m.mid && v.lastHp !== m.hp) { v.lastHp = m.hp; v.hp.setVisible(m.hp < m.maxHp); v.hp.list[1].width = Math.max(2, v.hp.w0 * m.hp / m.maxHp); }
     }
     // 경고 표시
@@ -211,12 +216,14 @@ export class PlayScene extends Phaser.Scene {
     }
     // 화살 (풀링)
     const sh = s.shots;
-    while (this.arrows.length < sh.length) { const g = this.add.container(0, 0); const tr = this.add.image(-26, 0, 'glow').setScale(0.9, 0.18).setTint(0xBFE8FF).setBlendMode('ADD'); const a = this.add.rectangle(0, 0, 44, 6, 0xFFFFFF).setStrokeStyle(2, 0x6AC8FF); const tip = this.add.triangle(26, 0, 0, -9, 0, 9, 16, 0, 0xFFF6C0); g.add([tr, a, tip]); g.tr = tr; this.world.add(g); this.arrows.push(g); }
-    this.arrows.forEach((g, i) => { const a = sh[i]; g.setVisible(!!a); if (!a) return; g.setPosition(a.x * k, a.y * k).setRotation(a.a).setDepth(3000); const el = s.sk.fire ? 0xFF8A3A : s.sk.frost ? 0x9AE8FF : s.sk.poison ? 0x8CE05A : s.sk.bolt ? 0xFFE14D : a.kind === 'spirit' ? 0xE8C0FF : 0xBFE8FF; g.tr.setTint(el); });
+    // 성능: 화살 하나 = 그림 하나 (빛 꼬리까지 미리 그려 둠 → 화살이 많아도 한 번에 그려짐)
+    while (this.arrows.length < sh.length) { const g = this.add.image(0, 0, this.arrowTex(0xBFE8FF)).setOrigin(60 / 110, 0.5); this.arrowL.add(g); this.arrows.push(g); }
+    const elc = s.sk.fire ? 0xFF8A3A : s.sk.frost ? 0x9AE8FF : s.sk.poison ? 0x8CE05A : s.sk.bolt ? 0xFFE14D : 0xBFE8FF;
+    this.arrows.forEach((g, i) => { const a = sh[i]; g.setVisible(!!a); if (!a) return; g.setPosition(a.x * k, a.y * k).setRotation(a.a); const key = this.arrowTex(a.kind === 'spirit' ? 0xE8C0FF : elc); if (g.texture.key !== key) g.setTexture(key); });
     // 적 탄
     const fs = s.foes;
-    while (this.foeV.length < fs.length) { const c = this.add.container(0, 0); c.add([this.add.image(0, 0, 'glow').setScale(0.6).setTint(0xFF5A8A).setBlendMode('ADD'), this.add.circle(0, 0, 13, 0xFFE0F0).setStrokeStyle(4, 0xFF3A6A)]); this.world.add(c); this.foeV.push(c); }
-    this.foeV.forEach((c, i) => { const f = fs[i]; c.setVisible(!!f); if (f) { c.setPosition(f.x * k, f.y * k).setDepth(3100); c.list[0].setTint(f.kind === 'ice' ? 0x7AD8FF : 0xFF5A8A); c.list[1].setStrokeStyle(4, f.kind === 'ice' ? 0x4AB8FF : 0xFF3A6A); } });
+    while (this.foeV.length < fs.length) { const c = this.add.image(0, 0, this.foeTex(false)); this.arrowL.add(c); this.foeV.push(c); }
+    this.foeV.forEach((c, i) => { const f = fs[i]; c.setVisible(!!f); if (f) { c.setPosition(f.x * k, f.y * k); const key = this.foeTex(f.kind === 'ice'); if (c.texture.key !== key) c.setTexture(key); } });
     // 떨어진 금화·경험치
     const ds = s.drops;
     while (this.dropV.length < ds.length) { const im = this.add.image(0, 0, 'i_gold').setDisplaySize(40, 40); this.world.add(im); this.dropV.push(im); }
@@ -239,7 +246,7 @@ export class PlayScene extends Phaser.Scene {
     const s = this.s, k = this.k;
     for (const e of s.events.splice(0)) {
       if (e.type === 'dmg') {
-        const v = this.views.get(e.id); if (v) { v.flash = true; v.im.setTintFill(0xFFFFFF); this.time.delayedCall(60, () => { if (v.active) { v.flash = false; v.im.clearTint(); } }); this.tweens.add({ targets: v.im, scale: v.im.scale * 0.92, duration: 50, yoyo: true }); }
+        const v = this.views.get(e.id); if (v && !(v.flashCd > 0)) { v.flashT = 0.05; v.flashCd = 0.18; }   // 계속 맞아도 하얗게 굳지 않게 번쩍임 간격 둠
         this.num(e.x * k, e.y * k, e.v, e.crit, e.el);
         audio.play(e.crit ? 'sfx_crit' : 'sfx_hit', { volume: e.el ? 0.2 : 0.35, gap: 60 });
         if (e.crit) this.hitStop = Math.max(this.hitStop, 0.04);
@@ -280,6 +287,20 @@ export class PlayScene extends Phaser.Scene {
       if (e.kind !== 'boss') audio.music(['bgm_forest', 'bgm_desert', 'bgm_ice'][this.chapter - 1] || 'bgm_forest');
     });
   }
+  // 화살 그림 (색마다 한 번만 만듦): 빛 꼬리 + 몸통 + 촉
+  arrowTex(col) {
+    const key = 'arw_' + col.toString(16); if (this.textures.exists(key)) return key;
+    const c = this.textures.createCanvas(key, 110, 28), g = c.getContext(), hex = '#' + col.toString(16).padStart(6, '0');
+    const gr = g.createLinearGradient(0, 0, 60, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, hex); g.globalAlpha = 0.75; g.fillStyle = gr; g.beginPath(); g.ellipse(36, 14, 34, 5, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+    g.fillStyle = '#FFFFFF'; g.strokeStyle = '#6AC8FF'; g.lineWidth = 2; g.fillRect(38, 11, 44, 6); g.strokeRect(38, 11, 44, 6);
+    g.fillStyle = '#FFF6C0'; g.beginPath(); g.moveTo(84, 5); g.lineTo(84, 23); g.lineTo(102, 14); g.closePath(); g.fill(); c.refresh(); return key;
+  }
+  foeTex(ice) {
+    const key = ice ? 'foe_ice' : 'foe_red'; if (this.textures.exists(key)) return key;
+    const c = this.textures.createCanvas(key, 64, 64), g = c.getContext(), gr = g.createRadialGradient(32, 32, 8, 32, 32, 32);
+    gr.addColorStop(0, ice ? 'rgba(122,216,255,0.9)' : 'rgba(255,90,138,0.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    g.fillStyle = ice ? '#E0F6FF' : '#FFE0F0'; g.strokeStyle = ice ? '#4AB8FF' : '#FF3A6A'; g.lineWidth = 4; g.beginPath(); g.arc(32, 32, 13, 0, Math.PI * 2); g.fill(); g.stroke(); c.refresh(); return key;
+  }
   digits() {
     if (this.textures.exists('dg_0')) return;
     for (const ch of '0123456789-!') { const c = this.textures.createCanvas('dg_' + ch, 30, 44), g = c.getContext(); g.font = '900 38px Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 7; g.strokeStyle = '#14102A'; g.lineJoin = 'round'; g.strokeText(ch, 15, 23); g.fillStyle = '#FFFFFF'; g.fillText(ch, 15, 23); c.refresh(); }
@@ -295,8 +316,8 @@ export class PlayScene extends Phaser.Scene {
     this.tweens.add({ targets: c, y: y - 70, scale: sz, alpha: 0, duration: 600, ease: 'Cubic.easeOut', onComplete: () => c.setVisible(false) });
   }
   float(x, y, s, col) { const t = T(this, x, y, s, 34, col, { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4000); this.world.add(t); this.tweens.add({ targets: t, y: y - 60, alpha: 0, duration: 800, onComplete: () => t.destroy() }); }
-  burst(x, y, n, col) { for (let i = 0; i < n; i++) { const p = this.add.image(x, y, i % 2 ? 'spark' : 'glow').setTint(col).setBlendMode('ADD').setScale(0.3 + Math.random() * 0.3).setDepth(3900); this.world.add(p); const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 90; this.tweens.add({ targets: p, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, alpha: 0, scale: 0, duration: 350 + Math.random() * 250, onComplete: () => p.destroy() }); } }
-  zap(x1, y1, x2, y2) { audio.play('sfx_zap', { volume: 0.3, gap: 80 }); const g = this.add.graphics().setDepth(3950); this.world.add(g); g.lineStyle(5, 0xFFF06A, 1).beginPath(); g.moveTo(x1, y1); for (let i = 1; i < 6; i++) g.lineTo(x1 + (x2 - x1) * i / 6 + (Math.random() - 0.5) * 30, y1 + (y2 - y1) * i / 6 + (Math.random() - 0.5) * 30); g.lineTo(x2, y2); g.strokePath(); this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() }); }
+  burst(x, y, n, col) { this.fxN ||= 0; n = Math.min(n, Math.max(0, 70 - this.fxN)); if (n > 16) n = 16 + Math.floor((n - 16) / 2); for (let i = 0; i < n; i++) { this.fxN++; const p = this.add.image(x, y, i % 2 ? 'spark' : 'glow').setTint(col).setBlendMode('ADD').setScale(0.3 + Math.random() * 0.3).setDepth(3900); this.fxL.add(p); const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 90; this.tweens.add({ targets: p, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, alpha: 0, scale: 0, duration: 350 + Math.random() * 250, onComplete: () => { p.destroy(); this.fxN--; } }); } }
+  zap(x1, y1, x2, y2) { this.zapN ||= 0; if (this.zapN >= 4) return; this.zapN++; audio.play('sfx_zap', { volume: 0.3, gap: 80 }); const g = this.add.graphics().setDepth(3950); this.fxL.add(g); g.lineStyle(5, 0xFFF06A, 1).beginPath(); g.moveTo(x1, y1); for (let i = 1; i < 6; i++) g.lineTo(x1 + (x2 - x1) * i / 6 + (Math.random() - 0.5) * 30, y1 + (y2 - y1) * i / 6 + (Math.random() - 0.5) * 30); g.lineTo(x2, y2); g.strokePath(); this.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => { g.destroy(); this.zapN--; } }); }
   banner(title, sub, col, hold = 900) {
     const c = this.add.container(W / 2, H * 0.4).setDepth(900).setScrollFactor(0).setAlpha(0);
     c.add([this.add.rectangle(0, 0, W, 170, 0x0B0D1E, 0.75), T(this, 0, -16, title, 62, C.text, { w: 900, ls: 2, stroke: '#14102A', thick: 8 }), T(this, 0, 50, sub, 28, col, { w: 800 })]);

@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.9';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.9';
-import { audio } from '../audio.js?v=0.17.9';
-import { load, save } from '../save.js?v=0.17.9';
-import { pushBack } from '../oad.js?v=0.17.9';
-import * as M from '../meta.js?v=0.17.9';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.9';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.9';
+import { W, H } from '../config.js?v=0.17.10';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.10';
+import { audio } from '../audio.js?v=0.17.10';
+import { load, save } from '../save.js?v=0.17.10';
+import { pushBack } from '../oad.js?v=0.17.10';
+import * as M from '../meta.js?v=0.17.10';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.10';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, TIERS, itemName } from '../core/data.js?v=0.17.10';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -278,7 +278,7 @@ export class PlayScene extends Phaser.Scene {
         this.burst(e.x * k, e.y * k, e.boss ? 40 : 14, 0xFFE8A0);
         audio.play('sfx_kill', { volume: 0.5, gap: 50 });
         if (e.boss) { this.cameras.main.shake(400, 0.012); this.cameras.main.flash(200, 255, 240, 200); this.hitStop = 0.4; }
-      } else if (e.type === 'shoot') { audio.play('sfx_shoot', { volume: 0.32, gap: 90, detune: (Math.random() - 0.5) * 240 }); this.heroV.recoil = 1; }
+      } else if (e.type === 'shoot') { audio.play('sfx_shoot', { volume: 0.4, gap: 110, detune: (Math.random() - 0.5) * 60 }); this.heroV.recoil = 1; }
       else if (e.type === 'boom') { audio.play('sfx_fire', { volume: 0.6 }); this.cameras.main.shake(180, 0.01); this.burst(e.x * k, e.y * k, 26, 0xFF8A3A); const r = this.add.circle(e.x * k, e.y * k, e.r * k, 0xFFB050, 0.5).setDepth(3800); this.world.add(r); this.tweens.add({ targets: r, alpha: 0, scale: 1.2, duration: 300, onComplete: () => r.destroy() }); }
       else if (e.type === 'loot') { audio.play('sfx_chest', { volume: 0.5 }); const sc = e.kind === 'scroll', col = sc ? 0x8AE8FF : TIERS[e.t].col, lb = T(this, e.x * k, e.y * k - 80, sc ? `강화 두루마리 +${e.n}` : `${TIERS[e.t].name} · ${itemName(e)}`, 28, '#' + col.toString(16).padStart(6, '0'), { w: 900, stroke: '#14102A', thick: 6 }).setDepth(4100); this.world.add(lb); this.tweens.add({ targets: lb, y: lb.y - 50, alpha: 0, delay: 900, duration: 700, onComplete: () => lb.destroy() }); }
       else if (e.type === 'blast') { if ((this.fxN || 0) < 60) { const r = this.add.circle(e.x * k, e.y * k, e.r * k, e.plain ? 0x9AE8FF : 0xFFA040, 0.28).setStrokeStyle(5, e.plain ? 0xCFF4FF : 0xFFD080, 0.9); this.fxL.add(r); r.setScale(0.4); this.tweens.add({ targets: r, scale: 1, alpha: 0, duration: 260, onComplete: () => r.destroy() }); this.burst(e.x * k, e.y * k, 6, e.plain ? 0x9AE8FF : 0xFF8A3A); } audio.play('sfx_fire', { volume: 0.25, gap: 90 }); }

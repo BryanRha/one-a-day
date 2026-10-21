@@ -1,15 +1,15 @@
 // 지도 만들기 (원작 디자인 룸): 지형 · 건물 · 유닛을 칠해서 내 지도 3칸에 저장 → 자유 대전(AI·둘이서)에서 플레이
-import { W, H } from '../config.js?v=0.12.0';
-import { T, C, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.12.0';
-import { audio } from '../audio.js?v=0.12.0';
-import { UNITS, UNIT_ORDER, TERRAIN } from '../core/data.js?v=0.12.0';
-import { TCH } from '../core/sim.js?v=0.12.0';
-import { customMaps } from './Brief.js?v=0.12.0';
+import { W, H } from '../config.js?v=0.13.0';
+import { T, C, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.13.0';
+import { audio } from '../audio.js?v=0.13.0';
+import { UNITS, UNIT_ORDER, TERRAIN } from '../core/data.js?v=0.13.0';
+import { TCH } from '../core/sim.js?v=0.13.0';
+import { customMaps } from './Brief.js?v=0.13.0';
 
 const CH = Object.fromEntries(Object.entries(TCH).map(([c, t]) => [t, c]));
-const TERR = ['plain', 'forest', 'mountain', 'road', 'river', 'bridge', 'sea', 'reef', 'beach', 'farm', 'wheat', 'trench'];
+const TERR = ['plain', 'forest', 'mountain', 'road', 'river', 'bridge', 'sea', 'reef', 'beach', 'farm', 'wheat', 'trench', 'pipe', 'seam', 'silo'];
 const BLDS = ['city', 'base', 'air', 'port', 'hq'];
-const TKEY = t => ({ road: 't_road_h', river: 't_river_h', bridge: 't_bridge_h', reef: 't_sea' }[t] || `t_${t}`);
+const TKEY = t => ({ road: 't_road_h', river: 't_river_h', bridge: 't_bridge_h', reef: 't_sea', pipe: 't_pipe_h', seam: 't_seam_h' }[t] || `t_${t}`);
 const KEY = 'front_tactics_maps';
 
 export class EditorScene extends Phaser.Scene {

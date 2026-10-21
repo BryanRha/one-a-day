@@ -16,40 +16,55 @@ export const UNITS = {
   fighter:    { name: '전투기',   cost: 20000, move: 9, mt: 'air',   dom: 'air',    vis: 2, range: [1, 1], air: true, desc: '하늘의 왕 · 공중 유닛만 공격' },
   bomber:     { name: '폭격기',   cost: 22000, move: 7, mt: 'air',   dom: 'air',    vis: 2, range: [1, 1], air: true, desc: '지상·해상에 강력한 폭격' },
   stealth:    { name: '스텔스기', cost: 24000, move: 6, mt: 'air',   dom: 'air',    vis: 4, range: [1, 1], air: true, dive: true, desc: '무엇이든 공격 · 은신하면 옆 칸에서만 보여요' },
+  mega:       { name: '거대전차', cost: 28000, move: 4, mt: 'tread', dom: 'ground', vis: 1, range: [1, 1], desc: '가장 강한 전차 · 주포 3발' },
+  carrier:    { name: '항공모함', cost: 30000, move: 5, mt: 'sea',   dom: 'sea',    vis: 4, range: [3, 7], indirect: true, carry: { n: 2, what: 'air' }, desc: '하늘만 멀리 쏴요 · 비행기 2대를 싣고 보급' },
+  piper:      { name: '파이프 열차', cost: 20000, move: 9, mt: 'pipe', dom: 'ground', vis: 4, range: [2, 5], indirect: true, desc: '파이프 위로만 달리는 열차포 · 땅·하늘·바다 모두' },
+  bomb:       { name: '자폭 드론', cost: 25000, move: 6, mt: 'air',  dom: 'air',    vis: 1, range: null, air: true, desc: '[자폭]하면 반경 3칸 모두 체력 -5 (아군도!)' },
   tcopter:    { name: '수송헬기', cost: 5000,  move: 6, mt: 'air',   dom: 'air',    vis: 2, range: null, air: true, carry: { n: 1, what: 'foot' }, desc: '보병 1명을 태우고 날아요' },
   battleship: { name: '전함',     cost: 28000, move: 5, mt: 'sea',   dom: 'sea',    vis: 2, range: [2, 6], indirect: true, desc: '바다의 대포 · 이동한 턴엔 못 쏴요' },
   cruiser:    { name: '순양함',   cost: 18000, move: 6, mt: 'sea',   dom: 'sea',    vis: 3, range: [1, 1], desc: '항공기와 잠수함 사냥' },
   lander:     { name: '상륙정',   cost: 12000, move: 6, mt: 'lander', dom: 'sea',   vis: 1, range: null, carry: { n: 2, what: 'ground' }, desc: '지상 유닛 2기 수송 · 해안에 상륙' },
   sub:        { name: '잠수함',   cost: 20000, move: 5, mt: 'sea',   dom: 'sea',    vis: 5, range: [1, 1], dive: true, desc: '함선 사냥꾼 · 잠수하면 옆 칸에서만 보여요' },
 };
+// 연료 · 매일 줄어드는 연료(day) · 주무기 탄약 (없으면 무한) · mg: 탄약이 떨어져도 기관총으로 보병은 공격
+const SUP = {
+  inf: [99, 0], bazooka: [70, 0, 3, 1], recon: [80, 0], ltank: [70, 0, 9, 1], htank: [50, 0, 9, 1], arty: [50, 0, 9], rocket: [50, 0, 6], aa: [60, 0, 9],
+  heli: [99, 2, 6, 1], truck: [70, 0], fighter: [99, 5, 9], bomber: [99, 5, 9], tcopter: [99, 2], battleship: [99, 1, 9], cruiser: [99, 1, 9], lander: [99, 1],
+  sub: [60, 1, 6], stealth: [60, 5, 6], mega: [50, 0, 3, 1], carrier: [99, 1, 9], piper: [99, 0, 9], bomb: [45, 5],
+};
+for (const [k, [fuel, day, ammo, mg]] of Object.entries(SUP)) Object.assign(UNITS[k], { fuel: UNITS[k].dom === 'ground' ? null : fuel, day, ammo: ammo ?? null, mg: !!mg });   // 지상 유닛은 연료 걱정 없음 (하늘·바다만)
 export const UNIT_ORDER = Object.keys(UNITS);
 export const GROUND = UNIT_ORDER.filter(u => UNITS[u].dom === 'ground');
 export const FOOT = ['inf', 'bazooka'];
 
 // 기본 피해(%) — 공격자 → 방어자 (원작 상성 구조를 단순화)
-const T = ['inf', 'bazooka', 'recon', 'ltank', 'htank', 'arty', 'rocket', 'aa', 'heli', 'truck', 'fighter', 'bomber', 'tcopter', 'battleship', 'cruiser', 'lander', 'sub', 'stealth'];
+const T = ['inf', 'bazooka', 'recon', 'ltank', 'htank', 'arty', 'rocket', 'aa', 'heli', 'truck', 'fighter', 'bomber', 'tcopter', 'battleship', 'cruiser', 'lander', 'sub', 'stealth', 'mega', 'carrier', 'piper', 'bomb'];
 const TABLE = {
-  //          inf  baz  rec  ltk  htk  art  rkt  aa   heli trk  ftr  bmb  tcp  bshp crs  lnd  sub  stl
-  inf:        [55,  45,  12,  5,   1,   15,  25,  5,   7,   14,  0,   0,   30,  0,   0,   0,   0,  0],
-  bazooka:    [65,  55,  85,  55,  15,  70,  85,  65,  9,   75,  0,   0,   12,  0,   0,   0,   0,  0],
-  recon:      [70,  65,  35,  6,   1,   45,  55,  4,   10,  45,  0,   0,   35,  0,   0,   0,   0,  0],
-  ltank:      [75,  70,  85,  55,  15,  70,  85,  65,  10,  75,  0,   0,   40,  1,   5,   10,  1,  0],
-  htank:      [105, 95,  105, 85,  55,  105, 105, 105, 12,  105, 0,   0,   45,  10,  30,  35,  10,  0],
-  arty:       [90,  85,  80,  70,  45,  75,  80,  75,  0,   70,  0,   0,   0,   40,  50,  55,  60,  0],
-  rocket:     [95,  90,  90,  80,  55,  80,  85,  85,  0,   80,  0,   0,   0,   55,  60,  60,  85,  0],
-  aa:         [105, 105, 60,  25,  10,  50,  55,  45,  120, 50,  65,  75,  120, 0,   0,   0,   0,  60],
-  heli:       [75,  65,  55,  55,  25,  65,  65,  25,  65,  60,  0,   0,   95,  25,  55,  25,  25,  0],
-  fighter:    [0,   0,   0,   0,   0,   0,   0,   0,   100, 0,   55,  100, 100, 0,   0,   0,   0,  85],
-  bomber:     [110, 110, 105, 105, 95,  105, 105, 95,  0,   105, 0,   0,   0,   75,  85,  95,  95,  0],
-  battleship: [95,  90,  90,  85,  55,  80,  85,  85,  0,   80,  0,   0,   0,   50,  95,  95,  95,  0],
-  cruiser:    [0,   0,   0,   0,   0,   0,   0,   0,   115, 0,   55,  65,  115, 5,   25,  25,  90,  45],
-  sub:        [0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   55,  25,  95,  55,  0],
-  stealth:    [90,  85,  85,  75,  70,  85,  85,  50,  85,  85,  45,  70,  95,  45,  35,  65,  55,  55],
+  //          inf  baz  rec  ltk  htk  art  rkt  aa   heli trk  ftr  bmb  tcp  bshp crs  lnd  sub  stl  mega crr pip bmb
+  inf:        [55,  45,  12,  5,   1,   15,  25,  5,   7,   14,  0,   0,   30,  0,   0,   0,   0,  0,  1,  0,  5,  0],
+  bazooka:    [65,  55,  85,  55,  15,  70,  85,  65,  9,   75,  0,   0,   12,  0,   0,   0,   0,  0,  15,  0,  55,  0],
+  recon:      [70,  65,  35,  6,   1,   45,  55,  4,   10,  45,  0,   0,   35,  0,   0,   0,   0,  0,  1,  0,  6,  0],
+  ltank:      [75,  70,  85,  55,  15,  70,  85,  65,  10,  75,  0,   0,   40,  1,   5,   10,  1,  0,  15,  0,  55,  0],
+  htank:      [105, 95,  105, 85,  55,  105, 105, 105, 12,  105, 0,   0,   45,  10,  30,  35,  10,  0,  35,  0,  85,  0],
+  arty:       [90,  85,  80,  70,  45,  75,  80,  75,  0,   70,  0,   0,   0,   40,  50,  55,  60,  0,  45,  45,  70,  0],
+  rocket:     [95,  90,  90,  80,  55,  80,  85,  85,  0,   80,  0,   0,   0,   55,  60,  60,  85,  0,  55,  55,  80,  0],
+  aa:         [105, 105, 60,  25,  10,  50,  55,  45,  120, 50,  65,  75,  120, 0,   0,   0,   0,  60,  10,  0,  25,  120],
+  heli:       [75,  65,  55,  55,  25,  65,  65,  25,  65,  60,  0,   0,   95,  25,  55,  25,  25,  0,  15,  25,  65,  0],
+  fighter:    [0,   0,   0,   0,   0,   0,   0,   0,   100, 0,   55,  100, 100, 0,   0,   0,   0,  85,  0,  0,  0,  120],
+  bomber:     [110, 110, 105, 105, 95,  105, 105, 95,  0,   105, 0,   0,   0,   75,  85,  95,  95,  0,  35,  85,  105,  0],
+  battleship: [95,  90,  90,  85,  55,  80,  85,  85,  0,   80,  0,   0,   0,   50,  95,  95,  95,  0,  45,  60,  80,  0],
+  cruiser:    [0,   0,   0,   0,   0,   0,   0,   0,   115, 0,   55,  65,  115, 5,   25,  25,  90,  45,  0,  5,  0,  120],
+  sub:        [0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   55,  25,  95,  55,  0,  0,  75,  0,  0],
+  stealth:    [90,  85,  85,  75,  70,  85,  85,  50,  85,  85,  45,  70,  95,  45,  35,  65,  55,  55,  15,  45,  70,  120],
+  mega:       [125, 115, 180, 160, 115, 180, 180, 180, 22,  180, 0,   0,   22,  45,  65,  75,  45,  0,   65,  45,  105, 0],
+  carrier:    [0,   0,   0,   0,   0,   0,   0,   0,   115, 0,   100, 100, 115, 0,   0,   0,   0,   100, 0,   0,   0,   120],
+  piper:      [95,  90,  90,  80,  55,  80,  85,  85,  105, 80,  65,  75,  105, 55,  60,  60,  85,  75,  25,  60,  80,  120],
 };
 export const base = (a, d) => (TABLE[a] ? TABLE[a][T.indexOf(d)] : 0) || 0;
 
 // 지형: def 방어 별 · cost 이동 비용 (null 못 감) · prop 건물(점령 가능) · hide 안개 속 숨는 곳(숲·암초)
-const C = (foot, mech, tire, tread, extra = {}) => ({ foot, mech, tire, tread, air: 1, sea: null, lander: null, ...extra });
+const C = (foot, mech, tire, tread, extra = {}) => ({ foot, mech, tire, tread, air: 1, sea: null, lander: null, pipe: null, ...extra });
+const WALL = { foot: null, mech: null, tire: null, tread: null, air: null, sea: null, lander: null };
 export const TERRAIN = {
   plain:    { name: '평지', def: 1, cost: C(1, 1, 2, 1) },
   farm:     { name: '밭',   def: 1, cost: C(1, 1, 2, 1) },
@@ -64,12 +79,16 @@ export const TERRAIN = {
   reef:     { name: '암초', def: 1, cost: { foot: null, mech: null, tire: null, tread: null, air: 1, sea: 2, lander: 2 }, hide: true },
   trench:   { name: '참호', def: 3, cost: C(1, 1, 2, 2) },
   city:     { name: '도시',   def: 3, cost: C(1, 1, 1, 1), prop: true },
-  base:     { name: '기지',   def: 3, cost: C(1, 1, 1, 1), prop: true, builds: 'ground' },
+  base:     { name: '기지',   def: 3, cost: C(1, 1, 1, 1, { pipe: 1 }), prop: true, builds: 'ground' },
   air:      { name: '비행장', def: 3, cost: C(1, 1, 1, 1), prop: true, builds: 'air' },
   port:     { name: '항구',   def: 3, cost: C(1, 1, 1, 1, { sea: 1, lander: 1 }), prop: true, builds: 'sea' },
+  pipe:     { name: '파이프', def: 0, cost: { ...WALL, pipe: 1 } },
+  seam:     { name: '파이프 이음매', def: 0, cost: { ...WALL }, seam: true },
+  silo:     { name: '미사일 기지', def: 1, cost: C(1, 1, 1, 1), silo: true },
+  silo_e:   { name: '빈 미사일 기지', def: 1, cost: C(1, 1, 1, 1) },
   hq:       { name: '본부',   def: 4, cost: C(1, 1, 1, 1), prop: true },
 };
-export const INCOME = 1000, CAPTURE = 20;
+export const INCOME = 1000, CAPTURE = 20, SEAM_HP = 99, SILO_DMG = 30, BOMB_DMG = 50;
 // 수리되는 건물: 지상 = 도시·기지·본부 · 공중 = 비행장 · 해상 = 항구
 export const repairsAt = (dom, t) => (dom === 'air' ? t === 'air' : dom === 'sea' ? t === 'port' : ['city', 'base', 'hq'].includes(t));
 

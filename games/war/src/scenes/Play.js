@@ -1,14 +1,14 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.12.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.12.0';
-import { audio } from '../audio.js?v=0.12.0';
-import { load, save } from '../save.js?v=0.12.0';
-import * as M from '../meta.js?v=0.12.0';
-import { inOAD, exitToOAD } from '../oad.js?v=0.12.0';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.12.0';
-import { AI, apply } from '../core/ai.js?v=0.12.0';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.12.0';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.12.0';
+import { W, H } from '../config.js?v=0.13.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.13.0';
+import { audio } from '../audio.js?v=0.13.0';
+import { load, save } from '../save.js?v=0.13.0';
+import * as M from '../meta.js?v=0.13.0';
+import { inOAD, exitToOAD } from '../oad.js?v=0.13.0';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.13.0';
+import { AI, apply } from '../core/ai.js?v=0.13.0';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.13.0';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.13.0';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -22,14 +22,15 @@ export class PlayScene extends Phaser.Scene {
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 쓰므로 지난 판 값이 남으면 끝나지 않거나 멈춤)
-    Object.assign(this, { fogG: null, pendingEvs: null, unloadList: [], ended: false, ending: false, wxLayer: null, wxKind: null, wxParts: null, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
+    Object.assign(this, { fogG: null, pendingEvs: null, unloadList: [], ended: false, ending: false, tileImg: null, seamT: null, wxLayer: null, wxKind: null, wxParts: null, paused: false, winWhy: null, enemySum: null, holdFast: false, dragFrom: null, dragged: false, nextIdx: -1, ghost: null, pending: null, tgts: [], spots: null, spotsCache: null, reach: null, autoAi: null, powers0: 0, captures: 0, hinted: false, powerHintObj: null, frozen: null, pw: null, danger: false });
     this.mode = data.mode || 'free';
-    this.map = data.custom || MAPS.find(m => m.id === data.mapId) || MAPS[0];
-    this.simMap = this.mode === 'campaign' || this.mode === 'daily' ? campaignMap(this.map) : this.map;
+    this.map = data.custom || MAPS.find(m => m.id === data.mapId) || WAR.find(m => m.id === data.mapId) || MAPS[0];
+    this.simMap = ['campaign', 'daily', 'war'].includes(this.mode) ? campaignMap(this.map) : this.map;
+    this.tagCo = data.tag || null;
     this.level = data.level || 'normal';
     this.co = data.co || d.co || 'ella';
     this.enemyCo = data.enemyCo || this.map.enemyCo || 'scarlet';
-    this.s = new Sim(this.simMap, [null, this.co, this.enemyCo], { limit: data.limit || this.map.par + 8 });
+    this.s = new Sim(this.simMap, [null, this.co, this.enemyCo], { limit: data.limit || this.map.par + 8, tag: [null, this.tagCo, data.enemyTag || this.map.enemyTag || null] });
     this.resumed = !!data.resume;
     if (data.resume) { this.s.restore(data.resume.sim); this.captures = data.resume.captures || 0; this.powers0 = data.resume.powers || 0; }
     this.ai = new AI(this.level);
@@ -131,8 +132,11 @@ export class PlayScene extends Phaser.Scene {
       } else if (t.t === 'river') { key = 't_river_h'; const h = ['river', 'bridge'].includes(kind(x - 1, y)) || ['river', 'bridge'].includes(kind(x + 1, y)); if (!h) ang = 90; }
       else if (t.t === 'bridge') { key = 't_bridge_h'; if (kind(x - 1, y) === 'river' || kind(x + 1, y) === 'river') ang = 90; }
       else if (t.t === 'reef') key = 't_sea';
+      else if (t.t === 'pipe' || t.t === 'seam') [key, ang] = this.pipeKey(x, y);
       else if (BLD[t.t]) key = t.t === 'port' ? 't_sea' : 't_plain';
       const im = this.add.image(px, py, key).setDisplaySize(ts + 1, ts + 1).setAngle(ang).setDepth(1);
+      (this.tileImg ||= new Map()).set(y * s.w + x, im);
+      if (t.t === 'seam') this.drawSeam(x, y);
       if (['plain', 'forest', 'farm', 'wheat', 'sea'].includes(t.t) && (x * 7 + y * 13) % 2) im.setFlipX(true);
       if (t.t === 'reef') { const g = this.add.graphics().setDepth(1.2); for (const [rx, ry, rr] of [[-0.22, -0.12, 0.13], [0.18, 0.05, 0.16], [-0.05, 0.22, 0.1], [0.25, -0.24, 0.08]]) { g.fillStyle(0x6E7468, 1).fillEllipse(px + rx * ts, py + ry * ts, rr * ts * 2.2, rr * ts * 1.5).fillStyle(0xA9AE9C, 1).fillEllipse(px + rx * ts - 3, py + ry * ts - 4, rr * ts * 1.4, rr * ts * 0.8).lineStyle(3, 0xD8F2FF, 0.6).strokeEllipse(px + rx * ts, py + ry * ts + 4, rr * ts * 2.6, rr * ts * 1.6); } }
       if (BLD[t.t]) this.drawBld(x, y);
@@ -144,6 +148,31 @@ export class PlayScene extends Phaser.Scene {
     for (let x = 0; x <= s.w; x++) g.lineBetween(this.ox + x * ts, this.oy, this.ox + x * ts, this.oy + s.h * ts);
     for (let y = 0; y <= s.h; y++) g.lineBetween(this.ox, this.oy + y * ts, this.ox + s.w * ts, this.oy + y * ts);
     g.lineStyle(6, 0x14160A, 0.8).strokeRect(this.ox - 3, this.oy - 3, s.w * ts + 6, s.h * ts + 6);
+  }
+  // 파이프: 이웃 파이프에 따라 곧은 관 · 꺾인 관 · 교차 (꺾인 관 그림은 오른쪽+아래 연결)
+  pipeKey(x, y) {
+    const s = this.s, P = (a, b) => ['pipe', 'seam'].includes((s.tile(a, b) || {}).t);
+    const L = P(x - 1, y), R = P(x + 1, y), U = P(x, y - 1), D = P(x, y + 1), n = L + R + U + D;
+    if (s.tile(x, y).t === 'seam') return ['t_seam_h', (U || D) && !(L || R) ? 90 : 0];
+    if (n >= 3) return ['t_pipe_x', 0];
+    if (n === 2 && !(L && R) && !(U && D)) return ['t_pipe_l', R && D ? 0 : D && L ? 90 : L && U ? 180 : 270];
+    return ['t_pipe_h', (U || D) && !(L || R) ? 90 : 0];
+  }
+  // 지형이 바뀐 칸 다시 그리기 (부서진 이음매 · 쏜 미사일 기지)
+  redrawTile(x, y) {
+    const s = this.s, t = s.tile(x, y), i = y * s.w + x, old = this.tileImg.get(i); if (!old) return;
+    let key = `t_${t.t}`, ang = 0; if (t.t === 'pipe' || t.t === 'seam') [key, ang] = this.pipeKey(x, y);
+    old.setTexture(key).setAngle(ang).setDisplaySize(this.ts + 1, this.ts + 1);
+    if (this.seamT && this.seamT.get(i)) { this.seamT.get(i).destroy(); this.seamT.delete(i); }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = s.tile(x + dx, y + dy); if (n && n.t === 'pipe') { const [k2, a2] = this.pipeKey(x + dx, y + dy); this.tileImg.get((y + dy) * s.w + x + dx).setTexture(k2).setAngle(a2).setDisplaySize(this.ts + 1, this.ts + 1); } }
+  }
+  drawSeam(x, y) {
+    const s = this.s, t = s.tile(x, y), i = y * s.w + x, [px, py] = this.xy(x, y); this.seamT ||= new Map();
+    if (this.seamT.get(i)) this.seamT.get(i).destroy();
+    if (t.t !== 'seam') return;
+    const c = this.add.container(px + this.ts * 0.28, py - this.ts * 0.3).setDepth(3);
+    c.add([this.add.circle(0, 0, this.ts * 0.17, 0x2B2416, 0.9).setStrokeStyle(3, 0xFFD45A), T(this, 0, 1, `${Math.ceil(t.hp / 10)}`, Math.round(this.ts * 0.2), '#FFE27A', { w: 900, shadow: false })]);
+    this.seamT.set(i, c);
   }
   drawBld(x, y) {
     const t = this.s.tile(x, y), [px, py] = this.xy(x, y), ts = this.ts;
@@ -189,8 +218,10 @@ export class PlayScene extends Phaser.Scene {
     c.hpBg.setFillStyle(n <= 3 ? 0xD9301E : n <= 6 ? 0xE8A21C : 0x111111, 0.95);
     c.cargo.setVisible(u.cargo.length > 0);
     c.setAlpha(u.dive ? 0.6 : 1);
-    if (u.dive && !c.diveT) { c.diveT = T(this, 0, -this.ts * 0.56, u.type === 'sub' ? '잠수' : '은신', Math.round(this.ts * 0.2), '#BFE6FF', { w: 900, stroke: '#0A1830', thick: 6 }); c.add(c.diveT); }
-    if (c.diveT) c.diveT.setVisible(!!u.dive);
+    const U = UNITS[u.type], mine = u.p === this.me, lowF = mine && U.fuel != null && U.day && u.fuel <= U.day * 2, noA = mine && U.ammo != null && u.ammo === 0;
+    const tags = [u.dive ? (u.type === 'sub' ? '잠수' : '은신') : '', lowF ? '연료!' : '', noA ? '탄약!' : ''].filter(Boolean).join(' · ');
+    if (tags && !c.diveT) { c.diveT = T(this, 0, -this.ts * 0.56, '', Math.round(this.ts * 0.2), '#BFE6FF', { w: 900, stroke: '#0A1830', thick: 6 }); c.add(c.diveT); }
+    if (c.diveT) c.diveT.setVisible(!!tags).setText(tags).setColor(lowF || noA ? '#FFB54A' : '#BFE6FF');
     const myTurn = this.human(this.s.turn) && u.p === this.s.turn, dim = u.done && myTurn, ready = !u.done && myTurn && !this.s.over;
     c.img.setTint(dim ? 0x808080 : 0xFFFFFF); c.outline.forEach(o => o.setAlpha(dim ? 0.35 : 0.95));
     c.ring.setAlpha(dim ? 0.35 : 0.9); c.doneT.setVisible(dim);
@@ -225,11 +256,30 @@ export class PlayScene extends Phaser.Scene {
     this.add.image(W - 290, 60, 'i_star').setDisplaySize(34, 34).setTint(0xFFD45A).setDepth(D).setVisible(false);
     this.enT = T(this, W - 140, 112, '', 24, C.sub, { ox: 1, w: 800 }).setDepth(D);
     iconBtn(this, W - 72, 96, 'i_pause', () => this.pause(), 92).setDepth(D);
+    // 교대 지휘관: 얼굴 옆 작은 원 (누르면 교대)
+    this.tagFace = this.add.image(150, 150, 'co_ella').setDepth(D).setVisible(false);
+    const tm = this.make.graphics().setScrollFactor(0); tm.fillCircle(150, 150, 30); this.tagFace.setMask(tm.createGeometryMask());
+    this.tagRing = this.add.circle(150, 150, 32).setStrokeStyle(4, 0xFFD45A).setDepth(D).setVisible(false).setInteractive({ useHandCursor: true });
+    this.tagRing.on('pointerup', () => this.askSwap());
+  }
+  askSwap() {
+    const s = this.s, me = this.me, t2 = s.tag[me]; if (!t2 || this.busy || !this.human(s.turn)) return;
+    const co = COS[t2], ok = s.canSwap(me), k = Math.floor(Math.min(1, s.tagPow[me] / co.need) * 100);
+    const p = popup(this, '지휘관 교대', 820, 640);
+    const im = this.add.image(-250, -60, `co_${t2}`); im.setScale(260 / im.height); p.content.add(im);
+    p.content.add(T(this, -90, -150, `${co.name} · ${co.title}`, 32, C.text, { ox: 0, w: 900 }));
+    p.content.add(T(this, -90, -100, co.desc, 24, C.sub, { ox: 0, w: 800, wrap: 440 }));
+    p.content.add(T(this, -90, -30, `필살기 게이지 ${k}%`, 24, C.gold, { ox: 0, w: 800 }));
+    p.content.add(T(this, 0, 90, ok ? '교대하면 이번 턴부터 이 지휘관의 특성이 적용돼요' : s.swapped[me] ? '이번 턴에는 이미 교대했어요' : '턴을 시작하고 아무것도 하기 전에만 교대할 수 있어요', 24, ok ? C.text : C.pink, { w: 800, wrap: 700 }));
+    p.content.add(btn(this, 0, 210, 460, 110, ok ? '지금 교대' : '닫기', () => { p.close(); if (ok) { s.swap(); this.drain().then(() => this.updateHud()); } }, { style: ok ? 'gold' : 'ghost', size: 32 }));
   }
   updateHud() {
     const s = this.s, me = this.me, foe = this.foe, coK = s.cos[me], co = COS[coK], k = Math.min(1, s.power[me] / co.sneed), kn = co.need / co.sneed;
     if (this.coFace.texture.key !== `co_${coK}`) { this.coFace.setTexture(`co_${coK}`); this.coFace.setScale(130 / Math.max(this.coFace.width, this.coFace.height)); this.coName.setText(co.name); }
     this.coRing.setStrokeStyle(5, TEAM[me]);
+    const t2 = s.tag[me]; this.tagFace.setVisible(!!t2); this.tagRing.setVisible(!!t2);
+    if (t2 && this.tagFace.texture.key !== `co_${t2}`) { this.tagFace.setTexture(`co_${t2}`); this.tagFace.setScale(64 / Math.max(this.tagFace.width, this.tagFace.height) * 1.4); }
+    if (t2) this.tagRing.setStrokeStyle(4, s.canSwap(me) && this.human(s.turn) ? 0xFFD45A : 0x777766);
     this.dayT.setText(`DAY ${s.day} / ${s.limit}`);
     const vs = this.mode === 'versus';
     this.turnT.setText((vs ? (s.turn === 1 ? '파랑 차례' : '빨강 차례') : s.turn === 1 ? '아군 턴' : '적군 턴')).setColor(s.turn === 1 ? C.blue : C.red);
@@ -279,7 +329,9 @@ export class PlayScene extends Phaser.Scene {
       this.info.add(T(this, ux + 132, y0 + 20, `${U.name}`, 32, u.p === 1 ? C.blue : C.red, { ox: 0, w: 900 }));
       const n = hpOf(u), hb = this.add.graphics(); hb.fillStyle(0x000000, 0.5).fillRoundedRect(ux + 132, y0 + 46, 260, 18, 9).fillStyle(n <= 3 ? 0xD9301E : n <= 6 ? 0xE8A21C : 0x6FCB4A, 1).fillRoundedRect(ux + 132, y0 + 46, Math.max(18, 26 * n), 18, 9); this.info.add(hb);
       this.info.add(T(this, ux + 402, y0 + 55, `${n}/10`, 24, C.text, { ox: 0, w: 900 }));
-      this.info.add(T(this, ux + 132, y0 + 92, `이동 ${this.s.moveOf(u)}${U.range ? ` · 사거리 ${this.s.rangeOf(u).join('~')}` : ` · 수송 ${u.cargo.length}/${U.carry.n}`}`, 24, C.text, { ox: 0, w: 800 }));
+      this.info.add(T(this, ux + 132, y0 + 86, `이동 ${this.s.moveOf(u)}${U.range ? ` · 사거리 ${this.s.rangeOf(u).join('~')}` : U.carry ? ` · 수송 ${u.cargo.length}/${U.carry.n}` : ''}`, 24, C.text, { ox: 0, w: 800 }));
+      const sup = [U.fuel != null ? `연료 ${u.fuel}/${U.fuel}${U.day ? ` (매일 -${U.day})` : ''}` : '', U.ammo != null ? `탄약 ${u.ammo}/${U.ammo}` : ''].filter(Boolean).join(' · ');
+      if (sup) this.info.add(T(this, ux + 132, y0 + 114, sup, 20, (U.fuel != null && U.day && u.fuel <= U.day * 2) || u.ammo === 0 ? '#FFB54A' : C.sub, { ox: 0, w: 800 }));
       // 상성: 강한 상대 · 조심할 상대 (각 2종)
       const others = UNIT_ORDER.filter(t => UNITS[t].range);
       const strong = others.slice().sort((a, b) => base(u.type, b) - base(u.type, a)).slice(0, 2).filter(t => base(u.type, t) >= 55);
@@ -334,7 +386,7 @@ export class PlayScene extends Phaser.Scene {
   // 이어하기 저장 (아군 턴 시작마다)
   autosave() {
     if (this.auto || this.mode === 'versus' || this.map.custom) return;
-    try { localStorage.setItem('front_tactics_resume', JSON.stringify({ mode: this.mode, mapId: this.map.id, level: this.level, co: this.co, enemyCo: this.enemyCo, captures: this.captures, powers: this.powers, sim: this.s.snapshot(), at: Date.now() })); } catch { /* */ }
+    try { localStorage.setItem('front_tactics_resume', JSON.stringify({ mode: this.mode, mapId: this.map.id, level: this.level, co: this.co, enemyCo: this.enemyCo, tag: this.tagCo, captures: this.captures, powers: this.powers, sim: this.s.snapshot(), at: Date.now() })); } catch { /* */ }
   }
 
   // ── 범위 칸 ──
@@ -449,11 +501,33 @@ export class PlayScene extends Phaser.Scene {
       else this.float(px, py - this.ts * 0.6, `점령 ${20 - e.left}/20`, C.text, 28);
       await sleep(this, 420 / sp);
     } else if (e.type === 'build') {
-      const u = this.s.unit(e.id); const c = this.makeUnit(u); c.setScale(0.3); audio.play('sfx_build', { volume: 0.6 });
+      const u = this.s.unit(e.id); if (!u) return; const c = this.views.get(e.id) || this.makeUnit(u); if (!c.visible) return; c.setScale(0.3); audio.play('sfx_build', { volume: 0.6 });
       await new Promise(r => this.tweens.add({ targets: c, scale: 1, duration: 260 / sp, ease: 'Back.easeOut', onComplete: r }));
-    } else if (e.type === 'power') await this.powerFx(e.p, e.lvl);
+    } else if (e.type === 'power') await this.powerFx(e.p, e.lvl, e.tag);
     else if (e.type === 'load') { const c = this.views.get(e.id); if (c) c.setVisible(false); }
     else if (e.type === 'unload') { const c = this.views.get(e.id), [px, py] = this.xy(e.x, e.y); if (c) { c.setVisible(true); const [fx, fy] = this.xy(...[this.s.unit(e.from).x, this.s.unit(e.from).y]); c.setPosition(fx, fy); await new Promise(r => this.tweens.add({ targets: c, x: px, y: py, duration: 160 / sp, onComplete: r })); } }
+    else if (e.type === 'seam') {
+      const [px, py] = this.xy(e.x, e.y), a = this.views.get(e.a); if (a) { const au = this.s.unit(e.a); if (au) this.face(a, au, px - a.x); }
+      audio.play(e.broken ? 'sfx_explode' : 'sfx_mg', { volume: 0.6 }); this.boom(px, py, e.broken ? 1.4 : 0.8); this.float(px, py - this.ts * 0.45, e.broken ? '파이프 파괴!' : `-${Math.ceil(e.dmg / 10)}`, C.gold, 34);
+      if (e.broken) this.redrawTile(e.x, e.y); else this.drawSeam(e.x, e.y); await sleep(this, 420 / this.speed);
+    }
+    else if (e.type === 'silo' || e.type === 'explode') {
+      const [tx, ty] = this.xy(e.x, e.y), r = e.type === 'silo' ? 2 : 3, dmg = e.type === 'silo' ? 3 : 5; this.follow(e.x, e.y);
+      if (e.type === 'silo') { const [fx, fy] = this.xy(e.fx, e.fy), m = this.add.image(fx, fy, 'glow').setTint(0xFFD060).setBlendMode('ADD').setScale(0.5).setDepth(60); audio.play('sfx_power', { volume: 0.6 }); await new Promise(res => this.tweens.add({ targets: m, x: tx, y: ty, duration: 600 / this.speed, ease: 'Cubic.easeIn', onComplete: () => { m.destroy(); res(); } })); this.redrawTile(e.fx, e.fy); }
+      audio.play('sfx_explode', { volume: 0.9 }); this.cameras.main.shake(260, 0.012); this.cameras.main.flash(160, 255, 200, 120);
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.abs(dx) + Math.abs(dy) > r || !this.s.tile(e.x + dx, e.y + dy)) continue; const [bx, by] = this.xy(e.x + dx, e.y + dy); this.time.delayedCall((Math.abs(dx) + Math.abs(dy)) * 60, () => this.boom(bx, by, 0.9)); }
+      for (const o of this.s.siloHits(e.x, e.y, r)) { const c = this.views.get(o.id); if (c && c.visible && o.id !== e.id) this.float(c.x, c.y - this.ts * 0.45, `-${dmg}`, o.p === this.me ? C.pink : '#FFE27A', 34); }
+      await sleep(this, 700 / this.speed); this.syncAll();
+    }
+    else if (e.type === 'crash') {
+      const c = this.views.get(e.id), [px, py] = this.xy(e.x, e.y); audio.play('sfx_explode', { volume: 0.7 }); this.boom(px, py, 1.2);
+      this.float(px, py - this.ts * 0.6, UNITS[e.ut] && UNITS[e.ut].dom === 'sea' ? '연료 바닥! 침몰' : '연료 바닥! 추락', C.pink, 32);
+      if (c) { this.views.delete(e.id); this.tweens.add({ targets: c, alpha: 0, y: c.y + 40, duration: 500, onComplete: () => c.destroy() }); }
+      await sleep(this, 500 / this.speed);
+    }
+    else if (e.type === 'supply') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && c.visible && u && u.p === this.me) this.float(c.x, c.y - this.ts * 0.4, '보급', '#9BE07A', 24); }
+    else if (e.type === 'lowfuel') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && u && u.p === this.me) { this.float(c.x, c.y - this.ts * 0.5, '연료 부족!', '#FFB54A', 26); if (!this.fuelHint) { this.fuelHint = true; this.time.delayedCall(900, () => toast(this, '연료가 떨어지면 추락·침몰해요 · 비행장·항구·항모로 보급', '#FFB54A', TOP + 60)); } } }
+    else if (e.type === 'swap') { audio.play('sfx_power', { volume: 0.5 }); toast(this, `지휘관 교대 · ${COS[e.co].name}`, C.gold, TOP + 60); this.updateHud(); }
     else if (e.type === 'dive') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && u && u.p === this.me) { audio.play('sfx_select', { volume: 0.5 }); this.float(c.x, c.y - this.ts * 0.5, e.on ? (u.type === 'sub' ? '잠수!' : '은신!') : (u.type === 'sub' ? '부상' : '출현'), '#BFE6FF', 30); } if (u) this.syncUnit(u); }
     else if (e.type === 'weather') { this.drawWeather(); const W2 = WEATHER[e.w]; toast(this, e.w === 'clear' ? '날씨가 맑아졌어요' : `날씨: ${W2.name} · ${W2.desc}`, '#BFE6FF', TOP + 60); await sleep(this, 500 / this.speed); }
     else if (e.type === 'repair') { const c = this.views.get(e.id); if (c && c.visible) this.float(c.x, c.y - this.ts * 0.4, '+수리', C.green, 24); }
@@ -493,13 +567,14 @@ export class PlayScene extends Phaser.Scene {
   }
   flash(x, y, col) { const r = this.add.image(x, y, 'ring').setTint(col).setBlendMode('ADD').setScale(0.2).setDepth(65); this.tweens.add({ targets: r, scale: 1.2, alpha: 0, duration: 500, onComplete: () => r.destroy() }); }
   float(x, y, s, col, size = 34) { const t = T(this, x, y, s, size, col, { w: 900, stroke: '#14160A', thick: 6 }).setDepth(80); this.tweens.add({ targets: t, y: y - 50, alpha: 0, delay: 350, duration: 650, onComplete: () => t.destroy() }); }
-  async powerFx(p, lvl = 1) {
+  async powerFx(p, lvl = 1, tag = null) {
     const co = this.s.cos[p], c = this.add.container(0, H / 2).setDepth(950);
     audio.play('sfx_power', { volume: 0.8 }); this.cameras.main.flash(250, 255, 220, 140);
     const bg = this.add.rectangle(W / 2, 0, W, 300, p === 1 ? 0x1E4C94 : 0x8E2414, 0.92);
     const face = this.add.image(-200, 0, `co_${co}`); face.setScale(300 / face.height);
     c.add([bg, face, T(this, W / 2 + 120, -40, lvl === 2 ? COS[co].superp : COS[co].power, 70, C.gold, { w: 900, stroke: '#14160A', thick: 8 }), T(this, W / 2 + 120, 50, lvl === 2 ? COS[co].sdesc : COS[co].pdesc, 28, C.text, { w: 800, wrap: 640 })]);
-    if (lvl === 2) c.add(T(this, W / 2 + 120, -110, '초필살기', 34, '#FF8A6A', { w: 900, ls: 6 }));
+    if (lvl === 2) c.add(T(this, W / 2 + 120, -110, tag ? `합동 필살기 · ${COS[tag].name}` : '초필살기', 34, tag ? C.gold : '#FF8A6A', { w: 900, ls: 6 }));
+    if (tag) { const f2 = this.add.image(-200, 60, `co_${tag}`); f2.setScale(220 / f2.height); c.addAt(f2, 1); this.tweens.add({ targets: f2, x: 330, duration: 360, delay: 120, ease: 'Back.easeOut' }); }
     this.tweens.add({ targets: face, x: 200, duration: 300, ease: 'Back.easeOut' });
     await sleep(this, 1500 / this.speed);
     await new Promise(r => this.tweens.add({ targets: c, alpha: 0, duration: 250, onComplete: () => { c.destroy(); r(); } }));
@@ -530,9 +605,10 @@ export class PlayScene extends Phaser.Scene {
       if (v && v.stop) return this.moveTo(x, y);
       this.cancelSel(); return this.tap(p);
     }
+    if (this.state === 'silo') { if (this.siloAt && this.siloAt[0] === x && this.siloAt[1] === y) return this.doSilo(); return this.aimSilo(x, y); }
     if (this.state === 'target') {
-      const e = this.unitSeen(x, y);
-      if (e && this.tgts.includes(e)) { if (this.pending === e) return this.doAttack(e); return this.preview(e); }
+      const e = this.tgts.find(o => o.x === x && o.y === y);
+      if (e) { if (this.pending === e) return this.doAttack(e); return this.preview(e); }
       this.toAct(); return;
     }
     if (this.state === 'unload') { if (this.spots.some(([a, b]) => a === x && b === y)) return this.doUnload(x, y); this.toAct(); }
@@ -590,11 +666,13 @@ export class PlayScene extends Phaser.Scene {
     const u = this.sel, [x, y] = this.ghost, s = this.s, moved = x !== u.x || y !== u.y;
     this.state = 'act'; this.clearHl(); this.pending = null;
     this.mark(x, y, 0xFFE27A, 0, true);
-    this.tgts = s.targets(u, x, y, moved);
+    this.tgts = [...s.targets(u, x, y, moved), ...s.seamTargets(u, x, y, moved)];
     const t = s.tile(x, y), list = [];
     if (this.tgts.length) list.push(['공격', () => this.toTarget(), 'red']);
     if (UNITS[u.type].capture && TERRAIN[t.t].prop && t.owner !== u.p) list.push(['점령', () => this.commit(() => s.capture(u.id)), 'gold']);
     if (u.cargo.length) { const sv = [u.x, u.y]; u.x = x; u.y = y; this.spotsCache = s.unloadSpots(u); u.x = sv[0]; u.y = sv[1]; if (this.spotsCache.length) list.push(['하차', () => this.toUnload(), 'blue']); }
+    if (FOOT.includes(u.type) && t.t === 'silo') list.push(['발사', () => this.toSilo(), 'red']);
+    if (u.type === 'bomb') list.push(['자폭', () => this.toBomb(), 'red']);
     if (UNITS[u.type].dive) list.push([u.dive ? (u.type === 'sub' ? '부상' : '출현') : (u.type === 'sub' ? '잠수' : '은신'), () => this.commit(() => s.dive(u.id)), 'blue']);
     list.push(['대기', () => this.commit(() => s.wait(u.id)), 'olive']);
     list.push(['취소', () => this.cancelSel(), 'ghost']);
@@ -612,7 +690,8 @@ export class PlayScene extends Phaser.Scene {
   // 공격 예상: 정확한 피해 · 반격 (운 없음)
   preview(e) {
     if (!this.sel || !this.ghost || !e) return this.cancelSel();
-    const u = this.sel, [x, y] = this.ghost, f = this.s.forecast(u, x, y, e);
+    const u = this.sel, [x, y] = this.ghost;
+    const f = e.seam ? (() => { const d = this.s.seamDmg(u, e.x, e.y); return { dmg: d, counter: 0, kill: d >= e.hp }; })() : this.s.forecast(u, x, y, e);
     this.pending = e;
     this.info.removeAll(true);
     const y0 = H - BOTTOM + 40;
@@ -622,12 +701,30 @@ export class PlayScene extends Phaser.Scene {
       this.info.add(T(this, bx + 124, y0 + 76, val, 40, col, { ox: 0, w: 900 }));
     };
     const eAfter = Math.max(0, Math.ceil((e.hp - f.dmg) / 10)), uAfter = Math.max(0, Math.ceil((u.hp - f.counter) / 10));
-    box(30, `u_${e.type}_${TEAMS[e.p]}`, `${UNITS[e.type].name} 피해`, f.kill ? '격파!' : `${hpOf(e)} → ${eAfter}`, f.kill ? C.gold : '#FFE27A');
+    box(30, e.seam ? 't_seam_h' : `u_${e.type}_${TEAMS[e.p]}`, `${e.seam ? '이음매' : UNITS[e.type].name} 피해`, f.kill ? (e.seam ? '파괴!' : '격파!') : `${hpOf(e)} → ${eAfter}`, f.kill ? C.gold : '#FFE27A');
     box(530, `u_${u.type}_${TEAMS[u.p]}`, '반격', f.counter ? `${hpOf(u)} → ${uAfter}` : '없음', f.counter ? C.pink : C.green);
     this.setActs([['공격!', () => this.doAttack(e), 'red'], ['뒤로', () => this.toAct(), 'ghost']]);
     this.clearHl(); for (const t of this.tgts) this.mark(t.x, t.y, 0xFF5040, t === e ? 0.6 : 0.2, t !== e);
   }
-  doAttack(e) { if (!this.sel) return; const id = this.sel.id; this.commit(() => this.s.attack(id, e.id)); }
+  doAttack(e) { if (!this.sel) return; const id = this.sel.id; this.commit(() => (e.seam ? this.s.attackSeam(id, e.x, e.y) : this.s.attack(id, e.id))); }
+  // 미사일 기지: 지도 어디든 고르기 → 반경 2칸 미리보기 → 한 번 더 누르거나 [발사!]
+  toSilo() { this.state = 'silo'; this.siloAt = null; this.clearHl(); this.setActs([['뒤로', () => this.toAct(), 'ghost']]); this.info.removeAll(true); this.info.add(T(this, 48, H - BOTTOM + 70, '미사일을 떨어뜨릴 곳을 누르세요 · 반경 2칸 체력 -3 (아군도)', 26, C.sub, { ox: 0, w: 800 })); }
+  aimSilo(x, y) {
+    this.siloAt = [x, y]; this.clearHl();
+    const hits = this.s.siloHits(x, y); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (Math.abs(dx) + Math.abs(dy) <= 2 && this.s.tile(x + dx, y + dy)) this.mark(x + dx, y + dy, 0xFF5040, 0.35);
+    const foe = hits.filter(o => o.p !== this.me && this.vis(o)).length, own = hits.filter(o => o.p === this.me).length;
+    this.info.removeAll(true); this.info.add(T(this, 48, H - BOTTOM + 70, `적 ${foe}기 · 아군 ${own}기가 맞아요 · 같은 칸을 한 번 더 누르면 발사`, 26, own ? C.pink : C.gold, { ox: 0, w: 800 }));
+    this.setActs([['발사!', () => this.doSilo(), 'red'], ['뒤로', () => this.toAct(), 'ghost']]);
+  }
+  doSilo() { if (!this.sel || !this.siloAt) return; const id = this.sel.id, [x, y] = this.siloAt; this.siloAt = null; this.commit(() => this.s.launch(id, x, y)); }
+  toBomb() {
+    const [x, y] = this.ghost; this.state = 'bomb'; this.clearHl();
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (Math.abs(dx) + Math.abs(dy) <= 3 && this.s.tile(x + dx, y + dy)) this.mark(x + dx, y + dy, 0xFF8A3D, 0.3);
+    const sv = [this.sel.x, this.sel.y]; this.sel.x = x; this.sel.y = y; const hits = this.s.siloHits(x, y, 3).filter(o => o !== this.sel); this.sel.x = sv[0]; this.sel.y = sv[1];
+    const foe = hits.filter(o => o.p !== this.me && this.vis(o)).length, own = hits.filter(o => o.p === this.me).length;
+    this.info.removeAll(true); this.info.add(T(this, 48, H - BOTTOM + 70, `적 ${foe}기 · 아군 ${own}기 체력 -5 · 드론은 사라져요`, 26, own ? C.pink : C.gold, { ox: 0, w: 800 }));
+    this.setActs([['폭발!', () => { const id = this.sel.id; this.commit(() => this.s.explode(id)); }, 'red'], ['뒤로', () => this.toAct(), 'ghost']]);
+  }
   toUnload() { this.unloadList = []; this.nextUnloadSpot(); }
   nextUnloadSpot() {
     const u = this.sel, taken = this.unloadList;
@@ -670,25 +767,25 @@ export class PlayScene extends Phaser.Scene {
     const inst = coInstant(this.s.cos[me], this.s.lv(me));
     p.content.add(T(this, 0, -ph / 2 + 140, `자금 ${fmt(this.s.funds[me])} · ${inst ? '긴급 동원: 만든 유닛이 바로 움직여요!' : '만든 유닛은 다음 턴부터 움직여요'}`, 26, inst ? C.gold : C.sub, { w: 800 }));
     list.forEach((t, i) => {
-      const U = UNITS[t], bx = (i % 2 ? 1 : -1) * 232, by = -ph / 2 + 260 + Math.floor(i / 2) * 170, cost = this.s.costOf(t, me), ok = this.s.funds[me] >= cost;
+      const U = UNITS[t], bx = (i % 2 ? 1 : -1) * 232, by = -ph / 2 + 260 + Math.floor(i / 2) * 170, cost = this.s.costOf(t, me), pipeOk = t !== 'piper' || this.s.pipeBase(x, y), ok = this.s.funds[me] >= cost && pipeOk;
       const g = this.add.graphics(); g.fillStyle(0x000000, ok ? 0.28 : 0.12).fillRoundedRect(bx - 222, by - 76, 444, 152, 20).lineStyle(2, ok ? 0xFFD45A : 0x666655, 0.6).strokeRoundedRect(bx - 222, by - 76, 444, 152, 20); p.content.add(g);
       const im = this.add.image(bx - 150, by, `u_${t}_${TEAMS[me]}`).setAlpha(ok ? 1 : 0.4); im.setScale(130 / Math.max(im.width, im.height)); p.content.add(im);
       p.content.add(T(this, bx - 70, by - 36, U.name, 30, ok ? C.text : C.dim, { ox: 0, w: 900 }));
       p.content.add(T(this, bx - 70, by + 6, fmt(cost) + (cost < U.cost ? ' ▼' : ''), 28, ok ? (cost < U.cost ? '#9BE07A' : C.gold) : C.dim, { ox: 0, w: 900 }));
-      p.content.add(T(this, bx - 70, by + 44, U.desc, 18, C.sub, { ox: 0, w: 700, wrap: 280 }));
+      p.content.add(T(this, bx - 70, by + 44, pipeOk ? U.desc : '파이프와 이어진 기지에서만 만들어요', 18, pipeOk ? C.sub : C.pink, { ox: 0, w: 700, wrap: 280 }));
       const z = this.add.zone(bx, by, 444, 152).setInteractive({ useHandCursor: true }); p.content.add(z);
-      z.on('pointerup', () => { if (!ok) return toast(this, '자금이 부족해요', C.sub); p.close(); this.s.build(x, y, t); this.drain().then(() => this.updateHud()); });
+      z.on('pointerup', () => { if (!ok) return toast(this, pipeOk ? '자금이 부족해요' : '파이프와 이어진 기지에서만 만들어요', C.sub); p.close(); this.s.build(x, y, t); this.drain().then(() => this.updateHud()); });
     });
   }
   usePower() {
     const me = this.me, co = COS[this.s.cos[me]];
     if (this.busy || !this.s.powerReady(me, 1)) return;
     if (!this.s.powerReady(me, 2)) return this.firePower(1);
-    const p = popup(this, '필살기 선택', 900, 700);
-    p.content.add(btn(this, 0, -120, 700, 150, `필살기 · ${co.power}`, () => { p.close(); this.firePower(1); }, { style: 'olive', size: 34 }));
-    p.content.add(T(this, 0, -30, co.pdesc, 24, C.sub, { w: 800 }));
-    p.content.add(btn(this, 0, 110, 700, 150, `초필살기 · ${co.superp}`, () => { p.close(); this.firePower(2); }, { style: 'red', size: 34 }));
-    p.content.add(T(this, 0, 200, co.sdesc, 24, C.sub, { w: 800 }));
+    const tg = this.s.powerReady(me, 3), p = popup(this, '필살기 선택', 900, tg ? 960 : 700), y0 = tg ? -230 : -120, gap = 230;
+    const opt = (k, label, desc, style, lvl, col = C.sub) => { p.content.add(btn(this, 0, y0 + k * gap, 740, 140, label, () => { p.close(); this.firePower(lvl); }, { style, size: 30 })); p.content.add(T(this, 0, y0 + k * gap + 92, desc, 24, col, { w: 800, wrap: 760 })); };
+    opt(0, `필살기 · ${co.power}`, co.pdesc, 'olive', 1);
+    opt(1, `초필살기 · ${co.superp}`, co.sdesc, 'red', 2);
+    if (tg) { const t2 = COS[this.s.tag[me]]; opt(2, `합동 필살기 · ${co.superp} + ${t2.superp}`, `두 지휘관의 초필살기를 한꺼번에! (${co.name} · ${t2.name})`, 'gold', 3, C.gold); }
   }
   async firePower(lvl) { if (this.busy || !this.human(this.s.turn)) return; this.busy = true; this.s.usePower(lvl); await this.drain(); this.busy = false; this.updateHud(); }
   tutorial() {
@@ -775,7 +872,7 @@ export class PlayScene extends Phaser.Scene {
       this.time.delayedCall(surrender ? 100 : 900, () => { this.cameras.main.fadeOut(500, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', r)); });
       return;
     }
-    const r = { mode: this.mode, mapId: this.map.id, win, day: s.day, lost: s.stats.lost[1], kills: s.stats.kills[1], captures: this.captures, built: s.stats.built[1], powers: this.powers, co: this.co, why: surrender ? 'surrender' : this.winWhy };
+    const r = { mode: this.mode, mapId: this.map.id, win, day: s.day, lost: s.stats.lost[1], kills: s.stats.kills[1], captures: this.captures, built: s.stats.built[1], powers: this.powers, co: this.co, tag: this.tagCo, why: surrender ? 'surrender' : this.winWhy, dealt: s.stats.dealt.slice(), units0: (this.simMap.units || []).filter(u => u.p === 1).length };
     const res = M.finish(r);
     this.time.delayedCall(surrender ? 100 : 900, () => { this.cameras.main.fadeOut(500, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', { ...r, ...res, level: this.level, enemyCo: this.enemyCo })); });
   }

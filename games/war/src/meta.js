@@ -1,6 +1,6 @@
 // 진행 · 재방문: 계급(경험치) · 캠페인 별 · 지휘관 해금 · 연속 출석 · 오늘의 미션 · 오늘의 작전
-import { load, save } from './save.js?v=0.12.0';
-import { MAPS } from './core/maps.js?v=0.12.0';
+import { load, save } from './save.js?v=0.13.0';
+import { MAPS, WAR } from './core/maps.js?v=0.13.0';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
@@ -77,6 +77,20 @@ export function claim(id) {
 }
 export const unclaimed = () => missions().some(m => m.done && !m.claimed);
 
+// ── 전쟁실: 속도 · 전력 · 기술 (각 100점) → S~D (원작 점수 방식을 단순화) ──
+export { WAR };
+const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
+export const warRank = t => (t >= 270 ? 'S' : t >= 230 ? 'A' : t >= 180 ? 'B' : t >= 130 ? 'C' : 'D');
+export function warScore(r, par) {
+  const speed = clamp(200 - r.day * 100 / par);                                   // 기준 일수 안이면 100
+  const d1 = r.dealt ? r.dealt[1] : 0, d2 = r.dealt ? r.dealt[2] : 0;
+  const power = clamp((d1 / Math.max(1, d1 + d2)) * 150 - 25);                    // 준 피해 비율
+  const tech = clamp(100 - r.lost * 100 / Math.max(6, (r.units0 || 4) + r.built)); // 잃은 유닛 비율
+  const total = speed + power + tech;
+  return { speed, power, tech, total, rank: warRank(total) };
+}
+export const warBest = id => load().war[id] || null;
+
 // ── 전투 결과 반영 ──
 // r: { mode, mapId, win, day, lost, kills, captures, built, powers, co }
 export function finish(r) {
@@ -89,13 +103,15 @@ export function finish(r) {
     if (r.win && st.unlockCo && !d.cos[st.unlockCo]) { d.cos[st.unlockCo] = 1; unlocked = st.unlockCo; }
     if (r.win && (!d.bestDays[st.id] || r.day < d.bestDays[st.id])) d.bestDays[st.id] = r.day;
   }
+  let war = null, warPrev = null;
+  if (r.mode === 'war') { const m = WAR.find(x => x.id === r.mapId); warPrev = d.war[r.mapId] || null; if (r.win && m) { war = warScore(r, m.par); if (!warPrev || war.total > warPrev.total) d.war[r.mapId] = { ...war, day: r.day, co: r.co }; } }
   if (r.mode === 'daily') { d.daily.tries++; if (r.win && (!d.daily.best || r.day < d.daily.best)) d.daily.best = r.day; if (r.win) d.daily.won = true; }
   d.coXp[r.co] = (d.coXp[r.co] || 0) + (r.win ? 30 : 10);
-  const xp = 20 + (r.win ? 50 : 0) + newStars * 30 + r.kills * 3 + r.captures * 2;
+  const xp = 20 + (r.win ? 50 : 0) + newStars * 30 + r.kills * 3 + r.captures * 2 + (war ? Math.round(war.total / 6) : 0);
   save();
   const up = addXp(xp);
   track('win', r.win ? 1 : 0); track('capture', r.captures); track('kill', r.kills); track('build', r.built); track('power', r.powers);
   if (stars === 3) track('stars3'); if (r.mode === 'daily') track('daily');
-  return { stars, newStars, unlocked, xp, rankUp: up };
+  return { stars, newStars, unlocked, xp, rankUp: up, war, warPrev };
 }
 export const coLevel = co => 1 + Math.floor(Math.sqrt((load().coXp[co] || 0) / 40));

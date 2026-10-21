@@ -1,7 +1,7 @@
 // 상대 AI: 다음 행동 하나씩 돌려줌 (화면이 한 동작씩 보여 줄 수 있게)
 // { kind: 'power' } · { kind: 'act', id, to, then: { kind: 'attack'|'capture'|'wait'|'unload', target, at } } · { kind: 'build', x, y, type } · { kind: 'end' }
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from './data.js?v=0.12.0';
-import { dist } from './sim.js?v=0.12.0';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base, repairsAt } from './data.js?v=0.13.0';
+import { dist } from './sim.js?v=0.13.0';
 
 const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.12, threat: 0.45, focus: 1.1 }, hard: { noise: 0, threat: 0.6, focus: 1.3 } };
 
@@ -46,8 +46,8 @@ export function stranded(sim, u) {
   const U = UNITS[u.type]; if (U.dom !== 'ground' || u.inside) return false;
   return !goalComps(sim, u.p, U.mt).has(labels(sim, U.mt)[u.y * sim.w + u.x]);
 }
-const fits = (tr, u) => { const C = UNITS[tr].carry; return !!C && (C.what === 'foot' ? FOOT.includes(u.type) : UNITS[u.type].dom === 'ground'); };
-const ferries = t => UNITS[t].carry && UNITS[t].dom !== 'ground';
+const fits = (tr, u) => { const C = UNITS[tr].carry; return !!C && (C.what === 'foot' ? FOOT.includes(u.type) : C.what === 'air' ? UNITS[u.type].dom === 'air' : UNITS[u.type].dom === 'ground'); };
+const ferries = t => UNITS[t].carry && UNITS[t].dom !== 'ground' && UNITS[t].carry.what !== 'air';
 // 여러 출발 칸에서 이동 비용 거리 (유닛은 무시)
 function distField(sim, mt, sources, init) {
   const n = sim.w * sim.h, d = new Float64Array(n).fill(1e9), q = [];
@@ -65,6 +65,8 @@ export class AI {
   next(sim) {
     const p = sim.turn;
     if (sim.over) return { kind: 'end' };
+    if (sim.powerReady(p, 3)) return { kind: 'power', lvl: 3 };
+    if (sim.canSwap(p) && sim.power[p] < sim.tagPow[p] * 0.7) return { kind: 'swap' };
     if (sim.powerReady(p, 2)) return { kind: 'power', lvl: 2 };
     if (sim.powerReady(p, 1) && sim.power[p] < (COS[sim.cos[p]].sneed * 0.8)) return { kind: 'power', lvl: 1 };
     if (!this.cache || this.cache.day !== sim.day || this.cache.p !== p || this.cache.n !== sim.units.length) this.cache = { day: sim.day, p, n: sim.units.length, threat: threatMap(sim, p) };
@@ -78,6 +80,10 @@ export class AI {
   plan(sim, u) {
     if (ferries(u.type)) return this.ferry(sim, u);
     const U = UNITS[u.type], val = U.cost, reach = sim.reach(u), p = u.p, threat = this.cache.threat;
+    // 보급: 탄약이 바닥이거나 (하늘·바다) 연료가 돌아갈 만큼만 남았으면 아군 건물로
+    const supT = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => o.t.owner === p && TERRAIN[o.t.t].prop && repairsAt(U.dom, o.t.t));
+    const supD = (x, y) => supT.length ? Math.min(...supT.map(o => dist(x, y, o.x, o.y))) : 0;
+    const needSup = supT.length && ((U.ammo != null && u.ammo === 0 && !U.mg) || (U.day > 0 && u.fuel <= U.day * 2 + supD(u.x, u.y) + 2));
     const isStr = stranded(sim, u), boats = isStr ? sim.mine(p).filter(o => ferries(o.type) && fits(o.type, u) && o.cargo.length < UNITS[o.type].carry.n) : [];
     const enemies = sim.units.filter(e => e.p !== p && !e.inside && !sim.hidden(p, e));
     const enemyHQ = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => o.t.t === 'hq' && o.t.owner !== p);
@@ -100,6 +106,7 @@ export class AI {
       if (U.capture && props.length) { const d = Math.min(...props.map(o => dist(v.x, v.y, o.x, o.y) + (o.t.t === 'hq' ? -3 : 0))); goal = -d * 260; }
       else if (enemies.length) { const near = enemies.map(e => dist(v.x, v.y, e.x, e.y) - (base(u.type, e.type) / 30)); goal = -Math.min(...near) * 160 * this.L.focus; }
       if (enemyHQ.length) goal += -dist(v.x, v.y, enemyHQ[0].x, enemyHQ[0].y) * (U.capture ? 120 : 60) * Math.min(2, 0.5 + sim.day / 10);
+      if (needSup) goal = -supD(v.x, v.y) * 700 + (supD(v.x, v.y) === 0 && !sim.unitAt(v.x, v.y) || (v.x === u.x && v.y === u.y && supD(v.x, v.y) === 0) ? 4000 : 0);
       // 섬에 갇힘: 수송 유닛 쪽으로
       if (isStr) goal = boats.length ? -Math.min(...boats.map(o => dist(v.x, v.y, o.x, o.y))) * 300 : 0;
       // 본부 지키기: 적이 우리 본부 근처면 가까이
@@ -129,6 +136,16 @@ export class AI {
         consider(stay * 0.6 + s * 1.3 + 900, [v.x, v.y], { kind: 'attack', target: e.id });
       }
     }
+    // 자폭 드론 · 미사일 기지: 적 가치 - 아군 가치 가 크면 터뜨림
+    const blast = (x, y, r, dmg, self) => { let v = 0; for (const o of sim.siloHits(x, y, r)) { if (o === self) continue; const d = Math.min(dmg, o.hp - 1) / 100 * UNITS[o.type].cost; v += o.p !== p ? d : -d * 1.2; } return v; };
+    if (u.type === 'bomb') for (const v of reach.values()) { if (!v.stop || v.load || (sim.unitAt(v.x, v.y) && sim.unitAt(v.x, v.y) !== u)) continue; const val = blast(v.x, v.y, 3, 50, u) - UNITS.bomb.cost * 0.6; if (val > 3000) consider(val * 2 + 20000, [v.x, v.y], { kind: 'explode' }); }
+    if (FOOT.includes(u.type)) for (const v of reach.values()) {
+      if (!v.stop || sim.tile(v.x, v.y).t !== 'silo' || (sim.unitAt(v.x, v.y) && sim.unitAt(v.x, v.y) !== u)) continue;
+      let bt = null; for (let y = 0; y < sim.h; y++) for (let x = 0; x < sim.w; x++) { const val = blast(x, y, 2, 30); if (!bt || val > bt.val) bt = { val, x, y }; }
+      if (bt && bt.val > 5000) consider(bt.val * 2 + 20000, [v.x, v.y], { kind: 'silo', at: [bt.x, bt.y] });
+    }
+    // 파이프 이음매: 할 일 없으면 부숨
+    if (U.range && (!best || best.then.kind === 'wait') && !enemies.some(e => dist(e.x, e.y, u.x, u.y) <= 5)) for (const v of reach.values()) { if (!v.stop || (sim.unitAt(v.x, v.y) && sim.unitAt(v.x, v.y) !== u)) continue; const sm = sim.seamTargets(u, v.x, v.y, v.x !== u.x || v.y !== u.y); if (sm.length) consider((best ? best.score : 0) + 600, [v.x, v.y], { kind: 'seam', at: [sm[0].x, sm[0].y] }); }
     // 트럭: 실은 보병 내리기 (점령할 건물 옆이면)
     if (u.cargo.length && !best?.then?.kind?.startsWith('attack')) {
       const spots = sim.unloadSpots(u);
@@ -208,7 +225,7 @@ export class AI {
       }
       // 갇힌 땅의 기지: 이미 많이 쌓였으면 수송비를 모음
       if (kind === 'ground') { const fake = { type: 'inf', p, x: o.x, y: o.y }; if (stranded(sim, fake) && mine.filter(u => stranded(sim, u)).length >= 4) continue; }
-      const opts = UNIT_ORDER.filter(t => UNITS[t].dom === kind && sim.costOf(t, p) <= funds && UNITS[t].range);
+      const opts = UNIT_ORDER.filter(t => UNITS[t].dom === kind && sim.costOf(t, p) <= funds && UNITS[t].range && (t !== 'piper' || sim.pipeBase(o.x, o.y)));
       if (!opts.length) continue;
       let pick = null, bs = -1e9;
       const needCap = (caps < Math.min(4, neutral + 2) && sim.day < 10) || caps < 2;
@@ -236,6 +253,7 @@ export class AI {
 // 한 행동 실행 (화면 없이 · 봇용)
 export function apply(sim, a) {
   if (a.kind === 'power') return sim.usePower(a.lvl || 1);
+  if (a.kind === 'swap') return sim.swap();
   if (a.kind === 'build') return sim.build(a.x, a.y, a.type);
   if (a.kind === 'end') { sim.endTurn(); return true; }
   if (a.kind === 'act') {
@@ -245,6 +263,9 @@ export function apply(sim, a) {
     if (t.kind === 'attack') { if (!sim.attack(a.id, t.target)) sim.wait(a.id); }
     else if (t.kind === 'capture') { if (!sim.capture(a.id)) sim.wait(a.id); }
     else if (t.kind === 'dive') { if (!sim.dive(a.id)) sim.wait(a.id); }
+    else if (t.kind === 'explode') { if (!sim.explode(a.id)) sim.wait(a.id); }
+    else if (t.kind === 'silo') { if (!sim.launch(a.id, t.at[0], t.at[1])) sim.wait(a.id); }
+    else if (t.kind === 'seam') { if (!sim.attackSeam(a.id, t.at[0], t.at[1])) sim.wait(a.id); }
     else if (t.kind === 'unload') { if (!sim.unload(a.id, t.at[0], t.at[1])) sim.wait(a.id); }
     else sim.wait(a.id);
     return true;

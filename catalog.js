@@ -8,13 +8,13 @@ export const GAMES = {
     title: '고양이와 마녀', en: 'Cat & Witch', genre: '슈팅', color: '#7A4DE0',
     tagline: '빗자루 타고 고양이와 밤하늘을 날아요',
     desc: '몬스터 줄의 빈틈을 뚫고 얼마나 멀리 날 수 있을까요? 별똥별을 피하고, 보스를 물리치고, 고양이 친구를 모아 보세요.',
-    path: 'games/witch/', cover: 'covers/witch.png', icon: 'covers/witch_icon.png', time: '1~3분',
+    path: 'games/witch/', logo: true, cover: 'covers/witch.png', icon: 'covers/witch_icon.png', time: '1~3분',
   },
   ocean: {
     title: '바다이야기', en: 'Ocean Tales', genre: '퍼즐', color: '#1E8FE6',
     tagline: '귀여운 바다 친구들을 맞춰요',
     desc: '같은 바다 친구 3개를 맞춰 터뜨리는 매치3 퍼즐. 500개 스테이지와 특수 블록 조합, 바다 마을 꾸미기까지.',
-    path: 'games/ocean-tales/', cover: 'covers/ocean.png', icon: 'covers/ocean_icon.png', time: '2~4분',
+    path: 'games/ocean-tales/', logo: true, cover: 'covers/ocean.png', icon: 'covers/ocean_icon.png', time: '2~4분',
   },
   racer: {
     title: '스트레스 차차차', en: 'Stress Cha-Cha-Cha', genre: '레이싱', color: '#3B5BDB',
@@ -26,13 +26,13 @@ export const GAMES = {
     title: '블록 블리스', en: 'Block Bliss', genre: '퍼즐', color: '#4F72FF',
     tagline: '줄을 지우는 보석 블록 퍼즐',
     desc: '조각 3개를 판에 맞춰 가로·세로 줄을 지우는 블록 퍼즐. 최고 기록에 도전하는 클래식, 매주 96레벨로 그림 한 장을 완성하는 어드벤처, 매일 바뀌는 미션까지.',
-    path: 'games/blocks/', cover: 'covers/blocks.png', icon: 'covers/blocks_icon.png', time: '3~6분',
+    path: 'games/blocks/', logo: true, cover: 'covers/blocks.png', icon: 'covers/blocks_icon.png', time: '3~6분',
   },
   dice: {
     title: '룬 다이스', en: 'Rune Dice', genre: '디펜스', color: '#8E6BFF',
     tagline: '룬 주사위를 소환하고 합성해 제단을 지켜요',
     desc: '무작위로 소환되는 룬 주사위를 같은 종류·같은 눈끼리 합성해 강하게 키우는 디펜스. 웨이브마다 몰려오는 적과 5종의 보스를 막고 최고 웨이브에 도전하세요. 매일 모두 같은 덱으로 겨루는 오늘의 도전도 있어요.',
-    path: 'games/dice/', cover: 'covers/dice.png', icon: 'covers/dice_icon.png', time: '5~8분',
+    path: 'games/dice/', logo: true, cover: 'covers/dice.png', icon: 'covers/dice_icon.png', time: '5~8분',
   },
   war: {
     title: '작전명 허스키', en: 'Operation Husky', genre: '전략', color: '#6E8338',

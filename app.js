@@ -1,11 +1,11 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.16.2';
-import * as R from './rules.js?v=0.16.2';
-import * as I from './install.js?v=0.16.2';
+import { PLANNED } from './catalog.js?v=0.16.3';
+import * as R from './rules.js?v=0.16.3';
+import * as I from './install.js?v=0.16.3';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.16.2';
+const VERSION = '0.16.3';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -49,10 +49,9 @@ function renderToday() {
     ${installBanner()}
     <div class="hero">
       <div class="ribbon">오늘의 게임</div>
-      <div class="cover" style="background-image:url('${g.cover}')"></div>
+      <div class="cover" role="img" aria-label="${g.title}" style="background-image:url('${g.cover}')"></div>
       <div class="body">
-        <h2>${g.title}</h2>
-        <div class="en">${g.en}</div>
+        ${g.logo ? '' : `<h2>${g.title}</h2>\n        <div class="en">${g.en}</div>`}
         <div class="meta"><span class="chip">🎮 ${g.genre}</span><span class="chip">⏱ ${g.time}</span><span class="chip">👥 모두 같은 게임</span></div>
         <p>${g.tagline}</p>
         <button class="btn" data-play="${id}">▶ 지금 플레이</button>
@@ -151,8 +150,8 @@ function detail(id) {
     : `<button class="btn alt" data-ad="${id}">📺 광고 보고 ${R.RULES.adUnlock === 'day' ? '오늘 하루' : '한 판'} 플레이</button>
        <button class="btn ghost" ${R.RULES.purchase ? '' : 'disabled'}>💎 소장하기 (준비 중)</button>
        <div class="note">오늘의 게임이 돌아오는 날엔 무료로 할 수 있어요</div>`;
-  openSheet(`<div class="cover" style="background-image:url('${g.cover}')"></div>
-    <h2>${g.title}</h2><div class="en" style="color:var(--sub);font-size:13px;letter-spacing:1.5px">${g.en.toUpperCase()}</div>
+  openSheet(`<div class="cover" role="img" aria-label="${g.title}" style="background-image:url('${g.cover}')"></div>
+    ${g.logo ? '' : `<h2>${g.title}</h2><div class="en" style="color:var(--sub);font-size:13px;letter-spacing:1.5px">${g.en.toUpperCase()}</div>`}
     <div class="meta" style="margin:10px 0"><span class="chip">🎮 ${g.genre}</span><span class="chip">⏱ ${g.time}</span>${lib ? `<span class="chip">🗓 ${fmtKey(lib.first)} 첫 플레이</span>` : ''}</div>
     <p style="color:#DDD5FA">${g.desc}</p>
     <div class="stack">${actions}<button class="btn ghost" data-close>닫기</button></div>`);

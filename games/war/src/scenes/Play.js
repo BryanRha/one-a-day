@@ -1,19 +1,21 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.14.1';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.1';
-import { audio } from '../audio.js?v=0.14.1';
-import { load, save } from '../save.js?v=0.14.1';
-import * as M from '../meta.js?v=0.14.1';
-import { inOAD, exitToOAD } from '../oad.js?v=0.14.1';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.14.1';
-import { AI, apply } from '../core/ai.js?v=0.14.1';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.14.1';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.1';
-import { STORY } from '../story.js?v=0.14.1';
+import { W, H } from '../config.js?v=0.14.2';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.2';
+import { audio } from '../audio.js?v=0.14.2';
+import { load, save } from '../save.js?v=0.14.2';
+import * as M from '../meta.js?v=0.14.2';
+import { inOAD, exitToOAD } from '../oad.js?v=0.14.2';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.14.2';
+import { AI, apply } from '../core/ai.js?v=0.14.2';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.14.2';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.2';
+import { STORY } from '../story.js?v=0.14.2';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
 const BLD = { city: 'city', base: 'base', air: 'air', hq: 'hq', port: 'port' };
+// 지휘관 테마곡 (Pixabay 곡을 성격별로 나눠 씀)
+export const CO_THEME = { ella: 'heroic', jun: 'heroic', leon: 'heroic', bas: 'heroic', viktor: 'epic', titan: 'epic', doo: 'epic', kai: 'epic', marin: 'naval', sora: 'air', iris: 'spy', sera: 'spy', yuki: 'winter', hana: 'cheer', terra: 'cheer', scarlet: 'villain' };
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
 const SND = { inf: 'sfx_rifle', bazooka: 'sfx_bazooka', recon: 'sfx_mg', ltank: 'sfx_cannon', htank: 'sfx_cannon', arty: 'sfx_cannon', rocket: 'sfx_rocket', aa: 'sfx_mg', heli: 'sfx_mg', truck: 'sfx_mg' };
 const MOVE_SND = { foot: 'sfx_move_foot', mech: 'sfx_move_foot', tire: 'sfx_move_car', tread: 'sfx_move_tank', air: 'sfx_move_heli' };
@@ -428,7 +430,7 @@ export class PlayScene extends Phaser.Scene {
     else { this.themeMusic(); this.speed = 1; this.skipBtn.setVisible(false); this.setActs(null); this.autosave(); this.drawDanger(); if (this.auto) return this.enemyTurn(1); if (!load().tips.war) this.tutorial(); }
   }
   // 턴마다 그 지휘관의 테마곡 (설정에서 끄면 기본 전투곡)
-  themeMusic() { const s = this.s, co = s.cos[s.turn]; if (load().coTheme === false || !co) return audio.music(s.turn === 1 || this.mode === 'versus' ? 'bgm_battle' : 'bgm_enemy', this); audio.music(`bgm_co_${co}`, this); }
+  themeMusic() { const s = this.s, co = s.cos[s.turn]; if (load().coTheme === false || !co) return audio.music(s.turn === 1 || this.mode === 'versus' ? 'bgm_battle' : 'bgm_enemy', this); audio.music(`bgm_${CO_THEME[co] || 'heroic'}`, this); }
   banner(title, sub, col) {
     audio.play('sfx_turn', { volume: 0.6 });
     const c = this.add.container(W / 2, H / 2).setDepth(900).setAlpha(0);

@@ -1,12 +1,12 @@
 // 효과음 / 배경음. 배경음은 처음 틀 때 받아 온다 (첫 로딩을 가볍게).
-import { load, save } from './save.js?v=0.14.1';
+import { load, save } from './save.js?v=0.14.2';
 
 export const SFX = [
   'sfx_click', 'sfx_select', 'sfx_move_foot', 'sfx_move_tank', 'sfx_move_car', 'sfx_move_heli', 'sfx_rifle', 'sfx_bazooka', 'sfx_cannon', 'sfx_mg',
   'sfx_rocket', 'sfx_explode', 'sfx_capture', 'sfx_captured', 'sfx_build', 'sfx_turn', 'sfx_power', 'sfx_win', 'sfx_lose', 'sfx_cancel',
   'sfx_missile', 'sfx_crash', 'sfx_supply', 'sfx_dive', 'sfx_swap', 'sfx_bomb', 'sfx_seam', 'sfx_talk', 'sfx_page', 'sfx_rank',
 ];
-export const BGM = ['bgm_battle', 'bgm_enemy', 'bgm_lobby'];
+export const BGM = ['bgm_battle', 'bgm_enemy', 'bgm_lobby', 'bgm_heroic', 'bgm_epic', 'bgm_naval', 'bgm_air', 'bgm_spy', 'bgm_winter', 'bgm_cheer', 'bgm_villain', 'bgm_story', 'bgm_warroom'];
 
 class AudioManager {
   constructor() { this.game = null; this.current = null; this.currentKey = null; this.last = {}; this.urlFor = k => `assets/audio/${k}.m4a`; }
@@ -31,12 +31,12 @@ class AudioManager {
       const sc = scene || this.game.scene.getScenes(true).slice(-1)[0];
       if (!sc) return;
       sc.load.audio(key, [this.urlFor(key)]);
-      if (key.startsWith('bgm_co_')) sc.load.once('loaderror', f => { if (f.key === key && this.currentKey === key) { this.currentKey = null; this.music('bgm_battle', sc); } });   // 테마곡이 없으면 기본 곡
+      if (key !== 'bgm_battle') sc.load.once('loaderror', f => { if (f.key === key && this.currentKey === key) { this.currentKey = null; this.music('bgm_battle', sc); } });   // 테마곡이 없으면 기본 곡
       sc.load.once('complete', () => { if (this.currentKey === key && !this.current) { this.currentKey = null; this.music(key, sc); } });
       sc.load.start();
       return;
     }
-    try { this.current = this.game.sound.add(key, { loop: true, volume: key === 'bgm_lobby' ? 0.4 : key.startsWith('bgm_co_') ? 0.36 : 0.32 }); this.current.play(); } catch { this.current = null; }
+    try { this.current = this.game.sound.add(key, { loop: true, volume: key === 'bgm_lobby' ? 0.4 : key === 'bgm_story' ? 0.42 : 0.34 }); this.current.play(); } catch { this.current = null; }
   }
   // 미리 받아 두기 (타이틀에서 비행·보스 곡을 조용히 받음)
   prefetch(scene, keys) {

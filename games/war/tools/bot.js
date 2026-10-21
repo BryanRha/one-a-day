@@ -1,7 +1,7 @@
 // AI 대 AI 대전으로 지도 점검: node tools/bot.js [판수=10] [지도id] [파랑레벨] [빨강레벨]
-import { Sim } from '../src/core/sim.js?v=0.14.1';
-import { AI, apply } from '../src/core/ai.js?v=0.14.1';
-import { MAPS } from '../src/core/maps.js?v=0.14.1';
+import { Sim } from '../src/core/sim.js?v=0.14.2';
+import { AI, apply } from '../src/core/ai.js?v=0.14.2';
+import { MAPS } from '../src/core/maps.js?v=0.14.2';
 import { fileURLToPath } from 'node:url';
 export function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 export function battle(map, lv1 = 'normal', lv2 = 'normal', seed = 1, cos = [null, 'ella', 'scarlet'], maxDay = 40) {

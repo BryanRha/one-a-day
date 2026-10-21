@@ -1,15 +1,15 @@
 // 작전 준비: 캠페인 작전 고르기 · 지도 미리보기 · 지휘관 고르기 · (자유 대전) 지도·난이도·AI/2인 대전·내 지도
-import { W, H } from '../config.js?v=0.14.1';
-import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.14.1';
-import { audio } from '../audio.js?v=0.14.1';
-import { load, save } from '../save.js?v=0.14.1';
-import * as M from '../meta.js?v=0.14.1';
-import { COS, WEATHER } from '../core/data.js?v=0.14.1';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.1';
-import { STORY } from '../story.js?v=0.14.1';
-import { rankOn } from '../rank.js?v=0.14.1';
-import { rankPopup } from '../rankui.js?v=0.14.1';
-import { Sim } from '../core/sim.js?v=0.14.1';
+import { W, H } from '../config.js?v=0.14.2';
+import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.14.2';
+import { audio } from '../audio.js?v=0.14.2';
+import { load, save } from '../save.js?v=0.14.2';
+import * as M from '../meta.js?v=0.14.2';
+import { COS, WEATHER } from '../core/data.js?v=0.14.2';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.2';
+import { STORY } from '../story.js?v=0.14.2';
+import { rankOn } from '../rank.js?v=0.14.2';
+import { rankPopup } from '../rankui.js?v=0.14.2';
+import { Sim } from '../core/sim.js?v=0.14.2';
 
 const LV = { easy: '쉬움', normal: '보통', hard: '어려움' };
 const TCOL = { pipe: 0x8A8F96, seam: 0xC8A040, silo: 0x5A5048, silo_e: 0x6A6A5A, plain: 0x8DB05A, farm: 0x9BB45A, wheat: 0xD8B85A, forest: 0x3E7A34, mountain: 0x9A8C78, road: 0xC8A878, bridge: 0xB0A090, river: 0x4A9AD8, beach: 0xE8D8A0, sea: 0x2A6AB0, reef: 0x3A7A90, trench: 0x8A7A50 };
@@ -109,6 +109,7 @@ export class BriefScene extends Phaser.Scene {
     }
     btn(this, W / 2, by, 560, 130, '작전 개시', () => this.start(), { style: 'gold', icon: 'i_play', size: 44 });
     this.cameras.main.fadeIn(200, 20, 22, 10);
+    audio.music(this.mode === 'war' ? 'bgm_warroom' : 'bgm_lobby', this);
     window.__brief = this;
   }
   restart(o) { this.scene.restart({ ...this.data0, mapId: this.mapId, custom: this.custom, level: this.level, versus: this.versus, co1: this.co, co2: this.co2, tag: this.tag ?? null, ...o }); }

@@ -1,5 +1,5 @@
 // 전투 규칙 (화면과 무관): 지도 · 이동 · 공격(운 없음 — 미리 정확히 계산) · 점령 · 생산 · 수송 · 안개 전장 · 턴
-import { UNITS, TERRAIN, INCOME, CAPTURE, FOOT, base, coAtk, coDef, coMove, coRange, coCapture, coVision, coReveal, repairsAt, COS } from './data.js?v=0.11.4';
+import { UNITS, TERRAIN, INCOME, CAPTURE, FOOT, base, coAtk, coDef, coMove, coRange, coCapture, coVision, coReveal, coStars, coCost, coInstant, coCounter, weatherProof, repairsAt, COS, HUNT } from './data.js?v=0.12.0';
 export const TUNE = { dmg: 1.1 };   // 전체 피해 배율 (한 판을 짧게)
 
 // 지도 칸 글자: 앞 글자 = 지형, 뒤 글자 = 주인(0 중립 · 1 파랑 · 2 빨강)
@@ -25,18 +25,20 @@ export class Sim {
     this.limit = opts.limit ?? map.limit ?? 20;
     this.noBuild = opts.noBuild ?? map.noBuild ?? [];          // 생산 못 하는 쪽 (원작 초반 작전처럼 적은 배치된 부대만)
     this.incomeMul = opts.incomeMul ?? map.incomeMul ?? [1, 1, 1];   // 판마다 수입 배율 (캠페인 난이도 조절)
-    this.fog = !!(opts.fog ?? map.fog);                          // 안개 전장
+    this.fogBase = !!(opts.fog ?? map.fog);                      // 안개 전장 (비 오는 날에도 안개)
+    this.wPlan = opts.weather ?? map.weather ?? 'clear';          // 날씨: 고정 또는 날짜별 순환
+    this.wForce = null;                                          // 유키 필살기: { w, left 남은 턴 }
     this.turn = 1; this.day = 1; this.over = false; this.winner = 0; this.events = [];
     this.stats = { lost: [0, 0, 0], built: [0, 0, 0], kills: [0, 0, 0], dealt: [0, 0, 0] };
     this.income(1);
   }
   ev(type, d = {}) { this.events.push({ type, ...d }); }
   // 저장 · 이어하기: 판 상태만 (지도 모양은 지도로 다시 만듦)
-  snapshot() { return { tiles: this.tiles.map(t => [t.owner, t.cap]), units: this.units.map(u => ({ ...u, cargo: [...u.cargo] })), nextId: this.nextId, power: this.power, powerOn: this.powerOn, funds: this.funds, turn: this.turn, day: this.day, limit: this.limit, stats: this.stats }; }
+  snapshot() { return { tiles: this.tiles.map(t => [t.owner, t.cap]), units: this.units.map(u => ({ ...u, cargo: [...u.cargo] })), nextId: this.nextId, power: this.power, powerOn: this.powerOn, funds: this.funds, turn: this.turn, day: this.day, limit: this.limit, stats: this.stats, wForce: this.wForce }; }
   restore(o) {
     o.tiles.forEach(([ow, cap], i) => { this.tiles[i].owner = ow; this.tiles[i].cap = cap; });
     this.units = o.units.map(u => ({ ...u, cargo: Array.isArray(u.cargo) ? [...u.cargo] : u.cargo ? [u.cargo] : [] }));
-    Object.assign(this, { nextId: o.nextId, power: o.power, powerOn: (o.powerOn || [0, 0, 0]).map(v => +v || 0), funds: o.funds, turn: o.turn, day: o.day, limit: o.limit, stats: o.stats });
+    Object.assign(this, { nextId: o.nextId, power: o.power, powerOn: (o.powerOn || [0, 0, 0]).map(v => +v || 0), funds: o.funds, turn: o.turn, day: o.day, limit: o.limit, stats: o.stats, wForce: o.wForce || null });
     this.events = []; this._vis = null; return this;
   }
   tile(x, y) { return x < 0 || y < 0 || x >= this.w || y >= this.h ? null : this.tiles[y * this.w + x]; }
@@ -49,18 +51,28 @@ export class Sim {
   mine(p = this.turn) { return this.units.filter(u => u.p === p && u.hp > 0); }
   props(p) { return this.tiles.filter(t => TERRAIN[t.t].prop && t.owner === p).length; }
   lv(p) { return this.powerOn[p] || 0; }
+  // ── 날씨 ──
+  get weather() { if (this.wForce) return this.wForce.w; const w = this.wPlan; return Array.isArray(w) ? w[(this.day - 1) % w.length] : w || 'clear'; }
+  get fog() { return this.fogBase || this.weather === 'rain'; }
+  set fog(v) { this.fogBase = !!v; }
+  wx(p) { return weatherProof(this.cos[p]) ? 'clear' : this.weather; }   // p 쪽이 받는 날씨
+  // 잠수·은신: 옆 칸에 상대 유닛이 있어야 보임
+  hidden(p, u) { return !!u.dive && u.p !== p && !this.units.some(o => o.p === p && !o.inside && dist(o.x, o.y, u.x, u.y) === 1); }
+  canHit(a, d) { return base(a.type, d.type) > 0 && (!d.dive || (HUNT[d.type] || []).includes(a.type)); }
+  costOf(type, p = this.turn) { return Math.round(UNITS[type].cost * coCost(this.cos[p], this.lv(p)) / 100) * 100; }
 
   // ── 안개 전장: p 가 볼 수 있는 칸 ──
   visible(p) {
-    const key = `${p}|${this.units.map(u => `${u.id}:${u.x},${u.y},${u.p},${u.inside ? 1 : 0}`).join(';')}|${this.tiles.map(t => t.owner).join('')}|${this.powerOn.join()}`;
+    const key = `${p}|${this.weather}|${this.units.map(u => `${u.id}:${u.x},${u.y},${u.p},${u.inside ? 1 : 0}`).join(';')}|${this.tiles.map(t => t.owner).join('')}|${this.powerOn.join()}`;
     if (this._vis && this._vis.key === key) return this._vis.set;
     const set = new Set(), all = !this.fog || coReveal(this.cos[p], this.lv(p));
     if (all) { for (let i = 0; i < this.tiles.length; i++) set.add(i); this._vis = { key, set }; return set; }
     this.tiles.forEach((t, i) => { if (TERRAIN[t.t].prop && t.owner === p) set.add(i); });
     for (const u of this.units) {
       if (u.p !== p || u.inside) continue;
-      let v = UNITS[u.type].vis + coVision(this.cos[p]);
+      let v = UNITS[u.type].vis + coVision(this.cos[p]) - (this.wx(p) === 'rain' ? 1 : 0);
       if (FOOT.includes(u.type) && this.tile(u.x, u.y).t === 'mountain') v += 3;
+      v = Math.max(1, v);
       for (let dy = -v; dy <= v; dy++) for (let dx = -v; dx <= v; dx++) {
         const d = Math.abs(dx) + Math.abs(dy), x = u.x + dx, y = u.y + dy, t = this.tile(x, y); if (!t || d > v) continue;
         if (TERRAIN[t.t].hide && d > 1) continue;   // 숲·암초 속은 바로 옆에서만 보임
@@ -70,18 +82,21 @@ export class Sim {
     this._vis = { key, set }; return set;
   }
   seen(p, x, y) { return this.visible(p).has(y * this.w + x); }
-  canSee(p, u) { return u.p === p || (!u.inside && this.seen(p, u.x, u.y)); }
+  canSee(p, u) { return u.p === p || (!u.inside && this.seen(p, u.x, u.y) && !this.hidden(p, u)); }
 
   // ── 이동 ──
   moveCost(u, x, y) {
     const t = this.tile(x, y); if (!t) return null;
-    return TERRAIN[t.t].cost[UNITS[u.type].mt];
+    const c = TERRAIN[t.t].cost[UNITS[u.type].mt]; if (c == null) return null;
+    // 눈: 길·다리·건물이 아닌 땅, 하늘은 1 더 (바다는 그대로)
+    if (this.wx(u.p) === 'snow' && UNITS[u.type].dom !== 'sea' && !(['road', 'bridge'].includes(t.t) || TERRAIN[t.t].prop)) return c + 1;
+    return c;
   }
-  moveOf(u) { return UNITS[u.type].move + coMove(this.cos[u.p], u.type, this.lv(u.p)); }
+  moveOf(u) { return UNITS[u.type].move + coMove(this.cos[u.p], u.type, this.lv(u.p)) - (u.dive ? 1 : 0); }
   // 갈 수 있는 칸: Map 'x,y' → { c 비용, prev } — 아군은 지나갈 수 있고, (보이는) 적은 막힘. 끝 칸은 비어 있어야 함(탑승은 됨)
   reach(u) {
     const mv = this.moveOf(u), out = new Map(), k = (x, y) => `${x},${y}`;
-    const blocks = o => o.p !== u.p && (!this.fog || this.canSee(u.p, o));   // 안개 속 적은 모르고 지나가려다 막힘(매복)
+    const blocks = o => o.p !== u.p && this.canSee(u.p, o);   // 안개 속·잠수한 적은 모르고 지나가려다 막힘(매복)
     out.set(k(u.x, u.y), { c: 0, prev: null, x: u.x, y: u.y });
     const q = [[0, u.x, u.y]];
     while (q.length) {
@@ -105,22 +120,23 @@ export class Sim {
   path(reach, x, y) { const out = []; let k = `${x},${y}`; while (k) { const v = reach.get(k); if (!v) return null; out.unshift([v.x, v.y]); k = v.prev; } return out; }
 
   // ── 공격 ──
-  rangeOf(u) { const r = UNITS[u.type].range; if (!r) return null; return [r[0], r[1] + coRange(this.cos[u.p], u.type, this.lv(u.p))]; }
+  rangeOf(u) { const r = UNITS[u.type].range; if (!r) return null; const mx = r[1] + coRange(this.cos[u.p], u.type, this.lv(u.p)) - (UNITS[u.type].indirect && this.wx(u.p) === 'sand' ? 1 : 0); return [r[0], Math.max(r[0], mx)]; }
   // fx,fy 에서 공격할 수 있는 적 (moved: 간접 유닛은 움직였으면 못 쏨 · 안개: 보이는 적만, 바로 옆은 보임)
   targets(u, fx, fy, moved) {
     const r = this.rangeOf(u); if (!r) return [];
     if (UNITS[u.type].indirect && moved) return [];
     return this.units.filter(e => {
-      if (e.p === u.p || e.hp <= 0 || e.inside || base(u.type, e.type) <= 0) return false;
+      if (e.p === u.p || e.hp <= 0 || e.inside || !this.canHit(u, e)) return false;
       const d = dist(fx, fy, e.x, e.y); if (d < r[0] || d > r[1]) return false;
+      if (e.dive) return d === 1 || this.canSee(u.p, e);
       return !this.fog || d === 1 || this.canSee(u.p, e);
     });
   }
   // 피해(내부 체력 0~100 기준): 기본 상성 × 지휘관 × 공격 체력 비율 × (1 − 지형★ × 방어 체력/100) ÷ 방어 지휘관
   calc(aType, aP, aHp, dType, dHp, dx, dy, dP) {
     const b = base(aType, dType); if (!b) return 0;
-    const stars = UNITS[dType].dom === 'air' ? 0 : TERRAIN[this.tile(dx, dy).t].def;
     const dp = dP ?? (aP === 1 ? 2 : 1);
+    const stars = UNITS[dType].dom === 'air' ? 0 : TERRAIN[this.tile(dx, dy).t].def + coStars(this.cos[dp], this.lv(dp));
     const v = TUNE.dmg * b * coAtk(this.cos[aP], aType, this.lv(aP)) * (Math.ceil(aHp / 10) / 10) * (1 - stars * Math.ceil(dHp / 10) / 100) / coDef(this.cos[dp], dType, this.lv(dp));
     return Math.max(0, Math.floor(v));
   }
@@ -128,8 +144,8 @@ export class Sim {
   forecast(u, fx, fy, e) {
     const dmg = Math.min(e.hp, this.calc(u.type, u.p, u.hp, e.type, e.hp, e.x, e.y, e.p));
     const left = e.hp - dmg; let counter = 0;
-    if (left > 0 && dist(fx, fy, e.x, e.y) === 1 && !UNITS[e.type].indirect && UNITS[e.type].range && !UNITS[u.type].indirect)
-      counter = Math.min(u.hp, this.calc(e.type, e.p, left, u.type, u.hp, fx, fy, u.p));
+    if (left > 0 && dist(fx, fy, e.x, e.y) === 1 && !UNITS[e.type].indirect && UNITS[e.type].range && !UNITS[u.type].indirect && this.canHit(e, u))
+      counter = Math.min(u.hp, Math.floor(this.calc(e.type, e.p, left, u.type, u.hp, fx, fy, u.p) * coCounter(this.cos[e.p], this.lv(e.p))));
     return { dmg, counter, kill: left <= 0, die: counter >= u.hp };
   }
 
@@ -139,7 +155,7 @@ export class Sim {
     const u = this.unit(id); if (!u || u.done || this.over) return false;
     const r = this.reach(u), v = r.get(`${x},${y}`); if (!v || !v.stop) return false;
     let path = this.path(r, x, y), trapped = null;
-    if (this.fog) {
+    {   // 안개·잠수: 길 위에 몰랐던 적이 있으면 그 앞에서 멈춤
       for (let i = 1; i < path.length; i++) {
         const o = this.unitAt(...path[i]);
         if (o && o.p !== u.p) { trapped = o; let j = i - 1; while (j > 0 && this.unitAt(...path[j]) && this.unitAt(...path[j]) !== u) j--; path = path.slice(0, j + 1); break; }
@@ -205,18 +221,20 @@ export class Sim {
     if (!tr.cargo.length || !this.unloadSpots(tr).length) this.finish(tr);
     return true;
   }
+  // 잠수(잠수함) · 은신(스텔스기) 켜고 끄기 — 대기 대신 하는 행동
+  dive(id) { const u = this.unit(id); if (!u || !UNITS[u.type].dive || u.done) return false; u.dive = !u.dive; this.finish(u); this.ev('dive', { id, on: u.dive }); return true; }
   wait(id) { const u = this.unit(id); if (!u) return false; this.finish(u); this.ev('wait', { id }); return true; }
   finish(u) { u.done = true; u.moved = false; }
   // 생산 (기지: 지상 · 비행장: 공중 · 항구: 해상) — 만든 유닛은 다음 턴부터
   canBuild(x, y, type, p = this.turn) {
     const t = this.tile(x, y); if (!t || t.owner !== p || this.unitAt(x, y) || this.noBuild.includes(p)) return false;
     const b = TERRAIN[t.t].builds; if (!b || b !== UNITS[type].dom) return false;
-    return this.funds[p] >= UNITS[type].cost;
+    return this.funds[p] >= this.costOf(type, p);
   }
   build(x, y, type) {
     if (!this.canBuild(x, y, type)) return false;
-    this.funds[this.turn] -= UNITS[type].cost; this.stats.built[this.turn]++;
-    const u = this.spawn(type, this.turn, x, y, 100, false); this.ev('build', { id: u.id, type, x, y }); return true;
+    const p = this.turn; this.funds[p] -= this.costOf(type, p); this.stats.built[p]++;
+    const u = this.spawn(type, p, x, y, 100, coInstant(this.cos[p], this.lv(p))); this.ev('build', { id: u.id, type, x, y }); return true;
   }
   // 필살기: 1 = 필살기 · 2 = 초필살기
   powerReady(p = this.turn, lvl = 1) { const co = this.cos[p]; return !!co && !this.powerOn[p] && this.power[p] >= (lvl === 2 ? COS[co].sneed : COS[co].need); }
@@ -225,6 +243,8 @@ export class Sim {
     this.power[p] = Math.max(0, this.power[p] - (lvl === 2 ? COS[co].sneed : COS[co].need)); this.powerOn[p] = lvl;
     if (co === 'scarlet') for (const e of this.units) if (e.p !== p) e.hp = Math.max(1, e.hp - (lvl === 2 ? 20 : 10));
     if (co === 'doo') for (const u of this.mine(p)) u.hp = Math.min(100, u.hp + (lvl === 2 ? 30 : 10));
+    if (co === 'yuki') { this.wForce = { w: 'snow', left: 2 }; if (lvl === 2) for (const e of this.units) if (e.p !== p) e.hp = Math.max(1, e.hp - 10); this.ev('weather', { w: 'snow', by: p }); }
+    if (co === 'hana' && lvl === 2) for (const u of this.mine(p)) u.hp = Math.min(100, u.hp + 10);
     if (co === 'marin' && lvl === 2) for (const u of this.mine(p)) if (UNITS[u.type].dom === 'sea') u.hp = Math.min(100, u.hp + 20);
     this._vis = null;
     this.ev('power', { p, co, lvl }); return true;
@@ -234,7 +254,10 @@ export class Sim {
     if (this.over) return;
     for (const u of this.mine()) { u.done = false; u.moved = false; }
     this.powerOn[this.turn] = 0;
+    const w0 = this.weather;
+    if (this.wForce && --this.wForce.left <= 0) this.wForce = null;
     this.turn = this.turn === 1 ? 2 : 1; if (this.turn === 1) this.day++;
+    if (this.weather !== w0) { this._vis = null; this.ev('weather', { w: this.weather }); }
     // 작전 기한: 마지막 날이 끝나면 전력(건물 + 유닛 가치)으로 판정
     if (this.turn === 1 && this.limit && this.day > this.limit) { const v = p => this.props(p) * 4000 + this.mine(p).reduce((a, u) => a + UNITS[u.type].cost * u.hp / 100, 0); this.over = true; this.winner = v(1) >= v(2) ? 1 : 2; this.ev('win', { p: this.winner, why: 'time' }); return; }
     this.income(this.turn);

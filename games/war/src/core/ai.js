@@ -1,7 +1,7 @@
 // 상대 AI: 다음 행동 하나씩 돌려줌 (화면이 한 동작씩 보여 줄 수 있게)
 // { kind: 'power' } · { kind: 'act', id, to, then: { kind: 'attack'|'capture'|'wait'|'unload', target, at } } · { kind: 'build', x, y, type } · { kind: 'end' }
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from './data.js?v=0.11.4';
-import { dist } from './sim.js?v=0.11.4';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base } from './data.js?v=0.12.0';
+import { dist } from './sim.js?v=0.12.0';
 
 const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.12, threat: 0.45, focus: 1.1 }, hard: { noise: 0, threat: 0.6, focus: 1.3 } };
 
@@ -9,7 +9,7 @@ const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.
 function threatMap(sim, p) {
   const m = new Map();
   for (const e of sim.units) {
-    if (e.p === p || e.inside || !UNITS[e.type].range) continue;
+    if (e.p === p || e.inside || !UNITS[e.type].range || sim.hidden(p, e)) continue;
     const r = sim.rangeOf(e), from = UNITS[e.type].indirect ? [[e.x, e.y]] : [...sim.reach(e).values()].filter(v => v.stop).map(v => [v.x, v.y]);
     const hit = new Set();
     for (const [fx, fy] of from) for (let dx = -r[1]; dx <= r[1]; dx++) for (let dy = -r[1]; dy <= r[1]; dy++) {
@@ -79,7 +79,7 @@ export class AI {
     if (ferries(u.type)) return this.ferry(sim, u);
     const U = UNITS[u.type], val = U.cost, reach = sim.reach(u), p = u.p, threat = this.cache.threat;
     const isStr = stranded(sim, u), boats = isStr ? sim.mine(p).filter(o => ferries(o.type) && fits(o.type, u) && o.cargo.length < UNITS[o.type].carry.n) : [];
-    const enemies = sim.units.filter(e => e.p !== p && !e.inside);
+    const enemies = sim.units.filter(e => e.p !== p && !e.inside && !sim.hidden(p, e));
     const enemyHQ = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => o.t.t === 'hq' && o.t.owner !== p);
     const props = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => TERRAIN[o.t.t].prop && o.t.owner !== p);
     const myHQ = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).find(o => o.t.t === 'hq' && o.t.owner === p);
@@ -134,6 +134,8 @@ export class AI {
       const spots = sim.unloadSpots(u);
       for (const [x, y] of spots) { const t = sim.tile(x, y); if (TERRAIN[t.t].prop && t.owner !== p) return { kind: 'act', id: u.id, to: [u.x, u.y], then: { kind: 'unload', at: [x, y] } }; }
     }
+    // 잠수함·스텔스기: 공격하지 않을 땐 잠수·은신 (보이지 않게)
+    if (best && U.dive && !u.dive && best.then.kind === 'wait') best.then = { kind: 'dive' };
     return best ? { kind: 'act', id: u.id, to: best.to, then: best.then } : null;
   }
 
@@ -192,26 +194,27 @@ export class AI {
     const enemies = sim.units.filter(e => e.p !== p), mine = sim.mine(p);
     const neutral = sim.tiles.filter(t => TERRAIN[t.t].prop && t.owner === 0).length;
     const caps = mine.filter(u => UNITS[u.type].capture).length;
+    const hasGround = sim.tiles.some(t => t.owner === p && TERRAIN[t.t].builds === 'ground');
     for (const o of spots) {
       const kind = TERRAIN[o.t.t].builds, funds = sim.funds[p];
       // 헬기가 많은데 대공포차가 모자라면 돈을 모아 대공포차부터
       const air = enemies.filter(e => UNITS[e.type].air).length, myAA = mine.filter(u => u.type === 'aa').length;
-      if (kind === 'ground' && air >= 2 && myAA < Math.ceil(air / 2)) { if (funds >= UNITS.aa.cost) return { kind: 'build', x: o.x, y: o.y, type: 'aa' }; continue; }
+      if (kind === 'ground' && air >= 2 && myAA < Math.ceil(air / 2)) { if (funds >= sim.costOf('aa', p)) return { kind: 'build', x: o.x, y: o.y, type: 'aa' }; continue; }
       // 섬에 갇힌 아군이 있으면 수송 유닛 (한 종류당 최대 2척)
       const ft = UNIT_ORDER.find(t => ferries(t) && UNITS[t].dom === kind);
       if (ft) {
         const str = mine.filter(u => fits(ft, u) && stranded(sim, u)).length, have = mine.filter(u => u.type === ft).length;
-        if (str && have < Math.min(2, Math.ceil(str / UNITS[ft].carry.n))) { if (funds >= UNITS[ft].cost) return { kind: 'build', x: o.x, y: o.y, type: ft }; if (kind === 'sea') continue; }
+        if (str && have < Math.min(2, Math.ceil(str / UNITS[ft].carry.n))) { if (funds >= sim.costOf(ft, p)) return { kind: 'build', x: o.x, y: o.y, type: ft }; if (kind === 'sea') continue; }
       }
       // 갇힌 땅의 기지: 이미 많이 쌓였으면 수송비를 모음
       if (kind === 'ground') { const fake = { type: 'inf', p, x: o.x, y: o.y }; if (stranded(sim, fake) && mine.filter(u => stranded(sim, u)).length >= 4) continue; }
-      const opts = UNIT_ORDER.filter(t => UNITS[t].dom === kind && UNITS[t].cost <= funds && UNITS[t].range);
+      const opts = UNIT_ORDER.filter(t => UNITS[t].dom === kind && sim.costOf(t, p) <= funds && UNITS[t].range);
       if (!opts.length) continue;
       let pick = null, bs = -1e9;
       const needCap = (caps < Math.min(4, neutral + 2) && sim.day < 10) || caps < 2;
       const aaN = enemies.filter(e => e.type === 'aa' || e.type === 'cruiser' || e.type === 'fighter').length, myAir = mine.filter(u => UNITS[u.type].air && UNITS[u.type].range).length;
       for (const t of opts) {
-        if (UNITS[t].air && UNITS[t].range && aaN >= 2 && myAir >= 2) continue;   // 대공이 많으면 공중 유닛은 그만
+        if (UNITS[t].air && UNITS[t].range && aaN >= 2 && myAir >= 2 && hasGround) continue;   // 대공이 많으면 공중 유닛은 그만 (기지가 있을 때)
         // 상성 효율 (상대 유닛 평균) + 돈을 쓰려는 성향 (비싼 유닛 선호) + 필요하면 점령병
         let eff = 0;
         for (const e of enemies) eff += base(t, e.type) * UNITS[e.type].cost / 100 - base(e.type, t) * UNITS[t].cost / 100 * 0.5;
@@ -225,7 +228,7 @@ export class AI {
         if (s > bs) { bs = s; pick = t; }
       }
       // 돈이 적게 남으면 보병으로 채움
-      if (pick && UNITS[pick].cost <= funds) return { kind: 'build', x: o.x, y: o.y, type: pick };
+      if (pick && sim.costOf(pick, p) <= funds) return { kind: 'build', x: o.x, y: o.y, type: pick };
     }
     return null;
   }
@@ -241,6 +244,7 @@ export function apply(sim, a) {
     const t = a.then;
     if (t.kind === 'attack') { if (!sim.attack(a.id, t.target)) sim.wait(a.id); }
     else if (t.kind === 'capture') { if (!sim.capture(a.id)) sim.wait(a.id); }
+    else if (t.kind === 'dive') { if (!sim.dive(a.id)) sim.wait(a.id); }
     else if (t.kind === 'unload') { if (!sim.unload(a.id, t.at[0], t.at[1])) sim.wait(a.id); }
     else sim.wait(a.id);
     return true;

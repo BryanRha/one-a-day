@@ -15,34 +15,36 @@ export const UNITS = {
   truck:      { name: '보급트럭', cost: 5000,  move: 6, mt: 'tire',  dom: 'ground', vis: 1, range: null, carry: { n: 1, what: 'foot' }, desc: '보병 1명 수송 · 옆 아군 매 턴 수리' },
   fighter:    { name: '전투기',   cost: 20000, move: 9, mt: 'air',   dom: 'air',    vis: 2, range: [1, 1], air: true, desc: '하늘의 왕 · 공중 유닛만 공격' },
   bomber:     { name: '폭격기',   cost: 22000, move: 7, mt: 'air',   dom: 'air',    vis: 2, range: [1, 1], air: true, desc: '지상·해상에 강력한 폭격' },
+  stealth:    { name: '스텔스기', cost: 24000, move: 6, mt: 'air',   dom: 'air',    vis: 4, range: [1, 1], air: true, dive: true, desc: '무엇이든 공격 · 은신하면 옆 칸에서만 보여요' },
   tcopter:    { name: '수송헬기', cost: 5000,  move: 6, mt: 'air',   dom: 'air',    vis: 2, range: null, air: true, carry: { n: 1, what: 'foot' }, desc: '보병 1명을 태우고 날아요' },
   battleship: { name: '전함',     cost: 28000, move: 5, mt: 'sea',   dom: 'sea',    vis: 2, range: [2, 6], indirect: true, desc: '바다의 대포 · 이동한 턴엔 못 쏴요' },
   cruiser:    { name: '순양함',   cost: 18000, move: 6, mt: 'sea',   dom: 'sea',    vis: 3, range: [1, 1], desc: '항공기와 잠수함 사냥' },
   lander:     { name: '상륙정',   cost: 12000, move: 6, mt: 'lander', dom: 'sea',   vis: 1, range: null, carry: { n: 2, what: 'ground' }, desc: '지상 유닛 2기 수송 · 해안에 상륙' },
-  sub:        { name: '잠수함',   cost: 20000, move: 5, mt: 'sea',   dom: 'sea',    vis: 5, range: [1, 1], desc: '함선 사냥꾼 · 멀리 봐요' },
+  sub:        { name: '잠수함',   cost: 20000, move: 5, mt: 'sea',   dom: 'sea',    vis: 5, range: [1, 1], dive: true, desc: '함선 사냥꾼 · 잠수하면 옆 칸에서만 보여요' },
 };
 export const UNIT_ORDER = Object.keys(UNITS);
 export const GROUND = UNIT_ORDER.filter(u => UNITS[u].dom === 'ground');
 export const FOOT = ['inf', 'bazooka'];
 
 // 기본 피해(%) — 공격자 → 방어자 (원작 상성 구조를 단순화)
-const T = ['inf', 'bazooka', 'recon', 'ltank', 'htank', 'arty', 'rocket', 'aa', 'heli', 'truck', 'fighter', 'bomber', 'tcopter', 'battleship', 'cruiser', 'lander', 'sub'];
+const T = ['inf', 'bazooka', 'recon', 'ltank', 'htank', 'arty', 'rocket', 'aa', 'heli', 'truck', 'fighter', 'bomber', 'tcopter', 'battleship', 'cruiser', 'lander', 'sub', 'stealth'];
 const TABLE = {
-  //          inf  baz  rec  ltk  htk  art  rkt  aa   heli trk  ftr  bmb  tcp  bshp crs  lnd  sub
-  inf:        [55,  45,  12,  5,   1,   15,  25,  5,   7,   14,  0,   0,   30,  0,   0,   0,   0],
-  bazooka:    [65,  55,  85,  55,  15,  70,  85,  65,  9,   75,  0,   0,   12,  0,   0,   0,   0],
-  recon:      [70,  65,  35,  6,   1,   45,  55,  4,   10,  45,  0,   0,   35,  0,   0,   0,   0],
-  ltank:      [75,  70,  85,  55,  15,  70,  85,  65,  10,  75,  0,   0,   40,  1,   5,   10,  1],
-  htank:      [105, 95,  105, 85,  55,  105, 105, 105, 12,  105, 0,   0,   45,  10,  30,  35,  10],
-  arty:       [90,  85,  80,  70,  45,  75,  80,  75,  0,   70,  0,   0,   0,   40,  50,  55,  60],
-  rocket:     [95,  90,  90,  80,  55,  80,  85,  85,  0,   80,  0,   0,   0,   55,  60,  60,  85],
-  aa:         [105, 105, 60,  25,  10,  50,  55,  45,  120, 50,  65,  75,  120, 0,   0,   0,   0],
-  heli:       [75,  65,  55,  55,  25,  65,  65,  25,  65,  60,  0,   0,   95,  25,  55,  25,  25],
-  fighter:    [0,   0,   0,   0,   0,   0,   0,   0,   100, 0,   55,  100, 100, 0,   0,   0,   0],
-  bomber:     [110, 110, 105, 105, 95,  105, 105, 95,  0,   105, 0,   0,   0,   75,  85,  95,  95],
-  battleship: [95,  90,  90,  85,  55,  80,  85,  85,  0,   80,  0,   0,   0,   50,  95,  95,  95],
-  cruiser:    [0,   0,   0,   0,   0,   0,   0,   0,   115, 0,   55,  65,  115, 5,   25,  25,  90],
-  sub:        [0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   55,  25,  95,  55],
+  //          inf  baz  rec  ltk  htk  art  rkt  aa   heli trk  ftr  bmb  tcp  bshp crs  lnd  sub  stl
+  inf:        [55,  45,  12,  5,   1,   15,  25,  5,   7,   14,  0,   0,   30,  0,   0,   0,   0,  0],
+  bazooka:    [65,  55,  85,  55,  15,  70,  85,  65,  9,   75,  0,   0,   12,  0,   0,   0,   0,  0],
+  recon:      [70,  65,  35,  6,   1,   45,  55,  4,   10,  45,  0,   0,   35,  0,   0,   0,   0,  0],
+  ltank:      [75,  70,  85,  55,  15,  70,  85,  65,  10,  75,  0,   0,   40,  1,   5,   10,  1,  0],
+  htank:      [105, 95,  105, 85,  55,  105, 105, 105, 12,  105, 0,   0,   45,  10,  30,  35,  10,  0],
+  arty:       [90,  85,  80,  70,  45,  75,  80,  75,  0,   70,  0,   0,   0,   40,  50,  55,  60,  0],
+  rocket:     [95,  90,  90,  80,  55,  80,  85,  85,  0,   80,  0,   0,   0,   55,  60,  60,  85,  0],
+  aa:         [105, 105, 60,  25,  10,  50,  55,  45,  120, 50,  65,  75,  120, 0,   0,   0,   0,  60],
+  heli:       [75,  65,  55,  55,  25,  65,  65,  25,  65,  60,  0,   0,   95,  25,  55,  25,  25,  0],
+  fighter:    [0,   0,   0,   0,   0,   0,   0,   0,   100, 0,   55,  100, 100, 0,   0,   0,   0,  85],
+  bomber:     [110, 110, 105, 105, 95,  105, 105, 95,  0,   105, 0,   0,   0,   75,  85,  95,  95,  0],
+  battleship: [95,  90,  90,  85,  55,  80,  85,  85,  0,   80,  0,   0,   0,   50,  95,  95,  95,  0],
+  cruiser:    [0,   0,   0,   0,   0,   0,   0,   0,   115, 0,   55,  65,  115, 5,   25,  25,  90,  45],
+  sub:        [0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   55,  25,  95,  55,  0],
+  stealth:    [90,  85,  85,  75,  70,  85,  85,  50,  85,  85,  45,  70,  95,  45,  35,  65,  55,  55],
 };
 export const base = (a, d) => (TABLE[a] ? TABLE[a][T.indexOf(d)] : 0) || 0;
 
@@ -71,7 +73,7 @@ export const INCOME = 1000, CAPTURE = 20;
 // 수리되는 건물: 지상 = 도시·기지·본부 · 공중 = 비행장 · 해상 = 항구
 export const repairsAt = (dom, t) => (dom === 'air' ? t === 'air' : dom === 'sea' ? t === 'port' : ['city', 'base', 'hq'].includes(t));
 
-// 지휘관 8명: 특성 + 필살기(1단계) + 초필살기(2단계, 게이지가 더 차야 함)
+// 지휘관 12명: 특성 + 필살기(1단계) + 초필살기(2단계, 게이지가 더 차야 함)
 export const COS = {
   ella:    { name: '엘라',   title: '전차대장',   color: 0x4F8BFF, desc: '전차·정찰차·대공 공격 +15%', power: '강철 돌격', pdesc: '차량 이동 +1 · 공격 +20%', superp: '전차 군단', sdesc: '차량 이동 +2 · 공격 +40% · 방어 +10%', need: 27000, sneed: 50000 },
   viktor:  { name: '빅터',   title: '포병 참모',  color: 0x6AA0E8, desc: '야포·로켓포·전함 사거리 +1', power: '일제 포격', pdesc: '원거리 공격 +30% · 사거리 +1 더', superp: '포격 지옥', sdesc: '원거리 공격 +50% · 사거리 +2 더', need: 27000, sneed: 50000 },
@@ -80,6 +82,10 @@ export const COS = {
   sora:    { name: '소라',   title: '에이스 조종사', color: 0x7FB8FF, desc: '공중 유닛 공격 +15%', power: '편대 비행', pdesc: '공중 이동 +1 · 공격 +25%', superp: '하늘의 지배자', sdesc: '공중 이동 +2 · 공격 +45%', need: 27000, sneed: 50000 },
   doo:     { name: '두',     title: '철벽 방어대장', color: 0x5A9AD8, desc: '모든 유닛 방어 +15%', power: '방어 진지', pdesc: '방어 +30% · 아군 체력 +1', superp: '불굴의 요새', sdesc: '방어 +50% · 아군 체력 +3', need: 24000, sneed: 45000 },
   iris:    { name: '아이리스', title: '정보 장교', color: 0x8FC8FF, desc: '안개 전장 시야 +1 · 공격 +5%', power: '정찰 위성', pdesc: '1턴 동안 지도 전체가 보임 · 공격 +15%', superp: '전장 장악', sdesc: '지도 전체가 보임 · 공격 +25% · 이동 +1', need: 22000, sneed: 42000 },
+  yuki:    { name: '유키',   title: '기상 장교',  color: 0xA8D8FF, desc: '날씨 영향을 받지 않아요', power: '눈보라', pdesc: '상대 턴까지 눈이 내림 · 공격 +10%', superp: '혹한', sdesc: '상대 턴까지 눈 · 상대 체력 -1 · 공격 +20%', need: 24000, sneed: 46000 },
+  hana:    { name: '하나',   title: '보급 장교',  color: 0x6FC0A0, desc: '유닛 생산비 -10%', power: '긴급 동원', pdesc: '생산비 -40% · 만든 유닛 바로 행동', superp: '총동원', sdesc: '생산비 -50% · 바로 행동 · 아군 체력 +1', need: 22000, sneed: 44000 },
+  leon:    { name: '레온',   title: '기동 사령관', color: 0x58A8F0, desc: '바퀴 유닛(정찰차·로켓포·트럭) 이동 +1', power: '전격전', pdesc: '지상 유닛 이동 +1', superp: '번개 작전', sdesc: '지상 유닛 이동 +2 · 공격 +20%', need: 24000, sneed: 46000 },
+  kai:     { name: '카이',   title: '공병 대장',  color: 0x7A9AB8, desc: '지형 방어 별 +1 (공중 제외)', power: '참호 구축', pdesc: '지형 별 +1 더 · 방어 +10%', superp: '철옹성', sdesc: '지형 별 +2 더 · 방어 +20% · 반격 +30%', need: 26000, sneed: 48000 },
   scarlet: { name: '스칼렛', title: '붉은 장군',  color: 0xE0453C, desc: '모든 유닛 공격 +10%', power: '붉은 폭풍', pdesc: '상대 유닛 체력 -1 · 공격 +15%', superp: '붉은 해일', sdesc: '상대 유닛 체력 -2 · 공격 +30%', need: 32000, sneed: 60000 },
 };
 const VEH = ['recon', 'ltank', 'htank', 'aa'];
@@ -94,6 +100,8 @@ export function coAtk(co, type, lv = 0) {
   if (co === 'sora') { if (U.dom === 'air') m += 0.15 + (lv === 2 ? 0.45 : lv ? 0.25 : 0); }
   if (co === 'iris') { m += 0.05 + (lv === 2 ? 0.25 : lv ? 0.15 : 0); }
   if (co === 'scarlet') { m += 0.1 + (lv === 2 ? 0.3 : lv ? 0.15 : 0); }
+  if (co === 'yuki') m += lv === 2 ? 0.2 : lv ? 0.1 : 0;
+  if (co === 'leon' && lv === 2 && UNITS[type].dom === 'ground') m += 0.2;
   return m;
 }
 // 방어 배율 (피해를 이 값으로 나눔)
@@ -101,9 +109,11 @@ export function coDef(co, type, lv = 0) {
   let m = 1;
   if (co === 'doo') m += 0.15 + (lv === 2 ? 0.5 : lv ? 0.3 : 0);
   if (co === 'ella' && lv === 2 && isVeh(type)) m += 0.1;
+  if (co === 'kai') m += lv === 2 ? 0.2 : lv ? 0.1 : 0;
   return m;
 }
 export function coMove(co, type, lv = 0) {
+  if (co === 'leon') { const g = UNITS[type].dom === 'ground'; return (['recon', 'rocket', 'truck'].includes(type) ? 1 : 0) + (g && lv ? (lv === 2 ? 2 : 1) : 0); }
   if (!lv) return 0; const U = UNITS[type], k = lv === 2 ? 2 : 1;
   if (co === 'ella' && isVeh(type)) return k;
   if (co === 'jun' && FOOT.includes(type)) return k;
@@ -116,3 +126,20 @@ export function coRange(co, type, lv = 0) { if (co !== 'viktor' || !UNITS[type].
 export const coCapture = (co, lv = 0) => (co === 'jun' ? (lv === 2 ? 2 : 1.5) : 1);
 export const coVision = (co) => (co === 'iris' ? 1 : 0);
 export const coReveal = (co, lv) => co === 'iris' && lv > 0;
+
+// 새 지휘관 특성
+export const coStars = (co, lv = 0) => (co === 'kai' ? 1 + (lv === 2 ? 2 : lv ? 1 : 0) : 0);        // 지형 방어 별 더
+export const coCost = (co, lv = 0) => (co === 'hana' ? (lv === 2 ? 0.5 : lv ? 0.6 : 0.9) : 1);        // 생산비 배율
+export const coInstant = (co, lv = 0) => co === 'hana' && lv > 0;                                    // 만든 유닛 바로 행동
+export const coCounter = (co, lv = 0) => (co === 'kai' && lv === 2 ? 1.3 : 1);                       // 반격 피해 배율
+export const weatherProof = co => co === 'yuki';
+
+// 날씨: 지도마다 고정 또는 날짜별 순환 (map.weather: 'snow' | ['clear', 'rain', ...])
+export const WEATHER = {
+  clear: { name: '맑음', desc: '' },
+  rain:  { name: '비',   desc: '안개 전장이 돼요 · 시야 -1' },
+  snow:  { name: '눈',   desc: '지상 이동 비용 +1 (길·다리·건물 제외) · 공중 이동 비용 +1' },
+  sand:  { name: '모래폭풍', desc: '원거리 사거리 -1' },
+};
+// 잠수함(잠수) · 스텔스기(은신) 을 때릴 수 있는 유닛
+export const HUNT = { sub: ['sub', 'cruiser'], stealth: ['fighter', 'stealth'] };

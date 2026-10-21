@@ -1,12 +1,12 @@
 // 작전 준비: 캠페인 작전 고르기 · 지도 미리보기 · 지휘관 고르기 · (자유 대전) 지도·난이도·AI/2인 대전·내 지도
-import { W, H } from '../config.js?v=0.11.4';
-import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.11.4';
-import { audio } from '../audio.js?v=0.11.4';
-import { load, save } from '../save.js?v=0.11.4';
-import * as M from '../meta.js?v=0.11.4';
-import { COS } from '../core/data.js?v=0.11.4';
-import { MAPS, campaignMap } from '../core/maps.js?v=0.11.4';
-import { Sim } from '../core/sim.js?v=0.11.4';
+import { W, H } from '../config.js?v=0.12.0';
+import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.12.0';
+import { audio } from '../audio.js?v=0.12.0';
+import { load, save } from '../save.js?v=0.12.0';
+import * as M from '../meta.js?v=0.12.0';
+import { COS, WEATHER } from '../core/data.js?v=0.12.0';
+import { MAPS, campaignMap } from '../core/maps.js?v=0.12.0';
+import { Sim } from '../core/sim.js?v=0.12.0';
 
 const LV = { easy: '쉬움', normal: '보통', hard: '어려움' };
 const TCOL = { plain: 0x8DB05A, farm: 0x9BB45A, wheat: 0xD8B85A, forest: 0x3E7A34, mountain: 0x9A8C78, road: 0xC8A878, bridge: 0xB0A090, river: 0x4A9AD8, beach: 0xE8D8A0, sea: 0x2A6AB0, reef: 0x3A7A90, trench: 0x8A7A50 };
@@ -32,14 +32,14 @@ export class BriefScene extends Phaser.Scene {
     if (this.mode !== 'daily') {
       const list = this.mode === 'campaign' ? M.STAGES.map(s => ({ id: s.id, label: `${s.n}`, open: M.stageOpen(M.STAGES.indexOf(s)), stars: d.stars[s.id] || 0 }))
         : [...M.STAGES.filter((s, i) => M.stageOpen(i)).map(s => ({ id: s.id, label: `${s.n}`, open: true })), ...customMaps().map((m, i) => ({ id: `c${i}`, custom: m, label: `내${i + 1}`, open: true }))];
-      const per = 8, w = (W - 60 - (per - 1) * 10) / per;
+      const per = list.length > 16 ? 9 : 8, w = (W - 60 - (per - 1) * 10) / per, rh = list.length > 16 ? 100 : 112;
       list.forEach((it, i) => {
-        const x = 30 + w / 2 + (i % per) * (w + 10), yy = y + 46 + Math.floor(i / per) * 112;
+        const x = 30 + w / 2 + (i % per) * (w + 10), yy = y + 46 + Math.floor(i / per) * rh;
         const on = it.custom ? !!this.custom && this.custom.name === it.custom.name : !this.custom && it.id === this.mapId;
-        btn(this, x, yy, w, 84, it.open ? it.label : '잠김', () => { if (!it.open) return toast(this, '앞 작전을 먼저 이겨요', C.sub); this.restart(it.custom ? { mapId: null, custom: it.custom } : { mapId: it.id, custom: null }); }, { style: on ? 'gold' : it.open ? 'olive' : 'ghost', size: it.label.length > 2 ? 26 : 34 });
-        if (this.mode === 'campaign') T(this, x, yy + 50, '★'.repeat(it.stars) + '☆'.repeat(3 - it.stars), 18, C.gold, { w: 900, shadow: false });
+        btn(this, x, yy, w, rh - 28, it.open ? it.label : '잠김', () => { if (!it.open) return toast(this, '앞 작전을 먼저 이겨요', C.sub); this.restart(it.custom ? { mapId: null, custom: it.custom } : { mapId: it.id, custom: null }); }, { style: on ? 'gold' : it.open ? 'olive' : 'ghost', size: it.label.length > 2 ? 26 : 34 });
+        if (this.mode === 'campaign') T(this, x, yy + rh / 2 - 6, '★'.repeat(it.stars) + '☆'.repeat(3 - it.stars), 18, C.gold, { w: 900, shadow: false });
       });
-      y += 46 + Math.ceil(list.length / per) * 112 + 6;
+      y += 46 + Math.ceil(list.length / per) * rh + 6;
     }
     const map = this.custom || MAPS.find(m => m.id === this.mapId), st = this.custom ? null : M.STAGES.find(s => s.id === this.mapId);
     this.ai = this.mode === 'campaign' ? st.ai : this.mode === 'daily' ? 'hard' : this.level;
@@ -48,7 +48,8 @@ export class BriefScene extends Phaser.Scene {
     this.add.existing(panel(this, W / 2, py, 1000, ph, { tone: 'paper' }));
     T(this, 70, y + 50, this.custom ? `내 지도 · ${map.name}` : `${st.n}. ${map.name}`, 38, '#2B2416', { ox: 0, w: 900, shadow: false });
     T(this, 70, y + 96, this.custom ? '직접 만든 지도' : map.desc, 23, '#4A3E1E', { ox: 0, w: 800, shadow: false, wrap: 520 });
-    const tags = [map.fog ? '안개 전장' : '', this.mode !== 'free' && map.camp && map.camp.noBuild ? '적은 생산 못 함' : '', this.versus ? '2인 대전' : `적 ${LV[this.ai]}`].filter(Boolean).join(' · ');
+    const wPlan = map.weather, wName = !wPlan ? '' : Array.isArray(wPlan) ? '날씨 ' + [...new Set(wPlan)].map(w => WEATHER[w].name).join('·') : '날씨 ' + WEATHER[wPlan].name;
+    const tags = [map.fog ? '안개 전장' : '', wName, this.mode !== 'free' && map.camp && map.camp.noBuild ? '적은 생산 못 함' : '', this.versus ? '2인 대전' : `적 ${LV[this.ai]}`].filter(Boolean).join(' · ');
     if (this.mode !== 'free') T(this, 70, y + 150, `별 ★ 승리 · ★ ${map.par}일 안 · ★ 손실 ${M.lossCap(map.par)}기 이하`, 23, '#7A5A10', { ox: 0, w: 800, shadow: false, wrap: 540 });
     T(this, 70, y + 196, tags, 23, map.fog ? '#5A3A8A' : '#6B5A2A', { ox: 0, w: 800, shadow: false });
     if (this.mode === 'campaign') { const best = d.bestDays[map.id]; T(this, 70, y + 240, best ? `최단 승리 ${best}일` : st.unlockCo && !d.cos[st.unlockCo] ? `승리 보상 · 지휘관 ${COS[st.unlockCo].name} 합류` : '', 23, '#2F6A18', { ox: 0, w: 800, shadow: false }); }
@@ -63,14 +64,14 @@ export class BriefScene extends Phaser.Scene {
       y += 100;
       if (!this.versus) { ['easy', 'normal', 'hard'].forEach((l, i) => btn(this, W / 2 + (i - 1) * 320, y + 34, 300, 76, LV[l], () => { d.level = l; save(); this.restart({ level: l }); }, { style: this.level === l ? 'olive' : 'ghost', size: 28 })); y += 92; }
     }
-    // 지휘관 (한 줄에 8명)
+    // 지휘관 (한 줄 · 많으면 작게)
     this.co = this.versus && data.co1 ? data.co1 : d.cos[d.co] ? d.co : 'ella';
     this.co2 = data.co2 || 'scarlet';
     const row = (yy, label, cur, all, pick, col) => {
       T(this, 40, yy, label, 28, C.text, { ox: 0, w: 900 });
-      const keys = Object.keys(COS).filter(k => all || d.cos[k]), sz = 112;
+      const keys = Object.keys(COS).filter(k => all || d.cos[k]), step = Math.min(124, (W - 80) / Math.max(8, keys.length)), sz = step - 10;
       keys.forEach((k, i) => {
-        const x = 40 + sz / 2 + i * (sz + 12), cy = yy + 92, on = k === cur;
+        const x = 40 + step / 2 + i * step, cy = yy + 92, on = k === cur;
         const fr = this.add.image(x, cy, `co_${k}`); fr.setScale((sz + 30) / fr.height);
         const m = this.make.graphics(); m.fillRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16); fr.setMask(m.createGeometryMask());
         this.add.graphics().lineStyle(on ? 6 : 2, on ? col : 0x6E7A40, 1).strokeRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16);

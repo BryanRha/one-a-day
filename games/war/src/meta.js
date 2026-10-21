@@ -1,6 +1,6 @@
 // 진행 · 재방문: 계급(경험치) · 캠페인 별 · 지휘관 해금 · 연속 출석 · 오늘의 미션 · 오늘의 작전
-import { load, save } from './save.js?v=0.11.4';
-import { MAPS } from './core/maps.js?v=0.11.4';
+import { load, save } from './save.js?v=0.12.0';
+import { MAPS } from './core/maps.js?v=0.12.0';
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
@@ -16,7 +16,7 @@ export function rank() {
 export function addXp(n) { const before = rank().k; load().xp += n; save(); const after = rank().k; return after > before ? RANKS[after] : null; }
 
 // ── 캠페인 ──
-export const STAGES = MAPS.map((m, i) => ({ ...m, n: i + 1, ai: ['easy', 'easy', 'normal', 'normal', 'hard', 'normal', 'normal', 'normal', 'normal', 'normal', 'hard', 'hard', 'normal', 'normal', 'hard'][i] || 'hard', unlockCo: { m2: 'viktor', m3: 'jun', m5: 'scarlet', m7: 'marin', m8: 'sora', m9: 'iris', m12: 'doo' }[m.id] }));
+export const STAGES = MAPS.map((m, i) => ({ ...m, n: i + 1, ai: ['easy', 'easy', 'normal', 'normal', 'hard', 'normal', 'normal', 'normal', 'normal', 'normal', 'hard', 'hard', 'normal', 'normal', 'hard', 'normal', 'normal', 'normal', 'hard', 'normal', 'hard', 'normal', 'hard', 'hard', 'hard'][i] || 'hard', unlockCo: { m2: 'viktor', m3: 'jun', m5: 'scarlet', m7: 'marin', m8: 'sora', m9: 'iris', m12: 'doo', m17: 'yuki', m19: 'hana', m21: 'leon', m23: 'kai' }[m.id] }));
 export const stageOpen = i => i === 0 || (load().stars[STAGES[i - 1].id] || 0) > 0;
 export const totalStars = () => Object.values(load().stars).reduce((a, b) => a + b, 0);
 // 별: 승리 1 · 기준 일수 안 1 · 잃은 유닛 (기준 일수/4)기 이하 1 — 뒤 작전일수록 손실 허용이 조금 늘어남

@@ -1,10 +1,10 @@
 // 홈: 계급 · 캠페인 · 오늘의 작전 · 자유 대전 · 지휘관 · 오늘의 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.11.4';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.11.4';
-import { audio } from '../audio.js?v=0.11.4';
-import { load } from '../save.js?v=0.11.4';
-import * as M from '../meta.js?v=0.11.4';
-import { COS } from '../core/data.js?v=0.11.4';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.12.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.12.0';
+import { audio } from '../audio.js?v=0.12.0';
+import { load } from '../save.js?v=0.12.0';
+import * as M from '../meta.js?v=0.12.0';
+import { COS } from '../core/data.js?v=0.12.0';
 
 // 계급장: 이병~병장 갈매기 · 부사관 · 장교 다이아 · 장성 별
 export function insignia(scene, x, y, k, s = 1) {
@@ -75,11 +75,11 @@ export class HomeScene extends Phaser.Scene {
     y += 290 + sp;
     T(this, 50, y - 110, `지휘관 ${Object.keys(COS).filter(k => d.cos[k]).length}/${Object.keys(COS).length}`, 34, C.text, { ox: 0, w: 900 });
     Object.keys(COS).forEach((k, i) => {
-      const sz = 112, x = 40 + sz / 2 + i * (sz + 12), cy = y - 10, own = d.cos[k];
+      const n = Object.keys(COS).length, step = Math.min(124, (W - 80) / n), sz = step - 10, x = 40 + step / 2 + i * step, cy = y - 10, own = d.cos[k];   // 지휘관이 늘면 한 줄에 맞게 작아짐
       const fr = this.add.image(x, cy, `co_${k}`); fr.setScale((sz + 30) / fr.height); if (!own) fr.setTint(0x333333);
       const m = this.make.graphics(); m.fillRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16); fr.setMask(m.createGeometryMask());
       this.add.graphics().lineStyle(3, own ? COS[k].color : 0x555544, 1).strokeRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16);
-      T(this, x, cy + 80, own ? COS[k].name : '잠김', 22, own ? C.text : C.dim, { w: 900 });
+      T(this, x, cy + sz / 2 + 24, own ? COS[k].name : '잠김', sz < 100 ? 19 : 22, own ? C.text : C.dim, { w: 900 });
       const z = this.add.zone(x, cy, sz, sz).setInteractive({ useHandCursor: true }); z.on('pointerup', () => this.coInfo(k));
     });
     // 미션
@@ -107,7 +107,7 @@ export class HomeScene extends Phaser.Scene {
     p.content.add(T(this, 40, 36, co.sdesc, 22, C.text, { ox: 0, w: 800, wrap: 380 }));
     const st = M.STAGES.find(s => s.unlockCo === k);
     if (!own) p.content.add(T(this, 40, 130, st ? `캠페인 ${st.n}. ${st.name} 승리로 합류` : '', 26, C.sub, { ox: 0, w: 800, wrap: 380 }));
-    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.11.4').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
+    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.12.0').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
   }
   drawMissions() {
     if (this.mBox) this.mBox.destroy();
@@ -126,7 +126,7 @@ export class HomeScene extends Phaser.Scene {
   settings() {
     const d = load(), pop = popup(this, '설정', 760, 620);
     const row = (y, label, on, fn) => { pop.content.add(T(this, -260, y, label, 40, C.text, { ox: 0 })); const b = btn(this, 200, y, 220, 96, on ? '켜짐' : '꺼짐', () => { fn(); b.setLabel(b.label.text === '켜짐' ? '꺼짐' : '켜짐'); }, { style: on ? 'green' : 'ghost', size: 34 }); pop.content.add(b); };
-    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.11.4').then(m => m.save()); });
+    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.12.0').then(m => m.save()); });
   }
   go(k, data) { audio.stopMusic(); this.cameras.main.fadeOut(220, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(k, data)); }
 }

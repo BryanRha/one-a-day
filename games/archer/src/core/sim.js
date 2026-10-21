@@ -1,6 +1,6 @@
 // 전투 규칙 (화면과 무관): 방 · 영웅 이동/자동 사격 · 화살 · 몬스터 AI · 적 탄 · 능력 · 레벨업
 // 좌표는 방 안의 픽셀 (가로 AW × 세로 AH). 한 칸 = CELL.
-import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR } from './data.js?v=0.17.1';
+import { HEROES, SKILLS, SKILL_KEYS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR } from './data.js?v=0.17.2';
 
 export const CELL = 120, COLS = 9, ROWS = 16, AW = CELL * COLS, AH = CELL * ROWS;   // 세로 화면에 맞춘 방 (9 × 16)
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -69,11 +69,12 @@ export class Sim {
   free(x, y) { const cx = Math.floor(x / CELL), cy = Math.floor(y / CELL); return cx >= 0 && cy >= 0 && cx < COLS && cy < ROWS && this.grid[cy][cx] === 0; }
   nextWave() { this.wave++; this.waveT = 18; this.spawnWave(); this.ev('wave', { n: this.wave, of: this.waves }); }
   spawnWave() {
-    const n = 3 + Math.floor(this.room / 3) + Math.floor(this.R() * 2) + (this.wave > 1 ? 1 : 0), list = this.ch.mons;
+    // 원작 2처럼 첫 웨이브부터 여럿이 섞여 나옴 (근접·원거리·돌진) · 뒤쪽 방은 이전과 비슷
+    const n = 4 + Math.floor(this.room / 4) + Math.floor(this.R() * 2) + (this.wave > 1 ? 1 : 0), list = this.ch.mons;
     const pool = this.room < 4 ? list.slice(0, 2) : this.room < 8 ? list.slice(0, 3) : list;
     for (let i = 0; i < n; i++) {
       let x, y, k = 0; do { x = CELL * (0.7 + this.R() * (COLS - 1.4)); y = CELL * (1 + this.R() * (ROWS * 0.6)); k++; } while ((!this.free(x, y) || d2({ x, y }, this.p) < 500 ** 2) && k < 40);
-      this.addMon(pool[Math.floor(this.R() * pool.length)], x, y);
+      this.addMon(this.room < 4 && i === 0 ? list[2] : pool[Math.floor(this.R() * pool.length)], x, y);   // 처음 방들도 세 번째 몬스터 하나 섞음
     }
   }
   // 막힌 칸이면 가장 가까운 빈 칸 가운데로
@@ -228,7 +229,7 @@ export class Sim {
   addXp(v) { this.xp += v; while (this.xp >= this.xpNeed()) { this.xp -= this.xpNeed(); this.lvl++; this.ev('levelup', { lvl: this.lvl }); } }
   // ── 몬스터 행동 ──
   moveMons(dt) {
-    const p = this.p, dmgMul = this.ch.dmgMul;
+    const p = this.p, dmgMul = this.ch.dmgMul * (0.6 + 0.4 * Math.min(1, (this.room - 1) / 8));   // 장 초반 방은 공격이 약하다가 9번 방부터 제 세기
     for (const m of [...this.mons]) {
       const M = m.boss ? BOSSES[m.type] : MONS[m.type], slow = m.slow > 0 ? 0.5 : 1;
       m.slow = Math.max(0, m.slow - dt);

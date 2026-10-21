@@ -1,12 +1,12 @@
 // 전투 화면: 방(바닥·장애물) · 영웅(어디든 눌러 끄는 가상 조이스틱, 멈추면 자동 사격) · 몬스터 · 화살 · 능력 고르기 · 일시정지 · 보스
-import { W, H } from '../config.js?v=0.17.1';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.1';
-import { audio } from '../audio.js?v=0.17.1';
-import { load, save } from '../save.js?v=0.17.1';
-import { pushBack } from '../oad.js?v=0.17.1';
-import * as M from '../meta.js?v=0.17.1';
-import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.1';
-import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.1';
+import { W, H } from '../config.js?v=0.17.2';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.17.2';
+import { audio } from '../audio.js?v=0.17.2';
+import { load, save } from '../save.js?v=0.17.2';
+import { pushBack } from '../oad.js?v=0.17.2';
+import * as M from '../meta.js?v=0.17.2';
+import { Sim, AW, AH, CELL, COLS, ROWS } from '../core/sim.js?v=0.17.2';
+import { HEROES, SKILLS, SRAR, MONS, BOSSES, CHAPTERS, ROOMS, GEAR, RAR } from '../core/data.js?v=0.17.2';
 
 const TOP = 170, BOT = 0;
 const sleep = (sc, ms) => new Promise(r => sc.time.delayedCall(ms, r));
@@ -17,7 +17,7 @@ export class PlayScene extends Phaser.Scene {
   create(data = {}) {
     const d = load();
     // 판마다 새로 시작 (Phaser 는 같은 화면 객체를 다시 씀)
-    Object.assign(this, { scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
+    Object.assign(this, { heroV: null, warnG: null, nums: null, npcV: null, skSig: null, scrollY: null, paused: false, picking: false, ended: false, joy: null, views: new Map(), arrows: [], foeV: [], dropV: [], orbV: [], spV: [], pending: [], ui: {}, hitStop: 0, shake: 0 });
     this.daily = !!data.daily;
     const dr = this.daily ? M.dailyRun() : null;
     this.chapter = dr ? dr.chapter : data.chapter || 1;
@@ -175,8 +175,11 @@ export class PlayScene extends Phaser.Scene {
   render(dt) {
     const s = this.s, k = this.k, p = s.p, hv = this.heroV;
     hv.setPosition(p.x * k, p.y * k); hv.setDepth(p.y);
-    // 그림의 활이 위쪽을 향하므로 겨누는 각도 + 90°. 부드럽게 돌아감
-    const want = p.face + Math.PI / 2; let da = Phaser.Math.Angle.Wrap(want - hv.im.rotation); hv.im.rotation += da * Math.min(1, dt * 18);
+    // 원작처럼 겨누는 쪽을 봄: 위쪽이면 뒷모습 · 아래쪽이면 앞모습 · 왼쪽이면 좌우 뒤집기 · 겨누는 쪽으로 살짝 기울임
+    const fx = Math.cos(p.face), fy = Math.sin(p.face), back = hv.back ? fy < 0.25 : fy < -0.15;
+    if (back !== hv.back) { hv.back = back; hv.im.setTexture(`${back ? 'hb' : 'ht'}_${this.heroK}`); hv.im.base = 130 / Math.max(hv.im.width, hv.im.height); }
+    if (Math.abs(fx) > 0.15) hv.im.setFlipX(fx < 0);
+    const want = Phaser.Math.Clamp(fx, -1, 1) * 0.22 * (back ? 1 : -1); hv.im.rotation += (want - hv.im.rotation) * Math.min(1, dt * 14);
     hv.im.setAlpha(p.inv > 0 && Math.floor(this.time.now / 80) % 2 ? 0.45 : 1);
     const bob = p.moving ? Math.sin(this.time.now / 70) : 0;
     hv.im.y = -18 - Math.abs(bob) * 7; hv.im.scaleX = hv.im.base * (1 + (p.moving ? Math.abs(bob) * 0.05 : 0) - (hv.recoil || 0) * 0.08); hv.im.scaleY = hv.im.base * (1 - (p.moving ? Math.abs(bob) * 0.04 : 0) + (hv.recoil || 0) * 0.05);

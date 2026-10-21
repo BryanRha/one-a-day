@@ -1,14 +1,15 @@
 // 전투 화면: 지도 · 유닛 선택 → 이동(파란 칸) → 행동(공격 · 점령 · 하차 · 대기) · 기지 생산 · 지휘관 필살기 · 상대 AI 턴
-import { W, H } from '../config.js?v=0.13.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.13.0';
-import { audio } from '../audio.js?v=0.13.0';
-import { load, save } from '../save.js?v=0.13.0';
-import * as M from '../meta.js?v=0.13.0';
-import { inOAD, exitToOAD } from '../oad.js?v=0.13.0';
-import { Sim, dist, hpOf } from '../core/sim.js?v=0.13.0';
-import { AI, apply } from '../core/ai.js?v=0.13.0';
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.13.0';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.13.0';
+import { W, H } from '../config.js?v=0.14.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.0';
+import { audio } from '../audio.js?v=0.14.0';
+import { load, save } from '../save.js?v=0.14.0';
+import * as M from '../meta.js?v=0.14.0';
+import { inOAD, exitToOAD } from '../oad.js?v=0.14.0';
+import { Sim, dist, hpOf } from '../core/sim.js?v=0.14.0';
+import { AI, apply } from '../core/ai.js?v=0.14.0';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, WEATHER, coInstant, base } from '../core/data.js?v=0.14.0';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.0';
+import { STORY } from '../story.js?v=0.14.0';
 
 const TOP = 196, BOTTOM = 360;
 const TEAM = { 1: 0x3E7FD8, 2: 0xD9472E }, TEAMS = { 1: 'b', 2: 'r' };
@@ -277,6 +278,7 @@ export class PlayScene extends Phaser.Scene {
     const s = this.s, me = this.me, foe = this.foe, coK = s.cos[me], co = COS[coK], k = Math.min(1, s.power[me] / co.sneed), kn = co.need / co.sneed;
     if (this.coFace.texture.key !== `co_${coK}`) { this.coFace.setTexture(`co_${coK}`); this.coFace.setScale(130 / Math.max(this.coFace.width, this.coFace.height)); this.coName.setText(co.name); }
     this.coRing.setStrokeStyle(5, TEAM[me]);
+    if (this.state === 'idle' && !this.sel) this.showInfo(null);
     const t2 = s.tag[me]; this.tagFace.setVisible(!!t2); this.tagRing.setVisible(!!t2);
     if (t2 && this.tagFace.texture.key !== `co_${t2}`) { this.tagFace.setTexture(`co_${t2}`); this.tagFace.setScale(64 / Math.max(this.tagFace.width, this.tagFace.height) * 1.4); }
     if (t2) this.tagRing.setStrokeStyle(4, s.canSwap(me) && this.human(s.turn) ? 0xFFD45A : 0x777766);
@@ -307,13 +309,32 @@ export class PlayScene extends Phaser.Scene {
     this.dangerLayer = this.add.layer().setDepth(19);
     this.showInfo(null);
   }
+  // 현황판: 양쪽 지휘관 얼굴 · 필살기 게이지 · 유닛·건물 수 (적 필살기가 차면 경고)
+  dashboard(y0) {
+    const s = this.s, me = this.me, foe = this.foe, my = this.human(s.turn);
+    this.info.add(T(this, W / 2, y0 + 4, my ? '유닛을 눌러 이동 · 기지·비행장·항구를 누르면 생산' : s.turn === me ? '' : '상대가 움직이는 중…', 22, C.sub, { w: 800 }));
+    const side = (p, right) => {
+      const co = s.cos[p], C0 = COS[co], cx = right ? W - 104 : 104, cy = y0 + 100, k = Math.min(1, s.power[p] / C0.sneed), kn = C0.need / C0.sneed;
+      const fr = this.add.graphics(); fr.fillStyle(0x14160A, 0.9).fillRoundedRect(cx - 56, cy - 56, 112, 112, 18).lineStyle(4, p === 1 ? 0x5AA8FF : 0xFF6A55, 1).strokeRoundedRect(cx - 56, cy - 56, 112, 112, 18); this.info.add(fr);
+      const im = this.add.image(cx, cy, `co_${co}`), fw = im.width; im.setCrop(0, 0, fw, fw * 0.92).setOrigin(0.5, (fw * 0.46) / im.height).setScale(104 / fw); this.info.add(im);
+      const ox = right ? 1 : 0, tx = right ? cx - 76 : cx + 76, sign = right ? -1 : 1;
+      this.info.add(T(this, tx, cy - 40, `${C0.name}${s.tag[p] ? ` +${COS[s.tag[p]].name}` : ''}`, 28, p === 1 ? C.blue : C.red, { ox, w: 900 }));
+      const bw = 280, bx = right ? tx - bw : tx, g = this.add.graphics();
+      g.fillStyle(0x000000, 0.5).fillRoundedRect(bx, cy - 12, bw, 16, 8).fillStyle(s.powerOn[p] ? 0xFF8A3D : k >= 1 ? 0xFF6A3D : k >= kn ? 0xFFD45A : 0x8EC2FF, 1).fillRoundedRect(right ? bx + bw - Math.max(16, bw * k) : bx, cy - 12, Math.max(16, bw * k), 16, 8).fillStyle(0xFFFFFF, 0.8).fillRect(right ? bx + bw - bw * kn : bx + bw * kn - 1, cy - 16, 3, 24);
+      this.info.add(g);
+      const units = s.mine(p).length, seeAll = p === me || !s.fog;
+      this.info.add(T(this, tx, cy + 30, `유닛 ${seeAll ? units : '?'} · 건물 ${s.props(p)}`, 22, C.text, { ox, w: 800 }));
+      if (p !== me && s.powerReady(p, 1)) { const w2 = T(this, tx, cy + 62, s.powerReady(p, 2) ? '⚠ 초필살기 준비됨!' : '⚠ 필살기 준비됨!', 22, '#FF8A70', { ox, w: 900 }); this.info.add(w2); this.tweens.add({ targets: w2, alpha: 0.35, duration: 500, yoyo: true, repeat: -1 }); }
+      else if (s.powerOn[p]) this.info.add(T(this, tx, cy + 62, `${s.powerOn[p] === 2 ? C0.superp : C0.power} 발동 중`, 22, C.gold, { ox, w: 900 }));
+      else this.info.add(T(this, tx, cy + 62, `필살기 ${Math.floor(Math.min(1, k / kn) * 100)}%`, 20, C.sub, { ox, w: 800 }));
+    };
+    side(me, false); side(foe, true);
+    this.info.add(T(this, W / 2, y0 + 100, 'VS', 34, C.gold, { w: 900, ls: 2 }));
+  }
   showInfo(x, y) {
     this.info.removeAll(true);
     const y0 = H - BOTTOM + 34, ix = 48;
-    if (x == null) {
-      this.info.add(T(this, ix, y0 + 40, this.human(this.s.turn) ? '유닛을 눌러 이동하세요 · 기지·비행장·항구를 누르면 생산' : '적군이 움직이는 중…', 28, C.sub, { ox: 0, w: 800 }));
-      return;
-    }
+    if (x == null) return this.dashboard(y0);
     const t = this.s.tile(x, y), tr = TERRAIN[t.t], u = this.unitSeen(x, y);
     // 지형
     const tk = BLD[t.t] ? `b_${BLD[t.t]}_${t.owner === 1 ? 'b' : t.owner === 2 ? 'r' : 'n'}` : `t_${t.t === 'road' ? 'road_h' : t.t === 'river' ? 'river_h' : t.t === 'bridge' ? 'bridge_h' : t.t === 'reef' ? 'sea' : t.t}`;
@@ -403,9 +424,11 @@ export class PlayScene extends Phaser.Scene {
     if (this.resumed) { this.resumed = false; toast(this, `이어하기 · DAY ${s.day}`, C.gold, TOP + 60); }
     if (this.mode === 'versus') { await this.handoff(); this.syncAll(); }
     else await this.banner(s.turn === 1 ? `DAY ${s.day}` : '적군 턴', s.turn === 1 ? '아군 턴 · 작전을 시작하세요' : COS[this.enemyCo].name + ' 장군이 움직여요', s.turn === 1 ? C.blue : C.red);
-    if (!this.human(s.turn)) { audio.music('bgm_enemy', this); this.speed = 2; this.setActs(null); [this.endBtn, this.nextBtn, this.dangerBtn].forEach(b => b.setVisible(false)); this.skipBtn.setVisible(true); await this.enemyTurn(); }
-    else { audio.music('bgm_battle', this); this.speed = 1; this.skipBtn.setVisible(false); this.setActs(null); this.autosave(); this.drawDanger(); if (this.auto) return this.enemyTurn(1); if (!load().tips.war) this.tutorial(); }
+    if (!this.human(s.turn)) { this.themeMusic(); this.speed = 2; this.setActs(null); [this.endBtn, this.nextBtn, this.dangerBtn].forEach(b => b.setVisible(false)); this.skipBtn.setVisible(true); await this.enemyTurn(); }
+    else { this.themeMusic(); this.speed = 1; this.skipBtn.setVisible(false); this.setActs(null); this.autosave(); this.drawDanger(); if (this.auto) return this.enemyTurn(1); if (!load().tips.war) this.tutorial(); }
   }
+  // 턴마다 그 지휘관의 테마곡 (설정에서 끄면 기본 전투곡)
+  themeMusic() { const s = this.s, co = s.cos[s.turn]; if (load().coTheme === false || !co) return audio.music(s.turn === 1 || this.mode === 'versus' ? 'bgm_battle' : 'bgm_enemy', this); audio.music(`bgm_co_${co}`, this); }
   banner(title, sub, col) {
     audio.play('sfx_turn', { volume: 0.6 });
     const c = this.add.container(W / 2, H / 2).setDepth(900).setAlpha(0);
@@ -508,27 +531,27 @@ export class PlayScene extends Phaser.Scene {
     else if (e.type === 'unload') { const c = this.views.get(e.id), [px, py] = this.xy(e.x, e.y); if (c) { c.setVisible(true); const [fx, fy] = this.xy(...[this.s.unit(e.from).x, this.s.unit(e.from).y]); c.setPosition(fx, fy); await new Promise(r => this.tweens.add({ targets: c, x: px, y: py, duration: 160 / sp, onComplete: r })); } }
     else if (e.type === 'seam') {
       const [px, py] = this.xy(e.x, e.y), a = this.views.get(e.a); if (a) { const au = this.s.unit(e.a); if (au) this.face(a, au, px - a.x); }
-      audio.play(e.broken ? 'sfx_explode' : 'sfx_mg', { volume: 0.6 }); this.boom(px, py, e.broken ? 1.4 : 0.8); this.float(px, py - this.ts * 0.45, e.broken ? '파이프 파괴!' : `-${Math.ceil(e.dmg / 10)}`, C.gold, 34);
+      audio.play(e.broken ? 'sfx_seam' : 'sfx_mg', { volume: 0.6 }); this.boom(px, py, e.broken ? 1.4 : 0.8); this.float(px, py - this.ts * 0.45, e.broken ? '파이프 파괴!' : `-${Math.ceil(e.dmg / 10)}`, C.gold, 34);
       if (e.broken) this.redrawTile(e.x, e.y); else this.drawSeam(e.x, e.y); await sleep(this, 420 / this.speed);
     }
     else if (e.type === 'silo' || e.type === 'explode') {
       const [tx, ty] = this.xy(e.x, e.y), r = e.type === 'silo' ? 2 : 3, dmg = e.type === 'silo' ? 3 : 5; this.follow(e.x, e.y);
-      if (e.type === 'silo') { const [fx, fy] = this.xy(e.fx, e.fy), m = this.add.image(fx, fy, 'glow').setTint(0xFFD060).setBlendMode('ADD').setScale(0.5).setDepth(60); audio.play('sfx_power', { volume: 0.6 }); await new Promise(res => this.tweens.add({ targets: m, x: tx, y: ty, duration: 600 / this.speed, ease: 'Cubic.easeIn', onComplete: () => { m.destroy(); res(); } })); this.redrawTile(e.fx, e.fy); }
-      audio.play('sfx_explode', { volume: 0.9 }); this.cameras.main.shake(260, 0.012); this.cameras.main.flash(160, 255, 200, 120);
+      if (e.type === 'silo') { const [fx, fy] = this.xy(e.fx, e.fy), m = this.add.image(fx, fy, 'glow').setTint(0xFFD060).setBlendMode('ADD').setScale(0.5).setDepth(60); audio.play('sfx_missile', { volume: 0.7 }); await new Promise(res => this.tweens.add({ targets: m, x: tx, y: ty, duration: 600 / this.speed, ease: 'Cubic.easeIn', onComplete: () => { m.destroy(); res(); } })); this.redrawTile(e.fx, e.fy); }
+      audio.play(e.type === 'explode' ? 'sfx_bomb' : 'sfx_explode', { volume: 0.9 }); this.cameras.main.shake(260, 0.012); this.cameras.main.flash(160, 255, 200, 120);
       for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.abs(dx) + Math.abs(dy) > r || !this.s.tile(e.x + dx, e.y + dy)) continue; const [bx, by] = this.xy(e.x + dx, e.y + dy); this.time.delayedCall((Math.abs(dx) + Math.abs(dy)) * 60, () => this.boom(bx, by, 0.9)); }
       for (const o of this.s.siloHits(e.x, e.y, r)) { const c = this.views.get(o.id); if (c && c.visible && o.id !== e.id) this.float(c.x, c.y - this.ts * 0.45, `-${dmg}`, o.p === this.me ? C.pink : '#FFE27A', 34); }
       await sleep(this, 700 / this.speed); this.syncAll();
     }
     else if (e.type === 'crash') {
-      const c = this.views.get(e.id), [px, py] = this.xy(e.x, e.y); audio.play('sfx_explode', { volume: 0.7 }); this.boom(px, py, 1.2);
+      const c = this.views.get(e.id), [px, py] = this.xy(e.x, e.y); audio.play('sfx_crash', { volume: 0.7 }); this.boom(px, py, 1.2);
       this.float(px, py - this.ts * 0.6, UNITS[e.ut] && UNITS[e.ut].dom === 'sea' ? '연료 바닥! 침몰' : '연료 바닥! 추락', C.pink, 32);
       if (c) { this.views.delete(e.id); this.tweens.add({ targets: c, alpha: 0, y: c.y + 40, duration: 500, onComplete: () => c.destroy() }); }
       await sleep(this, 500 / this.speed);
     }
-    else if (e.type === 'supply') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && c.visible && u && u.p === this.me) this.float(c.x, c.y - this.ts * 0.4, '보급', '#9BE07A', 24); }
+    else if (e.type === 'supply') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && c.visible && u && u.p === this.me) audio.play('sfx_supply', { volume: 0.4, gap: 300 }); if (c && c.visible && u && u.p === this.me) this.float(c.x, c.y - this.ts * 0.4, '보급', '#9BE07A', 24); }
     else if (e.type === 'lowfuel') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && u && u.p === this.me) { this.float(c.x, c.y - this.ts * 0.5, '연료 부족!', '#FFB54A', 26); if (!this.fuelHint) { this.fuelHint = true; this.time.delayedCall(900, () => toast(this, '연료가 떨어지면 추락·침몰해요 · 비행장·항구·항모로 보급', '#FFB54A', TOP + 60)); } } }
-    else if (e.type === 'swap') { audio.play('sfx_power', { volume: 0.5 }); toast(this, `지휘관 교대 · ${COS[e.co].name}`, C.gold, TOP + 60); this.updateHud(); }
-    else if (e.type === 'dive') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && u && u.p === this.me) { audio.play('sfx_select', { volume: 0.5 }); this.float(c.x, c.y - this.ts * 0.5, e.on ? (u.type === 'sub' ? '잠수!' : '은신!') : (u.type === 'sub' ? '부상' : '출현'), '#BFE6FF', 30); } if (u) this.syncUnit(u); }
+    else if (e.type === 'swap') { audio.play('sfx_swap', { volume: 0.6 }); this.themeMusic(); toast(this, `지휘관 교대 · ${COS[e.co].name}`, C.gold, TOP + 60); this.updateHud(); }
+    else if (e.type === 'dive') { const c = this.views.get(e.id), u = this.s.unit(e.id); if (c && u && u.p === this.me) { audio.play('sfx_dive', { volume: 0.6 }); this.float(c.x, c.y - this.ts * 0.5, e.on ? (u.type === 'sub' ? '잠수!' : '은신!') : (u.type === 'sub' ? '부상' : '출현'), '#BFE6FF', 30); } if (u) this.syncUnit(u); }
     else if (e.type === 'weather') { this.drawWeather(); const W2 = WEATHER[e.w]; toast(this, e.w === 'clear' ? '날씨가 맑아졌어요' : `날씨: ${W2.name} · ${W2.desc}`, '#BFE6FF', TOP + 60); await sleep(this, 500 / this.speed); }
     else if (e.type === 'repair') { const c = this.views.get(e.id); if (c && c.visible) this.float(c.x, c.y - this.ts * 0.4, '+수리', C.green, 24); }
     this.syncAll();
@@ -874,6 +897,8 @@ export class PlayScene extends Phaser.Scene {
     }
     const r = { mode: this.mode, mapId: this.map.id, win, day: s.day, lost: s.stats.lost[1], kills: s.stats.kills[1], captures: this.captures, built: s.stats.built[1], powers: this.powers, co: this.co, tag: this.tagCo, why: surrender ? 'surrender' : this.winWhy, dealt: s.stats.dealt.slice(), units0: (this.simMap.units || []).filter(u => u.p === 1).length };
     const res = M.finish(r);
-    this.time.delayedCall(surrender ? 100 : 900, () => { this.cameras.main.fadeOut(500, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Result', { ...r, ...res, level: this.level, enemyCo: this.enemyCo })); });
+    const rd = { ...r, ...res, level: this.level, enemyCo: this.enemyCo }, st = this.mode === 'campaign' && win && STORY[this.map.id], d = load();
+    const to = st && st.win && !(d.seenWin || {})[this.map.id] ? (((d.seenWin ||= {})[this.map.id] = 1), save(), ['Story', { lines: st.win, foe: this.enemyCo, title: '작전 성공', next: ['Result', rd] }]) : ['Result', rd];
+    this.time.delayedCall(surrender ? 100 : 900, () => { this.cameras.main.fadeOut(500, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(...to)); });
   }
 }

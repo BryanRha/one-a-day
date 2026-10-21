@@ -60,7 +60,7 @@ export const MAPS = [
     camp: { funds: [6000, 1000], incomeMul: [1, 1, 0.45] },
   },
   {
-    id: 'm4', name: '도시 쟁탈전', desc: '도시가 많은 시가전 · 자금 싸움', par: 13,
+    id: 'm4', name: '도시 쟁탈전', desc: '도시가 많은 시가전 · 자금 싸움', par: 17,
     rows: mirror([
       'C2 .  C0 .  H2 .  C0 .  C2',
       '.  r  r  r  r  r  r  r  .',
@@ -72,7 +72,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'inf', x: 2, y: 3 }, { t: 'inf', x: 6, y: 3 }, { t: 'recon', x: 4, y: 3 }], 14),
     funds: [4000, 4000], tip: '도시가 많을수록 자금이 빨리 쌓여요',
-    camp: { funds: [5000, 3000], incomeMul: [1, 1, 0.8] },
+    camp: { funds: [5000, 3000], incomeMul: [1, 1, 0.64] },
   },
   {
     id: 'm5', name: '최후의 요새', desc: '참호와 산으로 막힌 요새 · 로켓포와 중전차', par: 17,
@@ -118,7 +118,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'inf', x: 4, y: 2 }, { t: 'cruiser', x: 1, y: 1 }, { t: 'ltank', x: 5, y: 2 }], 14),
     funds: [8000, 8000], tip: '항구를 누르면 함선을 만들어요 · 전함은 멀리서 포격해요',
-    camp: { funds: [10000, 5000], incomeMul: [1, 1, 0.6] },
+    camp: { funds: [10000, 5000], incomeMul: [1, 1, 0.51] },
   },
   {
     id: 'm8', name: '하늘 길', desc: '산맥으로 막힌 땅 · 비행장과 공중전', par: 13, enemyCo: 'sora',
@@ -172,7 +172,7 @@ export const MAPS = [
     units: [{ t: 'inf', x: 3, y: 13, p: 1 }, { t: 'inf', x: 5, y: 13, p: 1 }, { t: 'lander', x: 4, y: 9, p: 1 }, { t: 'ltank', x: 4, y: 11, p: 1 },
       { t: 'inf', x: 3, y: 2, p: 2 }, { t: 'ltank', x: 4, y: 3, p: 2 }, { t: 'arty', x: 5, y: 1, p: 2 }, { t: 'inf', x: 6, y: 4, p: 2 }],
     funds: [9000, 3000], tip: '상륙정은 해안(모래사장)·항구에서만 내릴 수 있어요 · 수송헬기도 있어요',
-    camp: { incomeMul: [1, 1, 0.7] },
+    camp: { incomeMul: [1, 1, 0.56] },
   },
   {
     id: 'm11', name: '암초 해협', desc: '안개 낀 바다 · 암초에 숨은 잠수함', par: 16, fog: true, enemyCo: 'marin',
@@ -205,7 +205,7 @@ export const MAPS = [
     camp: { funds: [8000, 4500], incomeMul: [1, 1, 0.58] },
   },
   {
-    id: 'm13', name: '섬 사이', desc: '안개 낀 섬들 · 수송헬기로 건너요', par: 18, fog: true,
+    id: 'm13', name: '섬 사이', desc: '안개 낀 섬들 · 수송헬기로 건너요', par: 20, fog: true,
     rows: mirror([
       'H2 C2 b  s  s  s  b  C2 A2',
       'B2 .  P2 s  x  s  b  .  C0',
@@ -217,7 +217,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'inf', x: 1, y: 1 }, { t: 'tcopter', x: 7, y: 1 }, { t: 'heli', x: 1, y: 0 }], 14),
     funds: [10000, 10000], tip: '수송헬기에 보병을 태워 가운데 섬을 먼저 차지해요',
-    camp: { funds: [12000, 6000], incomeMul: [1, 1, 0.55] },
+    camp: { funds: [12000, 6000], incomeMul: [1, 1, 0.45] },
   },
   {
     id: 'm14', name: '대해전', desc: '바다 한가운데 · 전함·잠수함·순양함 총력전', par: 17, enemyCo: 'marin',
@@ -232,10 +232,10 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'battleship', x: 4, y: 0 }, { t: 'cruiser', x: 2, y: 0 }, { t: 'sub', x: 6, y: 0 }, { t: 'inf', x: 0, y: 1 }], 14),
     funds: [14000, 14000], tip: '전함은 멀리서 · 잠수함은 함선에 강해요 · 순양함은 잠수함에 강해요',
-    camp: { funds: [16000, 7000], incomeMul: [1, 1, 0.42] },
+    camp: { funds: [16000, 7000], incomeMul: [1, 1, 0.34] },
   },
   {
-    id: 'm15', name: '최후의 결전', desc: '안개 낀 붉은 군단 본진 · 육해공 총력전', par: 18, fog: true,
+    id: 'm15', name: '최후의 결전', desc: '안개 낀 붉은 군단 본진 · 육해공 총력전', par: 20, fog: true,
     rows: mirror([
       'm  P2 s  C2 H2 C2 s  A2 m',
       'b  b  s  t  r  t  s  b  b',
@@ -263,7 +263,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'inf', x: 3, y: 2 }, { t: 'ltank', x: 4, y: 2 }, { t: 'recon', x: 5, y: 1 }], 14),
     funds: [5000, 5000], tip: '눈 오는 날엔 길·다리·건물 말고는 이동이 1씩 더 들어요',
-    camp: { funds: [6000, 4000], incomeMul: [1, 1, 0.55] },
+    camp: { funds: [6000, 4000], incomeMul: [1, 1, 0.44] },
   },
   {
     id: 'm17', name: '눈보라 작전', desc: '안개 낀 설원 · 날씨를 다루는 유키', par: 16, fog: true, weather: ['snow', 'snow', 'clear'], enemyCo: 'yuki',
@@ -383,7 +383,7 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'inf', x: 3, y: 1 }, { t: 'ltank', x: 4, y: 2 }, { t: 'cruiser', x: 1, y: 1 }, { t: 'heli', x: 6, y: 1 }], 14),
     funds: [9000, 9000], tip: '비 오는 날은 안개 전장 · 시야도 1 줄어요',
-    camp: { funds: [9000, 5000], incomeMul: [1, 1, 0.55] },
+    camp: { funds: [9000, 5000], incomeMul: [1, 1, 0.62] },
   },
   {
     id: 'm25', name: '최종 작전', desc: '눈·모래·비가 번갈아 · 육해공 마지막 결전', par: 20, weather: ['clear', 'snow', 'sand', 'rain'], enemyCo: 'scarlet',
@@ -398,9 +398,13 @@ export const MAPS = [
     ]),
     units: munits([{ t: 'htank', x: 4, y: 1 }, { t: 'inf', x: 3, y: 1 }, { t: 'arty', x: 5, y: 1 }, { t: 'sub', x: 1, y: 0 }, { t: 'fighter', x: 2, y: 1 }], 14),
     funds: [12000, 12000], tip: '날씨가 매일 바뀌어요 · 맑은 날을 노려 총공격',
-    camp: { funds: [12000, 6000], incomeMul: [1, 1, 0.45] },
+    camp: { funds: [12000, 6000], incomeMul: [1, 1, 0.59] },
   },
 ];
+
+// 캠페인 적 지휘관은 이야기(story.js)에 맞춤
+import { FOES } from '../story.js?v=0.14.0';
+for (const m of MAPS) if (FOES[m.id]) m.enemyCo = FOES[m.id];
 
 // 전쟁실: 점수 도전 지도 (속도 · 전력 · 기술 300점 · S~D 등급) — 적은 어려움, 핸디캡 없음
 export const WAR = [
@@ -493,5 +497,131 @@ export const WAR = [
     units: munits([{ t: 'mega', x: 4, y: 1 }, { t: 'sub', x: 1, y: 0 }, { t: 'inf', x: 3, y: 1 }, { t: 'stealth', x: 2, y: 1 }], 14),
     funds: [12000, 12000], tip: '모든 것을 쓰는 마지막 시험 · 합동 필살기 타이밍이 점수를 갈라요',
     camp: { incomeMul: [1, 1, 0.65] },
+  },
+  {
+    id: 'w7', name: '눈 속 상륙', desc: '눈 덮인 섬 · 상륙정으로 건너요', par: 22, weather: 'snow', enemyCo: 'yuki',
+    rows: mirror([
+      'm  C2 .  B2 H2 .  C2 P2 s',
+      '.  .  .  .  r  .  .  b  s',
+      'f  .  m  .  r  .  f  b  s',
+      'C0 .  .  .  r  .  .  b  s',
+      'b  b  b  b  b  b  b  b  s',
+      's  s  x  s  s  s  x  s  s',
+      's  s  s  s  P0 s  s  s  s',
+    ]),
+    units: munits([{ t: 'inf', x: 3, y: 1 }, { t: 'ltank', x: 4, y: 1 }, { t: 'lander', x: 8, y: 1 }, { t: 'arty', x: 5, y: 1 }], 14),
+    funds: [10000, 10000], tip: '눈 오는 날엔 길 위가 빨라요 · 상륙정은 모래사장에서 내려요', camp: { incomeMul: [1, 1, 0.5] },
+  },
+  {
+    id: 'w8', name: '모래 포대', desc: '모래폭풍 속 포병전 · 미사일 기지 둘', par: 18, weather: ['sand', 'sand', 'clear'], enemyCo: 'viktor',
+    rows: mirror([
+      'm  .  C2 B2 H2 B2 C2 .  m',
+      '.  .  .  .  r  .  .  .  .',
+      '.  m  M  .  r  .  .  m  .',
+      'C0 .  .  m  r  m  .  .  C0',
+      '.  .  .  .  r  .  .  .  .',
+      '.  C0 m  .  r  .  m  C0 .',
+      '.  .  .  .  r  .  .  .  .',
+    ]),
+    units: munits([{ t: 'arty', x: 3, y: 1 }, { t: 'rocket', x: 5, y: 1 }, { t: 'inf', x: 4, y: 1 }, { t: 'ltank', x: 4, y: 2 }], 14),
+    funds: [9000, 9000], tip: '모래폭풍엔 사거리가 1 줄어요 · 맑은 날 포격하고 미사일로 뭉친 적을', camp: { incomeMul: [1, 1, 0.7] },
+  },
+  {
+    id: 'w9', name: '잠수함 사냥', desc: '안개 낀 바다 · 숨은 잠수함을 찾아요', par: 22, fog: true, enemyCo: 'marin',
+    rows: mirror([
+      'P2 s  s  x  s  s  s  b  C2',
+      's  s  s  s  s  x  s  b  H2',
+      's  x  s  s  s  s  s  b  B2',
+      's  s  s  x  P0 s  s  s  s',
+      'x  s  s  s  s  s  x  s  s',
+      's  s  P0 s  s  s  s  x  s',
+      's  s  s  s  x  s  s  s  s',
+    ]),
+    units: munits([{ t: 'sub', x: 1, y: 0 }, { t: 'sub', x: 3, y: 1 }, { t: 'cruiser', x: 2, y: 1 }, { t: 'inf', x: 8, y: 0 }], 14),
+    funds: [14000, 14000], tip: '순양함은 잠수함 사냥꾼 · 잠수한 잠수함은 바로 옆에서만 보여요', camp: { incomeMul: [1, 1, 0.6] },
+  },
+  {
+    id: 'w10', name: '파이프 미로', desc: '파이프로 막힌 미로 · 이음매를 골라 부숴요', par: 20, enemyCo: 'kai',
+    rows: mirror([
+      'C2 .  q  .  H2 .  q  .  C2',
+      '.  .  q  B2 r  B2 q  .  .',
+      'q  j  q  .  r  .  q  j  q',
+      '.  .  .  .  r  .  .  .  .',
+      'C0 q  q  j  r  j  q  q  C0',
+      '.  .  .  .  r  .  .  .  .',
+      'f  C0 .  ~  =  ~  .  C0 f',
+    ]),
+    units: munits([{ t: 'piper', x: 2, y: 1 }, { t: 'inf', x: 4, y: 1 }, { t: 'arty', x: 4, y: 2 }, { t: 'bazooka', x: 3, y: 3 }], 14),
+    funds: [9000, 9000], tip: '이음매를 부수면 새 길이 생겨요 · 파이프 열차는 미로 속 지름길', camp: { incomeMul: [1, 1, 0.7] },
+  },
+  {
+    id: 'w11', name: '스텔스 공방', desc: '산악 하늘 싸움 · 은신과 추적', par: 18, enemyCo: 'sora',
+    rows: mirror([
+      'm  m  C2 A2 H2 A2 C2 m  m',
+      'm  .  .  B2 r  .  .  .  m',
+      '.  m  .  m  r  m  .  m  .',
+      'C0 m  .  .  r  .  .  m  C0',
+      '.  .  m  .  .  .  m  .  .',
+      'm  C0 .  m  r  m  .  C0 m',
+      '.  .  .  ~  =  ~  .  .  .',
+    ]),
+    units: munits([{ t: 'stealth', x: 3, y: 1 }, { t: 'stealth', x: 5, y: 1 }, { t: 'aa', x: 4, y: 1 }, { t: 'inf', x: 4, y: 2 }], 14),
+    funds: [14000, 14000], tip: '전투기·스텔스기만 은신한 스텔스기를 때려요 · 대공포는 드러난 것만', camp: { incomeMul: [1, 1, 0.6] },
+  },
+  {
+    id: 'w12', name: '드론 폭풍', desc: '양쪽 자폭 드론 · 흩어지는 쪽이 이겨요', par: 18, enemyCo: 'bas',
+    rows: mirror([
+      'm  .  C2 A2 H2 B2 C2 .  m',
+      '.  f  .  .  r  .  .  f  .',
+      '.  .  m  .  r  .  m  .  .',
+      'C0 .  .  f  r  f  .  .  C0',
+      '.  m  .  .  r  .  .  m  .',
+      '.  .  C0 .  r  .  C0 .  .',
+      'p  p  .  ~  =  ~  .  p  p',
+    ]),
+    units: munits([{ t: 'bomb', x: 2, y: 1 }, { t: 'bomb', x: 6, y: 1 }, { t: 'aa', x: 4, y: 1 }, { t: 'ltank', x: 3, y: 1 }, { t: 'inf', x: 5, y: 1 }], 14),
+    funds: [10000, 10000], tip: '드론 반경 3칸 안에 뭉치면 한 번에 당해요 · 대공포·전투기로 먼저 격추', camp: { incomeMul: [1, 1, 0.7] },
+  },
+  {
+    id: 'w13', name: '거대전차 행진', desc: '눈 속을 밀고 오는 거대전차 둘', par: 20, weather: ['snow', 'clear'], enemyCo: 'titan',
+    rows: mirror([
+      'm  m  C2 B2 H2 B2 C2 m  m',
+      '.  .  .  .  r  .  .  .  .',
+      '.  t  .  .  r  .  .  t  .',
+      'C0 .  m  .  r  .  m  .  C0',
+      '.  .  .  f  r  f  .  .  .',
+      'f  .  C0 .  r  .  C0 .  f',
+      '.  .  .  ~  =  ~  .  .  .',
+    ]),
+    units: munits([{ t: 'mega', x: 3, y: 1 }, { t: 'mega', x: 5, y: 1 }, { t: 'inf', x: 4, y: 1 }, { t: 'bazooka', x: 4, y: 2 }], 14),
+    funds: [10000, 10000], tip: '거대전차는 주포 3발 · 다 쏘게 만든 뒤 포병·폭격기로', camp: { incomeMul: [1, 1, 0.65] },
+  },
+  {
+    id: 'w14', name: '항모 기동부대', desc: '섬들 사이 항모 결전 · 비행기 보급이 관건', par: 22, enemyCo: 'sera',
+    rows: mirror([
+      'C2 H2 b  s  s  s  b  A2 C2',
+      'B2 .  b  s  x  s  b  .  P2',
+      'b  b  b  s  s  s  b  b  b',
+      's  s  s  s  b  s  s  s  s',
+      's  x  s  b  C0 b  s  x  s',
+      's  s  s  s  b  s  s  s  s',
+      's  s  x  s  s  s  x  s  s',
+    ]),
+    units: munits([{ t: 'carrier', x: 4, y: 1 }, { t: 'fighter', x: 3, y: 1 }, { t: 'bomber', x: 5, y: 1 }, { t: 'inf', x: 1, y: 1 }], 14),
+    funds: [16000, 16000], tip: '비행기는 항모 위로 날아가면 실려서 보급·수리돼요', camp: { incomeMul: [1, 1, 0.6] },
+  },
+  {
+    id: 'w15', name: '마지막 시험', desc: '안개 · 날씨 · 파이프 · 미사일 · 육해공 전부', par: 24, fog: true, weather: ['clear', 'rain', 'snow', 'sand'], enemyCo: 'scarlet',
+    rows: mirror([
+      'P2 s  C2 A2 H2 B2 C2 q  m',
+      'b  b  .  .  r  .  .  q  .',
+      's  b  M  .  r  .  t  j  .',
+      's  C0 .  f  r  f  .  q  C0',
+      'x  b  .  .  r  .  M  q  .',
+      's  s  C0 m  r  m  C0 q  .',
+      's  s  .  ~  =  ~  .  q  .',
+    ]),
+    units: munits([{ t: 'mega', x: 4, y: 1 }, { t: 'sub', x: 0, y: 2 }, { t: 'inf', x: 3, y: 1 }, { t: 'stealth', x: 2, y: 1 }, { t: 'bomb', x: 5, y: 1 }], 14),
+    funds: [14000, 14000], tip: '모든 것을 쓰는 진짜 마지막 시험 · 합동 필살기 타이밍', camp: { incomeMul: [1, 1, 0.6] },
   },
 ];

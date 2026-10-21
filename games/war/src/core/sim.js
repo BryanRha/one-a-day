@@ -1,5 +1,5 @@
 // 전투 규칙 (화면과 무관): 지도 · 이동 · 공격(운 없음 — 미리 정확히 계산) · 점령 · 생산 · 수송 · 안개 전장 · 턴
-import { UNITS, TERRAIN, INCOME, CAPTURE, FOOT, base, coAtk, coDef, coMove, coRange, coCapture, coVision, coReveal, coStars, coCost, coInstant, coCounter, weatherProof, repairsAt, COS, HUNT, SEAM_HP, SILO_DMG, BOMB_DMG } from './data.js?v=0.13.0';
+import { UNITS, TERRAIN, INCOME, CAPTURE, FOOT, base, coAtk, coDef, coMove, coRange, coCapture, coVision, coReveal, coStars, coCost, coInstant, coCounter, coIncome, coFlat, weatherProof, repairsAt, COS, HUNT, SEAM_HP, SILO_DMG, BOMB_DMG } from './data.js?v=0.14.0';
 export const TUNE = { dmg: 1.1 };   // 전체 피해 배율 (한 판을 짧게)
 
 // 지도 칸 글자: 앞 글자 = 지형, 뒤 글자 = 주인(0 중립 · 1 파랑 · 2 빨강)
@@ -57,7 +57,8 @@ export class Sim {
   lv(p) { return this.powerOn[p] || 0; }
   // ── 지휘관 효과: 출전 지휘관 + (합동 필살기 중이면) 교대 지휘관의 초필살기 ──
   pc(p) { return this.tagOn[p] && this.tag[p] ? this.tag[p] : null; }
-  fAtk(p, type) { const c2 = this.pc(p); return coAtk(this.cos[p], type, this.lv(p)) + (c2 ? coAtk(c2, type, 2) - 1 : 0); }
+  fAtk(p, type, st = 0) { const c2 = this.pc(p); return coAtk(this.cos[p], type, this.lv(p), st) + (c2 ? coAtk(c2, type, 2, st) - 1 : 0); }
+  fFlat(p) { const c2 = this.pc(p); return coFlat(this.cos[p], this.lv(p)) || !!(c2 && coFlat(c2, 2)); }
   fDef(p, type) { const c2 = this.pc(p); return coDef(this.cos[p], type, this.lv(p)) + (c2 ? coDef(c2, type, 2) - 1 : 0); }
   fMove(p, type) { const c2 = this.pc(p); return coMove(this.cos[p], type, this.lv(p)) + (c2 ? coMove(c2, type, 2) : 0); }
   fRange(p, type) { const c2 = this.pc(p); return coRange(this.cos[p], type, this.lv(p)) + (c2 ? coRange(c2, type, 2) : 0); }
@@ -109,6 +110,7 @@ export class Sim {
   moveCost(u, x, y) {
     const t = this.tile(x, y); if (!t) return null;
     const c = TERRAIN[t.t].cost[UNITS[u.type].mt]; if (c == null) return null;
+    if (UNITS[u.type].dom === 'ground' && this.fFlat(u.p)) return 1;   // 테라 필살기
     // 눈: 길·다리·건물이 아닌 땅, 하늘은 1 더 (바다는 그대로)
     if (this.wx(u.p) === 'snow' && UNITS[u.type].dom !== 'sea' && !(['road', 'bridge'].includes(t.t) || TERRAIN[t.t].prop)) return c + 1;
     return c;
@@ -154,19 +156,20 @@ export class Sim {
     });
   }
   // 피해(내부 체력 0~100 기준): 기본 상성 × 지휘관 × 공격 체력 비율 × (1 − 지형★ × 방어 체력/100) ÷ 방어 지휘관
-  calc(aType, aP, aHp, dType, dHp, dx, dy, dP) {
+  calc(aType, aP, aHp, dType, dHp, dx, dy, dP, ax, ay) {
     const b = base(aType, dType); if (!b) return 0;
     const dp = dP ?? (aP === 1 ? 2 : 1);
     const stars = UNITS[dType].dom === 'air' ? 0 : TERRAIN[this.tile(dx, dy).t].def + (dp ? this.fStars(dp) : 0);
-    const v = TUNE.dmg * b * this.fAtk(aP, aType) * (Math.ceil(aHp / 10) / 10) * (1 - stars * Math.ceil(dHp / 10) / 100) / (dp ? this.fDef(dp, dType) : 1);
+    const aSt = ax == null || UNITS[aType].dom === 'air' ? 0 : TERRAIN[this.tile(ax, ay).t].def;
+    const v = TUNE.dmg * b * this.fAtk(aP, aType, aSt) * (Math.ceil(aHp / 10) / 10) * (1 - stars * Math.ceil(dHp / 10) / 100) / (dp ? this.fDef(dp, dType) : 1);
     return Math.max(0, Math.floor(v));
   }
   // 예상: 내가 줄 피해 · 반격 피해 (반격: 살아남은 적이 인접해 있고 간접 유닛이 아니면)
   forecast(u, fx, fy, e) {
-    const dmg = Math.min(e.hp, this.calc(u.type, u.p, u.hp, e.type, e.hp, e.x, e.y, e.p));
+    const dmg = Math.min(e.hp, this.calc(u.type, u.p, u.hp, e.type, e.hp, e.x, e.y, e.p, fx, fy));
     const left = e.hp - dmg; let counter = 0;
     if (left > 0 && dist(fx, fy, e.x, e.y) === 1 && !UNITS[e.type].indirect && UNITS[e.type].range && !UNITS[u.type].indirect && this.canHit(e, u) && this.hasAmmo(e, u))
-      counter = Math.min(u.hp, Math.floor(this.calc(e.type, e.p, left, u.type, u.hp, fx, fy, u.p) * this.fCounter(e.p)));
+      counter = Math.min(u.hp, Math.floor(this.calc(e.type, e.p, left, u.type, u.hp, fx, fy, u.p, e.x, e.y) * this.fCounter(e.p)));
     return { dmg, counter, kill: left <= 0, die: counter >= u.hp };
   }
 
@@ -279,6 +282,7 @@ export class Sim {
     if (co === 'scarlet') for (const e of this.units) if (e.p !== p) e.hp = Math.max(1, e.hp - (lvl === 2 ? 20 : 10));
     if (co === 'doo') for (const u of this.mine(p)) u.hp = Math.min(100, u.hp + (lvl === 2 ? 30 : 10));
     if (co === 'yuki') { this.wForce = { w: 'snow', left: 2 }; if (lvl === 2) for (const e of this.units) if (e.p !== p) e.hp = Math.max(1, e.hp - 10); this.ev('weather', { w: 'snow', by: p }); }
+    if (co === 'sera') { const q = p === 1 ? 2 : 1; if (lvl === 2) { this.funds[q] = Math.floor(this.funds[q] / 2 / 100) * 100; this.power[q] = Math.floor(this.power[q] / 2); this.tagPow[q] = Math.floor(this.tagPow[q] / 2); } else this.funds[p] += this.props(p) * 1000; }
     if (co === 'hana' && lvl === 2) for (const u of this.mine(p)) u.hp = Math.min(100, u.hp + 10);
     if (co === 'marin' && lvl === 2) for (const u of this.mine(p)) if (UNITS[u.type].dom === 'sea') u.hp = Math.min(100, u.hp + 20);
   }
@@ -299,7 +303,7 @@ export class Sim {
     if (!this.mine().length) { this.over = true; this.winner = this.turn === 1 ? 2 : 1; this.ev('win', { p: this.winner, why: 'rout' }); }
   }
   income(p, first = false) {
-    this.funds[p] += Math.round(this.props(p) * INCOME * (this.incomeMul[p] ?? 1) / 500) * 500;
+    this.funds[p] += Math.round(this.props(p) * INCOME * (this.incomeMul[p] ?? 1) * coIncome(this.cos[p]) / 500) * 500;
     for (const u of this.mine(p)) {
       u.done = false; u.moved = false;
       const U = UNITS[u.type], t = this.tile(u.x, u.y), host = u.inside ? this.unit(u.inside) : null;
@@ -333,7 +337,7 @@ export class Sim {
     this.tiles.forEach((t, i) => { if (t.t !== 'seam') return; const x = i % this.w, y = (i / this.w) | 0, d = dist(fx, fy, x, y); if (d >= r[0] && d <= r[1]) out.push({ seam: true, id: `s${i}`, x, y, hp: t.hp, type: 'seam', p: 0 }); });
     return out;
   }
-  seamDmg(u, x, y) { return Math.max(1, this.calc(u.type, u.p, u.hp, 'htank', this.tile(x, y).hp, x, y, 0)); }
+  seamDmg(u, x, y) { return Math.max(1, this.calc(u.type, u.p, u.hp, 'htank', this.tile(x, y).hp, x, y, 0, u.x, u.y)); }
   attackSeam(id, x, y) {
     const u = this.unit(id), t = this.tile(x, y); if (!u || !t || t.t !== 'seam') return false;
     if (!this.seamTargets(u, u.x, u.y, u.moved).some(o => o.x === x && o.y === y)) return false;

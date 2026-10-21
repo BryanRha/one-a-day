@@ -1,10 +1,10 @@
 // 홈: 계급 · 캠페인 · 오늘의 작전 · 자유 대전 · 지휘관 · 오늘의 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.13.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.13.0';
-import { audio } from '../audio.js?v=0.13.0';
-import { load } from '../save.js?v=0.13.0';
-import * as M from '../meta.js?v=0.13.0';
-import { COS } from '../core/data.js?v=0.13.0';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.14.0';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.14.0';
+import { audio } from '../audio.js?v=0.14.0';
+import { load } from '../save.js?v=0.14.0';
+import * as M from '../meta.js?v=0.14.0';
+import { COS } from '../core/data.js?v=0.14.0';
 
 // 계급장: 이병~병장 갈매기 · 부사관 · 장교 다이아 · 장성 별
 export function insignia(scene, x, y, k, s = 1) {
@@ -44,6 +44,7 @@ export class HomeScene extends Phaser.Scene {
     // 캠페인
     const done = M.STAGES.findIndex(s => !d.stars[s.id]), next = done < 0 ? M.STAGES.length - 1 : done;
     let y = Math.max(610, 150 + k.displayHeight - 40) + sp;
+    { const n = Object.keys(COS).length, extra = n > 12 ? 146 : 0; y = Math.max(520, Math.min(y, H - 1085 - extra - 3 * sp)); }   // 짧은 화면: 그림을 덜 보이고 아래 내용이 다 들어가게
     this.add.existing(panel(this, W / 2, y, 1000, 270, { tone: 'paper' }));
     T(this, 76, y - 92, 'CAMPAIGN', 22, '#6B5A2A', { ox: 0, w: 900, ls: 6, shadow: false });
     T(this, 76, y - 44, '캠페인 작전', 52, '#2B2416', { ox: 0, w: 900, shadow: false });
@@ -75,16 +76,18 @@ export class HomeScene extends Phaser.Scene {
     btn(this, W / 2 + hw / 2 + 6 + 108, y + 80, 200, 90, '지도 제작', () => this.go('Editor'), { style: 'ghost', size: 26 });
     // 지휘관
     y += 290 + sp;
+    this.coY = y; this.sp0 = sp;
     T(this, 50, y - 110, `지휘관 ${Object.keys(COS).filter(k => d.cos[k]).length}/${Object.keys(COS).length}`, 34, C.text, { ox: 0, w: 900 });
     Object.keys(COS).forEach((k, i) => {
-      const n = Object.keys(COS).length, step = Math.min(124, (W - 80) / n), sz = step - 10, x = 40 + step / 2 + i * step, cy = y - 10, own = d.cos[k];   // 지휘관이 늘면 한 줄에 맞게 작아짐
+      const n = Object.keys(COS).length, per = n > 12 ? Math.ceil(n / 2) : n, step = Math.min(124, (W - 80) / per), sz = this.coSz(step, n), x = 40 + step / 2 + (i % per) * step, cy = y - 10 + Math.floor(i / per) * (sz + 50), own = d.cos[k];   // 많으면 두 줄
       const fr = this.add.image(x, cy, `co_${k}`); fr.setScale((sz + 30) / fr.height); if (!own) fr.setTint(0x333333);
       const m = this.make.graphics(); m.fillRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16); fr.setMask(m.createGeometryMask());
       this.add.graphics().lineStyle(3, own ? COS[k].color : 0x555544, 1).strokeRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16);
-      T(this, x, cy + sz / 2 + 24, own ? COS[k].name : '잠김', sz < 100 ? 19 : 22, own ? C.text : C.dim, { w: 900 });
+      T(this, x, cy + sz / 2 + 20, own ? COS[k].name : '잠김', sz < 100 ? 19 : 22, own ? C.text : C.dim, { w: 900 });
       const z = this.add.zone(x, cy, sz, sz).setInteractive({ useHandCursor: true }); z.on('pointerup', () => this.coInfo(k));
     });
     // 미션
+    { const n = Object.keys(COS).length; if (n > 12) y += this.coSz(Math.min(124, (W - 80) / Math.ceil(n / 2)), n) + 50; }
     this.my = y + 290 + sp; this.drawMissions();
     audio.music('bgm_lobby', this);
     this.cameras.main.fadeIn(260, 20, 22, 10);
@@ -109,7 +112,7 @@ export class HomeScene extends Phaser.Scene {
     p.content.add(T(this, 40, 36, co.sdesc, 22, C.text, { ox: 0, w: 800, wrap: 380 }));
     const st = M.STAGES.find(s => s.unlockCo === k);
     if (!own) p.content.add(T(this, 40, 130, st ? `캠페인 ${st.n}. ${st.name} 승리로 합류` : '', 26, C.sub, { ox: 0, w: 800, wrap: 380 }));
-    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.13.0').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
+    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.14.0').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
   }
   drawMissions() {
     if (this.mBox) this.mBox.destroy();
@@ -125,10 +128,12 @@ export class HomeScene extends Phaser.Scene {
       else c.add(T(this, W - 160, y, `훈장 ${m.reward}`, 26, C.gold, { w: 800 }));
     });
   }
+  // 지휘관 얼굴 크기: 두 줄이면 화면 아래 미션이 잘리지 않게 남은 높이에 맞춤
+  coSz(step, n) { if (n <= 12) return step - 10; const room = H - 190 - (this.coY + 290 + this.sp0); return Math.max(64, Math.min(step - 10, room - 50)); }
   settings() {
-    const d = load(), pop = popup(this, '설정', 760, 620);
+    const d = load(), pop = popup(this, '설정', 760, 760);
     const row = (y, label, on, fn) => { pop.content.add(T(this, -260, y, label, 40, C.text, { ox: 0 })); const b = btn(this, 200, y, 220, 96, on ? '켜짐' : '꺼짐', () => { fn(); b.setLabel(b.label.text === '켜짐' ? '꺼짐' : '켜짐'); }, { style: on ? 'green' : 'ghost', size: 34 }); pop.content.add(b); };
-    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.13.0').then(m => m.save()); });
+    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.14.0').then(m => m.save()); }); row(270, '지휘관 테마곡', d.coTheme !== false, () => { d.coTheme = d.coTheme === false; import('../save.js?v=0.14.0').then(m => m.save()); });
   }
   go(k, data) { audio.stopMusic(); this.cameras.main.fadeOut(220, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(k, data)); }
 }

@@ -1,12 +1,13 @@
-import { W, BASE_H, setH } from './config.js?v=0.13.0';
-import { audio } from './audio.js?v=0.13.0';
-import { BootScene } from './scenes/Boot.js?v=0.13.0';
-import { HomeScene } from './scenes/Home.js?v=0.13.0';
-import { BriefScene } from './scenes/Brief.js?v=0.13.0';
-import { PlayScene } from './scenes/Play.js?v=0.13.0';
-import { ResultScene } from './scenes/Result.js?v=0.13.0';
-import { EditorScene } from './scenes/Editor.js?v=0.13.0';
-import { installBack } from './oad.js?v=0.13.0';
+import { W, BASE_H, setH } from './config.js?v=0.14.0';
+import { audio } from './audio.js?v=0.14.0';
+import { BootScene } from './scenes/Boot.js?v=0.14.0';
+import { HomeScene } from './scenes/Home.js?v=0.14.0';
+import { BriefScene } from './scenes/Brief.js?v=0.14.0';
+import { PlayScene } from './scenes/Play.js?v=0.14.0';
+import { ResultScene } from './scenes/Result.js?v=0.14.0';
+import { StoryScene } from './scenes/Story.js?v=0.14.0';
+import { EditorScene } from './scenes/Editor.js?v=0.14.0';
+import { installBack } from './oad.js?v=0.14.0';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }
@@ -15,7 +16,7 @@ async function start() {
     scale: { mode: innerHeight / innerWidth > BASE_H / W ? Phaser.Scale.EXPAND : Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     render: { antialias: true, powerPreference: 'high-performance' },
     input: { activePointers: 2 }, fps: { target: 60 },
-    scene: [BootScene, HomeScene, BriefScene, PlayScene, ResultScene, EditorScene],
+    scene: [BootScene, HomeScene, BriefScene, PlayScene, ResultScene, EditorScene, StoryScene],
   });
   // 안전망: 한 프레임에서 오류가 나도 게임 전체가 멈추지 않게 (requestAnimationFrame 이 끊기지 않도록)
   const step = game.step; let errN = 0;

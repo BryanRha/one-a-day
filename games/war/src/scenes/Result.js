@@ -1,12 +1,12 @@
 // 작전 결과: 승패 · 별 · 전과 · 경험치 · 계급 · 새 지휘관
-import { W, H } from '../config.js?v=0.13.0';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.13.0';
-import { audio } from '../audio.js?v=0.13.0';
-import { load } from '../save.js?v=0.13.0';
-import * as M from '../meta.js?v=0.13.0';
-import { COS } from '../core/data.js?v=0.13.0';
-import { MAPS } from '../core/maps.js?v=0.13.0';
-import { insignia } from './Home.js?v=0.13.0';
+import { W, H } from '../config.js?v=0.14.0';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.14.0';
+import { audio } from '../audio.js?v=0.14.0';
+import { load } from '../save.js?v=0.14.0';
+import * as M from '../meta.js?v=0.14.0';
+import { COS } from '../core/data.js?v=0.14.0';
+import { MAPS } from '../core/maps.js?v=0.14.0';
+import { insignia } from './Home.js?v=0.14.0';
 
 const PRAISE = ['완벽한 작전!', '훌륭한 지휘였어요!', '전선이 무너졌어요, 대승!', '역시 명지휘관!'];
 export class ResultScene extends Phaser.Scene {
@@ -64,7 +64,7 @@ export class ResultScene extends Phaser.Scene {
     let y = top + 260;
     if (w) {
       const RC = { S: '#FFD45A', A: '#9BE07A', B: '#8EC2FF', C: '#D8C8A0', D: '#B0A890' };
-      const rk = T(this, W / 2, y + 120, w.rank, 220, RC[w.rank], { w: 900, stroke: '#2B2416', thick: 14 }); rk.setScale(0); this.tweens.add({ targets: rk, scale: 1, duration: 420, delay: 1500, ease: 'Back.easeOut', onStart: () => audio.play('sfx_power', { volume: 0.7 }) });
+      const rk = T(this, W / 2, y + 120, w.rank, 220, RC[w.rank], { w: 900, stroke: '#2B2416', thick: 14 }); rk.setScale(0); this.tweens.add({ targets: rk, scale: 1, duration: 420, delay: 1500, ease: 'Back.easeOut', onStart: () => audio.play(w.rank === 'S' || w.rank === 'A' ? 'sfx_rank' : 'sfx_power', { volume: 0.7 }) });
       y += 300;
       this.add.existing(panel(this, W / 2, y + 170, 920, 400, { tone: 'paper' }));
       [['속도', w.speed, `${r.day}일 (기준 ${m.par}일)`], ['전력', w.power, `격파 ${r.kills}기`], ['기술', w.tech, `잃은 유닛 ${r.lost}기`]].forEach(([k, v, sub], i) => {

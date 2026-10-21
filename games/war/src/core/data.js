@@ -92,7 +92,7 @@ export const INCOME = 1000, CAPTURE = 20, SEAM_HP = 99, SILO_DMG = 30, BOMB_DMG 
 // 수리되는 건물: 지상 = 도시·기지·본부 · 공중 = 비행장 · 해상 = 항구
 export const repairsAt = (dom, t) => (dom === 'air' ? t === 'air' : dom === 'sea' ? t === 'port' : ['city', 'base', 'hq'].includes(t));
 
-// 지휘관 12명: 특성 + 필살기(1단계) + 초필살기(2단계, 게이지가 더 차야 함)
+// 지휘관 16명: 특성 + 필살기(1단계) + 초필살기(2단계, 게이지가 더 차야 함)
 export const COS = {
   ella:    { name: '엘라',   title: '전차대장',   color: 0x4F8BFF, desc: '전차·정찰차·대공 공격 +15%', power: '강철 돌격', pdesc: '차량 이동 +1 · 공격 +20%', superp: '전차 군단', sdesc: '차량 이동 +2 · 공격 +40% · 방어 +10%', need: 27000, sneed: 50000 },
   viktor:  { name: '빅터',   title: '포병 참모',  color: 0x6AA0E8, desc: '야포·로켓포·전함 사거리 +1', power: '일제 포격', pdesc: '원거리 공격 +30% · 사거리 +1 더', superp: '포격 지옥', sdesc: '원거리 공격 +50% · 사거리 +2 더', need: 27000, sneed: 50000 },
@@ -105,13 +105,21 @@ export const COS = {
   hana:    { name: '하나',   title: '보급 장교',  color: 0x6FC0A0, desc: '유닛 생산비 -10%', power: '긴급 동원', pdesc: '생산비 -40% · 만든 유닛 바로 행동', superp: '총동원', sdesc: '생산비 -50% · 바로 행동 · 아군 체력 +1', need: 22000, sneed: 44000 },
   leon:    { name: '레온',   title: '기동 사령관', color: 0x58A8F0, desc: '바퀴 유닛(정찰차·로켓포·트럭) 이동 +1', power: '전격전', pdesc: '지상 유닛 이동 +1', superp: '번개 작전', sdesc: '지상 유닛 이동 +2 · 공격 +20%', need: 24000, sneed: 46000 },
   kai:     { name: '카이',   title: '공병 대장',  color: 0x7A9AB8, desc: '지형 방어 별 +1 (공중 제외)', power: '참호 구축', pdesc: '지형 별 +1 더 · 방어 +10%', superp: '철옹성', sdesc: '지형 별 +2 더 · 방어 +20% · 반격 +30%', need: 26000, sneed: 48000 },
+  bas:     { name: '바스',   title: '강습 대장',  color: 0xE07A3C, desc: '직접 공격 +20% · 약점: 원거리 공격 -20%·사거리 -1', power: '돌격 명령', pdesc: '직접 공격 유닛 이동 +1 · 공격 +20%', superp: '전면 돌격', sdesc: '직접 공격 유닛 이동 +2 · 공격 +40%', need: 24000, sneed: 46000 },
+  sera:    { name: '세라',   title: '재무관',     color: 0xD8B04A, desc: '수입 +20% · 약점: 모든 유닛 공격 -10%', power: '전시 채권', pdesc: '건물 1곳당 자금 +1,000 바로', superp: '경제 봉쇄', sdesc: '상대 자금 절반 · 상대 필살기 게이지 절반', need: 22000, sneed: 44000 },
+  titan:   { name: '타이탄', title: '정예 사령관', color: 0x8A9AB0, desc: '공격·방어 +20% · 약점: 생산비 +20%', power: '정예 방진', pdesc: '방어 +20% 더', superp: '불패 군단', sdesc: '공격 +30% · 방어 +30% 더 · 반격 1.5배', need: 30000, sneed: 56000 },
+  terra:   { name: '테라',   title: '지형 레인저', color: 0x6AB06A, desc: '서 있는 칸 방어 별 1개당 공격 +8% · 약점: 공중 유닛 공격 -10%', power: '지형 장악', pdesc: '지상 유닛 모든 지형 이동 비용 1', superp: '대지의 분노', sdesc: '이동 비용 1 · 별당 공격 +16%', need: 24000, sneed: 46000 },
   scarlet: { name: '스칼렛', title: '붉은 장군',  color: 0xE0453C, desc: '모든 유닛 공격 +10%', power: '붉은 폭풍', pdesc: '상대 유닛 체력 -1 · 공격 +15%', superp: '붉은 해일', sdesc: '상대 유닛 체력 -2 · 공격 +30%', need: 32000, sneed: 60000 },
 };
 const VEH = ['recon', 'ltank', 'htank', 'aa'];
 const isVeh = t => UNITS[t].dom === 'ground' && !FOOT.includes(t);
 // 공격 배율 (lv: 0 평소 · 1 필살기 · 2 초필살기)
-export function coAtk(co, type, lv = 0) {
+export function coAtk(co, type, lv = 0, stars = 0) {   // stars: 공격하는 유닛이 선 칸의 방어 별 (테라)
   const U = UNITS[type]; let m = 1;
+  if (co === 'bas') m += U.indirect ? -0.2 : 0.2 + (lv === 2 ? 0.4 : lv ? 0.2 : 0);
+  if (co === 'sera') m -= 0.1;
+  if (co === 'titan') m += 0.2 + (lv === 2 ? 0.3 : 0);
+  if (co === 'terra') m += stars * (lv === 2 ? 0.16 : 0.08) - (U.dom === 'air' ? 0.1 : 0);
   if (co === 'ella') { if (VEH.includes(type)) m += 0.15; if (lv && isVeh(type)) m += lv === 2 ? 0.4 : 0.2; }
   if (co === 'viktor') { if (lv && U.indirect) m += lv === 2 ? 0.5 : 0.3; }
   if (co === 'jun') { if (FOOT.includes(type)) m += 0.2 + (lv === 2 ? 0.45 : lv ? 0.25 : 0); }
@@ -129,10 +137,12 @@ export function coDef(co, type, lv = 0) {
   if (co === 'doo') m += 0.15 + (lv === 2 ? 0.5 : lv ? 0.3 : 0);
   if (co === 'ella' && lv === 2 && isVeh(type)) m += 0.1;
   if (co === 'kai') m += lv === 2 ? 0.2 : lv ? 0.1 : 0;
+  if (co === 'titan') m += 0.2 + (lv === 2 ? 0.3 : lv ? 0.2 : 0);
   return m;
 }
 export function coMove(co, type, lv = 0) {
   if (co === 'leon') { const g = UNITS[type].dom === 'ground'; return (['recon', 'rocket', 'truck'].includes(type) ? 1 : 0) + (g && lv ? (lv === 2 ? 2 : 1) : 0); }
+  if (co === 'bas' && lv && UNITS[type].range && !UNITS[type].indirect) return lv === 2 ? 2 : 1;
   if (!lv) return 0; const U = UNITS[type], k = lv === 2 ? 2 : 1;
   if (co === 'ella' && isVeh(type)) return k;
   if (co === 'jun' && FOOT.includes(type)) return k;
@@ -141,16 +151,18 @@ export function coMove(co, type, lv = 0) {
   if (co === 'iris' && lv === 2) return 1;
   return 0;
 }
-export function coRange(co, type, lv = 0) { if (co !== 'viktor' || !UNITS[type].indirect) return 0; return 1 + (lv === 2 ? 2 : lv ? 1 : 0); }
+export function coRange(co, type, lv = 0) { if (!UNITS[type].indirect) return 0; if (co === 'bas') return -1; if (co !== 'viktor') return 0; return 1 + (lv === 2 ? 2 : lv ? 1 : 0); }
 export const coCapture = (co, lv = 0) => (co === 'jun' ? (lv === 2 ? 2 : 1.5) : 1);
 export const coVision = (co) => (co === 'iris' ? 1 : 0);
 export const coReveal = (co, lv) => co === 'iris' && lv > 0;
 
 // 새 지휘관 특성
 export const coStars = (co, lv = 0) => (co === 'kai' ? 1 + (lv === 2 ? 2 : lv ? 1 : 0) : 0);        // 지형 방어 별 더
-export const coCost = (co, lv = 0) => (co === 'hana' ? (lv === 2 ? 0.5 : lv ? 0.6 : 0.9) : 1);        // 생산비 배율
+export const coCost = (co, lv = 0) => (co === 'hana' ? (lv === 2 ? 0.5 : lv ? 0.6 : 0.9) : co === 'titan' ? 1.2 : 1);        // 생산비 배율
 export const coInstant = (co, lv = 0) => co === 'hana' && lv > 0;                                    // 만든 유닛 바로 행동
-export const coCounter = (co, lv = 0) => (co === 'kai' && lv === 2 ? 1.3 : 1);                       // 반격 피해 배율
+export const coCounter = (co, lv = 0) => (co === 'kai' && lv === 2 ? 1.3 : co === 'titan' && lv === 2 ? 1.5 : 1);                       // 반격 피해 배율
+export const coIncome = co => (co === 'sera' ? 1.2 : 1);                                               // 수입 배율
+export const coFlat = (co, lv = 0) => co === 'terra' && lv > 0;                                       // 지상 이동 비용 모두 1
 export const weatherProof = co => co === 'yuki';
 
 // 날씨: 지도마다 고정 또는 날짜별 순환 (map.weather: 'snow' | ['clear', 'rain', ...])

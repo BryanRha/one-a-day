@@ -1,12 +1,13 @@
 // 작전 준비: 캠페인 작전 고르기 · 지도 미리보기 · 지휘관 고르기 · (자유 대전) 지도·난이도·AI/2인 대전·내 지도
-import { W, H } from '../config.js?v=0.13.0';
-import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.13.0';
-import { audio } from '../audio.js?v=0.13.0';
-import { load, save } from '../save.js?v=0.13.0';
-import * as M from '../meta.js?v=0.13.0';
-import { COS, WEATHER } from '../core/data.js?v=0.13.0';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.13.0';
-import { Sim } from '../core/sim.js?v=0.13.0';
+import { W, H } from '../config.js?v=0.14.0';
+import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.14.0';
+import { audio } from '../audio.js?v=0.14.0';
+import { load, save } from '../save.js?v=0.14.0';
+import * as M from '../meta.js?v=0.14.0';
+import { COS, WEATHER } from '../core/data.js?v=0.14.0';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.14.0';
+import { STORY } from '../story.js?v=0.14.0';
+import { Sim } from '../core/sim.js?v=0.14.0';
 
 const LV = { easy: '쉬움', normal: '보통', hard: '어려움' };
 const TCOL = { pipe: 0x8A8F96, seam: 0xC8A040, silo: 0x5A5048, silo_e: 0x6A6A5A, plain: 0x8DB05A, farm: 0x9BB45A, wheat: 0xD8B85A, forest: 0x3E7A34, mountain: 0x9A8C78, road: 0xC8A878, bridge: 0xB0A090, river: 0x4A9AD8, beach: 0xE8D8A0, sea: 0x2A6AB0, reef: 0x3A7A90, trench: 0x8A7A50 };
@@ -37,9 +38,9 @@ export class BriefScene extends Phaser.Scene {
       list.forEach((it, i) => {
         const x = 30 + w / 2 + (i % per) * (w + 10), yy = y + 46 + Math.floor(i / per) * rh;
         const on = it.custom ? !!this.custom && this.custom.name === it.custom.name : !this.custom && it.id === this.mapId;
-        btn(this, x, yy, w, rh - 28, it.open ? it.label : '잠김', () => { if (!it.open) return toast(this, '앞 작전을 먼저 이겨요', C.sub); this.restart(it.custom ? { mapId: null, custom: it.custom } : { mapId: it.id, custom: null }); }, { style: on ? 'gold' : it.open ? 'olive' : 'ghost', size: it.label.length > 2 ? 26 : 34 });
+        const lb = btn(this, x, yy, w, rh - 28, it.label, () => { if (!it.open) return toast(this, '앞 작전을 먼저 이겨요', C.sub); this.restart(it.custom ? { mapId: null, custom: it.custom } : { mapId: it.id, custom: null }); }, { style: on ? 'gold' : it.open ? 'olive' : 'ghost', size: it.label.length > 2 ? 26 : 34 }); if (!it.open) { lb.label.setAlpha(0.35); lb.add(this.add.image(w / 2 - 20, -(rh - 28) / 2 + 18, 'i_lock').setDisplaySize(26, 26).setTint(0xC8C0A0)); }
         if (this.mode === 'war') T(this, x, yy + rh / 2 - 6, it.rank ? `${it.rank} 등급` : '—', 18, it.rank === 'S' ? C.gold : C.sub, { w: 900, shadow: false });
-        if (this.mode === 'campaign') T(this, x, yy + rh / 2 - 6, '★'.repeat(it.stars) + '☆'.repeat(3 - it.stars), 18, C.gold, { w: 900, shadow: false });
+        if (this.mode === 'campaign' && it.open) T(this, x, yy + rh / 2 - 6, '★'.repeat(it.stars) + '☆'.repeat(3 - it.stars), 18, C.gold, { w: 900, shadow: false });
       });
       y += 46 + Math.ceil(list.length / per) * rh + 6;
     }
@@ -57,6 +58,7 @@ export class BriefScene extends Phaser.Scene {
     T(this, 70, y + 196, tags, 23, map.fog ? '#5A3A8A' : '#6B5A2A', { ox: 0, w: 800, shadow: false });
     if (this.mode === 'campaign') { const best = d.bestDays[map.id]; T(this, 70, y + 240, best ? `최단 승리 ${best}일` : st.unlockCo && !d.cos[st.unlockCo] ? `승리 보상 · 지휘관 ${COS[st.unlockCo].name} 합류` : '', 23, '#2F6A18', { ox: 0, w: 800, shadow: false }); }
     if (this.mode === 'daily') { const op = M.dailyOp(); T(this, 70, y + 240, op.best ? `오늘 최단 ${op.best}일 · ${op.tries}번 도전` : '모두 같은 지도 · 가장 빨리 이겨요', 23, '#2F6A18', { ox: 0, w: 800, shadow: false }); }
+    if (this.mode === 'campaign' && STORY[map.id]) btn(this, 230, y + 330, 320, 72, '이야기 보기', () => this.story(STORY[map.id].pre, ['Brief', { ...this.data0, mapId: this.mapId, tag: this.tag ?? null }]), { style: 'ghost', size: 24 });
     if (map.tip) T(this, 70, y + ph - 60, `팁 · ${map.tip}`, 21, '#4A3E1E', { ox: 0, w: 800, shadow: false, wrap: 520 });
     this.mini(this.mode !== 'free' ? campaignMap(map) : map, W - 250, py, 400, ph - 40);
     y += ph + 20;
@@ -72,31 +74,51 @@ export class BriefScene extends Phaser.Scene {
     this.co2 = data.co2 || 'scarlet';
     const row = (yy, label, cur, all, pick, col) => {
       T(this, 40, yy, label, 28, C.text, { ox: 0, w: 900 });
-      const keys = Object.keys(COS).filter(k => all || d.cos[k]), step = Math.min(124, (W - 80) / Math.max(8, keys.length)), sz = step - 10;
+      const keys = Object.keys(COS).filter(k => all || d.cos[k]), per = keys.length > 9 ? Math.ceil(keys.length / 2) : Math.max(8, keys.length), step = Math.min(124, (W - 80) / per), sz = step - 10;
+      this.rowExtra = keys.length > per ? sz + 14 : 0;
       keys.forEach((k, i) => {
-        const x = 40 + step / 2 + i * step, cy = yy + 92, on = k === cur;
+        const x = 40 + step / 2 + (i % per) * step, cy = yy + 92 + Math.floor(i / per) * (sz + 14), on = k === cur;
         const fr = this.add.image(x, cy, `co_${k}`); fr.setScale((sz + 30) / fr.height);
         const m = this.make.graphics(); m.fillRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16); fr.setMask(m.createGeometryMask());
         this.add.graphics().lineStyle(on ? 6 : 2, on ? col : 0x6E7A40, 1).strokeRoundedRect(x - sz / 2, cy - sz / 2, sz, sz, 16);
         this.add.zone(x, cy, sz, sz).setInteractive({ useHandCursor: true }).on('pointerup', () => pick(k));
       });
-      const c = COS[cur]; T(this, 40, yy + 172, c ? `${c.name} · ${c.desc} · ${c.power}/${c.superp}` : '고르면 전투 중 얼굴을 눌러 [교대] · 두 게이지가 차면 합동 필살기 (다시 누르면 해제)', 21, C.sub, { ox: 0, w: 800, wrap: W - 80 });
+      const c = COS[cur]; T(this, 40, yy + 172 + this.rowExtra, c ? `${c.name} · ${c.desc} · ${c.power}/${c.superp}` : '고르면 전투 중 얼굴을 눌러 [교대] · 두 게이지가 차면 합동 필살기 (다시 누르면 해제)', 21, C.sub, { ox: 0, w: 800, wrap: W - 80 });
     };
     row(y + 10, this.versus ? '파랑 지휘관' : '출전 지휘관', this.co, this.versus, k => { if (!this.versus) { d.co = k; save(); } this.restart({ co1: k }); }, 0xFFD45A);
-    y += 220;
-    if (this.versus) { row(y + 10, '빨강 지휘관', this.co2, true, k => this.restart({ co2: k }), 0xFF6A55); y += 220; }
+    y += 220 + this.rowExtra;
+    if (this.versus) { row(y + 10, '빨강 지휘관', this.co2, true, k => this.restart({ co2: k }), 0xFF6A55); y += 220 + this.rowExtra; }
     else if (Object.keys(d.cos).length > 1) {
       this.tag = data.tag !== undefined ? data.tag : d.tag && d.tag !== this.co && d.cos[d.tag] ? d.tag : null;
-      row(y + 10, '교대 지휘관 (선택)', this.tag, false, k => { if (k === this.co) return toast(this, '출전 지휘관과 다른 지휘관을 골라요', C.sub); const t = this.tag === k ? null : k; d.tag = t; save(); this.restart({ tag: t }); }, 0x9BE07A); y += 220;
+      row(y + 10, '교대 지휘관 (선택)', this.tag, false, k => { if (k === this.co) return toast(this, '출전 지휘관과 다른 지휘관을 골라요', C.sub); const t = this.tag === k ? null : k; d.tag = t; save(); this.restart({ tag: t }); }, 0x9BE07A); y += 220 + this.rowExtra;
     }
-    btn(this, W / 2, Math.min(H - 100, Math.max(y + 90, H - 160)), 560, 130, '작전 개시', () => this.start(), { style: 'gold', icon: 'i_play', size: 44 });
+    // 적 지휘관 카드 (빈 자리에): 얼굴 · 특성 · 필살기
+    const eco = this.versus ? null : this.mode === 'free' ? (map.enemyCo || 'scarlet') : (map.enemyCo || 'scarlet'), by = Math.min(H - 100, Math.max(y + 90, H - 160));
+    if (eco && by - y > 380) {
+      const cy = y + 40 + (by - 110 - y - 40) / 2, E = COS[eco];
+      this.add.existing(panel(this, W / 2, cy, 1000, 250));
+      const im = this.add.image(150, cy, `co_${eco}`), fw = im.width; im.setCrop(0, 0, fw, fw * 0.92).setOrigin(0.5, (fw * 0.46) / im.height).setScale(190 / fw);
+      this.add.graphics().lineStyle(5, 0xFF6A55, 1).strokeRoundedRect(150 - 97, cy - 97, 194, 194, 22);
+      T(this, 280, cy - 80, '적 지휘관', 22, '#FF8A70', { ox: 0, w: 900, ls: 2 });
+      T(this, 280, cy - 40, `${E.name} · ${E.title}`, 36, C.text, { ox: 0, w: 900 });
+      T(this, 280, cy + 10, E.desc, 22, C.sub, { ox: 0, w: 800, wrap: 680 });
+      T(this, 280, cy + 64, `필살기 ${E.power} · 초필살기 ${E.superp}`, 22, C.gold, { ox: 0, w: 800, wrap: 680 });
+    }
+    btn(this, W / 2, by, 560, 130, '작전 개시', () => this.start(), { style: 'gold', icon: 'i_play', size: 44 });
     this.cameras.main.fadeIn(200, 20, 22, 10);
     window.__brief = this;
   }
   restart(o) { this.scene.restart({ ...this.data0, mapId: this.mapId, custom: this.custom, level: this.level, versus: this.versus, co1: this.co, co2: this.co2, tag: this.tag ?? null, ...o }); }
   start() {
-    const mode = this.versus ? 'versus' : this.mode;
-    this.go('Play', { mode, mapId: this.custom ? null : this.mapId, custom: this.custom, level: this.ai, co: this.co, enemyCo: this.versus ? this.co2 : undefined, tag: this.versus || this.tag === this.co ? null : this.tag });
+    const mode = this.versus ? 'versus' : this.mode, d = load();
+    const play = { mode, mapId: this.custom ? null : this.mapId, custom: this.custom, level: this.ai, co: this.co, enemyCo: this.versus ? this.co2 : undefined, tag: this.versus || this.tag === this.co ? null : this.tag };
+    const st = mode === 'campaign' && STORY[this.mapId];
+    if (st && st.pre && !(d.seen || {})[this.mapId]) { (d.seen ||= {})[this.mapId] = 1; save(); return this.story(st.pre, ['Play', play]); }
+    this.go('Play', play);
+  }
+  story(lines, next) {
+    const map = MAPS.find(m => m.id === this.mapId), stg = M.STAGES.find(s => s.id === this.mapId);
+    this.go('Story', { lines, foe: map.enemyCo || 'scarlet', title: stg ? `작전 ${stg.n} · ${map.name}` : map.name, next });
   }
   // 작은 지도 그림 (지형 색 · 건물 · 시작 유닛)
   mini(map, cx, cy, mw, mh) {

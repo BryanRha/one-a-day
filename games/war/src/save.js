@@ -5,7 +5,7 @@ function fresh() {
   return {
     v: 1, sfx: true, music: true, tips: {},
     xp: 0, battles: 0, wins: 0, kills: 0, captures: 0, medals: 0,
-    stars: {}, bestDays: {}, cos: { ella: 1 }, coXp: {}, co: 'ella', tag: null, level: 'normal', war: {},
+    stars: {}, bestDays: {}, cos: { ella: 1 }, coXp: {}, co: 'ella', tag: null, level: 'normal', war: {}, coTheme: true, seen: {}, seenWin: {},
     streak: { last: '', count: 0 }, missions: { date: '', list: [] }, daily: { date: '', best: 0, tries: 0, won: false },
   };
 }

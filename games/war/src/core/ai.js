@@ -1,7 +1,7 @@
 // 상대 AI: 다음 행동 하나씩 돌려줌 (화면이 한 동작씩 보여 줄 수 있게)
 // { kind: 'power' } · { kind: 'act', id, to, then: { kind: 'attack'|'capture'|'wait'|'unload', target, at } } · { kind: 'build', x, y, type } · { kind: 'end' }
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base, repairsAt } from './data.js?v=0.13.0';
-import { dist } from './sim.js?v=0.13.0';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base, repairsAt } from './data.js?v=0.14.0';
+import { dist } from './sim.js?v=0.14.0';
 
 const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.12, threat: 0.45, focus: 1.1 }, hard: { noise: 0, threat: 0.6, focus: 1.3 } };
 
@@ -72,6 +72,12 @@ export class AI {
     if (!this.cache || this.cache.day !== sim.day || this.cache.p !== p || this.cache.n !== sim.units.length) this.cache = { day: sim.day, p, n: sim.units.length, threat: threatMap(sim, p) };
     // 간접 유닛 먼저 (움직이기 전에 쏠 수 있게), 그다음 비싼 유닛, 마지막에 보병
     const todo = sim.mine(p).filter(u => !u.done && !u.inside).sort((a, b) => (UNITS[b.type].indirect ? 1 : 0) - (UNITS[a.type].indirect ? 1 : 0) || UNITS[b.type].cost - UNITS[a.type].cost);
+    // 가장 가치 있는 공격·점령부터 (유닛 순서와 상관없이) — 없으면 원래 순서대로 이동
+    if (this.L.focus >= 1.1 && todo.length > 1) {
+      let top = null;
+      for (const u of todo) { const pl = this.plan(sim, u); if (pl && ['attack', 'capture', 'explode', 'silo'].includes(pl.then.kind) && (!top || pl.score > top.score)) top = pl; }
+      if (top) return top;
+    }
     for (const u of todo) { const plan = this.plan(sim, u); if (plan) return plan; return { kind: 'act', id: u.id, to: [u.x, u.y], then: { kind: 'wait' } }; }
     const b = this.buildPlan(sim, p); if (b) return b;
     return { kind: 'end' };
@@ -84,10 +90,13 @@ export class AI {
     const supT = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => o.t.owner === p && TERRAIN[o.t.t].prop && repairsAt(U.dom, o.t.t));
     const supD = (x, y) => supT.length ? Math.min(...supT.map(o => dist(x, y, o.x, o.y))) : 0;
     const needSup = supT.length && ((U.ammo != null && u.ammo === 0 && !U.mg) || (U.day > 0 && u.fuel <= U.day * 2 + supD(u.x, u.y) + 2));
+    const needRep = !needSup && supT.length && u.hp <= 35 && val >= 6000;   // 많이 다친 비싼 유닛은 수리하러 후퇴
+    const mates = sim.mine(p).filter(o => o !== u && !o.inside);
     const isStr = stranded(sim, u), boats = isStr ? sim.mine(p).filter(o => ferries(o.type) && fits(o.type, u) && o.cargo.length < UNITS[o.type].carry.n) : [];
     const enemies = sim.units.filter(e => e.p !== p && !e.inside && !sim.hidden(p, e));
     const enemyHQ = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => o.t.t === 'hq' && o.t.owner !== p);
-    const props = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => TERRAIN[o.t.t].prop && o.t.owner !== p);
+    // 점령 목표: 다른 아군 점령병이 이미 올라가 있는 건물은 빼고 (서로 같은 곳으로 몰리지 않게)
+    const props = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).filter(o => TERRAIN[o.t.t].prop && o.t.owner !== p && !mates.some(m => m.x === o.x && m.y === o.y && UNITS[m.type].capture));
     const myHQ = sim.tiles.map((t, i) => ({ t, x: i % sim.w, y: (i / sim.w) | 0 })).find(o => o.t.t === 'hq' && o.t.owner === p);
     let best = null;
     const consider = (score, to, then) => { score += (this.R() - 0.5) * this.L.noise * 4000; if (!best || score > best.score) best = { score, to, then }; };
@@ -105,7 +114,11 @@ export class AI {
       let goal = 0;
       if (U.capture && props.length) { const d = Math.min(...props.map(o => dist(v.x, v.y, o.x, o.y) + (o.t.t === 'hq' ? -3 : 0))); goal = -d * 260; }
       else if (enemies.length) { const near = enemies.map(e => dist(v.x, v.y, e.x, e.y) - (base(u.type, e.type) / 30)); goal = -Math.min(...near) * 160 * this.L.focus; }
-      if (enemyHQ.length) goal += -dist(v.x, v.y, enemyHQ[0].x, enemyHQ[0].y) * (U.capture ? 120 : 60) * Math.min(2, 0.5 + sim.day / 10);
+      const late = sim.limit ? Math.max(0, sim.day - sim.limit * 0.55) / (sim.limit * 0.45) : 0;   // 기한이 가까우면 본부로 더 세게
+      if (enemyHQ.length) goal += -dist(v.x, v.y, enemyHQ[0].x, enemyHQ[0].y) * (U.capture ? 120 : 60) * (Math.min(2, 0.5 + sim.day / 10) + late);
+      if (needRep) goal = -supD(v.x, v.y) * 500 + (supD(v.x, v.y) === 0 ? 3000 : 0);
+      // 함께 움직이기: 혼자 튀어나가지 않게 (원거리 유닛 제외)
+      if (!U.indirect && !U.air) pos += Math.min(3, mates.filter(o => dist(o.x, o.y, v.x, v.y) <= 2).length) * 120;
       if (needSup) goal = -supD(v.x, v.y) * 700 + (supD(v.x, v.y) === 0 && !sim.unitAt(v.x, v.y) || (v.x === u.x && v.y === u.y && supD(v.x, v.y) === 0) ? 4000 : 0);
       // 섬에 갇힘: 수송 유닛 쪽으로
       if (isStr) goal = boats.length ? -Math.min(...boats.map(o => dist(v.x, v.y, o.x, o.y))) * 300 : 0;
@@ -131,6 +144,8 @@ export class AI {
         const save = [u.x, u.y]; u.x = v.x; u.y = v.y;
         const f = sim.forecast(u, v.x, v.y, e); u.x = save[0]; u.y = save[1];
         let s = UNITS[e.type].cost * f.dmg / 100 * (f.kill ? 1.5 : 1) - val * f.counter / 100 * 1.1;
+        if (f.kill) s += UNITS[e.type].cost * 0.4;                 // 마무리: 위협 하나를 아예 없앰
+        s += (100 - e.hp) / 100 * UNITS[e.type].cost * 0.3;      // 약해진 적 집중
         const et = sim.tile(e.x, e.y); if (TERRAIN[et.t].prop && UNITS[e.type].capture && et.owner === p) s += 3000 + (et.t === 'hq' ? 15000 : 0);   // 우리 건물 점령 중인 적
         if (f.die) s -= val;
         consider(stay * 0.6 + s * 1.3 + 900, [v.x, v.y], { kind: 'attack', target: e.id });
@@ -153,7 +168,7 @@ export class AI {
     }
     // 잠수함·스텔스기: 공격하지 않을 땐 잠수·은신 (보이지 않게)
     if (best && U.dive && !u.dive && best.then.kind === 'wait') best.then = { kind: 'dive' };
-    return best ? { kind: 'act', id: u.id, to: best.to, then: best.then } : null;
+    return best ? { kind: 'act', id: u.id, to: best.to, then: best.then, score: best.score } : null;
   }
 
   // 상륙정 · 수송헬기: 갇힌 아군 태우러 가기 → 목표가 있는 땅 옆에 내려 주기

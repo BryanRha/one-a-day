@@ -1,10 +1,11 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.22.4';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.22.4';
-import { audio } from '../audio.js?v=0.22.4';
-import { load } from '../save.js?v=0.22.4';
-import { SERIES, EPISODES } from '../episodes.js?v=0.22.4';
-import { loadEp } from './Boot.js?v=0.22.4';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.23.0';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.23.0';
+import { audio } from '../audio.js?v=0.23.0';
+import { load } from '../save.js?v=0.23.0';
+import { SERIES, EPISODES } from '../episodes.js?v=0.23.0';
+import { loadEp } from './Boot.js?v=0.23.0';
+import { cafeData } from '../cafe/state.js?v=0.23.0';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }
@@ -38,11 +39,19 @@ export class LibraryScene extends Phaser.Scene {
       this.cards.push(card); y += 156;
     }
     // 곧 공개 모드
-    y += 20; T(this, 60, y, '곧 만나요', 30, C.text, { ox: 0, w: 900 }); y += 40;
-    [['냥카페', '찾은 별로 고양이 카페 꾸미기'], ['오늘의 코디', '모은 옷으로 서윤 스타일링']].forEach(([a, b], i) => {
-      const x = W / 2 - 240 + i * 480; this.add.graphics().fillStyle(0x3A2236, 1).fillRoundedRect(x - 225, y, 450, 130, 22);
-      T(this, x - 195, y + 42, a, 32, C.text, { ox: 0, w: 900 }); T(this, x - 195, y + 88, b, 22, C.dim, { ox: 0, w: 700 });
-    });
+    // 나만의 공간: 냥카페 (+ 오늘의 코디 준비 중)
+    y += 30; T(this, 60, y, '나만의 공간', 34, C.text, { ox: 0, w: 900 }); y += 50;
+    const st = cafeData(), cafeC = this.add.container(W / 2, y + 140), cg = this.add.graphics();
+    cg.fillStyle(0x4A2A44, 1).fillRoundedRect(-480, -140, 960, 280, 28).lineStyle(3, 0xF0B65A, 1).strokeRoundedRect(-480, -140, 960, 280, 28);
+    cafeC.add([cg, this.add.image(-290, 0, this.cafeThumb())]);
+    cafeC.add(T(this, -60, -70, '서윤의 냥카페', 40, C.text, { ox: 0, w: 900 }));
+    cafeC.add(T(this, -60, -16, '별로 꾸미고, 고양이 손님을 맞이해요', 24, C.sub, { ox: 0, w: 700 }));
+    cafeC.add(T(this, -60, 46, `★ ${st.stars}   ·   손님 ${Object.keys(st.cafe.met).length} / 24`, 28, C.gold, { ox: 0, w: 900 }));
+    cafeC.add(T(this, 440, 100, '들어가기 ›', 26, '#FFB6CB', { ox: 1, w: 900 }));
+    cafeC.setSize(960, 280).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (this.dragged) return; audio.play('sfx_page', { volume: 0.6 }); this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Cafe')); });
+    y += 300;
+    const cc = this.add.graphics(); cc.fillStyle(0x3A2236, 1).fillRoundedRect(60, y, 960, 130, 22);
+    T(this, 100, y + 44, '오늘의 코디', 32, C.text, { ox: 0, w: 900 }); T(this, 100, y + 90, '모은 옷으로 서윤 스타일링 · 곧 열려요', 22, C.dim, { ox: 0, w: 700 });
     y += 190;
     // 스크롤: 카메라를 위아래로 · 끌었으면 카드 탭 무시 · 마스크(썸네일)는 카메라와 함께 움직이도록 따로 옮김
     const cam = this.cameras.main; cam.setBounds(0, 0, W, Math.max(H, y)); this.dragged = false;
@@ -56,6 +65,11 @@ export class LibraryScene extends Phaser.Scene {
     this.input.on('wheel', (p, o, dx, dy) => { if (this.modal) return; cam.scrollY = Phaser.Math.Clamp(cam.scrollY + dy, 0, Math.max(0, y - H)); });
     this.cameras.main.fadeIn(300, 30, 10, 26); window.__lib = this;
     const auto = data && data.auto && EPISODES.find(e => e.id === data.auto); if (auto) this.time.delayedCall(350, () => this.play(auto));
+  }
+  // 냥카페 썸네일: 카페 방 그림 창가 쪽을 둥글게
+  cafeThumb() {
+    const key = 'th_cafe'; if (this.textures.exists(key)) return key; const src = this.textures.get('cafe_room').getSourceImage(), w = 340, h = 240, c = this.textures.createCanvas(key, w, h), g = c.getContext();
+    g.beginPath(); if (g.roundRect) g.roundRect(0, 0, w, h, 22); else g.rect(0, 0, w, h); g.clip(); g.drawImage(src, 180, 180, 680, 480, 0, 0, w, h); c.refresh(); return key;
   }
   // 서재 썸네일: 웹툰 3컷을 132x112 둥근 사각형으로 잘라 텍스처로 한 번 만들어 둠
   thumb(ep) {

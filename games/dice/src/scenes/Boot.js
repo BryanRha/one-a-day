@@ -1,9 +1,9 @@
 // 로딩 + 코드로 그리는 주사위 판 텍스처 (룬마다 어두운 유리 주사위 + 원소색 빛 테두리)
-import { W, H, TITLE } from '../config.js?v=0.22.4';
-import { SFX } from '../audio.js?v=0.22.4';
-import { makeTextures } from '../fx.js?v=0.22.4';
-import { makeIcons } from '../pui.js?v=0.22.4';
-import { RUNES } from '../core/sim.js?v=0.22.4';
+import { W, H, TITLE } from '../config.js?v=0.23.0';
+import { SFX } from '../audio.js?v=0.23.0';
+import { makeTextures } from '../fx.js?v=0.23.0';
+import { makeIcons } from '../pui.js?v=0.23.0';
+import { RUNES } from '../core/sim.js?v=0.23.0';
 
 const hex = n => '#' + n.toString(16).padStart(6, '0');
 function rr(g, x, y, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h / 2)); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }

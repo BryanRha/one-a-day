@@ -1,11 +1,12 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.22.4';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.4';
-import { audio } from '../audio.js?v=0.22.4';
-import { load, save } from '../save.js?v=0.22.4';
-import { Viewer } from '../viewer.js?v=0.22.4';
-import { EPISODES } from '../episodes.js?v=0.22.4';
+import { W, H } from '../config.js?v=0.23.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.23.0';
+import { audio } from '../audio.js?v=0.23.0';
+import { load, save } from '../save.js?v=0.23.0';
+import { Viewer } from '../viewer.js?v=0.23.0';
+import { EPISODES } from '../episodes.js?v=0.23.0';
+import { starOnce } from '../cafe/state.js?v=0.23.0';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }
@@ -56,9 +57,10 @@ export class EvidenceScene extends Phaser.Scene {
     p.content.add(btn(this, 0, 190, 400, 100, '서재로', () => this.scene.start('Library'), { style: 'cream', size: 30 }));
   }
   win() {
-    const d = load(); d.coins += 10; d.ep[this.ep.id].step = 'after'; save();
+    const d = load(); d.coins += 10; d.ep[this.ep.id].step = 'after'; save(); const got = starOnce(this.ep.id, 'e', this.hearts >= 3 ? 2 : 1);
     audio.play('sfx_clear', { volume: 0.7 }); this.cameras.main.flash(300, 255, 230, 240);
     const t = T(this, W / 2, H / 2, '거짓말을 밝혀냈어요!', 60, '#FFFFFF', { w: 900, shadow: true }).setDepth(60);
+    if (got) T(this, W / 2, H / 2 + 80, '★'.repeat(got) + '  냥카페 별 +' + got, 38, C.gold, { w: 900, shadow: true }).setDepth(60);
     this.time.delayedCall(1500, () => { this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Story', { id: this.ep.id, part: 'after' })); });
   }
   leave() { this.paused = true; const p = popup(this, 760, 420, { onClose: () => { this.paused = false; } }); p.content.add(T(this, 0, -100, '서재로 돌아갈까요?', 40, C.ink, { w: 900 })); p.content.add(btn(this, -170, 80, 300, 110, '계속하기', () => p.close(), { style: 'cream' })); p.content.add(btn(this, 170, 80, 300, 110, '나가기', () => this.scene.start('Library'))); }

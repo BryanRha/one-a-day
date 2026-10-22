@@ -1,10 +1,11 @@
 // 웹툰 결말: 컷이 차례로 내려오고 말풍선이 하나씩 · 마지막 컷 반전 → "다음 화에 계속"
-import { W, H } from '../config.js?v=0.24.2';
-import { T, C, btn } from '../ui.js?v=0.24.2';
-import { audio } from '../audio.js?v=0.24.2';
-import { load, save } from '../save.js?v=0.24.2';
-import { EPISODES } from '../episodes.js?v=0.24.2';
-import { starOnce } from '../cafe/state.js?v=0.24.2';
+import { W, H } from '../config.js?v=0.24.3';
+import { T, C, btn } from '../ui.js?v=0.24.3';
+import { audio } from '../audio.js?v=0.24.3';
+import { goPrev } from '../nav.js?v=0.24.3';
+import { load, save } from '../save.js?v=0.24.3';
+import { EPISODES } from '../episodes.js?v=0.24.3';
+import { starOnce } from '../cafe/state.js?v=0.24.3';
 
 export class ToonScene extends Phaser.Scene {
   constructor() { super('Toon'); }
@@ -59,5 +60,5 @@ export class ToonScene extends Phaser.Scene {
     audio.play('sfx_clear', { volume: 0.6 });
   }
   end(auto) { if (this.leaving) return; this.leaving = true; this.cameras.main.fadeOut(300, 18, 8, 16); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Library', { auto })); }
-  onBack() { this.end(); return true; }
+  onBack() { if (this.over) { this.end(); return true; } return goPrev(this); }
 }

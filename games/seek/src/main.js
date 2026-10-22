@@ -1,18 +1,20 @@
-import { W, BASE_H, setH } from './config.js?v=0.24.2';
-import { audio } from './audio.js?v=0.24.2';
-import { BootScene } from './scenes/Boot.js?v=0.24.2';
-import { LibraryScene } from './scenes/Library.js?v=0.24.2';
-import { StoryScene } from './scenes/Story.js?v=0.24.2';
-import { HuntScene } from './scenes/Hunt.js?v=0.24.2';
-import { EvidenceScene } from './scenes/Evidence.js?v=0.24.2';
-import { ToonScene } from './scenes/Toon.js?v=0.24.2';
-import { CafeScene } from './scenes/Cafe.js?v=0.24.2';
-import { CatHuntScene } from './scenes/CatHunt.js?v=0.24.2';
-import { CatDexScene } from './scenes/CatDex.js?v=0.24.2';
-import { CoordScene } from './scenes/Coord.js?v=0.24.2';
-import { installBack } from './oad.js?v=0.24.2';
+import { W, BASE_H, setH } from './config.js?v=0.24.3';
+import { audio } from './audio.js?v=0.24.3';
+import { BootScene } from './scenes/Boot.js?v=0.24.3';
+import { LibraryScene } from './scenes/Library.js?v=0.24.3';
+import { StoryScene } from './scenes/Story.js?v=0.24.3';
+import { HuntScene } from './scenes/Hunt.js?v=0.24.3';
+import { EvidenceScene } from './scenes/Evidence.js?v=0.24.3';
+import { ToonScene } from './scenes/Toon.js?v=0.24.3';
+import { CafeScene } from './scenes/Cafe.js?v=0.24.3';
+import { CatHuntScene } from './scenes/CatHunt.js?v=0.24.3';
+import { CatDexScene } from './scenes/CatDex.js?v=0.24.3';
+import { CoordScene } from './scenes/Coord.js?v=0.24.3';
+import { installBack } from './oad.js?v=0.24.3';
+import { installNav } from './nav.js?v=0.24.3';
 
 async function start() {
+  installNav();
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* */ }
   const game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', width: W, height: BASE_H, backgroundColor: '#2E1A2A',

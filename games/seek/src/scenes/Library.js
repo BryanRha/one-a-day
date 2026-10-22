@@ -1,13 +1,13 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.24.2';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.24.2';
-import { audio } from '../audio.js?v=0.24.2';
-import { load } from '../save.js?v=0.24.2';
-import { SERIES, EPISODES } from '../episodes.js?v=0.24.2';
-import { loadEp } from './Boot.js?v=0.24.2';
-import { cafeData } from '../cafe/state.js?v=0.24.2';
-import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.24.2';
-import { buildLook } from '../coord/look.js?v=0.24.2';
+import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.24.3';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.24.3';
+import { audio } from '../audio.js?v=0.24.3';
+import { load } from '../save.js?v=0.24.3';
+import { SERIES, EPISODES } from '../episodes.js?v=0.24.3';
+import { loadEp } from './Boot.js?v=0.24.3';
+import { cafeData } from '../cafe/state.js?v=0.24.3';
+import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.24.3';
+import { buildLook } from '../coord/look.js?v=0.24.3';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }
@@ -92,6 +92,6 @@ export class LibraryScene extends Phaser.Scene {
     g.beginPath(); if (g.roundRect) g.roundRect(0, 0, w, h, 18); else g.rect(0, 0, w, h); g.clip();
     g.drawImage(src, (src.width - sw) / 2, (src.height - sh) / 2, sw, sh, 0, 0, w, h); c.refresh(); return key;
   }
-  play(ep) { audio.play('sfx_page', { volume: 0.6 }); const st = (load().ep[ep.id] || {}).step; this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => loadEp(this, ep, () => this.scene.start('Story', { id: ep.id, part: st === 'mid' || st === 'evidence' ? 'mid' : st === 'after' || st === 'toon' ? 'after' : st === 'hunt' ? 'hunt' : 'intro' }))); }
+  play(ep) { audio.play('sfx_page', { volume: 0.6 }); const st = (load().ep[ep.id] || {}).step; this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => loadEp(this, ep, () => st === 'hunt' ? this.scene.start('Hunt', { id: ep.id }) : this.scene.start('Story', { id: ep.id, part: st === 'mid' || st === 'evidence' ? 'mid' : st === 'after' || st === 'toon' ? 'after' : st === 'hunt' ? 'hunt' : 'intro' }))); }
   settings() { this.modal = true; const d = load(), p = popup(this, 700, 420, { onClose: () => { this.modal = false; } }); p.content.add(T(this, 0, -120, '설정', 44, C.ink, { w: 900 })); const b = btn(this, 0, 40, 420, 110, d.sfx ? '효과음 켜짐' : '효과음 꺼짐', () => { const on = audio.toggleSfx(); b.setLabel(on ? '효과음 켜짐' : '효과음 꺼짐'); }, { style: 'cream' }); p.content.add(b); }
 }

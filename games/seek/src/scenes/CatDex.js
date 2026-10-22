@@ -1,9 +1,10 @@
 // 고양이 도감 24마리: 만난 고양이는 사진 · 못 만난 고양이는 실루엣 + 좋아하는 것 힌트
-import { W, H } from '../config.js?v=0.24.2';
-import { T, C, btn, iconBtn, popup } from '../ui.js?v=0.24.2';
-import { CATS, POSES, likeText } from '../cafe/data.js?v=0.24.2';
-import { cafeData } from '../cafe/state.js?v=0.24.2';
-import { loadCafe } from '../cafe/room.js?v=0.24.2';
+import { goPrev } from '../nav.js?v=0.24.3';
+import { W, H } from '../config.js?v=0.24.3';
+import { T, C, btn, iconBtn, popup } from '../ui.js?v=0.24.3';
+import { CATS, POSES, likeText } from '../cafe/data.js?v=0.24.3';
+import { cafeData } from '../cafe/state.js?v=0.24.3';
+import { loadCafe } from '../cafe/room.js?v=0.24.3';
 
 export class CatDexScene extends Phaser.Scene {
   constructor() { super('CatDex'); }
@@ -39,5 +40,5 @@ export class CatDexScene extends Phaser.Scene {
     p.content.add(btn(this, 0, 350, 360, 100, '닫기', () => p.close(), { style: 'cream', size: 30 }));
   }
   leave() { this.cameras.main.fadeOut(200, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Cafe')); }
-  onBack() { this.leave(); return true; }
+  onBack() { return goPrev(this); }
 }

@@ -1,12 +1,13 @@
 // 오늘의 숨은 고양이: 내가 꾸민 카페 그대로가 맵 · 가구 뒤 · 위에 고양이 6마리가 숨음 · 하루 한 번 별
-import { W, H } from '../config.js?v=0.24.2';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.24.2';
-import { audio } from '../audio.js?v=0.24.2';
-import { save } from '../save.js?v=0.24.2';
-import { Viewer } from '../viewer.js?v=0.24.2';
-import { CATS, HIDE, ROOM } from '../cafe/data.js?v=0.24.2';
-import { cafeData, today } from '../cafe/state.js?v=0.24.2';
-import { loadCafe, furnitureList, composeTexture } from '../cafe/room.js?v=0.24.2';
+import { W, H } from '../config.js?v=0.24.3';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.24.3';
+import { audio } from '../audio.js?v=0.24.3';
+import { goPrev } from '../nav.js?v=0.24.3';
+import { save } from '../save.js?v=0.24.3';
+import { Viewer } from '../viewer.js?v=0.24.3';
+import { CATS, HIDE, ROOM } from '../cafe/data.js?v=0.24.3';
+import { cafeData, today } from '../cafe/state.js?v=0.24.3';
+import { loadCafe, furnitureList, composeTexture } from '../cafe/room.js?v=0.24.3';
 
 const HINT_COST = 10;
 export class CatHuntScene extends Phaser.Scene {
@@ -80,5 +81,5 @@ export class CatHuntScene extends Phaser.Scene {
     p.content.add(btn(this, 0, 190, 480, 110, '카페로 돌아가기', () => this.leave(), { size: 32 }));
   }
   leave() { this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Cafe')); }
-  onBack() { if (this.ended) { this.leave(); return true; } this.leave(); return true; }
+  onBack() { return goPrev(this); }
 }

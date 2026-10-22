@@ -1,9 +1,10 @@
 // 이야기 (Choices 식): 배경 · 인물 상반신(표정) · 이름표 말풍선 · 한 글자씩 · 선택지 → 다음 단계(hunt/evidence/toon)
-import { W, H } from '../config.js?v=0.24.2';
-import { T, C, btn, iconBtn } from '../ui.js?v=0.24.2';
-import { audio } from '../audio.js?v=0.24.2';
-import { load, save } from '../save.js?v=0.24.2';
-import { EPISODES } from '../episodes.js?v=0.24.2';
+import { W, H } from '../config.js?v=0.24.3';
+import { T, C, btn, iconBtn } from '../ui.js?v=0.24.3';
+import { audio } from '../audio.js?v=0.24.3';
+import { goPrev } from '../nav.js?v=0.24.3';
+import { load, save } from '../save.js?v=0.24.3';
+import { EPISODES } from '../episodes.js?v=0.24.3';
 
 export class StoryScene extends Phaser.Scene {
   constructor() { super('Story'); }
@@ -23,7 +24,7 @@ export class StoryScene extends Phaser.Scene {
     this.more = T(this, W - 100, by + 315, '▼', 26, '#E8628A', { w: 900 }); this.tweens.add({ targets: this.more, y: this.more.y + 8, duration: 500, yoyo: true, repeat: -1 });
     this.box.add([g, this.tag, this.who, this.line, this.more]);
     this.choiceL = this.add.container(0, 0);
-    iconBtn(this, 72, 76, 'back', () => this.scene.start('Library'), 88, { dark: true });
+    iconBtn(this, 72, 76, 'back', () => goPrev(this), 88, { dark: true });
     T(this, W / 2, 76, `${this.ep.no}화 · ${this.ep.title}`, 28, '#FFFFFF', { w: 800, shadow: true });
     this.input.on('pointerup', p => { if (p.y > 140) this.tap(); });
     this.cameras.main.fadeIn(300, 30, 10, 26); window.__story = this;
@@ -63,5 +64,5 @@ export class StoryScene extends Phaser.Scene {
     d.ep[this.ep.id].step = k; save();
     this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(map[k], { id: this.ep.id }));
   }
-  onBack() { this.scene.start('Library'); return true; }
+  onBack() { return goPrev(this); }
 }

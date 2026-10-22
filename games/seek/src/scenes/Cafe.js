@@ -1,14 +1,15 @@
 // 냥카페: 별로 가구를 놓아 카페를 꾸미고(June's Journey) · 좋아하는 가구를 놓으면 고양이가 찾아옴(네코아츠메)
 // 자리를 비운 사이 손님이 다녀가 선물을 남기고, 매일 내 카페에서 숨은 고양이 찾기
-import { W, H } from '../config.js?v=0.24.2';
-import { T, C, btn, iconBtn, popup, toast, panel } from '../ui.js?v=0.24.2';
-import { audio } from '../audio.js?v=0.24.2';
-import { load, save } from '../save.js?v=0.24.2';
-import { SLOTS, CATS, THEMES, ROOM, levelOf } from '../cafe/data.js?v=0.24.2';
-import { cafeData, level, placedCount, canCome, meet, seat, awayVisits, today, slotOf } from '../cafe/state.js?v=0.24.2';
-import { loadCafe, furnitureList, catItem, drawRoom } from '../cafe/room.js?v=0.24.2';
-import { coordData } from '../coord/state.js?v=0.24.2';
-import { buildLook } from '../coord/look.js?v=0.24.2';
+import { W, H } from '../config.js?v=0.24.3';
+import { T, C, btn, iconBtn, popup, toast, panel } from '../ui.js?v=0.24.3';
+import { audio } from '../audio.js?v=0.24.3';
+import { goPrev } from '../nav.js?v=0.24.3';
+import { load, save } from '../save.js?v=0.24.3';
+import { SLOTS, CATS, THEMES, ROOM, levelOf } from '../cafe/data.js?v=0.24.3';
+import { cafeData, level, placedCount, canCome, meet, seat, awayVisits, today, slotOf } from '../cafe/state.js?v=0.24.3';
+import { loadCafe, furnitureList, catItem, drawRoom } from '../cafe/room.js?v=0.24.3';
+import { coordData } from '../coord/state.js?v=0.24.3';
+import { buildLook } from '../coord/look.js?v=0.24.3';
 
 const TOP = 150, BAR = 200;
 export class CafeScene extends Phaser.Scene {
@@ -212,5 +213,5 @@ export class CafeScene extends Phaser.Scene {
   }
   goDex() { if (this.busy) return; this.cameras.main.fadeOut(200, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('CatDex')); }
   leave() { this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Library')); }
-  onBack() { if (this.sheet) { this.sheet.close(); this.sheet = null; return true; } this.leave(); return true; }
+  onBack() { if (this.sheet) { this.sheet.close(); this.sheet = null; return true; } return goPrev(this); }
 }

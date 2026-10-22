@@ -1,12 +1,13 @@
 // 오늘의 코디: 매일 이야기 속 상황 하나(Covet · Dress to Impress) → 옷장(한 벌 + 머리 · 가방 · 손 소품, 추천 3벌) → 인생샷 → 하나 · 지아 · 어머니 심사
-import { W, H } from '../config.js?v=0.24.2';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.24.2';
-import { audio } from '../audio.js?v=0.24.2';
-import { save } from '../save.js?v=0.24.2';
-import { OUTFITS, ACCS, THEMES, SLOT_NAMES } from '../coord/data.js?v=0.24.2';
-import { coordData, item, owned, lockText, buy, todayTheme, doneToday, judge, recommend } from '../coord/state.js?v=0.24.2';
-import { buildLook } from '../coord/look.js?v=0.24.2';
-import { today } from '../cafe/state.js?v=0.24.2';
+import { W, H } from '../config.js?v=0.24.3';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.24.3';
+import { audio } from '../audio.js?v=0.24.3';
+import { goPrev } from '../nav.js?v=0.24.3';
+import { save } from '../save.js?v=0.24.3';
+import { OUTFITS, ACCS, THEMES, SLOT_NAMES } from '../coord/data.js?v=0.24.3';
+import { coordData, item, owned, lockText, buy, todayTheme, doneToday, judge, recommend } from '../coord/state.js?v=0.24.3';
+import { buildLook } from '../coord/look.js?v=0.24.3';
+import { today } from '../cafe/state.js?v=0.24.3';
 
 const SHEET = 620, PER = 10;
 export class CoordScene extends Phaser.Scene {
@@ -26,7 +27,7 @@ export class CoordScene extends Phaser.Scene {
   brief() {
     const th = this.th, d = coordData(); this.bg(th.bg); this.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.35).setDepth(-4);
     this.topBar(`오늘의 코디 · ${new Date().getMonth() + 1}월 ${new Date().getDate()}일`);
-    const p = popup(this, 940, 1060, { closable: false, onBack: () => this.leave() });
+    const p = popup(this, 940, 1060, { closable: false, onBack: () => goPrev(this) }); this.briefP = p;
     p.content.add(T(this, 0, -460, '오늘의 상황', 26, C.dim, { w: 800 }));
     p.content.add(T(this, 0, -405, th.t, 52, C.ink, { w: 900 }));
     const row = this.add.container(0, -260), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(-420, -90, 840, 180, 26); row.add(g);
@@ -142,7 +143,7 @@ export class CoordScene extends Phaser.Scene {
     if (first) { d.coord.day = today(); d.stars += r.stars; d.coins += r.stars * 10; }
     d.coord.album = [{ day: today(), t: th.i, w: { ...this.w }, st: r.stars }, ...d.coord.album.filter(a => !(a.day === today() && a.st <= r.stars))].slice(0, 60); save();
     audio.play('sfx_clear', { volume: 0.7 });
-    const p = popup(this, 960, 1280, { closable: false, onBack: () => this.leave() });
+    const p = popup(this, 960, 1280, { closable: false, onBack: () => { p.close(); this.busy = false; this.sheet.setVisible(true); } });
     p.content.add(T(this, 0, -560, '★'.repeat(r.stars) + '☆'.repeat(3 - r.stars), 70, C.gold, { w: 900 }));
     p.content.add(T(this, 0, -480, ['괜찮은 시작이에요!', '잘 어울려요!', `완벽한 ${th.t} 룩!`][r.stars - 1], 42, C.ink, { w: 900 }));
     r.judges.forEach(({ j, st, line }, i) => {
@@ -169,5 +170,5 @@ export class CoordScene extends Phaser.Scene {
     });
   }
   leave() { this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(this.mode === 'album' ? 'Coord' : 'Library')); }
-  onBack() { if (this.mode === 'album') { this.scene.restart({}); return true; } this.leave(); return true; }
+  onBack() { if (this.mode === 'album' || this.mode === 'closet') { this.scene.restart({}); return true; } return goPrev(this); }
 }

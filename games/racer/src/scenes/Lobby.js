@@ -1,10 +1,10 @@
 // 차고: 메인 일러스트 + 드라이버 선택 · 자동차 선택 · 부품 강화 → 출발
-import { W, H } from '../config.js?v=0.24.2';
-import { txt, fmt, fit, button, toast, popup } from '../ui.js?v=0.24.2';
-import { audio } from '../audio.js?v=0.24.2';
-import { load, save } from '../save.js?v=0.24.2';
-import { wind } from '../fx.js?v=0.24.2';
-import * as M from '../meta.js?v=0.24.2';
+import { W, H } from '../config.js?v=0.24.3';
+import { txt, fmt, fit, button, toast, popup } from '../ui.js?v=0.24.3';
+import { audio } from '../audio.js?v=0.24.3';
+import { load, save } from '../save.js?v=0.24.3';
+import { wind } from '../fx.js?v=0.24.3';
+import * as M from '../meta.js?v=0.24.3';
 
 // 밝은 카드 (흰 바탕 + 남색 테두리)
 function card(scene, x, y, w, h, on = false) {

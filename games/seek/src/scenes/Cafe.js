@@ -1,12 +1,14 @@
 // 냥카페: 별로 가구를 놓아 카페를 꾸미고(June's Journey) · 좋아하는 가구를 놓으면 고양이가 찾아옴(네코아츠메)
 // 자리를 비운 사이 손님이 다녀가 선물을 남기고, 매일 내 카페에서 숨은 고양이 찾기
-import { W, H } from '../config.js?v=0.23.0';
-import { T, C, btn, iconBtn, popup, toast, panel } from '../ui.js?v=0.23.0';
-import { audio } from '../audio.js?v=0.23.0';
-import { load, save } from '../save.js?v=0.23.0';
-import { SLOTS, CATS, THEMES, ROOM, levelOf } from '../cafe/data.js?v=0.23.0';
-import { cafeData, level, placedCount, canCome, meet, seat, awayVisits, today, slotOf } from '../cafe/state.js?v=0.23.0';
-import { loadCafe, furnitureList, catItem, drawRoom } from '../cafe/room.js?v=0.23.0';
+import { W, H } from '../config.js?v=0.24.0';
+import { T, C, btn, iconBtn, popup, toast, panel } from '../ui.js?v=0.24.0';
+import { audio } from '../audio.js?v=0.24.0';
+import { load, save } from '../save.js?v=0.24.0';
+import { SLOTS, CATS, THEMES, ROOM, levelOf } from '../cafe/data.js?v=0.24.0';
+import { cafeData, level, placedCount, canCome, meet, seat, awayVisits, today, slotOf } from '../cafe/state.js?v=0.24.0';
+import { loadCafe, furnitureList, catItem, drawRoom } from '../cafe/room.js?v=0.24.0';
+import { coordData } from '../coord/state.js?v=0.24.0';
+import { buildLook } from '../coord/look.js?v=0.24.0';
 
 const TOP = 150, BAR = 200;
 export class CafeScene extends Phaser.Scene {
@@ -59,6 +61,14 @@ export class CafeScene extends Phaser.Scene {
     cf.here = cf.here.filter(id => canCome(CATS.find(c => c.id === id)));
     const cats = seat(cf.here).map(sp => catItem(sp.c, sp));
     this.room = drawRoom(this, [...furnitureList(placed), ...cats], this.s, this.ox, this.oy - this.lift);
+    // 오늘 코디를 입은 서윤 (카운터 앞 · 쿠션보다 앞, 러그보다 뒤)
+    const w = coordData().coord.wear, sy = this.add.container(0, 0); if (this.textures.exists(w.o)) {
+      const lk = buildLook(this, w.o, w, 560); lk.setPosition(735, 915); const sh = this.add.ellipse(735, 910, 170, 30, 0x3A2010, 0.22);
+      const idx = this.room.objs.findIndex(o => o.it.z > 2.8); const at = idx < 0 ? this.room.root.length : this.room.root.getIndex(this.room.objs[idx].im) - (this.room.objs[idx].it.shadow ? 1 : 0);
+      this.room.root.addAt([sh, lk], at); this.tweens.add({ targets: lk, scaleY: 1.008, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      lk.setSize(240, 560).setInteractive(new Phaser.Geom.Rectangle(-120, -560, 240, 560), Phaser.Geom.Rectangle.Contains).on('pointerup', () => { if (this.busy) return; toast(this, '서윤 · "오늘 코디 어때? 옷 갈아입고 올까?"', TOP + 120); });
+    }
+    sy.destroy();
     for (const o of this.room.objs) {
       o.im.setInteractive({ useHandCursor: true, pixelPerfect: !o.it.cat && !o.it.flat, alphaTolerance: 40 });
       if (o.it.cat) {   // 숨쉬기 · 꼬리 대신 살짝 흔들림 · 누르면 반응

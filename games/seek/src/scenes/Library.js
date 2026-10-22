@@ -1,11 +1,13 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.23.0';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.23.0';
-import { audio } from '../audio.js?v=0.23.0';
-import { load } from '../save.js?v=0.23.0';
-import { SERIES, EPISODES } from '../episodes.js?v=0.23.0';
-import { loadEp } from './Boot.js?v=0.23.0';
-import { cafeData } from '../cafe/state.js?v=0.23.0';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.24.0';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.24.0';
+import { audio } from '../audio.js?v=0.24.0';
+import { load } from '../save.js?v=0.24.0';
+import { SERIES, EPISODES } from '../episodes.js?v=0.24.0';
+import { loadEp } from './Boot.js?v=0.24.0';
+import { cafeData } from '../cafe/state.js?v=0.24.0';
+import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.24.0';
+import { buildLook } from '../coord/look.js?v=0.24.0';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }
@@ -50,9 +52,18 @@ export class LibraryScene extends Phaser.Scene {
     cafeC.add(T(this, 440, 100, '들어가기 ›', 26, '#FFB6CB', { ox: 1, w: 900 }));
     cafeC.setSize(960, 280).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (this.dragged) return; audio.play('sfx_page', { volume: 0.6 }); this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Cafe')); });
     y += 300;
-    const cc = this.add.graphics(); cc.fillStyle(0x3A2236, 1).fillRoundedRect(60, y, 960, 130, 22);
-    T(this, 100, y + 44, '오늘의 코디', 32, C.text, { ox: 0, w: 900 }); T(this, 100, y + 90, '모은 옷으로 서윤 스타일링 · 곧 열려요', 22, C.dim, { ox: 0, w: 700 });
-    y += 190;
+    // 오늘의 코디 카드: 오늘 입은 서윤 + 오늘의 상황
+    const cd = coordData(), th = todayTheme(), done = doneToday(), coC = this.add.container(W / 2, y + 150), og = this.add.graphics();
+    og.fillStyle(0x4A2A44, 1).fillRoundedRect(-480, -150, 960, 300, 28).lineStyle(3, done ? 0xF0B65A : 0xE86A8E, 1).strokeRoundedRect(-480, -150, 960, 300, 28); coC.add(og);
+    coC.add(T(this, -160, -82, '오늘의 코디', 40, C.text, { ox: 0, w: 900 }));
+    coC.add(T(this, -160, -26, `오늘의 상황 · ${th.t}`, 26, '#FFB6CB', { ox: 0, w: 800 }));
+    coC.add(T(this, -160, 26, `${th.by}: "${th.line}"`, 22, C.sub, { ox: 0, w: 700, wrap: 600, align: 'left' }));
+    coC.add(T(this, 440, 112, done ? '오늘 완료 ✓' : '코디하러 가기 ›', 26, done ? C.gold : '#FFB6CB', { ox: 1, w: 900 }));
+    if (!done) this.tweens.add({ targets: coC, scale: 1.015, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const w = cd.coord.wear, ids = [w.o, w.hair, w.bag, w.prop].filter(Boolean), put = () => { const lk = buildLook(this, w.o, w, 270); lk.setPosition(-330, 140); coC.add(lk); };
+    const need = ids.filter(k => !this.textures.exists(k)); if (need.length) { need.forEach(k => this.load.image(k, `assets/coord/${k}.webp`)); this.load.once('complete', put); this.load.start(); } else put();
+    coC.setSize(960, 300).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (this.dragged) return; audio.play('sfx_page', { volume: 0.6 }); this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Coord')); });
+    y += 330;
     // 스크롤: 카메라를 위아래로 · 끌었으면 카드 탭 무시 · 마스크(썸네일)는 카메라와 함께 움직이도록 따로 옮김
     const cam = this.cameras.main; cam.setBounds(0, 0, W, Math.max(H, y)); this.dragged = false;
     this.input.on('pointerdown', p => { this.dragY = p.y; this.dragS = cam.scrollY; this.dragged = false; this.vel = 0; });

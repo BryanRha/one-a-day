@@ -1,9 +1,9 @@
 // 웹툰 결말: 컷이 차례로 내려오고 말풍선이 하나씩 · 마지막 컷 반전 → "다음 화에 계속"
-import { W, H } from '../config.js?v=0.22.0';
-import { T, C, btn } from '../ui.js?v=0.22.0';
-import { audio } from '../audio.js?v=0.22.0';
-import { load, save } from '../save.js?v=0.22.0';
-import { EPISODES } from '../episodes.js?v=0.22.0';
+import { W, H } from '../config.js?v=0.22.1';
+import { T, C, btn } from '../ui.js?v=0.22.1';
+import { audio } from '../audio.js?v=0.22.1';
+import { load, save } from '../save.js?v=0.22.1';
+import { EPISODES } from '../episodes.js?v=0.22.1';
 
 export class ToonScene extends Phaser.Scene {
   constructor() { super('Toon'); }
@@ -13,15 +13,21 @@ export class ToonScene extends Phaser.Scene {
     this.strip = this.add.container(0, 0); this.y = 60; this.k = -1; this.step = []; this.lock = false; this.over = false; this.leaving = false;
     // 순서: 컷 → 그 컷의 말풍선들 → 다음 컷
     ep.toon.forEach((p, i) => { this.step.push({ panel: i }); p.b.forEach(b => this.step.push({ panel: i, bubble: b })); });
-    this.hint = T(this, W / 2, H - 70, '화면을 눌러 넘겨요', 24, '#9A7A8A', { w: 800 }).setScrollFactor(0).setDepth(10);
-    this.input.on('pointerup', () => this.next());
+    this.hint = T(this, W / 2, H - 70, '눌러서 넘기기 · 위아래로 끌어 지난 컷 보기', 24, '#9A7A8A', { w: 800 }).setScrollFactor(0).setDepth(10);
+    // 위아래로 끌면 지난 컷을 다시 볼 수 있음 · 끌지 않고 떼면 다음 장면
+    this.drag = null;
+    this.input.on('pointerdown', p => { if (!this.over) this.drag = { y: p.y, sy: this.strip.y, moved: false }; });
+    this.input.on('pointermove', p => { const g = this.drag; if (!g || !p.isDown) return; if (Math.abs(p.y - g.y) > 16) g.moved = true; if (g.moved) { this.tweens.killTweensOf(this.strip); this.lock = false; this.strip.y = Phaser.Math.Clamp(g.sy + p.y - g.y, Math.min(0, H - 160 - this.y), 0); } });
+    const up = () => { const g = this.drag; this.drag = null; if (g && !g.moved) this.next(); };
+    this.input.on('pointerup', up); this.input.on('pointerupoutside', () => { this.drag = null; });
     this.panels = []; this.next();
     this.cameras.main.fadeIn(400, 18, 8, 16); window.__toon = this;
   }
   next() {
     if (this.lock || this.over) return;
     this.k++; const s = this.step[this.k]; if (!s) return this.finale();
-    if (s.bubble) return this.bubble(this.panels[s.panel], s.bubble);
+    // 지난 컷을 보고 있었다면 지금 컷 자리로 돌아온 뒤 말풍선
+    if (s.bubble) { if (Math.abs(this.strip.y - this.want) > 4) this.tweens.add({ targets: this.strip, y: this.want, duration: 260, ease: 'Cubic.easeOut' }); return this.bubble(this.panels[s.panel], s.bubble); }
     const P = this.ep.toon[s.panel], im = this.add.image(W / 2, this.y, P.img).setOrigin(0.5, 0); im.setScale((W - 60) / im.width);
     const fr = this.add.rectangle(W / 2, this.y, W - 60, im.displayHeight).setOrigin(0.5, 0).setStrokeStyle(4, 0x000000, 1);
     this.strip.add([im, fr]); const pan = { im, y: this.y, h: im.displayHeight }; this.panels[s.panel] = pan;
@@ -29,7 +35,7 @@ export class ToonScene extends Phaser.Scene {
     im.setAlpha(0); this.tweens.add({ targets: [im, fr], alpha: 1, duration: 450 });
     this.y += im.displayHeight + 26; audio.play('sfx_page', { volume: 0.4 });
     // 새 컷이 화면 가운데쯤 오도록 위로 올림
-    const want = Math.min(0, -(pan.y + pan.h / 2 - H * 0.45)); this.lock = true; this.tweens.add({ targets: this.strip, y: want, duration: 500, ease: 'Cubic.easeInOut', onComplete: () => { this.lock = false; } });
+    const want = this.want = Math.min(0, -(pan.y + pan.h / 2 - H * 0.45)); this.lock = true; this.tweens.add({ targets: this.strip, y: want, duration: 500, ease: 'Cubic.easeInOut', onComplete: () => { this.lock = false; } });
   }
   bubble(pan, b) {
     const x = W / 2 + (b.x - 0.5) * (W - 60), y = pan.y + pan.h * b.y, isCap = !b.who;

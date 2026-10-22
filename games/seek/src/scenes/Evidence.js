@@ -1,11 +1,11 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.22.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.0';
-import { audio } from '../audio.js?v=0.22.0';
-import { load, save } from '../save.js?v=0.22.0';
-import { Viewer } from '../viewer.js?v=0.22.0';
-import { EPISODES } from '../episodes.js?v=0.22.0';
+import { W, H } from '../config.js?v=0.22.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.1';
+import { audio } from '../audio.js?v=0.22.1';
+import { load, save } from '../save.js?v=0.22.1';
+import { Viewer } from '../viewer.js?v=0.22.1';
+import { EPISODES } from '../episodes.js?v=0.22.1';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }
@@ -15,8 +15,8 @@ export class EvidenceScene extends Phaser.Scene {
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     const top = 150, bottom = 260, gap = 70, avail = H - top - bottom - gap * 2, vh = Math.min(avail / 2, W * 0.75);
     const y1 = top + gap, y2 = y1 + vh + gap;
-    this.vA = new Viewer(this, ev.a, 0, y1, W, vh, { onTap: (ip, p) => this.tap(ip, p) });
-    this.vB = new Viewer(this, ev.b, 0, y2, W, vh, { onTap: (ip, p) => this.tap(ip, p) }); this.vA.link(this.vB);
+    this.vA = new Viewer(this, ev.a, 0, y1, W, vh, { onTap: (ip, p, later) => this.tap(ip, p, later) });
+    this.vB = new Viewer(this, ev.b, 0, y2, W, vh, { onTap: (ip, p, later) => this.tap(ip, p, later) }); this.vA.link(this.vB);
     T(this, 40, y1 - 34, ev.la, 26, '#FFB6CB', { ox: 0, w: 900 }); T(this, 40, y2 - 34, ev.lb, 26, '#FFB6CB', { ox: 0, w: 900 });
     const bar = this.add.graphics(); bar.fillStyle(0x2E1A2A, 1).fillRect(0, 0, W, top); bar.fillStyle(0xFF9DB6, 0.6).fillRect(0, top - 3, W, 3);
     iconBtn(this, 72, 76, 'back', () => this.leave(), 88, { dark: true });
@@ -27,10 +27,15 @@ export class EvidenceScene extends Phaser.Scene {
     this.cameras.main.fadeIn(300, 30, 10, 26); window.__ev = this;
     this.time.delayedCall(400, () => toast(this, '두 사진에서 다른 곳을 눌러요 · 틀리면 하트가 줄어요', y2 - 60));
   }
-  tap(ip, p) {
+  tap(ip, p, later) {
     if (this.ended || this.paused) return;
     const i = this.ev.spots.findIndex((s, j) => !this.done.has(j) && (ip.x - s.x) ** 2 + (ip.y - s.y) ** 2 <= s.r ** 2);
     if (i >= 0) return this.hit(i);
+    if (later) return later(() => this.miss(p));
+    this.miss(p);
+  }
+  miss(p) {
+    if (this.ended || this.paused) return;
     this.hearts--; this.heartT[this.hearts]?.setColor('#5A3A52'); audio.play('sfx_miss', { volume: 0.5 }); audio.buzz(40); this.cameras.main.shake(140, 0.005);
     const x = this.add.image(p.x, p.y, 'spark').setTint(0xD9573B).setScale(0.55); this.tweens.add({ targets: x, alpha: 0, scale: 0.15, duration: 400, onComplete: () => x.destroy() });
     if (this.hearts <= 0) this.lose();

@@ -1,7 +1,7 @@
 // 사진관 UI: 크림색 인화지 패널 · 짙은 나무색 · 금박 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.22.0';
-import { audio } from './audio.js?v=0.22.0';
-import { pushBack } from './oad.js?v=0.22.0';
+import { W, H } from './config.js?v=0.22.1';
+import { audio } from './audio.js?v=0.22.1';
+import { pushBack } from './oad.js?v=0.22.1';
 
 export const C = { ink: '#3A2431', text: '#FFF6F8', cream: '#FCEFF2', paper: '#FFF8FA', brown: '#7A3E58', sub: '#D9B4C4', dim: '#9A7A8A', gold: '#F0B65A', rose: '#E86A8E', plum: '#2E1A2A', red: '#D9573B', green: '#6FAE5A', blue: '#4E86C6' };
 export const FONT = 'Pretendard, sans-serif';
@@ -70,7 +70,8 @@ export function stars(sc, x, y, n, size = 44, gap = 52) {
 }
 // 팝업 (뒤로가기로 닫힘)
 export function popup(sc, w, h, o = {}) {
-  const root = sc.add.container(0, 0).setDepth(o.depth || 1000), dim = sc.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.6).setInteractive(); root.add(dim);
+  // 카메라가 스크롤된 화면(서재)에서도 보이는 자리에 뜨도록 카메라 위치에 맞춤
+  const cam = sc.cameras.main, root = sc.add.container(cam.scrollX, cam.scrollY).setDepth(o.depth || 1000), dim = sc.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.6).setInteractive(); root.add(dim);
   const box = sc.add.container(W / 2, o.y || H / 2); root.add(box); box.add(panel(sc, 0, 0, w, h, { tone: o.tone }));
   const content = sc.add.container(0, 0); box.add(content);
   box.setScale(0.9).setAlpha(0); sc.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Back.easeOut' });
@@ -80,7 +81,7 @@ export function popup(sc, w, h, o = {}) {
   return { root, box, content, close };
 }
 export function toast(sc, msg, y = H * 0.42) {
-  const c = sc.add.container(W / 2, y).setDepth(2000), t = T(sc, 0, 0, msg, 34, C.text, { w: 800 }), bg = sc.add.rectangle(0, 0, t.width + 70, 84, 0x2E1A2A, 0.92).setStrokeStyle(2, 0xFF9DB6, 0.6);
+  y += sc.cameras.main.scrollY; const c = sc.add.container(W / 2, y).setDepth(2000), t = T(sc, 0, 0, msg, 34, C.text, { w: 800 }), bg = sc.add.rectangle(0, 0, t.width + 70, 84, 0x2E1A2A, 0.92).setStrokeStyle(2, 0xFF9DB6, 0.6);
   c.add([bg, t]); c.setAlpha(0); sc.tweens.add({ targets: c, alpha: 1, y: y - 20, duration: 200, hold: 1300, yoyo: true, onComplete: () => c.destroy() });
 }
 // 원형 글로우·반짝이 텍스처

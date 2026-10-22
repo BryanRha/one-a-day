@@ -1,4 +1,4 @@
-// 사진 보기 창: 두 손가락 확대·이동 · 한 손가락 끌기 · 두 번 탭 확대 · 탭 → 사진 좌표로 알려줌
+// 사진 보기 창: 두 손가락 확대·이동 · 한 손가락 끌기 · 두 번 탭 확대 · 마우스 휠 · 탭 → 사진 좌표로 알려줌
 // 틀린그림은 창 두 개가 같은 확대/위치를 공유 (link)
 export class Viewer {
   constructor(sc, key, x, y, w, h, o = {}) {
@@ -19,7 +19,10 @@ export class Viewer {
     this.zone.on('pointerdown', p => this.down(p));
     sc.input.on('pointermove', this.mv = p => this.move(p));
     sc.input.on('pointerup', this.up_ = p => this.up(p));
-    sc.events.once('shutdown', () => { sc.input.off('pointermove', this.mv); sc.input.off('pointerup', this.up_); });
+    sc.input.on('pointerupoutside', this.up_);   // 화면 밖에서 손을 떼도 손가락 기록을 지움 (안 지우면 다음 터치가 유령 손가락과 핀치가 됨)
+    // PC 마우스 휠: 커서 자리를 기준으로 확대·축소
+    sc.input.on('wheel', this.wh = (p, objs, dx, dy) => { if (p.x < x || p.y < y || p.x > x + w || p.y > y + h) return; const ip = this.toImg(p.x, p.y); this.zoom = Phaser.Math.Clamp(this.zoom * Math.exp(-dy * 0.0015), 1, this.maxZoom); const s = this.s; this.cx = ip.x - (p.x - x - w / 2) / s; this.cy = ip.y - (p.y - y - h / 2) / s; this.apply(); });
+    sc.events.once('shutdown', () => { sc.input.off('pointermove', this.mv); sc.input.off('pointerup', this.up_); sc.input.off('pointerupoutside', this.up_); sc.input.off('wheel', this.wh); this.pending?.remove(); });
   }
   // 빛바랜 사진 덮개: 세피아·흐린 사본을 위에 깔고, 찾을 때마다 그 둘레를 지워 원래 색이 드러나게
   addCover(key) {
@@ -58,6 +61,9 @@ export class Viewer {
   toImg(px, py) { const s = this.s; return { x: this.cx + (px - this.x - this.w / 2) / s, y: this.cy + (py - this.y - this.h / 2) / s }; }
   toScreen(ix, iy) { const s = this.s; return { x: this.x + this.w / 2 + (ix - this.cx) * s, y: this.y + this.h / 2 + (iy - this.cy) * s }; }
   down(p) {
+    // 놓친 손 떼기(앱 전환·알림 등)로 남은 기록은 버림
+    for (const id of [...this.ptrs.keys()]) { const ptr = this.sc.input.manager.pointers.find(q => q.id === id); if (!ptr || !ptr.isDown) this.ptrs.delete(id); }
+    this.zt?.stop(); this.zt = null;
     this.ptrs.set(p.id, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: p.downTime });
     if (this.ptrs.size === 2) { const [a, b] = [...this.ptrs.values()]; this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: this.zoom, mid: this.toImg((a.x + b.x) / 2, (a.y + b.y) / 2) }; this.moved = true; }
     else this.moved = false;
@@ -81,15 +87,17 @@ export class Viewer {
     if (this.moved || this.ptrs.size) return;
     const now = this.sc.time.now;
     // 두 번 탭: 2배 확대 / 원래대로 (첫 탭은 바로 정답 판정, 두 번째 탭은 확대만)
-    if (this.lastTap && now - this.lastTap.t < 280 && Math.hypot(p.x - this.lastTap.x, p.y - this.lastTap.y) < 60) { this.lastTap = null; this.zoomTo(this.zoom > 1.4 ? 1 : 2.2, p.x, p.y); return; }
+    // 두 번 탭이면 첫 탭의 '빗나감' 판정은 취소 (확대하려다 하트를 잃지 않게)
+    if (this.lastTap && now - this.lastTap.t < 280 && Math.hypot(p.x - this.lastTap.x, p.y - this.lastTap.y) < 60) { this.lastTap = null; this.pending?.remove(); this.pending = null; this.zoomTo(this.zoom > 1.4 ? 1 : 2.2, p.x, p.y); return; }
     this.lastTap = { t: now, x: p.x, y: p.y };
     const ip = this.toImg(p.x, p.y); if (ip.x < 0 || ip.y < 0 || ip.x > this.iw || ip.y > this.ih) return;
-    this.onTap(ip, p);
+    // 빗나감 처리는 later() 로 넘기면 두 번 탭 여부를 본 뒤(0.28초) 실행
+    this.onTap(ip, p, fn => { this.pending?.remove(); this.pending = this.sc.time.delayedCall(290, () => { this.pending = null; fn(); }); });
   }
   zoomTo(z, px, py) {
     const ip = this.toImg(px, py), from = { z: this.zoom, cx: this.cx, cy: this.cy }, o = { k: 0 };
-    this.sc.tweens.add({ targets: o, k: 1, duration: 220, ease: 'Cubic.easeOut', onUpdate: () => { this.zoom = from.z + (z - from.z) * o.k; const tx = z > from.z ? ip.x : this.iw / 2, ty = z > from.z ? ip.y : this.ih / 2; this.cx = from.cx + (tx - from.cx) * o.k; this.cy = from.cy + (ty - from.cy) * o.k; this.apply(); } });
+    this.zt?.stop(); this.zt = this.sc.tweens.add({ targets: o, k: 1, duration: 220, ease: 'Cubic.easeOut', onUpdate: () => { this.zoom = from.z + (z - from.z) * o.k; const tx = z > from.z ? ip.x : this.iw / 2, ty = z > from.z ? ip.y : this.ih / 2; this.cx = from.cx + (tx - from.cx) * o.k; this.cy = from.cy + (ty - from.cy) * o.k; this.apply(); } });
   }
   // 정답 쪽으로 화면 이동 (힌트)
-  focus(ix, iy, z = 1.8) { const from = { z: this.zoom, cx: this.cx, cy: this.cy }, o = { k: 0 }; this.sc.tweens.add({ targets: o, k: 1, duration: 450, ease: 'Cubic.easeInOut', onUpdate: () => { this.zoom = from.z + (Math.max(from.z, z) - from.z) * o.k; this.cx = from.cx + (ix - from.cx) * o.k; this.cy = from.cy + (iy - from.cy) * o.k; this.apply(); } }); }
+  focus(ix, iy, z = 1.8) { const from = { z: this.zoom, cx: this.cx, cy: this.cy }, o = { k: 0 }; this.zt?.stop(); this.zt = this.sc.tweens.add({ targets: o, k: 1, duration: 450, ease: 'Cubic.easeInOut', onUpdate: () => { this.zoom = from.z + (Math.max(from.z, z) - from.z) * o.k; this.cx = from.cx + (ix - from.cx) * o.k; this.cy = from.cy + (iy - from.cy) * o.k; this.apply(); } }); }
 }

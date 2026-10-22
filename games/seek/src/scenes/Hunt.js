@@ -1,11 +1,11 @@
 // 숨은 물건 맵 (Find It Out® 식): 고밀도 세로 맵 · 아래 아이콘 5칸(찾으면 다음 물건이 채워짐) · 실패·시간 제한 없음
 // + 이야기 단서: 분홍 테두리 아이콘 · 찾으면 서윤 혼잣말 · 물건마다 코인 · 힌트는 코인
-import { W, H } from '../config.js?v=0.22.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.0';
-import { audio } from '../audio.js?v=0.22.0';
-import { load, save } from '../save.js?v=0.22.0';
-import { Viewer } from '../viewer.js?v=0.22.0';
-import { EPISODES } from '../episodes.js?v=0.22.0';
+import { W, H } from '../config.js?v=0.22.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.1';
+import { audio } from '../audio.js?v=0.22.1';
+import { load, save } from '../save.js?v=0.22.1';
+import { Viewer } from '../viewer.js?v=0.22.1';
+import { EPISODES } from '../episodes.js?v=0.22.1';
 
 const SLOTS = 5, HINT_COST = 10, SPAM = { n: 3, t: 2, lock: 3 };
 export class HuntScene extends Phaser.Scene {
@@ -20,7 +20,7 @@ export class HuntScene extends Phaser.Scene {
     this.queue = q.filter(i => !prog.found.includes(i.n)); this.total = hu.items.length; this.got = this.total - this.queue.length;
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     const top = 150, trayH = 300;
-    this.v = new Viewer(this, hu.map, 0, top, W, H - top - trayH, { maxZoom: 4, onTap: (ip, p) => this.tap(ip, p) });
+    this.v = new Viewer(this, hu.map, 0, top, W, H - top - trayH, { maxZoom: 4, onTap: (ip, p, later) => this.tap(ip, p, later) });
     this.v.zoom = 1.6; this.v.cy = hu.h * 0.35; this.v.apply();
     // 위: 뒤로 · 화 제목 · 진행 · 코인
     const bar = this.add.graphics(); bar.fillStyle(0x2E1A2A, 1).fillRect(0, 0, W, top); bar.fillStyle(0xFF9DB6, 0.6).fillRect(0, top - 3, W, 3);
@@ -55,10 +55,15 @@ export class HuntScene extends Phaser.Scene {
     }
   }
   update(time, delta) { if (this.ended || this.paused) return; const dt = Math.min(0.05, delta / 1000); this.t += dt; if (this.lock > 0) { this.lock -= dt; if (this.lock <= 0 && this.blur) { this.blur.destroy(); this.blur = null; } } }
-  tap(ip, p) {
+  tap(ip, p, later) {
     if (this.ended || this.paused) return; if (this.lock > 0) { audio.play('sfx_miss', { volume: 0.3 }); return; }
     const s = this.slots.find(s => s.it && (ip.x - s.it.x) ** 2 + (ip.y - s.it.y) ** 2 <= s.it.r ** 2);
     if (s) return this.found(s);
+    if (later) return later(() => this.miss(p));
+    this.miss(p);
+  }
+  miss(p) {
+    if (this.ended || this.paused) return;
     audio.play('sfx_miss', { volume: 0.45 }); audio.buzz(25);
     const x = this.add.image(p.x, p.y, 'spark').setTint(0xD9573B).setScale(0.5).setDepth(40); this.tweens.add({ targets: x, alpha: 0, scale: 0.15, duration: 380, onComplete: () => x.destroy() });
     this.misses = this.misses.filter(t => this.t - t < SPAM.t); this.misses.push(this.t);

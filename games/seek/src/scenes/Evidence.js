@@ -1,11 +1,11 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.22.3';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.3';
-import { audio } from '../audio.js?v=0.22.3';
-import { load, save } from '../save.js?v=0.22.3';
-import { Viewer } from '../viewer.js?v=0.22.3';
-import { EPISODES } from '../episodes.js?v=0.22.3';
+import { W, H } from '../config.js?v=0.22.4';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.4';
+import { audio } from '../audio.js?v=0.22.4';
+import { load, save } from '../save.js?v=0.22.4';
+import { Viewer } from '../viewer.js?v=0.22.4';
+import { EPISODES } from '../episodes.js?v=0.22.4';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }

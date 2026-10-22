@@ -1,11 +1,11 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.22.3';
-import * as R from './rules.js?v=0.22.3';
-import * as I from './install.js?v=0.22.3';
+import { PLANNED } from './catalog.js?v=0.22.4';
+import * as R from './rules.js?v=0.22.4';
+import * as I from './install.js?v=0.22.4';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.22.3';
+const VERSION = '0.22.4';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];

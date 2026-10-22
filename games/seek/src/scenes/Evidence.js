@@ -1,11 +1,11 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.22.2';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.2';
-import { audio } from '../audio.js?v=0.22.2';
-import { load, save } from '../save.js?v=0.22.2';
-import { Viewer } from '../viewer.js?v=0.22.2';
-import { EPISODES } from '../episodes.js?v=0.22.2';
+import { W, H } from '../config.js?v=0.22.3';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.3';
+import { audio } from '../audio.js?v=0.22.3';
+import { load, save } from '../save.js?v=0.22.3';
+import { Viewer } from '../viewer.js?v=0.22.3';
+import { EPISODES } from '../episodes.js?v=0.22.3';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }
@@ -29,7 +29,8 @@ export class EvidenceScene extends Phaser.Scene {
   }
   tap(ip, p, later) {
     if (this.ended || this.paused) return;
-    const i = this.ev.spots.findIndex((s, j) => !this.done.has(j) && (ip.x - s.x) ** 2 + (ip.y - s.y) ** 2 <= s.r ** 2);
+    // 원 안에 든 남은 정답 중 가장 가까운 것 (가까이 붙은 두 정답을 헷갈리지 않게)
+    let i = -1, best = Infinity; this.ev.spots.forEach((s, j) => { const d2 = (ip.x - s.x) ** 2 + (ip.y - s.y) ** 2; if (!this.done.has(j) && d2 <= s.r ** 2 && d2 / s.r ** 2 < best) { best = d2 / s.r ** 2; i = j; } });
     if (i >= 0) return this.hit(i);
     if (later) return later(() => this.miss(p));
     this.miss(p);

@@ -1,10 +1,10 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.22.2';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.22.2';
-import { audio } from '../audio.js?v=0.22.2';
-import { load } from '../save.js?v=0.22.2';
-import { SERIES, EPISODES } from '../episodes.js?v=0.22.2';
-import { loadEp } from './Boot.js?v=0.22.2';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.22.3';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.22.3';
+import { audio } from '../audio.js?v=0.22.3';
+import { load } from '../save.js?v=0.22.3';
+import { SERIES, EPISODES } from '../episodes.js?v=0.22.3';
+import { loadEp } from './Boot.js?v=0.22.3';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }

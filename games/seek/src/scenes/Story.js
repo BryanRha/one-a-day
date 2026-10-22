@@ -1,10 +1,11 @@
 // 이야기 (Choices 식): 배경 · 인물 상반신(표정) · 이름표 말풍선 · 한 글자씩 · 선택지 → 다음 단계(hunt/evidence/toon)
-import { W, H } from '../config.js?v=0.24.3';
-import { T, C, btn, iconBtn } from '../ui.js?v=0.24.3';
-import { audio } from '../audio.js?v=0.24.3';
-import { goPrev } from '../nav.js?v=0.24.3';
-import { load, save } from '../save.js?v=0.24.3';
-import { EPISODES } from '../episodes.js?v=0.24.3';
+import { W, H } from '../config.js?v=0.25.0';
+import { T, C, btn, iconBtn } from '../ui.js?v=0.25.0';
+import { audio } from '../audio.js?v=0.25.0';
+import { goPrev } from '../nav.js?v=0.25.0';
+import { load, save } from '../save.js?v=0.25.0';
+import { EPISODES } from '../episodes.js?v=0.25.0';
+import { advance } from '../replay.js?v=0.25.0';
 
 export class StoryScene extends Phaser.Scene {
   constructor() { super('Story'); }
@@ -12,7 +13,7 @@ export class StoryScene extends Phaser.Scene {
     this.ep = EPISODES.find(e => e.id === data.id);
     if (data.part === 'hunt') return this.scene.start('Hunt', { id: this.ep.id });
     this.part = data.part; this.lines = this.ep[this.part]; this.i = -1; this.typing = null; this.busy = false; this.going = false;
-    const d = load(); (d.ep[this.ep.id] ||= { step: this.part }).step = this.part; save();
+    advance(this.ep.id, this.part);
     this.bg = this.add.image(W / 2, H / 2, 'bg_flower'); this.fitBg();
     this.shade = this.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.12);
     this.face = this.add.image(W / 2, H - 470, 'c_seoyun_smile').setOrigin(0.5, 1).setAlpha(0);
@@ -61,7 +62,7 @@ export class StoryScene extends Phaser.Scene {
   }
   go(k) {
     this.going = true; const d = load(), map = { hunt: 'Hunt', evidence: 'Evidence', toon: 'Toon' };
-    d.ep[this.ep.id].step = k; save();
+    advance(this.ep.id, k);
     this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(map[k], { id: this.ep.id }));
   }
   onBack() { return goPrev(this); }

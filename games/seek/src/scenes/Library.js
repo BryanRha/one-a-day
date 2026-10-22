@@ -1,13 +1,14 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.24.3';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.24.3';
-import { audio } from '../audio.js?v=0.24.3';
-import { load } from '../save.js?v=0.24.3';
-import { SERIES, EPISODES } from '../episodes.js?v=0.24.3';
-import { loadEp } from './Boot.js?v=0.24.3';
-import { cafeData } from '../cafe/state.js?v=0.24.3';
-import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.24.3';
-import { buildLook } from '../coord/look.js?v=0.24.3';
+import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.25.0';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.25.0';
+import { audio } from '../audio.js?v=0.25.0';
+import { load } from '../save.js?v=0.25.0';
+import { SERIES, EPISODES } from '../episodes.js?v=0.25.0';
+import { loadEp } from './Boot.js?v=0.25.0';
+import { medal, TIERS } from '../replay.js?v=0.25.0';
+import { cafeData } from '../cafe/state.js?v=0.25.0';
+import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.25.0';
+import { buildLook } from '../coord/look.js?v=0.25.0';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }
@@ -38,7 +39,8 @@ export class LibraryScene extends Phaser.Scene {
       if (open) card.add(this.add.image(-400, 0, this.thumb(ep)));   // 마스크 없이 미리 둥글게 잘라 둔 그림 (스크롤해도 안 깨짐)
       card.add(T(this, -300, -24, `${i + 1}화${open ? ' · ' + ep.teaser : ''}`, 24, open ? '#FFB6CB' : C.dim, { ox: 0, w: 700 }));
       card.add(T(this, -300, 22, open ? ep.title : '다음 주 공개', 36, open ? C.text : C.dim, { ox: 0, w: 900 }));
-      card.add(T(this, 440, 0, done ? '다시 보기' : st && st !== 'intro' ? '이어 보기' : open ? '보기' : '🔒', 28, done ? C.gold : open ? '#FFB6CB' : C.dim, { ox: 1, w: 900 }));
+      if (done) { const ms = ['hunt', 'evidence'].map(k => medal(ep.id, k)); ms.forEach((m, k) => { if (m >= 0) card.add(this.add.circle(300 + k * 34, 36, 13, TIERS[m].c)); }); }
+      card.add(T(this, 440, done ? -14 : 0, done ? '다시 보기' : st && st !== 'intro' ? '이어 보기' : open ? '보기' : '🔒', 28, done ? C.gold : open ? '#FFB6CB' : C.dim, { ox: 1, w: 900 }));
       if (open) { card.setSize(960, 132).setInteractive({ useHandCursor: true }).on('pointerup', p => { if (!this.dragged) this.play(ep); }); if (i === nextUp) this.tweens.add({ targets: card, scale: 1.02, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
       this.cards.push(card); y += 156;
     }
@@ -92,6 +94,19 @@ export class LibraryScene extends Phaser.Scene {
     g.beginPath(); if (g.roundRect) g.roundRect(0, 0, w, h, 18); else g.rect(0, 0, w, h); g.clip();
     g.drawImage(src, (src.width - sw) / 2, (src.height - sh) / 2, sw, sh, 0, 0, w, h); c.refresh(); return key;
   }
-  play(ep) { audio.play('sfx_page', { volume: 0.6 }); const st = (load().ep[ep.id] || {}).step; this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => loadEp(this, ep, () => st === 'hunt' ? this.scene.start('Hunt', { id: ep.id }) : this.scene.start('Story', { id: ep.id, part: st === 'mid' || st === 'evidence' ? 'mid' : st === 'after' || st === 'toon' ? 'after' : st === 'hunt' ? 'hunt' : 'intro' }))); }
+  // 다 본 화: 원하는 단계만 골라 다시 (숨은 물건 · 증거는 다시 하기 등급)
+  replayMenu(ep) {
+    const p = popup(this, 900, 1000), c = p.content, go = (key, data) => { p.close(); this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => loadEp(this, ep, () => this.scene.start(key, data))); };
+    c.add(T(this, 0, -410, `${ep.no}화 · ${ep.title}`, 40, C.ink, { w: 900 }));
+    c.add(T(this, 0, -355, '보고 싶은 단계를 골라요', 24, C.dim, { w: 800 }));
+    [['이야기 처음부터', null, () => go('Story', { id: ep.id, part: 'intro' })], ['단서 찾기 · 다시 하기', 'hunt', () => go('Hunt', { id: ep.id })], ['증거 대조 · 다시 하기', 'evidence', () => go('Evidence', { id: ep.id })], ['웹툰 결말 다시 보기', null, () => go('Toon', { id: ep.id })]].forEach(([t, kind, fn], i) => {
+      const y = -230 + i * 150, row = this.add.container(0, y), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(-400, -60, 800, 120, 24).lineStyle(3, 0xF0D6DF, 1).strokeRoundedRect(-400, -60, 800, 120, 24); row.add(g);
+      row.add(T(this, -360, 0, t, 32, C.ink, { ox: 0, w: 900 }));
+      if (kind) { const m = medal(ep.id, kind), mg = this.add.graphics(); mg.fillStyle(m >= 0 ? TIERS[m].c : 0xE6DCE0, 1).fillCircle(320, 0, 40); row.add([mg, T(this, 320, 0, m >= 0 ? TIERS[m].n : '-', 20, '#3A2431', { w: 900 })]); }
+      row.setSize(800, 120).setInteractive({ useHandCursor: true }).on('pointerup', () => { audio.play('sfx_click', { volume: 0.4 }); fn(); }); c.add(row);
+    });
+    c.add(T(this, 0, 380, '다시 하기 등급: 브론즈 → 실버(● 30 · ★ 1) → 골드(★ 2 · 코디 선물)', 22, '#C25A80', { w: 800, wrap: 800 }));
+  }
+  play(ep) { if ((load().ep[ep.id] || {}).step === 'done') { audio.play('sfx_page', { volume: 0.6 }); return this.replayMenu(ep); } audio.play('sfx_page', { volume: 0.6 }); const st = (load().ep[ep.id] || {}).step; this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => loadEp(this, ep, () => st === 'hunt' ? this.scene.start('Hunt', { id: ep.id }) : this.scene.start('Story', { id: ep.id, part: st === 'mid' || st === 'evidence' ? 'mid' : st === 'after' || st === 'toon' ? 'after' : st === 'hunt' ? 'hunt' : 'intro' }))); }
   settings() { this.modal = true; const d = load(), p = popup(this, 700, 420, { onClose: () => { this.modal = false; } }); p.content.add(T(this, 0, -120, '설정', 44, C.ink, { w: 900 })); const b = btn(this, 0, 40, 420, 110, d.sfx ? '효과음 켜짐' : '효과음 꺼짐', () => { const on = audio.toggleSfx(); b.setLabel(on ? '효과음 켜짐' : '효과음 꺼짐'); }, { style: 'cream' }); p.content.add(b); }
 }

@@ -1,11 +1,11 @@
 // 웹툰 결말: 컷이 차례로 내려오고 말풍선이 하나씩 · 마지막 컷 반전 → "다음 화에 계속"
-import { W, H } from '../config.js?v=0.24.3';
-import { T, C, btn } from '../ui.js?v=0.24.3';
-import { audio } from '../audio.js?v=0.24.3';
-import { goPrev } from '../nav.js?v=0.24.3';
-import { load, save } from '../save.js?v=0.24.3';
-import { EPISODES } from '../episodes.js?v=0.24.3';
-import { starOnce } from '../cafe/state.js?v=0.24.3';
+import { W, H } from '../config.js?v=0.25.0';
+import { T, C, btn } from '../ui.js?v=0.25.0';
+import { audio } from '../audio.js?v=0.25.0';
+import { goPrev } from '../nav.js?v=0.25.0';
+import { load, save } from '../save.js?v=0.25.0';
+import { EPISODES } from '../episodes.js?v=0.25.0';
+import { starOnce } from '../cafe/state.js?v=0.25.0';
 
 export class ToonScene extends Phaser.Scene {
   constructor() { super('Toon'); }
@@ -50,9 +50,9 @@ export class ToonScene extends Phaser.Scene {
   }
   finale() {
     this.over = true; this.hint.setVisible(false);
-    const d = load(); d.ep[this.ep.id].step = 'done'; d.coins += 20; save(); const sg = starOnce(this.ep.id, 't', 1);
+    const d = load(), first = (d.ep[this.ep.id] || {}).step !== 'done'; d.ep[this.ep.id].step = 'done'; if (first) d.coins += 20; save(); const sg = starOnce(this.ep.id, 't', 1);
     const root = this.add.container(0, 0).setDepth(20), dim = this.add.rectangle(W / 2, H / 2, W, H, 0x120810, 0); root.add(dim); this.tweens.add({ targets: dim, fillAlpha: 0.95, duration: 600, delay: 400 });
-    const els = [T(this, W / 2, H * 0.36, this.ep.final ? '시즌 1 완결' : '다음 화에 계속', 72, '#FFFFFF', { w: 900, shadow: true }), T(this, W / 2, H * 0.46, this.ep.next.title, 40, '#FFB6CB', { w: 900 }), T(this, W / 2, H * 0.52, this.ep.next.t, 30, C.sub, { w: 700, wrap: W - 160 }), T(this, W / 2, H * 0.6, sg ? '● +20 코인 · ★ +1 냥카페 별' : '● +20 코인', 30, C.gold, { w: 900 })];
+    const els = [T(this, W / 2, H * 0.36, this.ep.final ? '시즌 1 완결' : '다음 화에 계속', 72, '#FFFFFF', { w: 900, shadow: true }), T(this, W / 2, H * 0.46, this.ep.next.title, 40, '#FFB6CB', { w: 900 }), T(this, W / 2, H * 0.52, this.ep.next.t, 30, C.sub, { w: 700, wrap: W - 160 }), T(this, W / 2, H * 0.6, sg ? '● +20 코인 · ★ +1 냥카페 별' : first ? '● +20 코인' : ' ', 30, C.gold, { w: 900 })];
     els.forEach((e, i) => { e.setAlpha(0); root.add(e); this.tweens.add({ targets: e, alpha: 1, duration: 500, delay: 800 + i * 250 }); });
     // 다음 화가 있으면 바로 이어 보기 (서재를 거쳐 그림을 불러온 뒤 자동 시작)
     const nx = EPISODES[EPISODES.indexOf(this.ep) + 1], bs = nx ? [btn(this, W / 2, H * 0.72, 600, 130, '다음 화 보기', () => this.end(nx.id), { size: 40 }), btn(this, W / 2, H * 0.72 + 150, 400, 100, '서재로', () => this.end(), { style: 'cream', size: 30 })] : [btn(this, W / 2, H * 0.74, 560, 130, '서재로', () => this.end(), { size: 40 })];

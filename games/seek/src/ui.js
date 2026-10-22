@@ -1,9 +1,9 @@
 // 사진관 UI: 크림색 인화지 패널 · 짙은 나무색 · 금박 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.20.0';
-import { audio } from './audio.js?v=0.20.0';
-import { pushBack } from './oad.js?v=0.20.0';
+import { W, H } from './config.js?v=0.21.0';
+import { audio } from './audio.js?v=0.21.0';
+import { pushBack } from './oad.js?v=0.21.0';
 
-export const C = { ink: '#2B1E14', text: '#FFF8EC', cream: '#F6EBD6', paper: '#FBF4E6', brown: '#5A3E2B', sub: '#B9A58C', dim: '#8A7966', gold: '#E9B44C', red: '#D9573B', green: '#6FAE5A', blue: '#4E86C6' };
+export const C = { ink: '#3A2431', text: '#FFF6F8', cream: '#FCEFF2', paper: '#FFF8FA', brown: '#7A3E58', sub: '#D9B4C4', dim: '#9A7A8A', gold: '#F0B65A', rose: '#E86A8E', plum: '#2E1A2A', red: '#D9573B', green: '#6FAE5A', blue: '#4E86C6' };
 export const FONT = 'Pretendard, sans-serif';
 
 export function T(sc, x, y, s, size = 40, color = C.text, o = {}) {
@@ -21,16 +21,16 @@ export function panel(sc, x, y, w, h, o = {}) {
   tex(sc, key, w + 60, h + 60, g => {
     g.translate(30, 30); g.shadowColor = 'rgba(30,15,5,0.45)'; g.shadowBlur = 24; g.shadowOffsetY = 10; rr(g, 0, 0, w, h, r);
     const gr = g.createLinearGradient(0, 0, 0, h);
-    if (tone === 'paper') { gr.addColorStop(0, '#FFFAF0'); gr.addColorStop(1, '#F1E4CB'); } else { gr.addColorStop(0, 'rgba(58,40,28,0.94)'); gr.addColorStop(1, 'rgba(36,24,16,0.96)'); }
+    if (tone === 'paper') { gr.addColorStop(0, '#FFFBFC'); gr.addColorStop(1, '#F8E6EC'); } else { gr.addColorStop(0, 'rgba(58,32,52,0.94)'); gr.addColorStop(1, 'rgba(36,20,34,0.96)'); }
     g.fillStyle = gr; g.fill(); g.shadowColor = 'transparent';
-    rr(g, 6, 6, w - 12, h - 12, r - 6); g.lineWidth = 2; g.strokeStyle = tone === 'paper' ? 'rgba(160,120,70,0.35)' : 'rgba(233,180,76,0.35)'; g.stroke();
+    rr(g, 6, 6, w - 12, h - 12, r - 6); g.lineWidth = 2; g.strokeStyle = tone === 'paper' ? 'rgba(220,130,160,0.35)' : 'rgba(240,160,190,0.35)'; g.stroke();
   });
   return sc.add.image(x, y, key);
 }
 // 버튼
-const STY = { gold: ['#F6CE6E', '#D89A2E', '#8A5A12', '#3A2408'], brown: ['#8A644A', '#5A3E2B', '#2E1E12', '#FFF4E2'], cream: ['#FFFAF0', '#EADBC0', '#B39A78', '#4A3424'], green: ['#9CD382', '#5E9E48', '#2E5E22', '#FFFFFF'] };
+const STY = { rose: ['#FF9DB6', '#E8628A', '#9A2E52', '#FFFFFF'], gold: ['#FFD98A', '#F0A84A', '#A8641A', '#4A2808'], brown: ['#8A5A78', '#5E3456', '#2E1A2A', '#FFF2F6'], cream: ['#FFFFFF', '#F6DDE6', '#C99AAE', '#5A2E44'], green: ['#9CD382', '#5E9E48', '#2E5E22', '#FFFFFF'] };
 export function btn(sc, x, y, w, h, label, onClick, o = {}) {
-  const s = STY[o.style || 'gold'], key = `bt_${w}_${h}_${o.style || 'gold'}`;
+  const s = STY[o.style || 'rose'], key = `bt_${w}_${h}_${o.style || 'rose'}`;
   tex(sc, key, w + 30, h + 34, g => {
     g.translate(15, 12); g.shadowColor = 'rgba(30,15,5,0.4)'; g.shadowBlur = 14; g.shadowOffsetY = 8;
     rr(g, 0, 6, w, h - 6, h / 2); g.fillStyle = s[2]; g.fill(); g.shadowColor = 'transparent';
@@ -48,14 +48,16 @@ export function btn(sc, x, y, w, h, label, onClick, o = {}) {
 // 동그란 아이콘 버튼 (글자 아이콘)
 export function iconBtn(sc, x, y, glyph, onClick, size = 96, o = {}) {
   const key = `ib_${size}_${o.dark ? 'd' : 'l'}`;
-  tex(sc, key, size + 20, size + 24, g => { g.translate(10, 8); g.shadowColor = 'rgba(30,15,5,0.4)'; g.shadowBlur = 10; g.shadowOffsetY = 5; g.beginPath(); g.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2); g.fillStyle = o.dark ? 'rgba(40,28,20,0.85)' : '#FFF8EC'; g.fill(); g.shadowColor = 'transparent'; g.lineWidth = 3; g.strokeStyle = o.dark ? 'rgba(233,180,76,0.6)' : 'rgba(150,110,70,0.4)'; g.stroke(); });
-  const c = sc.add.container(x, y), col = o.dark ? '#E9B44C' : '#5A3E2B', ik = `ic_${glyph}_${size}_${o.dark ? 'd' : 'l'}`;
+  tex(sc, key, size + 20, size + 24, g => { g.translate(10, 8); g.shadowColor = 'rgba(30,15,5,0.4)'; g.shadowBlur = 10; g.shadowOffsetY = 5; g.beginPath(); g.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2); g.fillStyle = o.dark ? 'rgba(46,26,42,0.85)' : '#FFFFFF'; g.fill(); g.shadowColor = 'transparent'; g.lineWidth = 3; g.strokeStyle = o.dark ? 'rgba(255,170,200,0.6)' : 'rgba(232,106,142,0.45)'; g.stroke(); });
+  const c = sc.add.container(x, y), col = o.dark ? '#FFB6CB' : '#E8628A', ik = `ic_${glyph}_${size}_${o.dark ? 'd' : 'l'}`;
   // 선 아이콘 (글자 대신 그림): back · hint(돋보기) · gear
   const drawn = ['back', 'hint', 'gear'].includes(glyph);
   if (drawn) tex(sc, ik, size, size, g => { const u = size / 100; g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 9 * u; g.lineCap = 'round'; g.lineJoin = 'round';
     if (glyph === 'back') { g.beginPath(); g.moveTo(58 * u, 28 * u); g.lineTo(36 * u, 50 * u); g.lineTo(58 * u, 72 * u); g.stroke(); }
     if (glyph === 'hint') { g.beginPath(); g.arc(44 * u, 44 * u, 20 * u, 0, Math.PI * 2); g.stroke(); g.lineWidth = 12 * u; g.beginPath(); g.moveTo(59 * u, 59 * u); g.lineTo(74 * u, 74 * u); g.stroke(); g.fillStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.arc(38 * u, 38 * u, 6 * u, 0, Math.PI * 2); g.fill(); }
-    if (glyph === 'gear') { g.lineWidth = 8 * u; g.beginPath(); g.arc(50 * u, 50 * u, 14 * u, 0, Math.PI * 2); g.stroke(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.beginPath(); g.moveTo(50 * u + Math.cos(a) * 22 * u, 50 * u + Math.sin(a) * 22 * u); g.lineTo(50 * u + Math.cos(a) * 31 * u, 50 * u + Math.sin(a) * 31 * u); g.stroke(); } } });
+    if (glyph === 'gear') { // 톱니바퀴: 굵은 톱니 8개가 붙은 바퀴 + 가운데 구멍
+      g.beginPath(); for (let i = 0; i < 16; i++) { const a0 = i * Math.PI / 8 - Math.PI / 16, a1 = a0 + Math.PI / 8, R = i % 2 ? 23 * u : 31 * u; g.lineTo(50 * u + Math.cos(a0 + 0.06) * R, 50 * u + Math.sin(a0 + 0.06) * R); g.lineTo(50 * u + Math.cos(a1 - 0.06) * R, 50 * u + Math.sin(a1 - 0.06) * R); } g.closePath(); g.fill();
+      g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(50 * u, 50 * u, 10 * u, 0, Math.PI * 2); g.fill(); g.globalCompositeOperation = 'source-over'; } });
   c.add([sc.add.image(0, 0, key), drawn ? sc.add.image(0, 0, ik) : T(sc, 0, -2, glyph, size * 0.42, col, { w: 900 })]);
   c.setSize(size, size).setInteractive({ useHandCursor: true }).on('pointerup', () => { audio.play('sfx_click', { volume: 0.4 }); onClick(); });
   return c;
@@ -68,7 +70,7 @@ export function stars(sc, x, y, n, size = 44, gap = 52) {
 }
 // 팝업 (뒤로가기로 닫힘)
 export function popup(sc, w, h, o = {}) {
-  const root = sc.add.container(0, 0).setDepth(o.depth || 1000), dim = sc.add.rectangle(W / 2, H / 2, W, H, 0x140A04, 0.6).setInteractive(); root.add(dim);
+  const root = sc.add.container(0, 0).setDepth(o.depth || 1000), dim = sc.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.6).setInteractive(); root.add(dim);
   const box = sc.add.container(W / 2, o.y || H / 2); root.add(box); box.add(panel(sc, 0, 0, w, h, { tone: o.tone }));
   const content = sc.add.container(0, 0); box.add(content);
   box.setScale(0.9).setAlpha(0); sc.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Back.easeOut' });
@@ -78,7 +80,7 @@ export function popup(sc, w, h, o = {}) {
   return { root, box, content, close };
 }
 export function toast(sc, msg, y = H * 0.42) {
-  const c = sc.add.container(W / 2, y).setDepth(2000), t = T(sc, 0, 0, msg, 34, C.text, { w: 800 }), bg = sc.add.rectangle(0, 0, t.width + 70, 84, 0x2B1E14, 0.9).setStrokeStyle(2, 0xE9B44C, 0.5);
+  const c = sc.add.container(W / 2, y).setDepth(2000), t = T(sc, 0, 0, msg, 34, C.text, { w: 800 }), bg = sc.add.rectangle(0, 0, t.width + 70, 84, 0x2E1A2A, 0.92).setStrokeStyle(2, 0xFF9DB6, 0.6);
   c.add([bg, t]); c.setAlpha(0); sc.tweens.add({ targets: c, alpha: 1, y: y - 20, duration: 200, hold: 1300, yoyo: true, onComplete: () => c.destroy() });
 }
 // 원형 글로우·반짝이 텍스처

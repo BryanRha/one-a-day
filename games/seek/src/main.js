@@ -1,12 +1,12 @@
-import { W, BASE_H, setH } from './config.js?v=0.21.0';
-import { audio } from './audio.js?v=0.21.0';
-import { BootScene } from './scenes/Boot.js?v=0.21.0';
-import { LibraryScene } from './scenes/Library.js?v=0.21.0';
-import { StoryScene } from './scenes/Story.js?v=0.21.0';
-import { HuntScene } from './scenes/Hunt.js?v=0.21.0';
-import { EvidenceScene } from './scenes/Evidence.js?v=0.21.0';
-import { ToonScene } from './scenes/Toon.js?v=0.21.0';
-import { installBack } from './oad.js?v=0.21.0';
+import { W, BASE_H, setH } from './config.js?v=0.22.0';
+import { audio } from './audio.js?v=0.22.0';
+import { BootScene } from './scenes/Boot.js?v=0.22.0';
+import { LibraryScene } from './scenes/Library.js?v=0.22.0';
+import { StoryScene } from './scenes/Story.js?v=0.22.0';
+import { HuntScene } from './scenes/Hunt.js?v=0.22.0';
+import { EvidenceScene } from './scenes/Evidence.js?v=0.22.0';
+import { ToonScene } from './scenes/Toon.js?v=0.22.0';
+import { installBack } from './oad.js?v=0.22.0';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* */ }

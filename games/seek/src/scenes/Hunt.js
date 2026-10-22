@@ -1,11 +1,11 @@
 // 숨은 물건 맵 (Find It Out® 식): 고밀도 세로 맵 · 아래 아이콘 5칸(찾으면 다음 물건이 채워짐) · 실패·시간 제한 없음
 // + 이야기 단서: 분홍 테두리 아이콘 · 찾으면 서윤 혼잣말 · 물건마다 코인 · 힌트는 코인
-import { W, H } from '../config.js?v=0.21.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.21.0';
-import { audio } from '../audio.js?v=0.21.0';
-import { load, save } from '../save.js?v=0.21.0';
-import { Viewer } from '../viewer.js?v=0.21.0';
-import { EPISODES } from '../episodes.js?v=0.21.0';
+import { W, H } from '../config.js?v=0.22.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.22.0';
+import { audio } from '../audio.js?v=0.22.0';
+import { load, save } from '../save.js?v=0.22.0';
+import { Viewer } from '../viewer.js?v=0.22.0';
+import { EPISODES } from '../episodes.js?v=0.22.0';
 
 const SLOTS = 5, HINT_COST = 10, SPAM = { n: 3, t: 2, lock: 3 };
 export class HuntScene extends Phaser.Scene {
@@ -14,9 +14,9 @@ export class HuntScene extends Phaser.Scene {
     const ep = this.ep = EPISODES.find(e => e.id === data.id), hu = ep.hunt, d = load();
     const prog = d.ep[ep.id] ||= { step: 'hunt' }; prog.step = 'hunt'; prog.found ||= []; save();
     Object.assign(this, { misses: [], lock: 0, t: 0, ended: false, paused: false, blur: null, got: 0 });
-    // 순서: 일반 물건 사이사이에 단서 · 반지 상자는 맨 끝
-    const normal = hu.items.filter(i => !i.clue).sort(() => Math.random() - 0.5), clues = hu.items.filter(i => i.clue && i.clue !== 'k_ring'), ring = hu.items.find(i => i.clue === 'k_ring');
-    const q = [...normal]; clues.forEach((c, k) => q.splice(Math.min(q.length, 3 + k * 4), 0, c)); if (ring) q.push(ring);
+    // 순서: 일반 물건 사이사이에 단서 · 결정적 단서(last)는 맨 끝
+    const normal = hu.items.filter(i => !i.clue).sort(() => Math.random() - 0.5), clues = hu.items.filter(i => i.clue && !i.last), last = hu.items.find(i => i.last);
+    const q = [...normal]; clues.forEach((c, k) => q.splice(Math.min(q.length, 3 + k * 4), 0, c)); if (last) q.push(last);
     this.queue = q.filter(i => !prog.found.includes(i.n)); this.total = hu.items.length; this.got = this.total - this.queue.length;
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     const top = 150, trayH = 300;

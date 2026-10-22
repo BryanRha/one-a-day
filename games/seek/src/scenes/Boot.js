@@ -1,10 +1,22 @@
-// 로딩: 1화 그림 · 인물 · 단서 · 효과음 · 코드 텍스처
-import { W, H, TITLE } from '../config.js?v=0.21.0';
-import { SFX } from '../audio.js?v=0.21.0';
-import { makeTextures } from '../ui.js?v=0.21.0';
-
-const WEBP = ['map1', 'ev1_a', 'ev1_b', 'bg_flower', 'bg_office', 't1_1', 't1_2', 't1_3', 't1_4'];
-const PNG = ['c_seoyun_smile', 'c_seoyun_doubt', 'c_seoyun_shock', 'c_dohyun_smile', 'c_dohyun_nervous', 'c_jia', 'k_idcard', 'k_order', 'k_ring', 'k_card', 'k_key', 'k_note'];
+// 로딩: 인물 · 단서 · 서재 썸네일 · 효과음 · 코드 텍스처 (화별 그림은 loadEp)
+import { W, H, TITLE } from '../config.js?v=0.22.0';
+import { SFX } from '../audio.js?v=0.22.0';
+import { makeTextures } from '../ui.js?v=0.22.0';
+import { EPISODES } from '../episodes.js?v=0.22.0';
+// 처음엔 공통(인물 · 단서 · 서재 썸네일)만 · 화별 그림(맵 · 증거 · 웹툰)은 그 화를 열 때 loadEp 로
+const WEBP = ['bg_flower', 'bg_office', 't1_2', 'c_seoyun_smile', 'c_seoyun_doubt', 'c_seoyun_shock', 'c_dohyun_smile', 'c_dohyun_nervous', 'c_dohyun_serious', 'c_jia', 'c_jia_smile', 'c_jia_sad', 'c_mother', 'c_hana', 'c_taejun'];
+for (const e of EPISODES) { WEBP.push(e.toon[2].img); for (const it of e.hunt.items) if (it.clue && !WEBP.includes(it.clue)) WEBP.push(it.clue); }
+export const epKeys = ep => { const n = ep.no; return [`map${n}`, `ev${n}_a`, `ev${n}_b`, `t${n}_1`, `t${n}_2`, `t${n}_3`, `t${n}_4`].concat(n > 1 ? [`bg${n}`] : []); };
+// 화 그림을 불러온 뒤 done() · 이미 있으면 바로
+export function loadEp(scene, ep, done) {
+  // 다른 화의 큰 그림(맵 · 증거 · 웹툰 · 물건 확대 조각)은 내려서 메모리를 비움 (서재 썸네일은 남김)
+  const tx = scene.textures;
+  for (const o of EPISODES) if (o !== ep) for (const k of epKeys(o)) if (!WEBP.includes(k) && tx.exists(k)) tx.remove(k);
+  for (const k of tx.getTextureKeys()) if (k.startsWith('hm_') && !k.startsWith(`hm_${ep.id}_`)) tx.remove(k);
+  const need = epKeys(ep).filter(k => !scene.textures.exists(k)); if (!need.length) return done();
+  for (const k of need) scene.load.image(k, `assets/v2/${k}.webp`);
+  scene.load.once('complete', () => done()); scene.load.start();
+}
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
@@ -14,7 +26,6 @@ export class BootScene extends Phaser.Scene {
     this.add.text(W / 2, H / 2, TITLE, { fontFamily: 'Pretendard', fontStyle: '900', fontSize: '84px', color: '#FFF6F8' }).setOrigin(0.5);
     this.load.on('progress', v => { bar.width = 480 * v; });
     for (const k of WEBP) this.load.image(k, `assets/v2/${k}.webp`);
-    for (const k of PNG) this.load.image(k, `assets/v2/${k}.png`);
     for (const n of SFX) this.load.audio(n, [`assets/audio/${n}.m4a`]);
     this.load.on('loaderror', () => {});
   }

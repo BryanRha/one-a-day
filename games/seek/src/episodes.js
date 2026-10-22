@@ -1,4 +1,5 @@
 // 「그 남자의 비밀」 시즌 1 — 화마다: 이야기 → 숨은 물건 맵 → 증거 대조 → 웹툰 결말
+import { MORE } from './episodes_s1.js?v=0.22.0';
 export const SERIES = { title: "그 남자의 비밀", en: "HIS SECRET", season: 1, total: 10 };
 export const EPISODES = [
  {
@@ -80,6 +81,7 @@ export const EPISODES = [
      "y": 148,
      "r": 22,
      "clue": "k_ring",
+     "last": true,
      "line": "옥상 테이블 위에… 반지 상자?!"
     },
     {
@@ -353,3 +355,4 @@ export const EPISODES = [
   }
  }
 ];
+EPISODES.push(...MORE);

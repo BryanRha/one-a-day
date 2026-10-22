@@ -1,9 +1,9 @@
 // 레벨 데이터. 문자 규칙은 engine.js 상단 주석 참고.
 // stars / moves 는 tools/tune.js 가 봇 시뮬레이션으로 계산한 levels_tuning.js 값을 덮어쓴다.
-import { TUNING } from './levels_tuning.js?v=0.22.1';
-import { MORE } from './levels_more.js?v=0.22.1';
-import { GEN } from './levels_gen.js?v=0.22.1';
-import { shapeLevel } from './levels_shapes.js?v=0.22.1';
+import { TUNING } from './levels_tuning.js?v=0.22.2';
+import { MORE } from './levels_more.js?v=0.22.2';
+import { GEN } from './levels_gen.js?v=0.22.2';
+import { shapeLevel } from './levels_shapes.js?v=0.22.2';
 
 const fill = (w, h, ch = '.') => Array.from({ length: h }, () => ch.repeat(w));
 

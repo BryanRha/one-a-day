@@ -1,10 +1,10 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.22.1';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.22.1';
-import { audio } from '../audio.js?v=0.22.1';
-import { load } from '../save.js?v=0.22.1';
-import { SERIES, EPISODES } from '../episodes.js?v=0.22.1';
-import { loadEp } from './Boot.js?v=0.22.1';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.22.2';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.22.2';
+import { audio } from '../audio.js?v=0.22.2';
+import { load } from '../save.js?v=0.22.2';
+import { SERIES, EPISODES } from '../episodes.js?v=0.22.2';
+import { loadEp } from './Boot.js?v=0.22.2';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }
@@ -30,7 +30,7 @@ export class LibraryScene extends Phaser.Scene {
       const card = this.add.container(W / 2, y + 70), bg = this.add.graphics();
       bg.fillStyle(open ? 0x4A2A44 : 0x3A2236, 1).fillRoundedRect(-480, -66, 960, 132, 24).lineStyle(3, done ? 0xF0B65A : open ? 0xE86A8E : 0x5A3A52, 1).strokeRoundedRect(-480, -66, 960, 132, 24);
       card.add(bg);
-      if (open) { const th = this.add.image(-400, 0, ep.toon[2].img); th.setScale(140 / Math.min(th.width, th.height)); const mk = this.make.graphics({ add: false }); mk.fillStyle(0xffffff).fillRoundedRect(W / 2 - 466, y + 70 - 56, 132, 112, 18); th.setMask(mk.createGeometryMask()); card.add(th); }
+      if (open) card.add(this.add.image(-400, 0, this.thumb(ep)));   // 마스크 없이 미리 둥글게 잘라 둔 그림 (스크롤해도 안 깨짐)
       card.add(T(this, -300, -24, `${i + 1}화${open ? ' · ' + ep.teaser : ''}`, 24, open ? '#FFB6CB' : C.dim, { ox: 0, w: 700 }));
       card.add(T(this, -300, 22, open ? ep.title : '다음 주 공개', 36, open ? C.text : C.dim, { ox: 0, w: 900 }));
       card.add(T(this, 440, 0, done ? '다시 보기' : st && st !== 'intro' ? '이어 보기' : open ? '보기' : '🔒', 28, done ? C.gold : open ? '#FFB6CB' : C.dim, { ox: 1, w: 900 }));
@@ -56,6 +56,14 @@ export class LibraryScene extends Phaser.Scene {
     this.input.on('wheel', (p, o, dx, dy) => { if (this.modal) return; cam.scrollY = Phaser.Math.Clamp(cam.scrollY + dy, 0, Math.max(0, y - H)); });
     this.cameras.main.fadeIn(300, 30, 10, 26); window.__lib = this;
     const auto = data && data.auto && EPISODES.find(e => e.id === data.auto); if (auto) this.time.delayedCall(350, () => this.play(auto));
+  }
+  // 서재 썸네일: 웹툰 3컷을 132x112 둥근 사각형으로 잘라 텍스처로 한 번 만들어 둠
+  thumb(ep) {
+    const key = `th_${ep.id}`; if (this.textures.exists(key)) return key;
+    const src = this.textures.get(ep.toon[2].img).getSourceImage(), w = 132, h = 112, c = this.textures.createCanvas(key, w, h), g = c.getContext();
+    const k = Math.max(w / src.width, h / src.height), sw = w / k, sh = h / k;
+    g.beginPath(); if (g.roundRect) g.roundRect(0, 0, w, h, 18); else g.rect(0, 0, w, h); g.clip();
+    g.drawImage(src, (src.width - sw) / 2, (src.height - sh) / 2, sw, sh, 0, 0, w, h); c.refresh(); return key;
   }
   play(ep) { audio.play('sfx_page', { volume: 0.6 }); const st = (load().ep[ep.id] || {}).step; this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => loadEp(this, ep, () => this.scene.start('Story', { id: ep.id, part: st === 'mid' || st === 'evidence' ? 'mid' : st === 'after' || st === 'toon' ? 'after' : st === 'hunt' ? 'hunt' : 'intro' }))); }
   settings() { this.modal = true; const d = load(), p = popup(this, 700, 420, { onClose: () => { this.modal = false; } }); p.content.add(T(this, 0, -120, '설정', 44, C.ink, { w: 900 })); const b = btn(this, 0, 40, 420, 110, d.sfx ? '효과음 켜짐' : '효과음 꺼짐', () => { const on = audio.toggleSfx(); b.setLabel(on ? '효과음 켜짐' : '효과음 꺼짐'); }, { style: 'cream' }); p.content.add(b); }

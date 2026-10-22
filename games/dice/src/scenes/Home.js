@@ -1,10 +1,10 @@
 // 홈: 생존 원정 · 오늘의 도전 · 덱 · 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.22.1';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.22.1';
-import { audio } from '../audio.js?v=0.22.1';
-import { load } from '../save.js?v=0.22.1';
-import * as M from '../meta.js?v=0.22.1';
-import { RUNES } from '../core/sim.js?v=0.22.1';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.22.2';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.22.2';
+import { audio } from '../audio.js?v=0.22.2';
+import { load } from '../save.js?v=0.22.2';
+import * as M from '../meta.js?v=0.22.2';
+import { RUNES } from '../core/sim.js?v=0.22.2';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }

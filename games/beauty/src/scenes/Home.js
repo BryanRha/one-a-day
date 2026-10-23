@@ -1,14 +1,15 @@
 // 매장 (원작의 식당 꾸미기): 낡은 가게 → 할 일(코인)로 이야기 · 수리 · 디자인 3종 선택(언제든 무료 변경)
-import { W, H } from '../config.js?v=0.33.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.33.0';
-import { load as loadSave } from '../save.js?v=0.33.0';
-import { audio } from '../audio.js?v=0.33.0';
-import { load, save } from '../save.js?v=0.33.0';
-import { hud } from '../hud.js?v=0.33.0';
-import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.33.0';
-import { daily, season, chapter, curTask, canNextChapter, nextChapter, giveReward, rewardText } from '../state.js?v=0.33.0';
-import { packCount, claimable, albumClaimable, loginCheck, LOGIN } from '../album.js?v=0.33.0';
-import { RACE, raceState, raceJoin, raceClaim, LADDER, DECO, ladder, ladderReady, ladderClaim, ladderEndsIn, VIP, vip, vipClaim, vipEndsIn, fmtLeft } from '../events.js?v=0.33.0';
+import { W, H } from '../config.js?v=0.34.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.34.0';
+import { load as loadSave } from '../save.js?v=0.34.0';
+import { audio } from '../audio.js?v=0.34.0';
+import { load, save } from '../save.js?v=0.34.0';
+import { hud } from '../hud.js?v=0.34.0';
+import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.34.0';
+import { daily, season, chapter, curTask, canNextChapter, nextChapter, giveReward, rewardText } from '../state.js?v=0.34.0';
+import { packCount, claimable, albumClaimable, loginCheck, LOGIN } from '../album.js?v=0.34.0';
+import { bingo, spin, dig, DUO, duoState, duoJoin, duoClaim } from '../minigames.js?v=0.34.0';
+import { RACE, raceState, raceJoin, raceClaim, LADDER, DECO, ladder, ladderReady, ladderClaim, ladderEndsIn, VIP, vip, vipClaim, vipEndsIn, fmtLeft } from '../events.js?v=0.34.0';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -36,6 +37,9 @@ export class HomeScene extends Phaser.Scene {
     this.evRace = this.side(W - 80, top + 110, 'img:ev_race', rs.joined && !rs.ended ? `${rs.rank}등` : '레이스', () => this.raceView(), rs.joined ? (rs.ended && !rs.claimed ? 1 : 0) : rs.left > 0 ? '!' : 0);
     this.side(W - 80, top + 250, 'img:ev_ladder', '축제', () => this.ladderView(), ladderReady());
     this.side(W - 80, top + 390, 'img:ev_vip', `VIP ${vp.done}/${VIP.goal}`, () => this.vipView(), vp.done >= VIP.goal && !vp.claimed ? 1 : 0);
+    const mg = bingo().balls + spin().tokens + dig().shovels, du = duoState();
+    this.side(W - 80, top + 530, 'img:roulette', '놀이', () => this.scene.start('Mini'), mg > 0 ? mg : 0);
+    this.side(W - 80, top + 670, 'img:duo', '듀오', () => this.duoView(), du.joined ? (du.ended && !du.claimed ? 1 : 0) : du.can ? '!' : 0);
     this.time.addEvent({ delay: 5000, loop: true, callback: () => { const s = raceState(); if (s.joined && !s.ended && this.evRace) this.evRace.lbl.setText(`${s.rank}등`); } });
     // 아래: 다음 할 일 카드 + 작업대 버튼
     const by = H - bot, g = this.add.graphics().setDepth(20); g.fillStyle(0xFFFFFF, 0.96).fillRoundedRect(30, by, W - 60, bot - 30, 36).lineStyle(4, 0xF1C6CF, 1).strokeRoundedRect(30, by, W - 60, bot - 30, 36);
@@ -166,6 +170,26 @@ export class HomeScene extends Phaser.Scene {
       p.content.add(T(this, r.deco ? -140 : -230, y, rewardText(r), 26, C.ink, { ox: 0, w: 900 }));
       if (got) p.content.add(T(this, 360, y, '받음 ✓', 26, C.green, { w: 900 }));
       else p.content.add(btn(this, 360, y, 150, 72, '받기', () => { if (!ok) return toast(this, `꽃잎 ${need - l.pts}개 더 모아요`); const rr = ladderClaim(i); if (!rr) return; const { deco, ...rest } = rr; giveReward(rest); audio.play(deco ? 'sfx_repair' : 'sfx_coin', { volume: 0.7 }); p.close(); if (deco) toast(this, `「${DECO[deco].n}」이 가게에 놓였어요!`, H / 2); this.time.delayedCall(deco ? 900 : 200, () => this.scene.restart({ view: this.view })); }, { size: 24, style: ok ? 'rose' : 'cream' })); });
+  }
+  duoView() {
+    const s = duoState(), p = popup(this, 980, 1060);
+    p.content.add(T(this, 0, -470, '듀오 뷰티 배틀 (2대2)', 44, C.ink, { w: 900 }));
+    if (!s.joined || s.claimed) {
+      p.content.add(T(this, 0, -405, `짝꿍과 함께 ${DUO.hours}시간 동안 주문 점수를 겨뤄요`, 26, C.dim, { w: 900 }));
+      const im = this.add.image(0, -170, 'duo'); im.setScale(300 / im.height); p.content.add(im);
+      p.content.add(T(this, 0, 60, `이기면 ${rewardText(DUO.win)}`, 30, C.brown, { w: 900 })); p.content.add(T(this, 0, 110, `져도 ${rewardText(DUO.lose)}`, 26, C.dim, { w: 900 }));
+      p.content.add(btn(this, 0, 380, 420, 110, s.can ? '배틀 시작' : '내일 다시', () => { if (!s.can) return p.close(); duoJoin(); audio.play('sfx_levelup', { volume: 0.6 }); p.close(); this.scene.restart({ view: this.view }); }, { size: 34, style: s.can ? 'rose' : 'cream' }));
+      return;
+    }
+    const c = s.c, side = (x, title, faces, names, pts, mine) => { const g = this.add.graphics(); g.fillStyle(mine ? 0xFFE3EC : 0xEDF4FF, 1).fillRoundedRect(x - 210, -380, 420, 560, 30); p.content.add(g);
+      p.content.add(T(this, x, -340, title, 28, mine ? C.rose : C.blue, { w: 900 }));
+      faces.forEach((f, k) => { const im = this.add.image(x, -200 + k * 170, f); im.setScale(130 / Math.max(im.width, im.height)); p.content.add([this.add.circle(x, -200 + k * 170, 70, 0xFFFFFF), im, T(this, x, -120 + k * 170, names[k], 22, C.ink, { w: 900 })]); });
+      p.content.add(T(this, x, 140, `${pts}`, 60, mine ? C.rose : C.blue, { w: 900 })); };
+    side(-230, '우리 팀', ['c_soyun_smile', c.mate.face], [`나 ${s.me}`, `${c.mate.n} ${s.mate}`], s.team, true);
+    side(230, c.foe.n, c.foe.faces, ['', ''], s.foe, false);
+    p.content.add(T(this, 0, 240, s.ended ? (s.team >= s.foe ? '우리 팀 승리!' : '아쉽게 졌어요') : `남은 시간 ${fmtLeft(s.left)} · 주문 1개 = 1점`, 30, s.ended ? C.rose : C.dim, { w: 900 }));
+    if (s.ended) p.content.add(btn(this, 0, 380, 420, 110, '보상 받기', () => { const r = duoClaim(); if (r) { giveReward(r); audio.play('sfx_levelup', { volume: 0.7 }); toast(this, `${rewardText(r)} 받았어요!`, H / 2); } p.close(); this.time.delayedCall(700, () => this.scene.restart({ view: this.view })); }, { size: 32 }));
+    else p.content.add(btn(this, 0, 380, 420, 110, '작업대로 가기', () => { p.close(); this.scene.start('Board'); }, { size: 32, style: 'gold' }));
   }
   vipView() {
     const v = vip(), p = popup(this, 900, 900);

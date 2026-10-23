@@ -1,15 +1,16 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.33.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.33.0';
-import { audio } from '../audio.js?v=0.33.0';
-import { load, save } from '../save.js?v=0.33.0';
-import { goPrev } from '../nav.js?v=0.33.0';
-import { hud } from '../hud.js?v=0.33.0';
-import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.33.0';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.33.0';
-import { adsOpen, rewardAd } from '../store.js?v=0.33.0';
-import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.33.0';
-import { raceAdd, ladderAdd, vipAdd, VIP } from '../events.js?v=0.33.0';
+import { W, H } from '../config.js?v=0.34.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.34.0';
+import { audio } from '../audio.js?v=0.34.0';
+import { load, save } from '../save.js?v=0.34.0';
+import { goPrev } from '../nav.js?v=0.34.0';
+import { hud } from '../hud.js?v=0.34.0';
+import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.34.0';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.34.0';
+import { adsOpen, rewardAd } from '../store.js?v=0.34.0';
+import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.34.0';
+import { raceAdd, ladderAdd, vipAdd, VIP } from '../events.js?v=0.34.0';
+import { bingoAdd, digAddOrder, digAdd, spinAdd, duoAdd } from '../minigames.js?v=0.34.0';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);
@@ -124,6 +125,7 @@ export class BoardScene extends Phaser.Scene {
   merge(from, to) {
     const a = this.d.board[from], nb = a.t === 'i' ? { t: 'i', c: a.c, l: a.l + 1 } : a.t === 's' ? { t: 's', k: specialNext(a.k) } : { t: 'g', g: a.g, l: a.l + 1 };
     this.d.board[to] = nb; this.d.board[from] = null; this.sel = to; this.d.stats.merges++; addGoal('merges'); if (nb.t === 'i' && nb.l === 5) addGoal('lv5');
+    if (nb.t === 'i' && nb.l >= 5) spinAdd(1);   // 룰렛 토큰
     // 원작처럼 5단계 이상 합치면 가끔 재화 아이템이 튀어나옴
     if (nb.t === 'i' && nb.l >= 5 && Math.random() < 0.06) { const e = this.nearestEmpty(to); if (e >= 0) { this.d.board[e] = { t: 's', k: ['en1', 'co1', 'ge1'][Math.floor(Math.random() * 3)] }; this.time.delayedCall(200, () => this.fx(e, 0xFFE27A)); } }
     // 옆 칸 잠긴 상자 열기
@@ -324,13 +326,14 @@ export class BoardScene extends Phaser.Scene {
     used.forEach(i => { const cell = this.d.board[i], im = this.add.image(cx(i), cy(i), itemKey(cell.c, cell.l)).setDepth(55); im.setScale((CS - 22) / Math.max(im.width, im.height)); this.tweens.add({ targets: im, x: ox, y: oy, scale: im.scale * 0.6, duration: 380, ease: 'Cubic.easeIn', onComplete: () => { im.destroy(); } }); this.fx(i, 0xFFD6E4); this.d.board[i] = null; });
     this.d.coins += o.coins; this.d.stats.orders++; addGoal('orders'); piggyAdd();
     // 이벤트 점수: 레이스 +1(두 개짜리 +2) · 꽃잎 = 물건 단계 합 · VIP
+    bingoAdd(1); digAddOrder(); duoAdd(o.items.length);
     { const rp = raceAdd(o.items.length), lp = ladderAdd(o.items.reduce((a, it) => a + it.l, 0)); let vp = 0; if (o.vip) vp = vipAdd();
       this.time.delayedCall(450, () => { const t = T(this, 30 + k * 345 + 165, 460, [rp && `🏆+${rp}`, `🌸+${lp}`, o.vip && `👑 ${vp}/${VIP.goal}`].filter(Boolean).join('  '), 28, '#C2408A', { w: 900, shadow: true }).setDepth(61); this.tweens.add({ targets: t, y: t.y - 60, alpha: 0, duration: 1300, delay: 400, onComplete: () => t.destroy() }); }); }
     { const a = album(); a.orders++; if (a.orders % ORDERS_PER_PACK === 0) { addPack('basic'); this.time.delayedCall(900, () => this.packFly()); } }
     if (o.bonus) { const e = this.nearestEmpty(used[0]); if (e >= 0) this.d.board[e] = { t: 's', k: o.bonus }; else this.d.pendingItems.push({ t: 's', k: o.bonus }); }
     this.d.orders[k] = { ...makeOrder(false, this.d.board), at: Date.now() + 6000 }; save();
     audio.play('sfx_order', { volume: 0.7 }); audio.buzz([20, 40, 20]);
-    const ups = addXp(o.xp); this.time.delayedCall(300, () => this.flyCoins(ox, 400, o.coins));
+    const ups = addXp(o.xp); if (ups.length) { spinAdd(ups.length); digAdd(ups.length * 2); } this.time.delayedCall(300, () => this.flyCoins(ox, 400, o.coins));
     this.redraw(); this.hud.update();
     if (ups.length) this.time.delayedCall(600, () => this.levelUp(ups.reduce((a, u) => ({ ...u, gems: a.gems + u.gems, coins: a.coins + u.coins, gift: a.gift || u.gift, items: [...a.items, ...u.items], pack: u.pack === 'diamond' || a.pack === 'diamond' ? 'diamond' : u.pack === 'gold' || a.pack === 'gold' ? 'gold' : u.pack || a.pack }), { gems: 0, coins: 0, gift: false, items: [], pack: null })));
     if (this.d.tut === 2) { this.d.tut = 3; save(); this.tutorial(); }

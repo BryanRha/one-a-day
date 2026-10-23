@@ -1,7 +1,7 @@
 // 출석 보상(7일 주기) + 일일 미션(매일 3개). 진행은 save.js 의 같은 저장소에 함께 저장한다.
 // 보상은 모두 정해진 내용이고 미리 보여 준다 (무작위 뽑기 없음).
-import { load, save, addCoins, addBooster } from './save.js?v=0.33.0';
-import { count, newlyReached } from './progress.js?v=0.33.0';
+import { load, save, addCoins, addBooster } from './save.js?v=0.34.0';
+import { count, newlyReached } from './progress.js?v=0.34.0';
 
 export const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 

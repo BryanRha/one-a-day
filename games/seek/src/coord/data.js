@@ -87,5 +87,9 @@ export const THEMES = [
   { t: '와인 시음회', bg: 'bg3', who: 'c_jia_smile', by: '지아', line: '와인 시음회 자리 하나 남았어요. 올래요?', tags: ['시크', '우아'], hid: { c: '레드' }, hidN: '와인빛' },
   { t: '밤 산책', bg: 'bg10', who: 'c_dohyun_smile', by: '도현', line: '오늘 밤 한강 걸을래? 야경이 예쁘대.', tags: ['청순', '러블리'], hid: { se: '가을' }, hidN: '선선한 계절' },
   { t: '꽃집 화보 촬영', bg: 'bg_flower', who: 'c_hana', by: '하나', line: '잡지 화보 섭외 왔어! 오늘의 주인공은 너야.', tags: ['러블리', '우아'], hid: { slot: 'prop' }, hidN: '손에 소품' },
+  { t: '지아의 재판 응원', bg: 'bg19', who: 'c_jia_firm', by: '지아', line: '서윤 씨, 내일 법원에 와 줄래요? 단정하게요.', tags: ['우아', '시크'], hid: { c: '블루' }, hidN: '남색' },
+  { t: '가면 무도회 준비', bg: 'bg17', who: 'c_jia_smile', by: '지아', line: '무도회 드레스 같이 골라 줘요. 서윤 씨도 초대받았어요.', tags: ['우아', '러블리'], hid: { c: '레드' }, hidN: '버건디' },
+  { t: '부산 바닷가 동행', bg: 'bg13', who: 'c_seojin_smile', by: '서진', line: '지아 씨 고향에 같이 가 주실래요? 바람이 셀 거예요.', tags: ['캐주얼', '청순'], hid: { se: '봄' }, hidN: '봄 느낌' },
+  { t: '크리스마스 마켓', bg: 'bg20', who: 'c_hana', by: '하나', line: '크리스마스 마켓 취재 같이 가자! 사진 많이 찍을 거야.', tags: ['러블리', '캐주얼'], hid: { se: '겨울' }, hidN: '겨울 느낌' },
   { t: '두 번째 데이트 기념일', bg: 'bg3', who: 'c_dohyun_smile', by: '도현', line: '우리 처음 만난 루프톱 다시 가 볼래?', tags: ['러블리', '시크'], hid: { c: '블랙' }, hidN: '블랙' },
 ];

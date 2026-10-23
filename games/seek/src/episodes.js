@@ -1,5 +1,6 @@
 // 「그 남자의 비밀」 시즌 1 — 화마다: 이야기 → 숨은 물건 맵 → 증거 대조 → 웹툰 결말
-import { MORE } from './episodes_s1.js?v=0.25.3';
+import { MORE } from './episodes_s1.js?v=0.26.0';
+import { S2 } from './episodes_s2.js?v=0.26.0';
 export const SERIES = { title: "그 남자의 비밀", en: "HIS SECRET", season: 1, total: 10 };
 export const EPISODES = [
  {
@@ -355,4 +356,9 @@ export const EPISODES = [
   }
  }
 ];
-EPISODES.push(...MORE);
+EPISODES.push(...MORE, ...S2);
+// 시즌 정보 (서재 탭 · 완결 문구)
+export const SEASONS = [{ n: 1, title: '그 남자의 비밀', en: 'HIS SECRET', tag: '3주년 전날, 그가 거짓말을 시작했다', cover: 't1_2' }, { n: 2, title: '그 여자의 비밀', en: 'HER SECRET', tag: '12년 전 사라진 아버지, 그리고 한 통의 메시지', cover: 't11_2' }];
+export const seasonOf = ep => ep.season || 1;
+export const epNo = ep => ep.sn || ep.no;
+export const hero = ep => ep.hero || { n: '서윤', face: 'c_seoyun_doubt' };

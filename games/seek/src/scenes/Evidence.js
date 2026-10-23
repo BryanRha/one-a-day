@@ -1,14 +1,14 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.25.3';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.3';
-import { audio } from '../audio.js?v=0.25.3';
-import { goPrev } from '../nav.js?v=0.25.3';
-import { load, save } from '../save.js?v=0.25.3';
-import { Viewer } from '../viewer.js?v=0.25.3';
-import { EPISODES } from '../episodes.js?v=0.25.3';
-import { starOnce } from '../cafe/state.js?v=0.25.3';
-import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.25.3';
+import { W, H } from '../config.js?v=0.26.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.26.0';
+import { audio } from '../audio.js?v=0.26.0';
+import { goPrev } from '../nav.js?v=0.26.0';
+import { load, save } from '../save.js?v=0.26.0';
+import { Viewer } from '../viewer.js?v=0.26.0';
+import { EPISODES, epNo } from '../episodes.js?v=0.26.0';
+import { starOnce } from '../cafe/state.js?v=0.26.0';
+import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.26.0';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }
@@ -19,12 +19,12 @@ export class EvidenceScene extends Phaser.Scene {
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     const top = 150, bottom = 260, gap = 70, avail = H - top - bottom - gap * 2, vh = Math.min(avail / 2, W * 0.75);
     const y1 = top + gap, y2 = y1 + vh + gap;
-    this.vA = new Viewer(this, ev.a, 0, y1, W, vh, { onTap: (ip, p, later) => this.tap(ip, p, later) });
-    this.vB = new Viewer(this, ev.b, 0, y2, W, vh, { onTap: (ip, p, later) => this.tap(ip, p, later) }); this.vA.link(this.vB);
+    this.vA = new Viewer(this, ev.a, 0, y1, W, vh, { fit: true, onTap: (ip, p, later) => this.tap(ip, p, later) });
+    this.vB = new Viewer(this, ev.b, 0, y2, W, vh, { fit: true, onTap: (ip, p, later) => this.tap(ip, p, later) }); this.vA.link(this.vB);
     T(this, 40, y1 - 34, ev.la, 26, '#FFB6CB', { ox: 0, w: 900 }); T(this, 40, y2 - 34, ev.lb, 26, '#FFB6CB', { ox: 0, w: 900 });
     const bar = this.add.graphics(); bar.fillStyle(0x2E1A2A, 1).fillRect(0, 0, W, top); bar.fillStyle(0xFF9DB6, 0.6).fillRect(0, top - 3, W, 3);
     iconBtn(this, 72, 76, 'back', () => this.leave(), 88, { dark: true });
-    T(this, W / 2, 56, `${ep.no}화 · 증거 대조${this.replay ? ' · 다시 하기' : ''}`, 34, '#FFFFFF', { w: 900 }); T(this, W / 2, 104, `다른 곳 ${ev.spots.length}개를 찾아 거짓말을 밝혀요`, 22, C.sub, { w: 800 });
+    T(this, W / 2, 56, `${epNo(ep)}화 · 증거 대조${this.replay ? ' · 다시 하기' : ''}`, 34, '#FFFFFF', { w: 900 }); T(this, W / 2, 104, `다른 곳 ${ev.spots.length}개를 찾아 거짓말을 밝혀요`, 22, C.sub, { w: 800 });
     this.heartT = [0, 1, 2].map(i => T(this, W - 150 + i * 50, 76, '♥', 44, '#FF6A8E', { w: 900 }));
     const by = H - bottom / 2 - 20; this.dots = ev.spots.map((_, i) => this.add.circle(W / 2 - (ev.spots.length - 1) * 42 + i * 84, by - 40, 26, 0x000000, 0.3).setStrokeStyle(4, 0xFF9DB6, 0.9));
     this.capT = T(this, W / 2, by + 50, '', 30, '#FFFFFF', { w: 800, wrap: W - 120 });

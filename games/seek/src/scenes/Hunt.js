@@ -1,14 +1,14 @@
 // 숨은 물건 맵 (Find It Out® 식): 고밀도 세로 맵 · 아래 아이콘 5칸(찾으면 다음 물건이 채워짐) · 실패·시간 제한 없음
 // + 이야기 단서: 분홍 테두리 아이콘 · 찾으면 서윤 혼잣말 · 물건마다 코인 · 힌트는 코인
-import { W, H } from '../config.js?v=0.25.3';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.3';
-import { audio } from '../audio.js?v=0.25.3';
-import { goPrev } from '../nav.js?v=0.25.3';
-import { load, save } from '../save.js?v=0.25.3';
-import { Viewer } from '../viewer.js?v=0.25.3';
-import { EPISODES } from '../episodes.js?v=0.25.3';
-import { starOnce } from '../cafe/state.js?v=0.25.3';
-import { advance, passed, stepOf, replayResult, medal, TIERS } from '../replay.js?v=0.25.3';
+import { W, H } from '../config.js?v=0.26.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.26.0';
+import { audio } from '../audio.js?v=0.26.0';
+import { goPrev } from '../nav.js?v=0.26.0';
+import { load, save } from '../save.js?v=0.26.0';
+import { Viewer } from '../viewer.js?v=0.26.0';
+import { EPISODES, epNo, hero } from '../episodes.js?v=0.26.0';
+import { starOnce } from '../cafe/state.js?v=0.26.0';
+import { advance, passed, stepOf, replayResult, medal, TIERS } from '../replay.js?v=0.26.0';
 
 const SLOTS = 5, HINT_COST = 10, SPAM = { n: 3, t: 2, lock: 3 };
 export class HuntScene extends Phaser.Scene {
@@ -31,7 +31,7 @@ export class HuntScene extends Phaser.Scene {
     // 위: 뒤로 · 화 제목 · 진행 · 코인
     const bar = this.add.graphics(); bar.fillStyle(0x2E1A2A, 1).fillRect(0, 0, W, top); bar.fillStyle(0xFF9DB6, 0.6).fillRect(0, top - 3, W, 3);
     iconBtn(this, 72, 76, 'back', () => this.leave(), 88, { dark: true });
-    T(this, W / 2, 56, `${ep.no}화 · 단서 찾기${this.replay ? ' · 다시 하기' : ''}`, 34, '#FFFFFF', { w: 900 });
+    T(this, W / 2, 56, `${epNo(ep)}화 · 단서 찾기${this.replay ? ' · 다시 하기' : ''}`, 34, '#FFFFFF', { w: 900 });
     this.progT = T(this, W / 2, 104, '', 24, C.sub, { w: 800 });
     this.coinT = T(this, W - 40, 76, '', 32, C.gold, { ox: 1, w: 900 });
     // 아래: 아이콘 5칸 + 힌트
@@ -95,7 +95,7 @@ export class HuntScene extends Phaser.Scene {
     this.paused = true; const root = this.add.container(0, 0).setDepth(900);
     const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.55).setInteractive(); root.add(dim);
     const ic = this.add.image(W / 2, H * 0.3, it.clue); ic.setScale(0); root.add(ic); this.tweens.add({ targets: ic, scale: 300 / Math.max(ic.width, ic.height), duration: 380, ease: 'Back.easeOut' });
-    const face = this.add.image(W / 2 - 250, H - 380, 'c_seoyun_doubt').setOrigin(0.5, 1); face.setScale(560 / face.height); root.add(face);
+    const face = this.add.image(W / 2 - 250, H - 380, hero(this.ep).face).setOrigin(0.5, 1); face.setScale(560 / face.height); root.add(face);
     const g = this.add.graphics(); g.fillStyle(0xFFFFFF, 0.97).fillRoundedRect(40, H - 400, W - 80, 300, 34).lineStyle(4, 0xFF9DB6, 1).strokeRoundedRect(40, H - 400, W - 80, 300, 34); root.add(g);
     root.add(T(this, 90, H - 330, `단서 발견 · ${it.n}`, 28, '#E8628A', { ox: 0, w: 900 }));
     root.add(T(this, 90, H - 280, it.line, 36, C.ink, { ox: 0, oy: 0, w: 700, wrap: W - 180, lh: 14, align: 'left' }));

@@ -1,14 +1,14 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.25.3';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.25.3';
-import { audio } from '../audio.js?v=0.25.3';
-import { load } from '../save.js?v=0.25.3';
-import { SERIES, EPISODES } from '../episodes.js?v=0.25.3';
-import { loadEp } from './Boot.js?v=0.25.3';
-import { medal, TIERS } from '../replay.js?v=0.25.3';
-import { cafeData } from '../cafe/state.js?v=0.25.3';
-import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.25.3';
-import { buildLook } from '../coord/look.js?v=0.25.3';
+import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.26.0';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.26.0';
+import { audio } from '../audio.js?v=0.26.0';
+import { load } from '../save.js?v=0.26.0';
+import { SERIES, EPISODES, SEASONS, seasonOf, epNo } from '../episodes.js?v=0.26.0';
+import { loadEp } from './Boot.js?v=0.26.0';
+import { medal, TIERS } from '../replay.js?v=0.26.0';
+import { cafeData } from '../cafe/state.js?v=0.26.0';
+import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.26.0';
+import { buildLook } from '../coord/look.js?v=0.26.0';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }
@@ -18,21 +18,28 @@ export class LibraryScene extends Phaser.Scene {
     const d = load();
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     // 표지: 웹툰 2컷(도현) 크게 + 어둡게 + 제목
-    const cov = this.add.image(W / 2, 0, 't1_2').setOrigin(0.5, 0); cov.setScale(W / cov.width * 1.25); cov.y = -60;
+    const nextUp0 = EPISODES.findIndex(e => (d.ep[e.id] || {}).step !== 'done');
+    this.season = (data && data.season) || (nextUp0 >= 0 ? seasonOf(EPISODES[nextUp0]) : SEASONS.length); const SS = SEASONS[this.season - 1];
+    const cov = this.add.image(W / 2, 0, SS.cover).setOrigin(0.5, 0); cov.setScale(W / cov.width * 1.25); cov.y = -60;
     const g = this.add.graphics(); for (let i = 0; i < 60; i++) g.fillStyle(0x2E1A2A, i / 60).fillRect(0, 380 + i * 10, W, 10); g.fillStyle(0x2E1A2A, 1).fillRect(0, 980, W, H);
     // 위 막대(코인 · 설정): 스크롤해도 화면 위에 고정 (tick 에서 카메라 위치를 따라감)
     const head = this.head = this.add.container(0, 0).setDepth(20), hbg = this.add.graphics(); hbg.fillStyle(0x2E1A2A, 1).fillRect(0, 0, W, 150).fillStyle(0xFF9DB6, 0.35).fillRect(0, 147, W, 3); hbg.setAlpha(0.55);
     head.add([hbg, T(this, 50, 76, `● ${d.coins}`, 34, C.gold, { ox: 0, w: 900, shadow: true }), iconBtn(this, W - 76, 76, 'gear', () => this.settings(), 88, { dark: true })]);
     this.cameras.main.setBackgroundColor(0x2E1A2A); this.modal = false;
-    T(this, 60, 760, '로맨스 미스터리 · 시즌 1', 28, '#FFB6CB', { ox: 0, w: 800, shadow: true });
-    T(this, 56, 840, TITLE, 104, '#FFFFFF', { ox: 0, w: 900, shadow: true });
-    T(this, 62, 925, `${TITLE_EN} — 3주년 전날, 그가 거짓말을 시작했다`, 26, C.sub, { ox: 0, w: 700, shadow: true });
+    T(this, 60, 760, `로맨스 미스터리 · 시즌 ${SS.n}`, 28, '#FFB6CB', { ox: 0, w: 800, shadow: true });
+    T(this, 56, 840, SS.title, 104, '#FFFFFF', { ox: 0, w: 900, shadow: true });
+    T(this, 62, 925, `${SS.en} — ${SS.tag}`, 26, C.sub, { ox: 0, w: 700, shadow: true });
     // 화 목록 (10화 · 위아래로 끌어서 스크롤)
-    let y = 1040; T(this, 60, y, `에피소드 · ${SERIES.total}화 완결`, 34, C.text, { ox: 0, w: 900 }); y += 70;
+    let y = 1010;
+    // 시즌 탭
+    SEASONS.forEach((se, k) => { const on = se.n === this.season, x = 60 + k * 300, tg = this.add.graphics(); tg.fillStyle(on ? 0xE8628A : 0x3A2236, 1).fillRoundedRect(x, y, 280, 76, 38);
+      const tt = T(this, x + 140, y + 38, `시즌 ${se.n}`, 30, on ? '#FFFFFF' : C.sub, { w: 900 }); const z = this.add.zone(x + 140, y + 38, 280, 76).setInteractive({ useHandCursor: true }); z.on('pointerup', () => { if (this.dragged || on) return; audio.play('sfx_page', { volume: 0.5 }); this.scene.restart({ season: se.n }); }); });
+    y += 110; const eps = EPISODES.filter(e => seasonOf(e) === this.season);
+    T(this, 60, y, `에피소드 · ${eps.length}화 완결`, 34, C.text, { ox: 0, w: 900 }); y += 70;
     const nextUp = EPISODES.findIndex(e => (d.ep[e.id] || {}).step !== 'done');
     this.cards = [];
-    for (let i = 0; i < SERIES.total; i++) {
-      const ep = EPISODES[i], st = ep ? (d.ep[ep.id] || {}).step : null, open = !!ep, done = st === 'done';
+    for (let i = 0; i < eps.length; i++) {
+      const ep = eps[i], st = ep ? (d.ep[ep.id] || {}).step : null, open = !!ep, done = st === 'done';
       const card = this.add.container(W / 2, y + 70), bg = this.add.graphics();
       bg.fillStyle(open ? 0x4A2A44 : 0x3A2236, 1).fillRoundedRect(-480, -66, 960, 132, 24).lineStyle(3, done ? 0xF0B65A : open ? 0xE86A8E : 0x5A3A52, 1).strokeRoundedRect(-480, -66, 960, 132, 24);
       card.add(bg);
@@ -41,7 +48,7 @@ export class LibraryScene extends Phaser.Scene {
       card.add(T(this, -300, 22, open ? ep.title : '다음 주 공개', 36, open ? C.text : C.dim, { ox: 0, w: 900 }));
       if (done) { const ms = ['hunt', 'evidence'].map(k => medal(ep.id, k)); ms.forEach((m, k) => { if (m >= 0) card.add(this.add.circle(300 + k * 34, 36, 13, TIERS[m].c)); }); }
       card.add(T(this, 440, done ? -14 : 0, done ? '다시 보기' : st && st !== 'intro' ? '이어 보기' : open ? '보기' : '🔒', 28, done ? C.gold : open ? '#FFB6CB' : C.dim, { ox: 1, w: 900 }));
-      if (open) { card.setSize(960, 132).setInteractive({ useHandCursor: true }).on('pointerup', p => { if (!this.dragged) this.play(ep); }); if (i === nextUp) this.tweens.add({ targets: card, scale: 1.02, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
+      if (open) { card.setSize(960, 132).setInteractive({ useHandCursor: true }).on('pointerup', p => { if (!this.dragged) this.play(ep); }); if (EPISODES.indexOf(ep) === nextUp) this.tweens.add({ targets: card, scale: 1.02, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
       this.cards.push(card); y += 156;
     }
     // 곧 공개 모드
@@ -76,10 +83,10 @@ export class LibraryScene extends Phaser.Scene {
     const tick = () => { if (this.dragY == null && Math.abs(this.vel) > 0.5) { this.vel *= 0.92; cam.scrollY = Phaser.Math.Clamp(cam.scrollY + this.vel, 0, Math.max(0, y - H)); } head.y = cam.scrollY; hbg.setAlpha(Math.min(1, 0.55 + cam.scrollY / 400)); };
     this.events.on('update', tick); this.events.once('shutdown', () => this.events.off('update', tick));
     // 이어 볼 화가 화면 아래에 있으면 거기까지 내려 줌
-    if (nextUp > 2) cam.scrollY = Phaser.Math.Clamp(1110 + nextUp * 156 - H * 0.55, 0, Math.max(0, y - H));
+    const ni = eps.indexOf(EPISODES[nextUp]); if (ni > 2) cam.scrollY = Phaser.Math.Clamp(1190 + ni * 156 - H * 0.55, 0, Math.max(0, y - H));
     this.input.on('wheel', (p, o, dx, dy) => { if (this.modal) return; cam.scrollY = Phaser.Math.Clamp(cam.scrollY + dy, 0, Math.max(0, y - H)); });
     this.cameras.main.fadeIn(300, 30, 10, 26); window.__lib = this;
-    const auto = data && data.auto && EPISODES.find(e => e.id === data.auto); if (auto) this.time.delayedCall(350, () => this.play(auto));
+    const auto = data && data.auto && EPISODES.find(e => e.id === data.auto); if (auto && seasonOf(auto) !== this.season) return this.scene.restart({ auto: data.auto, season: seasonOf(auto) }); if (auto) this.time.delayedCall(350, () => this.play(auto));
   }
   // 냥카페 썸네일: 카페 방 그림 창가 쪽을 둥글게
   cafeThumb() {
@@ -97,7 +104,7 @@ export class LibraryScene extends Phaser.Scene {
   // 다 본 화: 원하는 단계만 골라 다시 (숨은 물건 · 증거는 다시 하기 등급)
   replayMenu(ep) {
     const p = popup(this, 900, 1000), c = p.content, go = (key, data) => { p.close(); this.cameras.main.fadeOut(250, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => loadEp(this, ep, () => this.scene.start(key, data))); };
-    c.add(T(this, 0, -410, `${ep.no}화 · ${ep.title}`, 40, C.ink, { w: 900 }));
+    c.add(T(this, 0, -410, `${epNo(ep)}화 · ${ep.title}`, 40, C.ink, { w: 900 }));
     c.add(T(this, 0, -355, '보고 싶은 단계를 골라요', 24, C.dim, { w: 800 }));
     [['이야기 처음부터', null, () => go('Story', { id: ep.id, part: 'intro' })], ['단서 찾기 · 다시 하기', 'hunt', () => go('Hunt', { id: ep.id })], ['증거 대조 · 다시 하기', 'evidence', () => go('Evidence', { id: ep.id })], ['웹툰 결말 다시 보기', null, () => go('Toon', { id: ep.id })]].forEach(([t, kind, fn], i) => {
       const y = -230 + i * 150, row = this.add.container(0, y), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(-400, -60, 800, 120, 24).lineStyle(3, 0xF0D6DF, 1).strokeRoundedRect(-400, -60, 800, 120, 24); row.add(g);

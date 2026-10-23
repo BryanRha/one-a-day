@@ -1,11 +1,12 @@
 // 매장 (원작의 식당 꾸미기): 낡은 가게 → 할 일(코인)로 이야기 · 수리 · 디자인 3종 선택(언제든 무료 변경)
-import { W, H } from '../config.js?v=0.27.1';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.27.1';
-import { audio } from '../audio.js?v=0.27.1';
-import { load, save } from '../save.js?v=0.27.1';
-import { hud } from '../hud.js?v=0.27.1';
-import { SPOTS, DESIGNS, ROOM, TASKS } from '../data.js?v=0.27.1';
-import { daily, season } from '../state.js?v=0.27.1';
+import { W, H } from '../config.js?v=0.28.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.28.0';
+import { load as loadSave } from '../save.js?v=0.28.0';
+import { audio } from '../audio.js?v=0.28.0';
+import { load, save } from '../save.js?v=0.28.0';
+import { hud } from '../hud.js?v=0.28.0';
+import { SPOTS, DESIGNS, ROOM, TASKS } from '../data.js?v=0.28.0';
+import { daily, season } from '../state.js?v=0.28.0';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -20,6 +21,7 @@ export class HomeScene extends Phaser.Scene {
     const dl = daily(), dn = dl.goals.filter((g, i) => g.have >= g.need && !dl.done.includes(i)).length;
     this.side(80, top + 110, '📅', '목표', () => this.scene.start('Season'), dn);
     this.side(80, top + 260, '🛍', '상점', () => this.scene.start('Shop'), 0);
+    this.side(80, top + 410, '⚙', '설정', () => this.settings(), 0);
     // 아래: 다음 할 일 카드 + 작업대 버튼
     const by = H - bot, g = this.add.graphics().setDepth(20); g.fillStyle(0xFFFFFF, 0.96).fillRoundedRect(30, by, W - 60, bot - 30, 36).lineStyle(4, 0xF1C6CF, 1).strokeRoundedRect(30, by, W - 60, bot - 30, 36);
     const task = TASKS[d.task];
@@ -31,7 +33,7 @@ export class HomeScene extends Phaser.Scene {
       if (d.coins >= task.cost) this.tweens.add({ targets: this.taskB, scale: 1.06, duration: 600, yoyo: true, repeat: -1 });
     } else { T(this, W / 2, by + 100, '1장 완료! 2장은 곧 열려요', 36, C.ink, { w: 900 }).setDepth(21); }
     btn(this, W / 2, by + 260, W - 140, 120, '작업대로 가기 · 주문 받기', () => this.scene.start('Board'), { size: 36, style: 'gold' }).setDepth(21);
-    this.cameras.main.fadeIn(250, 255, 244, 236); window.__home = this;
+    this.cameras.main.fadeIn(250, 255, 244, 236); window.__home = this; audio.music('bgm_shop');
     if (d.task === 0) this.time.delayedCall(500, () => this.doTask());
   }
   side(x, y, ic, n, fn, badge) {
@@ -39,7 +41,7 @@ export class HomeScene extends Phaser.Scene {
     const lg = this.add.graphics(); lg.fillStyle(0xE86A8E, 1).fillRoundedRect(-44, 50, 88, 38, 19);
     c.add([g, T(this, 0, -6, ic, 48, '#000', { w: 900 }), lg, T(this, 0, 68, n, 22, '#FFFFFF', { w: 900 })]);
     if (badge) c.add([this.add.circle(40, -40, 18, 0xD9573B), T(this, 40, -41, String(badge), 20, '#FFFFFF', { w: 900 })]);
-    c.setSize(120, 120).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (!this.busy) { audio.play('sfx_click'); fn(); } });
+    c.setSize(120, 120).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (!this.busy) { audio.play('sfx_tap', { volume: 0.6 }); this.tweens.add({ targets: c, scale: 0.9, duration: 70, yoyo: true }); fn(); } });
   }
   drawRoom() {
     this.room?.destroy(); const r = this.room = this.add.container(this.ox, this.oy).setScale(this.s);
@@ -55,7 +57,7 @@ export class HomeScene extends Phaser.Scene {
   doTask() {
     const t = TASKS[this.d.task]; if (!t || this.busy) return;
     if (this.d.coins < t.cost) return toast(this, `코인이 ${t.cost - this.d.coins} 부족해요 · 작업대에서 주문을 받아요`, H - 470);
-    this.d.coins -= t.cost; save(); audio.play('sfx_page');
+    this.d.coins -= t.cost; save(); audio.play('sfx_coin', { volume: 0.6 });
     if (t.story) { this.d.task++; save(); return this.scene.start('Story', { id: t.story, ret: 'Home' }); }
     const sp = SPOTS.find(s => s.id === t.repair); this.pickDesign(sp, true);
   }
@@ -71,19 +73,38 @@ export class HomeScene extends Phaser.Scene {
     for (let k = 1; k <= 3; k++) {
       const x = W / 2 + (k - 2) * 330, c = this.add.container(x, y0 + 260), cg = this.add.graphics(); c.add(cg);
       const im = this.add.image(0, -20, `${sp.id}_${k}`); im.setScale(Math.min(220 / im.width, 170 / im.height)); c.add(im); c.add(T(this, 0, 104, DESIGNS[k - 1], 26, C.ink, { w: 900 }));
-      c.setSize(300, 280).setInteractive({ useHandCursor: true }).on('pointerup', () => { sel = k; audio.play('sfx_click'); draw(); show(); });
+      c.setSize(300, 280).setInteractive({ useHandCursor: true }).on('pointerup', () => { sel = k; audio.play('sfx_tap', { volume: 0.6 }); draw(); show(); });
       cards.push({ cg, k }); root.add(c);
     }
     const draw = () => cards.forEach(c => c.cg.clear().fillStyle(0xFFFFFF, 1).fillRoundedRect(-150, -140, 300, 280, 26).lineStyle(c.k === sel ? 6 : 3, c.k === sel ? 0xE86A8E : 0xF1D2C8, 1).strokeRoundedRect(-150, -140, 300, 280, 26)); draw();
     root.add(btn(this, W / 2, y0 + 450, 480, 100, fresh ? '이걸로 완성!' : '이걸로 할게요', () => {
       root.destroy(); this.busy = false; this.picker = null; save();
-      if (fresh) { this.d.task++; save(); audio.play('sfx_clear', { volume: 0.7 }); this.cameras.main.flash(300, 255, 240, 230); this.time.delayedCall(500, () => this.scene.restart()); } else this.scene.restart();
+      if (fresh) { this.d.task++; save(); this.busy = true; audio.play('sfx_repair', { volume: 0.7 }); audio.duck(2000); audio.buzz([20, 40, 30]); this.celebrate(sp); this.time.delayedCall(1300, () => this.scene.restart()); } else this.scene.restart();
     }, { size: 32 }));
     // 취소 (뒤로가기도 같음): 새로 고치던 중이면 코인 돌려줌
     const cancel = () => { if (fresh) { delete this.d.spots[sp.id]; this.d.coins += TASKS[this.d.task].cost; } else this.d.spots[sp.id] = prev; save(); root.destroy(); this.busy = false; this.picker = null; this.drawRoom(); this.hud.update(); };
     this.picker = { cancel };
     root.add(btn(this, W - 120, y0 + 60, 160, 72, '취소', cancel, { style: 'cream', size: 24 }));
     root.y = sh; this.tweens.add({ targets: root, y: 0, duration: 260, ease: 'Cubic.easeOut' });
+  }
+  // 수리 완성: 가구 자리에서 반짝이 터짐 + 먼지 + 화면 살짝 밝게
+  celebrate(sp) {
+    const x = this.ox + sp.x * this.s, y = this.oy + (sp.hang ? sp.y : sp.y - sp.w * 0.4) * this.s; this.cameras.main.flash(300, 255, 240, 230);
+    for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, s = this.add.image(x, y, 'spark').setTint([0xFFE27A, 0xFF9DB6, 0xFFFFFF][k % 3]).setScale(0.5).setDepth(40), r = 120 + (k % 3) * 50; this.tweens.add({ targets: s, x: x + Math.cos(a) * r, y: y + Math.sin(a) * r, angle: 200, alpha: 0, scale: 0.15, duration: 700, ease: 'Cubic.easeOut', onComplete: () => s.destroy() }); }
+    for (let k = 0; k < 6; k++) { const p = this.add.circle(x + (k - 2.5) * 40, y + 60, 26, 0xFFFFFF, 0.8).setDepth(39); this.tweens.add({ targets: p, y: p.y - 60, scale: 2, alpha: 0, duration: 800, delay: k * 40, onComplete: () => p.destroy() }); }
+    const t = T(this, x, y - 120, '완성!', 60, C.rose, { w: 900, shadow: true }).setDepth(41).setScale(0.3); this.tweens.add({ targets: t, scale: 1, duration: 360, ease: 'Back.easeOut' });
+  }
+  // 설정: 배경음 · 효과음 · 진동
+  settings() {
+    const p = popup(this, 760, 640), rows = [['배경음', () => loadSave().music !== false, () => audio.toggleMusic()], ['효과음', () => loadSave().sfx !== false, () => audio.toggleSfx()], ['진동', () => loadSave().haptic !== false, () => audio.toggleHaptic()]];
+    p.content.add(T(this, 0, -230, '설정', 44, C.ink, { w: 900 }));
+    rows.forEach(([n, get, flip], k) => {
+      const y = -110 + k * 120, c = this.add.container(0, y), g = this.add.graphics(); c.add(g); c.add(T(this, -250, 0, n, 36, C.ink, { ox: 0, w: 800 }));
+      const draw = () => { const on = get(); g.clear().fillStyle(on ? 0xE86A8E : 0xE3D3CC, 1).fillRoundedRect(110, -34, 140, 68, 34).fillStyle(0xFFFFFF, 1).fillCircle(on ? 216 : 144, 0, 28); };
+      draw(); const hit = this.add.rectangle(180, 0, 160, 80, 0, 0).setInteractive({ useHandCursor: true }); c.add(hit);
+      hit.on('pointerup', () => { flip(); draw(); audio.play('sfx_tap', { volume: 0.6 }); }); p.content.add(c);
+    });
+    p.content.add(btn(this, 0, 240, 360, 100, '닫기', () => p.close(), { style: 'cream', size: 30 }));
   }
   onBack() { if (this.picker) { this.picker.cancel(); return true; } return false; }
 }

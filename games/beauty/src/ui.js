@@ -1,7 +1,7 @@
 // K뷰티 레시피 UI: 크림 패널 · 장미색 버튼 · 금빛 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.27.1';
-import { audio } from './audio.js?v=0.27.1';
-import { pushBack } from './oad.js?v=0.27.1';
+import { W, H } from './config.js?v=0.28.0';
+import { audio } from './audio.js?v=0.28.0';
+import { pushBack } from './oad.js?v=0.28.0';
 
 export const C = { ink: '#4A2C2A', text: '#FFFFFF', cream: '#FFF4EC', paper: '#FFFBF6', brown: '#8A5A44', sub: '#C99A86', dim: '#A08878', gold: '#E8A93A', rose: '#E86A8E', plum: '#5A3A34', red: '#D9573B', green: '#5FA65A', blue: '#4E86C6', mint: '#7CC6A8' };
 export const FONT = 'Pretendard, sans-serif';
@@ -41,7 +41,7 @@ export function btn(sc, x, y, w, h, label, onClick, o = {}) {
   c.add([im, t]); c.setSize(w, h).setInteractive({ useHandCursor: true });
   c.on('pointerdown', () => sc.tweens.add({ targets: c, scale: 0.95, duration: 70 }));
   c.on('pointerout', () => c.setScale(1));
-  c.on('pointerup', () => { sc.tweens.add({ targets: c, scale: 1, duration: 90 }); audio.play('sfx_click', { volume: 0.4 }); onClick && onClick(); });
+  c.on('pointerup', () => { sc.tweens.add({ targets: c, scale: 1, duration: 90 }); audio.play('sfx_tap', { volume: 0.6 }); onClick && onClick(); });
   c.label = t; c.setLabel = s2 => t.setText(s2);
   return c;
 }
@@ -59,7 +59,7 @@ export function iconBtn(sc, x, y, glyph, onClick, size = 96, o = {}) {
       g.beginPath(); for (let i = 0; i < 16; i++) { const a0 = i * Math.PI / 8 - Math.PI / 16, a1 = a0 + Math.PI / 8, R = i % 2 ? 23 * u : 31 * u; g.lineTo(50 * u + Math.cos(a0 + 0.06) * R, 50 * u + Math.sin(a0 + 0.06) * R); g.lineTo(50 * u + Math.cos(a1 - 0.06) * R, 50 * u + Math.sin(a1 - 0.06) * R); } g.closePath(); g.fill();
       g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(50 * u, 50 * u, 10 * u, 0, Math.PI * 2); g.fill(); g.globalCompositeOperation = 'source-over'; } });
   c.add([sc.add.image(0, 0, key), drawn ? sc.add.image(0, 0, ik) : T(sc, 0, -2, glyph, size * 0.42, col, { w: 900 })]);
-  c.setSize(size, size).setInteractive({ useHandCursor: true }).on('pointerup', () => { audio.play('sfx_click', { volume: 0.4 }); onClick(); });
+  c.setSize(size, size).setInteractive({ useHandCursor: true }).on('pointerup', () => { audio.play('sfx_tap', { volume: 0.6 }); onClick(); });
   return c;
 }
 // 별 3개 (n 개 채움)

@@ -1,8 +1,8 @@
 // 이야기: 배경 · 인물 상반신 · 이름표 말풍선 · 한 글자씩 · 건너뛰기 (원작처럼 건너뛸 수 있음)
-import { W, H } from '../config.js?v=0.27.1';
-import { T, C, btn } from '../ui.js?v=0.27.1';
-import { audio } from '../audio.js?v=0.27.1';
-import { STORY } from '../data.js?v=0.27.1';
+import { W, H } from '../config.js?v=0.28.0';
+import { T, C, btn } from '../ui.js?v=0.28.0';
+import { audio } from '../audio.js?v=0.28.0';
+import { STORY } from '../data.js?v=0.28.0';
 
 export class StoryScene extends Phaser.Scene {
   constructor() { super('Story'); }
@@ -17,7 +17,7 @@ export class StoryScene extends Phaser.Scene {
     this.more = T(this, W - 100, by + 335, '▼', 26, C.rose, { w: 900 }); this.tweens.add({ targets: this.more, y: this.more.y + 8, duration: 500, yoyo: true, repeat: -1 });
     btn(this, W - 130, 80, 200, 80, '건너뛰기', () => this.end(), { style: 'cream', size: 26 });
     this.input.on('pointerup', p => { if (p.y > 150) this.tap(); });
-    this.cameras.main.fadeIn(300, 255, 244, 236); window.__story = this; this.next();
+    this.cameras.main.fadeIn(300, 255, 244, 236); window.__story = this; audio.music('bgm_story'); this.next();
   }
   tap() { if (this.typing) { this.typing.remove(); this.typing = null; this.line.setText(this.cur.t); this.more.setVisible(true); return; } this.next(); }
   next() {
@@ -27,8 +27,7 @@ export class StoryScene extends Phaser.Scene {
     else if (this.face.alpha < 1) this.tweens.add({ targets: this.face, alpha: 1, duration: 200 });
     const by = H - 470; this.tag.clear(); if (L.who) this.tag.fillStyle(0xE86A8E, 1).fillRoundedRect(70, by - 36, 60 + L.who.length * 36, 72, 36); this.who.setText(L.who || '').setY(by);
     this.more.setVisible(false); let n = 0; this.line.setText(''); this.typing?.remove();
-    this.typing = this.time.addEvent({ delay: 28, repeat: L.t.length - 1, callback: () => { n++; this.line.setText(L.t.slice(0, n)); if (n >= L.t.length) { this.typing = null; this.more.setVisible(true); } } });
-    audio.play('sfx_page', { volume: 0.25 });
+    this.typing = this.time.addEvent({ delay: 28, repeat: L.t.length - 1, callback: () => { n++; this.line.setText(L.t.slice(0, n)); if (n % 3 === 1 && L.t[n - 1] !== ' ') audio.play('sfx_blip', { volume: 0.22, rate: L.who === '할머니' ? 0.85 : 1 + (n % 2) * 0.06, gap: 60 }); if (n >= L.t.length) { this.typing = null; this.more.setVisible(true); } } });
   }
   end() { if (this.going) return; this.going = true; this.cameras.main.fadeOut(250, 255, 244, 236); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(this.ret)); }
   onBack() { this.end(); return true; }

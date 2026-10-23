@@ -1,11 +1,11 @@
 // 룬 컬렉션: 덱 3개(프리셋) · 칸 골라 룬 넣기 · 덱 조합 보너스 · 24룬 (희귀도) · 카드+수정으로 등급업
-import { W, H } from '../config.js?v=0.25.2';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.25.2';
-import { audio } from '../audio.js?v=0.25.2';
-import { load } from '../save.js?v=0.25.2';
-import * as M from '../meta.js?v=0.25.2';
-import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js?v=0.25.2';
-import * as P from '../core/predict.js?v=0.25.2';
+import { W, H } from '../config.js?v=0.25.3';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.25.3';
+import { audio } from '../audio.js?v=0.25.3';
+import { load } from '../save.js?v=0.25.3';
+import * as M from '../meta.js?v=0.25.3';
+import { RUNES, RUNE_ORDER, RARITY, RARITY_NAME, RARITY_COLOR, SYNERGY, synergiesOf } from '../core/sim.js?v=0.25.3';
+import * as P from '../core/predict.js?v=0.25.3';
 
 export const DESC = {
   flame: '맞은 적 주변까지 불태워요', frost: '맞은 적을 느리게 해요', storm: '근처 적 둘에게 번개가 이어져요', venom: '독이 쌓여 계속 피해를 줘요',

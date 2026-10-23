@@ -1,8 +1,8 @@
 // 로딩: 재료 · 생산기 · 인물 · 매장 · 배경 · 효과음
-import { W, H, TITLE } from '../config.js?v=0.27.0';
-import { SFX, audio } from '../audio.js?v=0.27.0';
-import { makeTextures } from '../ui.js?v=0.27.0';
-import { CHAINS, MAX_LV, SPOTS } from '../data.js?v=0.27.0';
+import { W, H, TITLE } from '../config.js?v=0.27.1';
+import { SFX, audio } from '../audio.js?v=0.27.1';
+import { makeTextures } from '../ui.js?v=0.27.1';
+import { CHAINS, MAX_LV, SPOTS } from '../data.js?v=0.27.1';
 
 const ITEMS = ['gen_camellia1', 'gen_camellia2', 'gen_rice1', 'gen_rice2', 'gen_ginseng1', 'gen_ginseng2', 'gen_tea1', 'gen_tea2', 'gen_dew', 'gen_gift', 'box', 'bubble', 'coin', 'gem', 'energy'];
 for (const c of Object.keys(CHAINS)) for (let l = 1; l <= MAX_LV; l++) ITEMS.push(`${c}${l}`);

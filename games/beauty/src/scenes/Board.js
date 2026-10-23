@@ -1,13 +1,13 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.27.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.27.0';
-import { audio } from '../audio.js?v=0.27.0';
-import { load, save } from '../save.js?v=0.27.0';
-import { goPrev } from '../nav.js?v=0.27.0';
-import { hud } from '../hud.js?v=0.27.0';
-import { CHAINS, GENS, MAX_LV, itemKey, itemName, genImg, ENERGY, STORAGE } from '../data.js?v=0.27.0';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal } from '../state.js?v=0.27.0';
-import { adsOpen, rewardAd } from '../store.js?v=0.27.0';
+import { W, H } from '../config.js?v=0.27.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.27.1';
+import { audio } from '../audio.js?v=0.27.1';
+import { load, save } from '../save.js?v=0.27.1';
+import { goPrev } from '../nav.js?v=0.27.1';
+import { hud } from '../hud.js?v=0.27.1';
+import { CHAINS, GENS, MAX_LV, itemKey, itemName, genImg, ENERGY, STORAGE } from '../data.js?v=0.27.1';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal } from '../state.js?v=0.27.1';
+import { adsOpen, rewardAd } from '../store.js?v=0.27.1';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);
@@ -51,13 +51,14 @@ export class BoardScene extends Phaser.Scene {
     this.homeB.setSize(140, 120).setInteractive({ useHandCursor: true }).on('pointerup', () => this.scene.start('Home'));
     this.storeY = by + 85; this.redraw(); this.drawOrders(); this.info(-1);
     // 입력: 칸 위에서 누르기 · 끌기 · 놓기
-    this.input.on('pointerdown', p => this.down(p)); this.input.on('pointermove', p => this.move(p)); this.input.on('pointerup', p => this.up(p));
+    this.input.on('pointerdown', p => this.down(p)); this.input.on('pointermove', p => this.move(p)); this.input.on('pointerup', p => this.up(p)); this.input.on('pointerupoutside', p => this.up(p));
     this.time.addEvent({ delay: 1000, loop: true, callback: () => this.tick() });
     this.cameras.main.fadeIn(250, 255, 244, 236); window.__board = this;
     if (d.tut < 3) this.time.delayedCall(400, () => this.tutorial());
   }
   // ── 그리기
   redraw() {
+    this.dragSp?.destroy(); this.dragSp = null;   // 끌던 그림은 작업대 밖으로 꺼내 두었으므로 따로 지움
     this.layer.removeAll(true); this.sprites = []; const now = Date.now();
     this.d.board.forEach((cell, i) => {
       if (!cell) return; const x = cx(i), y = cy(i), ct = this.add.container(x, y);
@@ -82,7 +83,7 @@ export class BoardScene extends Phaser.Scene {
   }
   move(p) {
     const g = this.drag; if (!g || !p.isDown) return;
-    if (!g.moved && Math.hypot(p.x - this.press.x, p.y - this.press.y) > 16) { g.moved = true; const sp = this.sprites[g.i]; if (sp) { sp.setDepth(30); this.layer.remove(sp); this.add.existing(sp); sp.setDepth(30).setScale(1.12); } }
+    if (!g.moved && Math.hypot(p.x - this.press.x, p.y - this.press.y) > 16) { g.moved = true; const sp = this.sprites[g.i]; if (sp) { this.layer.remove(sp); this.add.existing(sp); sp.setDepth(30).setScale(1.12); this.dragSp = sp; } }
     if (g.moved) { const sp = this.sprites[g.i]; if (sp) sp.setPosition(p.x, p.y - 30); }
   }
   up(p) {

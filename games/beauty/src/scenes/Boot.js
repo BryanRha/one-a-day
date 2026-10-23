@@ -1,8 +1,8 @@
 // 로딩: 재료 · 생산기 · 인물 · 매장 · 배경 · 효과음
-import { W, H, TITLE } from '../config.js?v=0.30.0';
-import { SFX, BGM, audio } from '../audio.js?v=0.30.0';
-import { makeTextures } from '../ui.js?v=0.30.0';
-import { CHAINS, MAX_LV, ALL_SPOTS } from '../data.js?v=0.30.0';
+import { W, H, TITLE } from '../config.js?v=0.30.1';
+import { SFX, BGM, audio } from '../audio.js?v=0.30.1';
+import { makeTextures } from '../ui.js?v=0.30.1';
+import { CHAINS, MAX_LV, ALL_SPOTS } from '../data.js?v=0.30.1';
 
 const ITEMS = ['gen_dew', 'gen_gift', 'box', 'bubble', 'coin', 'gem', 'energy', 'en1', 'en2', 'en3', 'co1', 'co2', 'co3', 'ge1', 'ge2', 'ge3', 'scissors', 'ribbon', 'hourglass', 'pickbox', 'chest', 'cardpack'];
 for (const g of Object.keys(CHAINS)) for (let l = 1; l <= 5; l++) ITEMS.push(`gen_${g}${l}`);

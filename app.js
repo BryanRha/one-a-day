@@ -1,11 +1,11 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.30.0';
-import * as R from './rules.js?v=0.30.0';
-import * as I from './install.js?v=0.30.0';
+import { PLANNED } from './catalog.js?v=0.30.1';
+import * as R from './rules.js?v=0.30.1';
+import * as I from './install.js?v=0.30.1';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.30.0';
+const VERSION = '0.30.1';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -184,14 +184,16 @@ function play(id) {
   if (!R.canPlay(id)) return detail(id);
   closeSheet();
   R.recordPlay(id);
+  // 게임용 기록 여러 칸을 '누른 순간', 게임 화면(iframe)을 넣기 '전에' 만들어 둠
+  //   · 폰 크롬은 터치 없이 만든 기록을 뒤로가기 때 건너뛰어 앱이 꺼짐 → 터치 순간에 미리 쌓고, 하나씩 씀
+  //   · iframe 을 먼저 넣으면 게임이 불러와지면서 방금 만든 기록이 사라질 수 있음
+  for (let i = 1; i <= DEPTH; i++) history.pushState({ game: id, g: i }, '');
   frame = document.createElement('iframe'); backReady = false;
   frame.id = 'frame'; frame.title = G(id).title; frame.allow = 'autoplay; fullscreen; vibrate';
   frame.src = `${G(id).path}${G(id).path.includes('?') ? '&' : '?'}v=${VERSION}`;
   player.prepend(frame);
   player.hidden = false;
   document.body.style.overflow = 'hidden';
-  // 게임용 기록 두 칸 (누른 순간 만들어 둠): 폰 브라우저가 기록 한 칸을 건너뛰어도 앱이 꺼지지 않게 여유를 둠
-  history.pushState({ game: id, g: 1 }, ''); history.pushState({ game: id, g: 2 }, '');
 }
 function closeGame() {
   player.hidden = true;
@@ -203,15 +205,17 @@ function closeGame() {
 }
 // 뒤로가기: 먼저 게임에게 물어봄 (팝업 닫기 · 이전 화면 · 일시정지) → 게임이 처리하면 다시 막아 두고, 게임 첫 화면이면 원어데이로
 let forceExit = false, backWait = null, backReady = false;   // backReady: 게임이 뒤로가기를 직접 처리한다고 알려 옴
-function exitGame() { forceExit = true; history.back(); }
-const gameEntry = () => !!(history.state && history.state.game);
-// 게임 기록 칸 다시 채우기 (두 칸 유지) · 게임을 닫을 땐 남은 칸을 조용히 지움
-function rearm() { if (!history.state || history.state.g !== 1) history.pushState({ game: true, g: 1 }, ''); history.pushState({ game: true, g: 2 }, ''); }
-function leaveGame() { closeGame(); if (gameEntry()) history.back(); }
+const DEPTH = 4, gDepth = () => (history.state && history.state.game ? history.state.g || 1 : 0);
+let needArm = false;
+// 남은 게임 칸 다시 채우기: 사용자가 방금 화면을 만졌을 때만 (게임 안을 터치해도 원어데이에 '활성'이 전해짐) — 아니면 다음 터치 때
+function rearm() { const ua = navigator.userActivation; if (ua && !ua.isActive) { needArm = true; return; } needArm = false; for (let i = gDepth() + 1; i <= DEPTH; i++) history.pushState({ game: true, g: i }, ''); }
+setInterval(() => { if (needArm && !player.hidden && navigator.userActivation && navigator.userActivation.isActive) rearm(); }, 250);
+// 게임 닫기: 남은 게임 칸을 한 번에 되돌려 원어데이 첫 기록으로
+function leaveGame() { const g = gDepth(); closeGame(); needArm = false; if (g) history.go(-g); }
+function exitGame() { const g = gDepth(); if (!g) return closeGame(); forceExit = true; history.go(-g); }
 addEventListener('popstate', () => {
   if (player.hidden) return;
   if (!$('#sheet').hidden && !forceExit) { closeSheet(); rearm(); return; }   // 나가기 확인 창이 떠 있으면 그 창만 닫음
-  if (forceExit && gameEntry()) { history.back(); return; }   // 원어데이로 나가기: 남은 게임 칸까지 되돌림
   if (forceExit || !frame || !frame.contentWindow) { forceExit = false; leaveGame(); return; }
   clearTimeout(backWait);
   backWait = setTimeout(() => { backWait = null; leaveGame(); }, backReady ? 3000 : 450);   // 응답 없는 게임(옛 버전)은 바로 닫음 · 처리하는 게임은 넉넉히 기다림

@@ -1,7 +1,7 @@
 // 냥카페 그림: 불러오기 · 방에 가구/고양이 배치 (화면용 이미지 묶음 · 숨은 고양이용 한 장짜리 캔버스)
-import { SLOTS, CATS, POSES, ROOM } from './data.js?v=0.30.0';
-import { cafeData } from './state.js?v=0.30.0';
-import { coordData } from '../coord/state.js?v=0.30.0';
+import { SLOTS, CATS, POSES, ROOM } from './data.js?v=0.30.1';
+import { cafeData } from './state.js?v=0.30.1';
+import { coordData } from '../coord/state.js?v=0.30.1';
 
 export function cafeKeys() {
   const k = [ROOM.key];

@@ -1,0 +1,89 @@
+// 매장 (원작의 식당 꾸미기): 낡은 가게 → 할 일(코인)로 이야기 · 수리 · 디자인 3종 선택(언제든 무료 변경)
+import { W, H } from '../config.js?v=0.27.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.27.0';
+import { audio } from '../audio.js?v=0.27.0';
+import { load, save } from '../save.js?v=0.27.0';
+import { hud } from '../hud.js?v=0.27.0';
+import { SPOTS, DESIGNS, ROOM, TASKS } from '../data.js?v=0.27.0';
+import { daily, season } from '../state.js?v=0.27.0';
+
+export class HomeScene extends Phaser.Scene {
+  constructor() { super('Home'); }
+  create() {
+    const d = this.d = load(); this.busy = false; this.picker = null;
+    this.add.rectangle(W / 2, H / 2, W, H, 0xFBEFE8);
+    const top = 130, bot = 380; // 방은 위 막대 밑부터 할 일 카드까지 꽉 채움 (긴 화면은 양옆이 조금 잘림)
+    this.s = (H - bot + 30 - (top - 40)) / ROOM.h; this.ox = (W - ROOM.w * this.s) / 2; this.oy = top - 40;
+    this.drawRoom();
+    this.hud = hud(this, { left: 80 });
+    // 왼쪽 아이콘: 하루 목표 · 시즌 · 상점
+    const dl = daily(), dn = dl.goals.filter((g, i) => g.have >= g.need && !dl.done.includes(i)).length;
+    this.side(80, top + 110, '📅', '목표', () => this.scene.start('Season'), dn);
+    this.side(80, top + 260, '🛍', '상점', () => this.scene.start('Shop'), 0);
+    // 아래: 다음 할 일 카드 + 작업대 버튼
+    const by = H - bot, g = this.add.graphics().setDepth(20); g.fillStyle(0xFFFFFF, 0.96).fillRoundedRect(30, by, W - 60, bot - 30, 36).lineStyle(4, 0xF1C6CF, 1).strokeRoundedRect(30, by, W - 60, bot - 30, 36);
+    const task = TASKS[d.task];
+    if (task) {
+      T(this, 70, by + 50, `1장 · 할머니의 레시피  ${d.task + 1} / ${TASKS.length}`, 24, C.dim, { ox: 0, w: 800 }).setDepth(21);
+      T(this, 70, by + 105, task.n, 40, C.ink, { ox: 0, w: 900 }).setDepth(21);
+      T(this, 70, by + 155, task.story ? '이야기 · 다음 장면을 봐요' : '수리 · 디자인을 골라요', 24, C.sub, { ox: 0, w: 800 }).setDepth(21);
+      this.taskB = btn(this, 830, by + 105, 300, 110, task.cost ? `●${task.cost}` : '무료', () => this.doTask(), { size: 34, style: d.coins >= task.cost ? 'rose' : 'cream' }).setDepth(21);
+      if (d.coins >= task.cost) this.tweens.add({ targets: this.taskB, scale: 1.06, duration: 600, yoyo: true, repeat: -1 });
+    } else { T(this, W / 2, by + 100, '1장 완료! 2장은 곧 열려요', 36, C.ink, { w: 900 }).setDepth(21); }
+    btn(this, W / 2, by + 260, W - 140, 120, '작업대로 가기 · 주문 받기', () => this.scene.start('Board'), { size: 36, style: 'gold' }).setDepth(21);
+    this.cameras.main.fadeIn(250, 255, 244, 236); window.__home = this;
+    if (d.task === 0) this.time.delayedCall(500, () => this.doTask());
+  }
+  side(x, y, ic, n, fn, badge) {
+    const c = this.add.container(x, y).setDepth(30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 0.95).fillCircle(0, 0, 56).lineStyle(4, 0xF1C6CF, 1).strokeCircle(0, 0, 56);
+    const lg = this.add.graphics(); lg.fillStyle(0xE86A8E, 1).fillRoundedRect(-44, 50, 88, 38, 19);
+    c.add([g, T(this, 0, -6, ic, 48, '#000', { w: 900 }), lg, T(this, 0, 68, n, 22, '#FFFFFF', { w: 900 })]);
+    if (badge) c.add([this.add.circle(40, -40, 18, 0xD9573B), T(this, 40, -41, String(badge), 20, '#FFFFFF', { w: 900 })]);
+    c.setSize(120, 120).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (!this.busy) { audio.play('sfx_click'); fn(); } });
+  }
+  drawRoom() {
+    this.room?.destroy(); const r = this.room = this.add.container(this.ox, this.oy).setScale(this.s);
+    r.add(this.add.image(0, 0, 'room').setOrigin(0));
+    for (const sp of [...SPOTS].sort((a, b) => a.d - b.d)) {
+      const v = this.d.spots[sp.id] || 0, key = `${sp.id}_${v}`, tex = this.textures.get(key).getSourceImage(), h = sp.w * tex.height / tex.width;
+      if (!sp.hang && !sp.flat) r.add(this.add.ellipse(sp.x, sp.y - 4, sp.w * 0.8, sp.w * 0.12, 0x5A3020, 0.18));
+      const im = this.add.image(sp.x, sp.y, key).setOrigin(0.5, sp.hang ? 0.5 : 1).setDisplaySize(sp.w, h); r.add(im);
+      im.setInteractive({ useHandCursor: true, pixelPerfect: !sp.flat, alphaTolerance: 40 }).on('pointerup', () => { if (this.busy) return; if (v) this.pickDesign(sp, false); else toast(this, `${sp.n}은(는) 할 일 순서가 오면 고칠 수 있어요`, 260); });
+      const nxt = TASKS[this.d.task]; if (nxt && nxt.repair === sp.id) { const gl = this.add.image(sp.x, sp.hang ? sp.y : sp.y - h / 2, 'glow').setTint(0xFFE27A).setBlendMode('ADD').setDisplaySize(sp.w * 1.3, h * 1.3); r.addAt(gl, r.getIndex(im)); this.tweens.add({ targets: gl, alpha: 0.3, duration: 700, yoyo: true, repeat: -1 }); }
+    }
+  }
+  doTask() {
+    const t = TASKS[this.d.task]; if (!t || this.busy) return;
+    if (this.d.coins < t.cost) return toast(this, `코인이 ${t.cost - this.d.coins} 부족해요 · 작업대에서 주문을 받아요`, H - 470);
+    this.d.coins -= t.cost; save(); audio.play('sfx_page');
+    if (t.story) { this.d.task++; save(); return this.scene.start('Story', { id: t.story, ret: 'Home' }); }
+    const sp = SPOTS.find(s => s.id === t.repair); this.pickDesign(sp, true);
+  }
+  // 디자인 3종 고르기 (수리 · 다시 바꾸기 모두 무료로)
+  pickDesign(sp, fresh) {
+    this.busy = true; let sel = this.d.spots[sp.id] || 1;
+    const show = () => { this.d.spots[sp.id] = sel; this.drawRoom(); };
+    const prev = this.d.spots[sp.id] || 0; show();
+    const root = this.add.container(0, 0).setDepth(60), sh = 520, y0 = H - sh, g = this.add.graphics(); g.fillStyle(0xFFFBF6, 1).fillRoundedRect(0, y0, W, sh + 40, 40).lineStyle(4, 0xF1C6CF, 1).strokeRoundedRect(0, y0, W, sh + 40, 40); root.add(g);
+    root.add(T(this, 50, y0 + 56, `${sp.n} · 디자인을 골라요`, 36, C.ink, { ox: 0, w: 900 }));
+    root.add(T(this, 50, y0 + 100, '나중에 눌러서 언제든 무료로 바꿀 수 있어요', 22, C.dim, { ox: 0, w: 800 }));
+    const cards = [];
+    for (let k = 1; k <= 3; k++) {
+      const x = W / 2 + (k - 2) * 330, c = this.add.container(x, y0 + 260), cg = this.add.graphics(); c.add(cg);
+      const im = this.add.image(0, -20, `${sp.id}_${k}`); im.setScale(Math.min(220 / im.width, 170 / im.height)); c.add(im); c.add(T(this, 0, 104, DESIGNS[k - 1], 26, C.ink, { w: 900 }));
+      c.setSize(300, 280).setInteractive({ useHandCursor: true }).on('pointerup', () => { sel = k; audio.play('sfx_click'); draw(); show(); });
+      cards.push({ cg, k }); root.add(c);
+    }
+    const draw = () => cards.forEach(c => c.cg.clear().fillStyle(0xFFFFFF, 1).fillRoundedRect(-150, -140, 300, 280, 26).lineStyle(c.k === sel ? 6 : 3, c.k === sel ? 0xE86A8E : 0xF1D2C8, 1).strokeRoundedRect(-150, -140, 300, 280, 26)); draw();
+    root.add(btn(this, W / 2, y0 + 450, 480, 100, fresh ? '이걸로 완성!' : '이걸로 할게요', () => {
+      root.destroy(); this.busy = false; this.picker = null; save();
+      if (fresh) { this.d.task++; save(); audio.play('sfx_clear', { volume: 0.7 }); this.cameras.main.flash(300, 255, 240, 230); this.time.delayedCall(500, () => this.scene.restart()); } else this.scene.restart();
+    }, { size: 32 }));
+    // 취소 (뒤로가기도 같음): 새로 고치던 중이면 코인 돌려줌
+    const cancel = () => { if (fresh) { delete this.d.spots[sp.id]; this.d.coins += TASKS[this.d.task].cost; } else this.d.spots[sp.id] = prev; save(); root.destroy(); this.busy = false; this.picker = null; this.drawRoom(); this.hud.update(); };
+    this.picker = { cancel };
+    root.add(btn(this, W - 120, y0 + 60, 160, 72, '취소', cancel, { style: 'cream', size: 24 }));
+    root.y = sh; this.tweens.add({ targets: root, y: 0, duration: 260, ease: 'Cubic.easeOut' });
+  }
+  onBack() { if (this.picker) { this.picker.cancel(); return true; } return false; }
+}

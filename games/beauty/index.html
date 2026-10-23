@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FBEFE8">
+<title>K뷰티 레시피 - K-Beauty Recipe</title>
+<meta name="description" content="할머니의 한방 화장품 가게를 되살리는 K-뷰티 머지 게임">
+<style>
+  @font-face { font-family: 'Pretendard'; src: url('fonts/Pretendard-Bold.woff2') format('woff2'); font-weight: 700; font-display: block; }
+  @font-face { font-family: 'Pretendard'; src: url('fonts/Pretendard-ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: block; }
+  @font-face { font-family: 'Pretendard'; src: url('fonts/Pretendard-Black.woff2') format('woff2'); font-weight: 900; font-display: block; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #FBEFE8; touch-action: none; -webkit-user-select: none; user-select: none; }
+  #game { position: fixed; top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px); left: 0; right: 0; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<script src="lib/phaser.min.js"></script>
+<script type="module" src="src/main.js?v=0.27.0"></script>
+</body>
+</html>

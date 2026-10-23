@@ -1,6 +1,6 @@
 // 게임 밖 성장: 마녀 강화 · 고양이 입양/성장 · 미션 · 출석 · 업적 · 산책 · 상점 · 주간 랭킹
 // 확률형 뽑기 없음 — 고양이는 비행 중 모은 발바닥 도장으로 "정해 둔 고양이"를 입양한다.
-import { load, save, todayKey, weekKey } from './save.js?v=0.26.2';
+import { load, save, todayKey, weekKey } from './save.js?v=0.27.0';
 
 export const WITCH_INFO = {
   luna: { name: '루나', title: '별빛 마녀', desc: '별빛 마법탄 · 코인 +10%', unlock: null, color: 0xB89AFF },

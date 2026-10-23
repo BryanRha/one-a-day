@@ -1,0 +1,73 @@
+// 경제 · 진행 규칙: 에너지 회복 · 경험치/레벨 · 해금 계열 · 주문 만들기 · 하루 목표 · 월간 시즌
+import { load, save } from './save.js?v=0.27.0';
+import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, TASKS, STORAGE } from './data.js?v=0.27.0';
+
+export const today = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; };
+export const seasonId = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}`; };
+
+// 에너지: 상한 미만일 때만 시간으로 회복 (구매·보상으로는 상한을 넘을 수 있음)
+export function tickEnergy() {
+  const d = load(), now = Date.now();
+  if (d.energy >= ENERGY.max) { d.eAt = now; return d.energy; }
+  const n = Math.floor((now - d.eAt) / (ENERGY.regenSec * 1000));
+  if (n > 0) { d.energy = Math.min(ENERGY.max, d.energy + n); d.eAt += n * ENERGY.regenSec * 1000; if (d.energy >= ENERGY.max) d.eAt = now; save(); }
+  return d.energy;
+}
+export const nextEnergyIn = () => { const d = load(); return d.energy >= ENERGY.max ? 0 : Math.max(0, ENERGY.regenSec * 1000 - (Date.now() - d.eAt)); };
+export function spendEnergy(n) { tickEnergy(); const d = load(); if (d.energy < n) return false; if (d.energy >= ENERGY.max) d.eAt = Date.now(); d.energy -= n; addGoal('energy', n); save(); return true; }
+
+// 경험치 · 레벨 (레벨업 → 에너지 가득 + 보석·코인, 3레벨마다 선물 상자)
+export const xpNeed = lv => LEVELS[Math.min(lv, LEVELS.length - 1)] + Math.max(0, lv - LEVELS.length + 1) * 150;
+export function addXp(n) {
+  const d = load(); d.xp += n; const ups = [];
+  while (d.xp >= xpNeed(d.lv)) { d.xp -= xpNeed(d.lv); d.lv++; const r = levelReward(d.lv); d.gems += r.gems; d.coins += r.coins; d.energy = Math.max(d.energy, ENERGY.max); d.eAt = Date.now(); if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + 1; ups.push({ lv: d.lv, ...r }); }
+  save(); return ups;
+}
+
+// 해금 계열: 기본 동백 · 쌀, 이야기로 인삼 · 녹차
+export function unlockedChains() { const d = load(), out = ['camellia', 'rice']; for (let i = 0; i < d.task; i++) if (TASKS[i].unlock) out.push(TASKS[i].unlock); return out; }
+export const storageSize = () => { const d = load(); return STORAGE.base + (d.storeExtra || 0) + (d.ent.storage4 ? 4 : 0); };
+
+// 주문: 손님 1명 · 물건 1~2개 · 레벨이 오를수록 높은 단계
+export function makeOrder(easy = false, board = null) {
+  const d = load(), chains = unlockedChains(), lv = d.lv;
+  const top = Math.min(7, 2 + Math.floor(lv / 2)), lo = easy ? 2 : Math.max(2, top - 2);
+  const pick = () => { const c = chains[Math.floor(Math.random() * chains.length)], l = lo + Math.floor(Math.random() * (top - lo + 1)); return { c, l: easy ? Math.min(l, 3) : l }; };
+  // 작업대에 이미 있는 2단계 이상 물건을 원하는 손님 (원작처럼 막힌 물건이 쌓이지 않게)
+  const onBoard = (board || []).filter(c => c && c.t === 'i' && !c.b && c.l >= 2 && c.l <= top + 1 && chains.includes(c.c));
+  const first = !easy && onBoard.length && Math.random() < 0.4 ? (() => { const c = onBoard[Math.floor(Math.random() * onBoard.length)]; return { c: c.c, l: c.l }; })() : pick();
+  const n = lv >= 3 && Math.random() < 0.45 ? 2 : 1, items = [first]; if (n === 2) { let b = pick(), k = 0; while (b.c === items[0].c && b.l === items[0].l && k++ < 5) b = pick(); items.push(b); }
+  const val = items.reduce((a, it) => a + Math.round(3 * Math.pow(1.85, it.l - 1)), 0);
+  const cu = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
+  d.orderSeq++;
+  return { id: d.orderSeq, face: cu.face, who: cu.n, say: cu.say[Math.floor(Math.random() * cu.say.length)], items, coins: val, xp: Math.max(1, Math.round(val / 4)), at: 0 };
+}
+// 주문판 3장 채우기 · 대기시간(완료 후 새 손님까지) · 오래 쉬었다 오면 쉬운 주문부터
+export function fillOrders() {
+  const d = load(), now = Date.now(), away = now - (d.lastSeen || 0) > 15 * 60e3;
+  d.orders = d.orders.filter(o => o);
+  while (d.orders.length < 3) d.orders.push({ ...makeOrder(away || d.orders.length === 0 && d.stats.orders < 6, d.board), at: now + (d.orders.length && !away ? 4000 * d.orders.length : 0) });
+  d.lastSeen = now; save();
+}
+
+// 하루 목표 3개 → 시즌 점수
+const GOAL_POOL = [
+  { k: 'orders', n: c => `주문 ${c}개 완료`, c: [5, 8, 12], pts: 10 },
+  { k: 'merges', n: c => `합치기 ${c}번`, c: [30, 50, 80], pts: 10 },
+  { k: 'energy', n: c => `에너지 ${c} 사용`, c: [40, 70, 100], pts: 10 },
+  { k: 'lv5', n: c => `5단계 제품 ${c}개 만들기`, c: [2, 3, 5], pts: 15 },
+];
+export function daily() {
+  const d = load();
+  if (d.daily.day !== today()) { const pool = [...GOAL_POOL].sort(() => Math.random() - 0.5).slice(0, 3); d.daily = { day: today(), goals: pool.map(g => { const c = g.c[Math.min(2, Math.floor(d.lv / 4))]; return { k: g.k, n: g.n(c), need: c, have: 0, pts: g.pts }; }), done: [], bonus: false }; save(); }
+  return d.daily;
+}
+export function addGoal(k, n = 1) { const d = load(), dl = daily(); for (const g of dl.goals) if (g.k === k && g.have < g.need) g.have = Math.min(g.need, g.have + n); save(); }
+// 월간 시즌: 무료 · 프리미엄 두 줄 (프리미엄은 결제 열리면 사용)
+export const SEASON = { goal: [20, 50, 90, 140, 200, 270, 350, 440],
+  free: [{ energy: 30 }, { coins: 50 }, { gems: 10 }, { gift: 1 }, { energy: 60 }, { coins: 150 }, { gems: 25 }, { gift: 3, gems: 40 }],
+  prem: [{ gems: 15 }, { energy: 60 }, { gift: 1 }, { gems: 30 }, { coins: 200 }, { gift: 2 }, { energy: 120 }, { gems: 100 }] };
+export function season() { const d = load(); if (d.season.id !== seasonId()) { d.season = { id: seasonId(), pts: 0, claimed: [], pclaimed: [] }; d.ent.pass = false; save(); } return d.season; }
+export function claimGoal(i) { const d = load(), dl = daily(), g = dl.goals[i]; if (!g || g.have < g.need || dl.done.includes(i)) return 0; dl.done.push(i); season().pts += g.pts; save(); return g.pts; }
+export function giveReward(r) { const d = load(); if (r.energy) d.energy += r.energy; if (r.coins) d.coins += r.coins; if (r.gems) d.gems += r.gems; if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + r.gift; save(); }
+export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`].filter(Boolean).join(' ');

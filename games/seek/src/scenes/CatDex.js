@@ -1,10 +1,10 @@
 // 고양이 도감 24마리: 만난 고양이는 사진 · 못 만난 고양이는 실루엣 + 좋아하는 것 힌트
-import { goPrev } from '../nav.js?v=0.29.1';
-import { W, H } from '../config.js?v=0.29.1';
-import { T, C, btn, iconBtn, popup } from '../ui.js?v=0.29.1';
-import { CATS, POSES, likeText } from '../cafe/data.js?v=0.29.1';
-import { cafeData } from '../cafe/state.js?v=0.29.1';
-import { loadCafe } from '../cafe/room.js?v=0.29.1';
+import { goPrev } from '../nav.js?v=0.29.2';
+import { W, H } from '../config.js?v=0.29.2';
+import { T, C, btn, iconBtn, popup } from '../ui.js?v=0.29.2';
+import { CATS, POSES, likeText } from '../cafe/data.js?v=0.29.2';
+import { cafeData } from '../cafe/state.js?v=0.29.2';
+import { loadCafe } from '../cafe/room.js?v=0.29.2';
 
 export class CatDexScene extends Phaser.Scene {
   constructor() { super('CatDex'); }

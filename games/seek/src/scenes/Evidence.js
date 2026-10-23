@@ -1,20 +1,21 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.26.1';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.26.1';
-import { audio } from '../audio.js?v=0.26.1';
-import { goPrev } from '../nav.js?v=0.26.1';
-import { load, save } from '../save.js?v=0.26.1';
-import { Viewer } from '../viewer.js?v=0.26.1';
-import { EPISODES, epNo } from '../episodes.js?v=0.26.1';
-import { starOnce } from '../cafe/state.js?v=0.26.1';
-import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.26.1';
+import { W, H } from '../config.js?v=0.26.2';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.26.2';
+import { audio } from '../audio.js?v=0.26.2';
+import { goPrev } from '../nav.js?v=0.26.2';
+import { load, save } from '../save.js?v=0.26.2';
+import { Viewer } from '../viewer.js?v=0.26.2';
+import { EPISODES, epNo } from '../episodes.js?v=0.26.2';
+import { starOnce } from '../cafe/state.js?v=0.26.2';
+import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.26.2';
 
+const HINT_COST = 10;
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }
   create(data) {
     const ep = this.ep = EPISODES.find(e => e.id === data.id), ev = this.ev = ep.evidence;
-    Object.assign(this, { hearts: ev.hearts, found: 0, done: new Set(), ended: false, paused: false, replay: passed(ep.id, 'evidence') && stepOf(ep.id) === 'done', t0: Date.now() });
+    Object.assign(this, { hearts: ev.hearts, found: 0, done: new Set(), ended: false, paused: false, hints: 0, replay: passed(ep.id, 'evidence') && stepOf(ep.id) === 'done', t0: Date.now() });
     advance(ep.id, 'evidence');
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     const top = 150, bottom = 260, gap = 70, avail = H - top - bottom - gap * 2, vh = Math.min(avail / 2, W * 0.75);
@@ -28,6 +29,9 @@ export class EvidenceScene extends Phaser.Scene {
     this.heartT = [0, 1, 2].map(i => T(this, W - 150 + i * 50, 76, '♥', 44, '#FF6A8E', { w: 900 }));
     const by = H - bottom / 2 - 20; this.dots = ev.spots.map((_, i) => this.add.circle(W / 2 - (ev.spots.length - 1) * 42 + i * 84, by - 40, 26, 0x000000, 0.3).setStrokeStyle(4, 0xFF9DB6, 0.9));
     this.capT = T(this, W / 2, by + 50, '', 30, '#FFFFFF', { w: 800, wrap: W - 120 });
+    // 힌트 (숨은 물건과 같은 돋보기 · 코인): 못 찾은 곳 하나로 확대 + 반짝임
+    iconBtn(this, W - 80, by - 40, 'hint', () => this.hint(), 96); this.hintT = T(this, W - 80, by + 24, `● ${HINT_COST}`, 22, C.gold, { w: 900 });
+    this.coinT = T(this, 80, by + 24, `● ${load().coins}`, 22, C.gold, { w: 900 });
     this.cameras.main.fadeIn(300, 30, 10, 26); window.__ev = this;
     this.time.delayedCall(400, () => toast(this, '두 사진에서 다른 곳을 눌러요 · 틀리면 하트가 줄어요', y2 - 60));
   }
@@ -52,6 +56,14 @@ export class EvidenceScene extends Phaser.Scene {
     this.capT.setText(`"${s.cap}"`).setAlpha(0); this.tweens.add({ targets: this.capT, alpha: 1, duration: 250 });
     if (this.found >= this.ev.spots.length) { this.ended = true; this.time.delayedCall(1300, () => this.win()); }
   }
+  hint() {
+    if (this.ended || this.paused) return; const d = load();
+    if (d.coins < HINT_COST) return toast(this, '코인이 부족해요 · 단서를 찾으면 모여요', this.vB.y - 60);
+    const i = this.ev.spots.findIndex((_, j) => !this.done.has(j)); if (i < 0) return; const s = this.ev.spots[i];
+    d.coins -= HINT_COST; save(); this.hints++; this.coinT.setText(`● ${d.coins}`); audio.play('sfx_hint', { volume: 0.7 });
+    this.vA.focus(s.x, s.y, 2);
+    for (const v of [this.vA, this.vB]) { const g = this.add.image(s.x, s.y, 'glow').setTint(0xFFE27A).setBlendMode('ADD'); g.setScale(s.r * 3 / 128); v.layer.add(g); this.tweens.add({ targets: g, alpha: 0.15, duration: 420, yoyo: true, repeat: 4, onComplete: () => g.destroy() }); }
+  }
   lose() {
     this.ended = true; const p = popup(this, 820, 560, { closable: false, onBack: () => goPrev(this) });
     p.content.add(T(this, 0, -180, '조금 더 꼼꼼히 볼까요?', 44, C.ink, { w: 900 }));
@@ -60,8 +72,8 @@ export class EvidenceScene extends Phaser.Scene {
     p.content.add(btn(this, 0, 190, 400, 100, '서재로', () => this.scene.start('Library'), { style: 'cream', size: 30 }));
   }
   win() {
-    if (this.replay) return replayResult(this, { id: this.ep.id, kind: 'evidence', n: this.ev.spots.length, sec: (Date.now() - this.t0) / 1000, slip: this.ev.hearts - this.hearts, next: 'after' });
-    const d = load(); d.coins += 10; advance(this.ep.id, 'after'); const got = starOnce(this.ep.id, 'e', this.hearts >= 3 ? 2 : 1);
+    if (this.replay) return replayResult(this, { id: this.ep.id, kind: 'evidence', n: this.ev.spots.length, sec: (Date.now() - this.t0) / 1000, slip: this.ev.hearts - this.hearts + this.hints, next: 'after' });
+    const d = load(); d.coins += 10; advance(this.ep.id, 'after'); const got = starOnce(this.ep.id, 'e', this.hearts >= 3 && !this.hints ? 2 : 1);
     audio.play('sfx_clear', { volume: 0.7 }); this.cameras.main.flash(300, 255, 230, 240);
     const t = T(this, W / 2, H / 2, '거짓말을 밝혀냈어요!', 60, '#FFFFFF', { w: 900, shadow: true }).setDepth(60);
     if (got) T(this, W / 2, H / 2 + 80, '★'.repeat(got) + '  냥카페 별 +' + got, 38, C.gold, { w: 900, shadow: true }).setDepth(60);

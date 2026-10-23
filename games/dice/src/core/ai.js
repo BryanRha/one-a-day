@@ -1,5 +1,5 @@
 // 자동 운영 (봇 밸런싱 · 브라우저 자동 테스트 공용)
-import { SLOTS, MAX_PIPS, RUNES } from './sim.js?v=0.26.1';
+import { SLOTS, MAX_PIPS, RUNES } from './sim.js?v=0.26.2';
 
 // 한 번 판단: 소환 → (판이 차면) 합성 → 남는 SP 로 강화
 export function act(s, skill = 0.6, R = Math.random) {

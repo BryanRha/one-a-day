@@ -1,11 +1,11 @@
 // 로딩: 재료 · 생산기 · 인물 · 매장 · 배경 · 효과음
-import { W, H, TITLE } from '../config.js?v=0.32.0';
-import { SFX, BGM, audio } from '../audio.js?v=0.32.0';
-import { makeTextures } from '../ui.js?v=0.32.0';
-import { CHAINS, MAX_LV, ALL_SPOTS } from '../data.js?v=0.32.0';
-import { ALL_CARDS } from '../album.js?v=0.32.0';
+import { W, H, TITLE } from '../config.js?v=0.33.0';
+import { SFX, BGM, audio } from '../audio.js?v=0.33.0';
+import { makeTextures } from '../ui.js?v=0.33.0';
+import { CHAINS, MAX_LV, ALL_SPOTS } from '../data.js?v=0.33.0';
+import { ALL_CARDS } from '../album.js?v=0.33.0';
 
-const ITEMS = ['gen_dew', 'gen_gift', 'box', 'bubble', 'coin', 'gem', 'energy', 'en1', 'en2', 'en3', 'co1', 'co2', 'co3', 'ge1', 'ge2', 'ge3', 'scissors', 'ribbon', 'hourglass', 'pickbox', 'chest', 'cardpack', 'pack_basic', 'pack_gold', 'pack_diamond', 'joker', 'piggy', 'vault', 'calendar', 'album'];
+const ITEMS = ['gen_dew', 'gen_gift', 'box', 'bubble', 'coin', 'gem', 'energy', 'en1', 'en2', 'en3', 'co1', 'co2', 'co3', 'ge1', 'ge2', 'ge3', 'scissors', 'ribbon', 'hourglass', 'pickbox', 'chest', 'cardpack', 'pack_basic', 'pack_gold', 'pack_diamond', 'joker', 'piggy', 'vault', 'calendar', 'album', 'ev_race', 'ev_ladder', 'ev_vip', 'petal', 'medal1', 'medal2', 'medal3', 'vip_ticket', 'deco_tree', 'deco_booth', 'deco_garland'];
 for (const g of Object.keys(CHAINS)) for (let l = 1; l <= 5; l++) ITEMS.push(`gen_${g}${l}`);
 for (const c of Object.keys(CHAINS)) for (let l = 1; l <= MAX_LV; l++) ITEMS.push(`${c}${l}`);
 const CHARS = ['c_soyun_smile', 'c_soyun_shock', 'c_soyun_fight', 'c_grandma', 'c_doyun_smile', 'c_doyun_shy', 'c_sera_smug', 'c_sera_angry', 'c_pinky_wink', 'c_pinky_wow', 'c_haneul_smile', 'c_haneul_worry', 'c_jiho_calm', 'c_jiho_guilty', ...Array.from({ length: 10 }, (_, i) => `u${i + 1}`)];

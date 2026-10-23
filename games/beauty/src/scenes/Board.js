@@ -1,14 +1,15 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.32.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.32.0';
-import { audio } from '../audio.js?v=0.32.0';
-import { load, save } from '../save.js?v=0.32.0';
-import { goPrev } from '../nav.js?v=0.32.0';
-import { hud } from '../hud.js?v=0.32.0';
-import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.32.0';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.32.0';
-import { adsOpen, rewardAd } from '../store.js?v=0.32.0';
-import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.32.0';
+import { W, H } from '../config.js?v=0.33.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.33.0';
+import { audio } from '../audio.js?v=0.33.0';
+import { load, save } from '../save.js?v=0.33.0';
+import { goPrev } from '../nav.js?v=0.33.0';
+import { hud } from '../hud.js?v=0.33.0';
+import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.33.0';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.33.0';
+import { adsOpen, rewardAd } from '../store.js?v=0.33.0';
+import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.33.0';
+import { raceAdd, ladderAdd, vipAdd, VIP } from '../events.js?v=0.33.0';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);
@@ -307,6 +308,7 @@ export class BoardScene extends Phaser.Scene {
       const f = this.add.image(62, 70, o.face); f.setScale(104 / f.width); c.add([this.add.circle(62, 70, 54, 0xFCE4EC), f]);
       c.add(T(this, 128, 40, o.who, 20, C.brown, { ox: 0, w: 800 })); c.add(T(this, 128, 82, `"${o.say}"`, 17, C.dim, { ox: 0, w: 700, wrap: 190, align: 'left' }));
       o.items.forEach((it, j) => { const ix = o.items.length === 1 ? 165 : 100 + j * 130, im = this.add.image(ix, 176, itemKey(it.c, it.l)); im.setScale(96 / Math.max(im.width, im.height)); c.add(im); it.ok = this.has(it); c.add(this.add.circle(ix + 40, 206, 18, it.ok ? 0x5FA65A : 0xD9C2CC).setStrokeStyle(3, 0xFFFFFF)); c.add(T(this, ix + 40, 205, it.ok ? '✓' : '', 20, '#FFFFFF', { w: 900 })); });
+      if (o.vip) { g.lineStyle(6, 0xF0B65A, 1).strokeRoundedRect(0, 0, 330, 278, 28); const cr = this.add.image(30, 26, 'ev_vip'); cr.setScale(56 / cr.height); c.add(cr); }
       if (o.bonus) { const bi = this.add.image(300, 30, o.bonus); bi.setScale(46 / Math.max(bi.width, bi.height)); c.add([this.add.circle(300, 30, 28, 0xFFF1B8).setStrokeStyle(3, 0xF0B65A), bi]); }
       const all = o.items.every(it => this.has(it)), bt = btn(this, 165, 250, 260, 64, all ? `완료 ●${o.coins}` : `●${o.coins} · ★${o.xp}`, () => all && this.complete(k), { style: all ? 'green' : 'cream', size: 24 });
       if (all) this.tweens.add({ targets: bt, scale: 1.06, duration: 500, yoyo: true, repeat: -1 });
@@ -321,6 +323,9 @@ export class BoardScene extends Phaser.Scene {
     const ox = 30 + k * 345 + 165, oy = 146 + 170;
     used.forEach(i => { const cell = this.d.board[i], im = this.add.image(cx(i), cy(i), itemKey(cell.c, cell.l)).setDepth(55); im.setScale((CS - 22) / Math.max(im.width, im.height)); this.tweens.add({ targets: im, x: ox, y: oy, scale: im.scale * 0.6, duration: 380, ease: 'Cubic.easeIn', onComplete: () => { im.destroy(); } }); this.fx(i, 0xFFD6E4); this.d.board[i] = null; });
     this.d.coins += o.coins; this.d.stats.orders++; addGoal('orders'); piggyAdd();
+    // 이벤트 점수: 레이스 +1(두 개짜리 +2) · 꽃잎 = 물건 단계 합 · VIP
+    { const rp = raceAdd(o.items.length), lp = ladderAdd(o.items.reduce((a, it) => a + it.l, 0)); let vp = 0; if (o.vip) vp = vipAdd();
+      this.time.delayedCall(450, () => { const t = T(this, 30 + k * 345 + 165, 460, [rp && `🏆+${rp}`, `🌸+${lp}`, o.vip && `👑 ${vp}/${VIP.goal}`].filter(Boolean).join('  '), 28, '#C2408A', { w: 900, shadow: true }).setDepth(61); this.tweens.add({ targets: t, y: t.y - 60, alpha: 0, duration: 1300, delay: 400, onComplete: () => t.destroy() }); }); }
     { const a = album(); a.orders++; if (a.orders % ORDERS_PER_PACK === 0) { addPack('basic'); this.time.delayedCall(900, () => this.packFly()); } }
     if (o.bonus) { const e = this.nearestEmpty(used[0]); if (e >= 0) this.d.board[e] = { t: 's', k: o.bonus }; else this.d.pendingItems.push({ t: 's', k: o.bonus }); }
     this.d.orders[k] = { ...makeOrder(false, this.d.board), at: Date.now() + 6000 }; save();

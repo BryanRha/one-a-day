@@ -1,7 +1,8 @@
 // 경제 · 진행 규칙: 에너지 회복 · 경험치/레벨 · 해금 계열 · 주문 만들기 · 하루 목표 · 월간 시즌
-import { load, save } from './save.js?v=0.32.0';
-import { album, addPack, PACKS } from './album.js?v=0.32.0';
-import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.32.0';
+import { load, save } from './save.js?v=0.33.0';
+import { album, addPack, PACKS } from './album.js?v=0.33.0';
+import { vipWants, DECO } from './events.js?v=0.33.0';
+import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.33.0';
 
 export const today = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; };
 export const seasonId = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}`; };
@@ -51,8 +52,12 @@ export function makeOrder(easy = false, board = null) {
   const cu = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
   d.orderSeq++;
   // 원작처럼 가끔 덤 보상 (에너지 · 코인 · 보석 아이템)
+  // VIP 손님: 이벤트 중이면 가끔 (한 번에 한 명) · 한 단계 높은 물건 · 코인 1.5배
+  const isVip = !easy && vipWants() && !(d.orders || []).some(o => o && o.vip) && Math.random() < 0.3;
+  if (isVip) items.forEach(it => { it.l = Math.min(MAX_LV - 1, it.l + 1); });
   const bonus = !easy && Math.random() < 0.12 ? ['en1', 'co1', 'ge1', 'en1', 'en2'][Math.floor(Math.random() * 5)] : null;
-  return { id: d.orderSeq, face: cu.face, who: cu.n, say: cu.say[Math.floor(Math.random() * cu.say.length)], items, coins: val, xp: Math.max(1, Math.round(val / 4)), at: 0, bonus };
+  const v2 = items.reduce((a, it) => a + Math.round(3 * Math.pow(1.85, it.l - 1)), 0), coins = isVip ? Math.round(v2 * 1.5) : val;
+  return { id: d.orderSeq, face: cu.face, who: isVip ? `VIP ${cu.n}` : cu.n, say: isVip ? '특별한 날이라 최고급으로 부탁해요!' : cu.say[Math.floor(Math.random() * cu.say.length)], items, coins, xp: Math.max(1, Math.round(coins / 4)), at: 0, bonus, vip: isVip || undefined };
 }
 // 주문판 3장 채우기 · 대기시간(완료 후 새 손님까지) · 오래 쉬었다 오면 쉬운 주문부터
 export function fillOrders() {
@@ -84,7 +89,7 @@ export function claimGoal(i) { const d = load(), dl = daily(), g = dl.goals[i]; 
 export function giveReward(r) { const d = load(); if (r.energy) d.energy += r.energy; if (r.coins) d.coins += r.coins; if (r.gems) d.gems += r.gems; if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + r.gift;
   if (r.pack) addPack(r.pack); if (r.joker) album().jokers += r.joker; if (r.items) for (const k of r.items) d.pendingItems.push({ t: 's', k }); save(); }
 const ITEM_N = { scissors: '가위', ribbon: '리본', chest: '보물 상자', pickbox: '고르기 상자', hourglass: '모래시계' };
-export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`, r.pack && PACKS[r.pack].n, r.joker && `조커 ${r.joker}`, r.items && r.items.map(k => ITEM_N[k] || k).join('·')].filter(Boolean).join(' ');
+export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`, r.pack && PACKS[r.pack].n, r.joker && `조커 ${r.joker}`, r.items && r.items.map(k => ITEM_N[k] || k).join('·'), r.deco && DECO[r.deco].n].filter(Boolean).join(' ');
 
 // 도감: 처음 만든 물건이면 보석 보상 (원작의 새 물건 발견 보상)
 export function discover(key, l) { const d = load(); if (d.seen[key]) return 0; d.seen[key] = 1; const g = l >= 3 ? 1 + Math.floor(l / 3) : 0; d.gems += g; save(); return g || -1; }

@@ -1,11 +1,11 @@
 // 홈: 클래식 · 어드벤처 두 모드 + 연속 출석 · 별 조각 · 오늘의 미션 · 컬렉션
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.35.0';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.35.0';
-import { audio } from '../audio.js?v=0.35.0';
-import { load, save } from '../save.js?v=0.35.0';
-import * as M from '../meta.js?v=0.35.0';
-import { makeLevel, SEASON_LEVELS } from '../core/levels.js?v=0.35.0';
-import { pictureView } from '../picture.js?v=0.35.0';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.35.1';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.35.1';
+import { audio } from '../audio.js?v=0.35.1';
+import { load, save } from '../save.js?v=0.35.1';
+import * as M from '../meta.js?v=0.35.1';
+import { makeLevel, SEASON_LEVELS } from '../core/levels.js?v=0.35.1';
+import { pictureView } from '../picture.js?v=0.35.1';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }

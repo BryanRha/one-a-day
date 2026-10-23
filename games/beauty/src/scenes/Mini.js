@@ -1,11 +1,11 @@
 // 미니게임 화면: 빙고 · 룰렛 · 보물 찾기 (위 탭으로 바꿈)
-import { W, H } from '../config.js?v=0.35.0';
-import { T, C, btn, iconBtn, popup, toast, firstTip } from '../ui.js?v=0.35.0';
-import { audio } from '../audio.js?v=0.35.0';
-import { goPrev } from '../nav.js?v=0.35.0';
-import { hud } from '../hud.js?v=0.35.0';
-import { giveReward, rewardText } from '../state.js?v=0.35.0';
-import { BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.35.0';
+import { W, H } from '../config.js?v=0.35.1';
+import { T, C, btn, iconBtn, popup, toast, firstTip } from '../ui.js?v=0.35.1';
+import { audio } from '../audio.js?v=0.35.1';
+import { goPrev } from '../nav.js?v=0.35.1';
+import { hud } from '../hud.js?v=0.35.1';
+import { giveReward, rewardText } from '../state.js?v=0.35.1';
+import { BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.35.1';
 
 const TABS = [['bingo', '설화 빙고', 'bingo_ball'], ['wheel', '행운 룰렛', 'roulette'], ['dig', '보물 찾기', 'shovel']];
 export class MiniScene extends Phaser.Scene {

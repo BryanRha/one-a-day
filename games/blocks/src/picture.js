@@ -1,5 +1,5 @@
 // 어드벤처 그림: 사진을 48×32 픽셀 그림으로 줄이고, 12×8 = 96칸을 레벨을 깰 때마다 한 칸씩 드러냄
-import { rng } from './core/board.js?v=0.35.0';
+import { rng } from './core/board.js?v=0.35.1';
 export const PX_W = 12, PX_H = 8;
 
 export function pixelTexture(scene, key) {

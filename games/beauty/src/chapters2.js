@@ -106,3 +106,5 @@ export const STORY456 = {
   s69: { bg: 'room6', lines: [P('wow', '전 세계 주문 10만 개! 설화당 글로벌 1위예요!'), R('smug', '루나 그룹은 철수했대요. 깔끔하네요.'), J('calm', '다음 목적지는 뉴욕입니다, 사장님.')] },
   s70: { bg: 'room', lines: [S('smile', '다시 서울, 할머니 가게. 처음 이곳에 섰던 날이 생각나.'), D('smile', '이제 우리 가게네요.'), S('fight', '설화당의 이야기는 계속돼요!'), END('6장 완료 · 다음 이야기를 준비하고 있어요')] },
 };
+// 균형 (110일 봇: 5장 35일 · 6장 50일 걸려 너무 느림 → 줄임. 목표 6장까지 약 3개월)
+for (const [list, k] of [[TASKS5, 0.75], [TASKS6, 0.6]]) for (const t of list) t.cost = Math.round(t.cost * k / 10) * 10;

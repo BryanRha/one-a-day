@@ -1,6 +1,6 @@
 // 냥카페 · 별 저장 상태 (save.js 의 같은 저장 묶음 안 d.stars · d.cafe)
-import { load, save } from '../save.js?v=0.35.0';
-import { SLOTS, CATS, SPOTS, FLOOR, POSES, PEOPLE, levelOf } from './data.js?v=0.35.0';
+import { load, save } from '../save.js?v=0.35.1';
+import { SLOTS, CATS, SPOTS, FLOOR, POSES, PEOPLE, levelOf } from './data.js?v=0.35.1';
 
 const HOUR = 3600e3, VISIT_EVERY = 2 * HOUR;
 // 처음 쓰는 순간: 이미 본 화만큼 별을 소급 지급 (화당 4) + 시작 선물 3

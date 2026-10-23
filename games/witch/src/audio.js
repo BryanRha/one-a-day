@@ -1,5 +1,5 @@
 // 효과음 / 배경음. 배경음은 처음 틀 때 받아 온다 (첫 로딩을 가볍게).
-import { load, save } from './save.js?v=0.26.0';
+import { load, save } from './save.js?v=0.26.1';
 
 export const SFX = [
   'sfx_shot_star', 'sfx_shot_fire', 'sfx_shot_ice', 'sfx_shot_bolt', 'sfx_hit', 'sfx_kill_0', 'sfx_kill_1', 'sfx_kill_2',

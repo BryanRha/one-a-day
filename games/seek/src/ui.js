@@ -1,7 +1,7 @@
 // 사진관 UI: 크림색 인화지 패널 · 짙은 나무색 · 금박 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.26.0';
-import { audio } from './audio.js?v=0.26.0';
-import { pushBack } from './oad.js?v=0.26.0';
+import { W, H } from './config.js?v=0.26.1';
+import { audio } from './audio.js?v=0.26.1';
+import { pushBack } from './oad.js?v=0.26.1';
 
 export const C = { ink: '#3A2431', text: '#FFF6F8', cream: '#FCEFF2', paper: '#FFF8FA', brown: '#7A3E58', sub: '#D9B4C4', dim: '#9A7A8A', gold: '#F0B65A', rose: '#E86A8E', plum: '#2E1A2A', red: '#D9573B', green: '#6FAE5A', blue: '#4E86C6' };
 export const FONT = 'Pretendard, sans-serif';
@@ -76,8 +76,9 @@ export function popup(sc, w, h, o = {}) {
   const content = sc.add.container(0, 0); box.add(content);
   box.setScale(0.9).setAlpha(0); sc.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Back.easeOut' });
   const close = () => { if (root.closing) return; root.closing = true; unback(); sc.tweens.add({ targets: root, alpha: 0, duration: 140, onComplete: () => { root.destroy(); o.onClose && o.onClose(); } }); };
+  sc.events.once('shutdown', () => unback());   // 화면이 바뀌면 뒤로가기 목록에서도 빠짐 (남아 있으면 다음 뒤로가기가 먹힘)
   if (o.closable !== false && o.dimClose !== false) dim.on('pointerup', p => { if (Math.hypot(p.upX - p.downX, p.upY - p.downY) < 24) close(); });   // 끌다가 뗀 건 닫지 않음
-  const unback = pushBack(() => { if (root.closing) return false; if (o.onBack) { o.onBack(); return true; } if (o.closable === false) return true; close(); return true; });
+  const unback = pushBack(() => { if (root.closing || !root.scene) return false; if (o.onBack) { o.onBack(); return true; } if (o.closable === false) return true; close(); return true; });
   return { root, box, content, close };
 }
 export function toast(sc, msg, y = H * 0.42) {

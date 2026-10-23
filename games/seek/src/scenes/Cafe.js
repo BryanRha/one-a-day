@@ -1,15 +1,15 @@
 // 냥카페: 별로 가구를 놓아 카페를 꾸미고(June's Journey) · 좋아하는 가구를 놓으면 고양이가 찾아옴(네코아츠메)
 // 자리를 비운 사이 손님이 다녀가 선물을 남기고, 매일 내 카페에서 숨은 고양이 찾기
-import { W, H } from '../config.js?v=0.26.0';
-import { T, C, btn, iconBtn, popup, toast, panel } from '../ui.js?v=0.26.0';
-import { audio } from '../audio.js?v=0.26.0';
-import { goPrev } from '../nav.js?v=0.26.0';
-import { load, save } from '../save.js?v=0.26.0';
-import { SLOTS, CATS, THEMES, ROOM, levelOf } from '../cafe/data.js?v=0.26.0';
-import { cafeData, level, placedCount, canCome, meet, seat, awayVisits, today, slotOf } from '../cafe/state.js?v=0.26.0';
-import { loadCafe, furnitureList, catItem, drawRoom } from '../cafe/room.js?v=0.26.0';
-import { coordData } from '../coord/state.js?v=0.26.0';
-import { buildLook } from '../coord/look.js?v=0.26.0';
+import { W, H } from '../config.js?v=0.26.1';
+import { T, C, btn, iconBtn, popup, toast, panel } from '../ui.js?v=0.26.1';
+import { audio } from '../audio.js?v=0.26.1';
+import { goPrev } from '../nav.js?v=0.26.1';
+import { load, save } from '../save.js?v=0.26.1';
+import { SLOTS, CATS, THEMES, ROOM, levelOf } from '../cafe/data.js?v=0.26.1';
+import { cafeData, level, placedCount, canCome, meet, seat, awayVisits, today, slotOf } from '../cafe/state.js?v=0.26.1';
+import { loadCafe, furnitureList, catItem, drawRoom } from '../cafe/room.js?v=0.26.1';
+import { coordData } from '../coord/state.js?v=0.26.1';
+import { buildLook } from '../coord/look.js?v=0.26.1';
 
 const TOP = 150, BAR = 200;
 export class CafeScene extends Phaser.Scene {
@@ -198,7 +198,7 @@ export class CafeScene extends Phaser.Scene {
     p.content.add(btn(this, 0, h / 2 - 90, 480, 110, `선물 받기 · ● ${sum}`, () => p.close(), { size: 32 }));
   }
   intro() {
-    this.busy = true; const p = popup(this, 900, 900, { closable: false });
+    this.busy = true; const p = popup(this, 900, 900, { closable: false, onBack: () => this.leave() });
     p.content.add(T(this, 0, -360, '서윤의 냥카페', 48, C.ink, { w: 900 }));
     p.content.add(T(this, 0, -300, '꽃집 옆 빈 가게에 작은 고양이 카페를 열었어요', 26, C.dim, { w: 700 }));
     [['★', '이야기 · 숨은 물건 찾기를 하면 별이 모여요'], ['🛋', '별로 가구를 놓아 카페를 꾸며요'], ['🐾', '좋아하는 가구가 있으면 고양이가 찾아와요'], ['📷', '자리를 비운 사이에도 손님이 다녀가요'], ['🔍', '매일 한 번, 내 카페에서 숨은 고양이 찾기']]

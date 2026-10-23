@@ -1,14 +1,14 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.26.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.26.0';
-import { audio } from '../audio.js?v=0.26.0';
-import { goPrev } from '../nav.js?v=0.26.0';
-import { load, save } from '../save.js?v=0.26.0';
-import { Viewer } from '../viewer.js?v=0.26.0';
-import { EPISODES, epNo } from '../episodes.js?v=0.26.0';
-import { starOnce } from '../cafe/state.js?v=0.26.0';
-import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.26.0';
+import { W, H } from '../config.js?v=0.26.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.26.1';
+import { audio } from '../audio.js?v=0.26.1';
+import { goPrev } from '../nav.js?v=0.26.1';
+import { load, save } from '../save.js?v=0.26.1';
+import { Viewer } from '../viewer.js?v=0.26.1';
+import { EPISODES, epNo } from '../episodes.js?v=0.26.1';
+import { starOnce } from '../cafe/state.js?v=0.26.1';
+import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.26.1';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }
@@ -53,7 +53,7 @@ export class EvidenceScene extends Phaser.Scene {
     if (this.found >= this.ev.spots.length) { this.ended = true; this.time.delayedCall(1300, () => this.win()); }
   }
   lose() {
-    this.ended = true; const p = popup(this, 820, 560, { closable: false, onBack: () => this.scene.start('Library') });
+    this.ended = true; const p = popup(this, 820, 560, { closable: false, onBack: () => goPrev(this) });
     p.content.add(T(this, 0, -180, '조금 더 꼼꼼히 볼까요?', 44, C.ink, { w: 900 }));
     p.content.add(T(this, 0, -110, `${this.found} / ${this.ev.spots.length}곳을 찾았어요`, 30, C.brown, { w: 700 }));
     p.content.add(btn(this, 0, 50, 520, 130, '다시 대조하기', () => this.scene.restart({ id: this.ep.id }), { size: 38 }));

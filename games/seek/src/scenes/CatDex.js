@@ -1,10 +1,10 @@
 // 고양이 도감 24마리: 만난 고양이는 사진 · 못 만난 고양이는 실루엣 + 좋아하는 것 힌트
-import { goPrev } from '../nav.js?v=0.26.0';
-import { W, H } from '../config.js?v=0.26.0';
-import { T, C, btn, iconBtn, popup } from '../ui.js?v=0.26.0';
-import { CATS, POSES, likeText } from '../cafe/data.js?v=0.26.0';
-import { cafeData } from '../cafe/state.js?v=0.26.0';
-import { loadCafe } from '../cafe/room.js?v=0.26.0';
+import { goPrev } from '../nav.js?v=0.26.1';
+import { W, H } from '../config.js?v=0.26.1';
+import { T, C, btn, iconBtn, popup } from '../ui.js?v=0.26.1';
+import { CATS, POSES, likeText } from '../cafe/data.js?v=0.26.1';
+import { cafeData } from '../cafe/state.js?v=0.26.1';
+import { loadCafe } from '../cafe/room.js?v=0.26.1';
 
 export class CatDexScene extends Phaser.Scene {
   constructor() { super('CatDex'); }
@@ -39,6 +39,6 @@ export class CatDexScene extends Phaser.Scene {
     if (m) p.content.add(T(this, 0, 250, `방문 ${m.n}번 · 사진 ${m.photos.length} / 3 (다시 찾아오면 새 사진)`, 22, C.dim, { w: 700 }));
     p.content.add(btn(this, 0, 350, 360, 100, '닫기', () => p.close(), { style: 'cream', size: 30 }));
   }
-  leave() { this.cameras.main.fadeOut(200, 30, 10, 26); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('Cafe')); }
+  leave() { goPrev(this); }
   onBack() { return goPrev(this); }
 }

@@ -1,13 +1,13 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.29.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.29.0';
-import { audio } from '../audio.js?v=0.29.0';
-import { load, save } from '../save.js?v=0.29.0';
-import { goPrev } from '../nav.js?v=0.29.0';
-import { hud } from '../hud.js?v=0.29.0';
-import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.29.0';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.29.0';
-import { adsOpen, rewardAd } from '../store.js?v=0.29.0';
+import { W, H } from '../config.js?v=0.29.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.29.1';
+import { audio } from '../audio.js?v=0.29.1';
+import { load, save } from '../save.js?v=0.29.1';
+import { goPrev } from '../nav.js?v=0.29.1';
+import { hud } from '../hud.js?v=0.29.1';
+import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.29.1';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.29.1';
+import { adsOpen, rewardAd } from '../store.js?v=0.29.1';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);
@@ -138,11 +138,14 @@ export class BoardScene extends Phaser.Scene {
     if (opened.length) { this.time.delayedCall(140, () => audio.play('sfx_box', { volume: 0.55 })); opened.forEach(n => { this.fx(n, 0xFFE9A0); const s2 = this.sprites[n]; if (s2) { s2.setScale(0.4); this.tweens.add({ targets: s2, scale: 1, duration: 360, delay: 120, ease: 'Back.easeOut' }); } }); }
     this.found(to); opened.forEach(n => this.found(n)); this.info(to); if (this.d.tut === 1) this.tutorial();
   }
+  // 생산기에서 빈 칸으로 포물선을 그리며 날아감 (위치를 한 트윈에서만 바꿔 끝 위치가 항상 정확함)
+  arcTo(sp, x0, y0, x1, y1, ms) { sp.setPosition(x0, y0).setScale(0.3); const o = { t: 0 }, h = 60 + Math.hypot(x1 - x0, y1 - y0) * 0.15;
+    this.tweens.add({ targets: o, t: 1, duration: ms, ease: 'Sine.easeOut', onUpdate: () => { if (!sp.scene) return; const t = o.t; sp.setPosition(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - Math.sin(Math.PI * t) * h).setScale(0.3 + 0.7 * Math.min(1, t * 1.15)); }, onComplete: () => { if (sp.scene) sp.setPosition(x1, y1).setScale(1); } }); }
   shake(i) { const s = this.sprites[i]; if (s) this.tweens.add({ targets: s, x: cx(i) + 8, duration: 50, yoyo: true, repeat: 2, onComplete: () => s.setX(cx(i)) }); }
   neighbors(i) { const c = colOf(i), r = rowOf(i), out = []; if (c > 0) out.push(i - 1); if (c < COLS - 1) out.push(i + 1); if (r > 0) out.push(i - COLS); if (r < ROWS - 1) out.push(i + COLS); return out; }
   nearestEmpty(i) { let best = -1, bd = 1e9; this.d.board.forEach((c, j) => { if (c) return; const dd = Math.abs(colOf(j) - colOf(i)) + Math.abs(rowOf(j) - rowOf(i)) * 1.01; if (dd < bd) { bd = dd; best = j; } }); return best; }
   ring(i) { const r = this.add.circle(cx(i), cy(i), 30).setStrokeStyle(8, 0xFFE27A).setDepth(39); this.tweens.add({ targets: r, scale: 3, alpha: 0, duration: 480, ease: 'Cubic.easeOut', onComplete: () => r.destroy() }); }
-  floatText(i, s, col) { const t = T(this, cx(i), cy(i) - 70, s, 32, col, { w: 900, shadow: true }).setDepth(45); this.tweens.add({ targets: t, y: t.y - 70, alpha: 0, duration: 1100, delay: 300, onComplete: () => t.destroy() }); }
+  floatText(i, s, col) { const now = this.time.now; this.ftAt = (this.ftAt || []).filter(a => now - a < 900); const t = T(this, cx(i), cy(i) - 70 - this.ftAt.length * 44, s, 32, col, { w: 900, shadow: true }).setDepth(45); this.ftAt.push(now); this.tweens.add({ targets: t, y: t.y - 70, alpha: 0, duration: 1100, delay: 300, onComplete: () => t.destroy() }); }
   // 끄는 동안 합칠 수 있는 칸을 빛나게 (원작처럼 어디 놓을지 바로 보임)
   showTargets(from) { this.clearTargets(); const a = this.d.board[from]; this.tg = [];
     this.d.board.forEach((c, j) => { if (j !== from && this.canMerge(a, c)) { const r = this.add.rectangle(cx(j), cy(j), CS - 10, CS - 10, 0xFFE27A, 0.28).setStrokeStyle(5, 0xF0B65A).setDepth(5); this.tweens.add({ targets: r, alpha: 0.5, duration: 400, yoyo: true, repeat: -1 }); this.tg.push(r); } }); }
@@ -173,10 +176,14 @@ export class BoardScene extends Phaser.Scene {
       audio.play(S.give.energy ? 'sfx_gen' : 'sfx_coin', { volume: 0.6, rate: 1.1 }); audio.buzz(10); return; }
     if (S.tool) { this.sel = i; this.redraw(); this.info(i); return toast(this, S.help, cy(i) - 120); }
     if (c.k === 'hourglass') { this.d.board[i] = null; this.d.orders.forEach(o => { if (o.at > Date.now()) o.at = Date.now(); }); this.d.board.forEach(g => { if (g && g.t === 'g' && g.g === 'dew') { g.ch = GENS.dew.charges[1]; g.at = 0; } }); save(); audio.play('sfx_repair', { volume: 0.5, rate: 1.3 }); this.fx(i, 0xFFE9A0, 12); this.redraw(); this.drawOrders(); return; }
-    if (c.k === 'chest') { const out = this.chestLoot(), cells = []; this.d.board[i] = null;
+    if (c.k === 'chest') { const out = this.chestLoot(), cells = [];
+      // 상자 칸은 비워 두고 주변 빈 칸부터 채움 (자리가 모자랄 때만 상자 칸 사용) → 나온 물건이 상자와 겹치지 않음
       for (const it of out) { const e = this.nearestEmpty(i); if (e < 0) { this.d.pendingItems.push(it); continue; } this.d.board[e] = it; cells.push(e); }
-      save(); audio.play('sfx_box', { volume: 0.7 }); audio.buzz([15, 30, 15]); this.redraw(); this.fx(i, 0xFFE27A, 14); this.ring(i);
-      cells.forEach((e, k) => { const sp = this.sprites[e]; if (sp) { sp.setPosition(cx(i), cy(i)).setScale(0.2); this.tweens.add({ targets: sp, x: cx(e), y: cy(e), scale: 1, duration: 360, delay: k * 70, ease: 'Back.easeOut' }); } this.found(e); });
+      this.d.board[i] = null; const left = this.d.pendingItems.length && this.d.pendingItems.at(-1) && out.includes(this.d.pendingItems.at(-1)); if (left) { this.d.board[i] = this.d.pendingItems.pop(); cells.push(i); }
+      save(); audio.play('sfx_box', { volume: 0.7 }); audio.buzz([15, 30, 15]); this.redraw(); this.ring(i);
+      // 상자가 부풀었다 사라지는 연출 (판 그림과 따로)
+      const ghost = this.add.image(cx(i), cy(i), 'chest').setDepth(35); ghost.setScale((CS - 26) / Math.max(ghost.width, ghost.height)); this.tweens.add({ targets: ghost, scale: ghost.scale * 1.35, alpha: 0, duration: 320, ease: 'Cubic.easeOut', onComplete: () => { ghost.destroy(); this.fx(i, 0xFFE27A, 14); } });
+      cells.forEach((e, k) => { const sp = this.sprites[e]; if (sp) { sp.setPosition(cx(i), cy(i)).setScale(0.2).setVisible(false); this.tweens.add({ targets: sp, x: cx(e), y: cy(e), scale: 1, duration: 380, delay: 200 + k * 90, ease: 'Back.easeOut', onStart: () => sp.setVisible(true) }); } this.found(e); });
       if (cells.length < out.length) toast(this, '자리가 없어 남은 선물은 나중에 나와요', cy(i) - 120); return; }
     if (c.k === 'pickbox') return this.pickBox(i);
   }
@@ -207,7 +214,7 @@ export class BoardScene extends Phaser.Scene {
     if (cell.g === 'gift') { cell.u--; if (cell.u <= 0) this.d.board[i] = null; } else if (!G.cost) { cell.ch--; if (cell.ch <= 0) cell.at = Date.now(); }
     save(); audio.play('sfx_gen', { volume: 0.55, rate: 0.95 + Math.random() * 0.12 }); audio.buzz(6);
     this.redraw(); this.hud.update();
-    const sp = this.sprites[e]; if (sp) { sp.setPosition(cx(i), cy(i)).setScale(0.3); this.tweens.add({ targets: sp, x: cx(e), y: cy(e), scale: 1, duration: 300, ease: 'Back.easeOut' }); this.tweens.add({ targets: sp, y: { from: cy(i), to: Math.min(cy(i), cy(e)) - 50 }, duration: 150, yoyo: true, ease: 'Sine.easeOut' }); }
+    const sp = this.sprites[e]; if (sp) this.arcTo(sp, cx(i), cy(i), cx(e), cy(e), 320);
     const gs = this.sprites[i]; if (gs) this.tweens.add({ targets: gs, scaleX: 1.12, scaleY: 0.9, duration: 70, yoyo: true });
     this.found(e); this.info(i); if (this.d.tut === 0 && this.d.board.filter(c => c && c.t === 'i' && c.c === 'camellia' && c.l === 1).length >= 2) { this.d.tut = 1; save(); this.tutorial(); }
   }

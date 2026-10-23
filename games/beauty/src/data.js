@@ -2,29 +2,53 @@
 // 원작(Gossip Harbor) 구조: 계열별 단계 머지 · 생산기(에너지) · 무료/임시 생산기 · 주문 · 코인=이야기·수리 · 레벨업=에너지 가득
 
 export const CHAINS = {
-  camellia: { n: '동백', color: 0xE8505B, items: ['동백 잎', '동백 꽃봉오리', '동백꽃', '동백 꽃다발', '동백 오일', '동백 세럼', '동백 크림', '동백 선물 세트'] },
-  rice: { n: '쌀', color: 0xF2E6CF, items: ['쌀알', '쌀밥 한 그릇', '쌀뜨물', '쌀 폼클렌저', '쌀 토너', '진주 크림', '쌀 스킨케어 듀오', '진주 쌀 컬렉션'] },
-  ginseng: { n: '인삼', color: 0xE0B055, items: ['인삼 새싹', '인삼 뿌리', '인삼 묶음', '인삼 진액', '골드 앰플', '인삼 에센스', '인삼 골드 크림', '인삼 명품 세트'] },
-  tea: { n: '녹차', color: 0x7CC67A, items: ['찻씨', '찻잎', '찻잎 다발', '말차 한 잔', '녹차 마스크팩', '녹차 토너', '녹차 클레이 팩', '녹차 스파 바구니'] },
+  camellia: { n: '동백', color: 0xE8505B, items: ['동백 잎', '동백 꽃봉오리', '동백꽃', '동백 꽃다발', '동백 오일', '동백 세럼', '동백 크림', '동백 선물 세트', '동백 스파 트레이', '설화당 동백 시그니처'] },
+  rice: { n: '쌀', color: 0xF2E6CF, items: ['쌀알', '쌀밥 한 그릇', '쌀뜨물', '쌀 폼클렌저', '쌀 토너', '진주 크림', '쌀 스킨케어 듀오', '진주 쌀 컬렉션', '진주 화장대 세트', '설화당 진주 시그니처'] },
+  ginseng: { n: '인삼', color: 0xE0B055, items: ['인삼 새싹', '인삼 뿌리', '인삼 묶음', '인삼 진액', '골드 앰플', '인삼 에센스', '인삼 골드 크림', '인삼 명품 세트', '궁중 약재함', '설화당 인삼 시그니처'] },
+  tea: { n: '녹차', color: 0x7CC67A, items: ['찻씨', '찻잎', '찻잎 다발', '말차 한 잔', '녹차 마스크팩', '녹차 토너', '녹차 클레이 팩', '녹차 스파 바구니', '녹차 다실 세트', '설화당 녹차 시그니처'] },
 };
-export const MAX_LV = 8;
+export const MAX_LV = 10;
 export const itemKey = (c, l) => `${c}${l}`;
 export const itemName = (c, l) => CHAINS[c].items[l - 1];
 
 // 생산기: 누르면 에너지 1 · 충전 횟수 다 쓰면 시간 지나 다시 · 같은 생산기끼리 합치면 2단계
+// 생산기 단계별 나오는 재료 단계 확률 (1단계, 2단계, 3단계, 4단계) — 원작처럼 높은 생산기일수록 높은 재료
+const DROPS = [[0], [0.86, 0.14], [0.6, 0.34, 0.06], [0.42, 0.4, 0.15, 0.03], [0.28, 0.42, 0.22, 0.08], [0.18, 0.38, 0.3, 0.14]];
+export const GEN_MAX = 5;
+export const genName = (g, l) => GENS[g].names ? GENS[g].names[l] : GENS[g].n;
 export const GENS = {
-  camellia: { n: '동백 바구니', chain: 'camellia', cost: 1, charges: [0, 40, 60], recharge: 180, drops: [[0], [0.86, 0.14], [0.6, 0.34, 0.06]] },
-  rice: { n: '쌀독', chain: 'rice', cost: 1, charges: [0, 40, 60], recharge: 180, drops: [[0], [0.86, 0.14], [0.6, 0.34, 0.06]] },
-  ginseng: { n: '약재 서랍', chain: 'ginseng', cost: 1, charges: [0, 36, 55], recharge: 200, drops: [[0], [0.88, 0.12], [0.62, 0.32, 0.06]], rare: 0.1 },
-  tea: { n: '찻잎 바구니', chain: 'tea', cost: 1, charges: [0, 40, 60], recharge: 180, drops: [[0], [0.86, 0.14], [0.6, 0.34, 0.06]] },
+  camellia: { n: '동백', names: ['', '동백 바구니', '동백 꽃수레', '동백 화단', '동백 온실', '황금 동백 정원'], chain: 'camellia', cost: 1, drops: DROPS },
+  rice: { n: '쌀', names: ['', '쌀독', '꽃 장식 쌀독', '쌀 궤짝', '물레방아', '황금 곳간'], chain: 'rice', cost: 1, drops: DROPS },
+  ginseng: { n: '인삼', names: ['', '약재 서랍', '약재 장', '약재 궤', '약방 계산대', '궁중 약장'], chain: 'ginseng', cost: 1, drops: DROPS, rare: 0.1 },
+  tea: { n: '녹차', names: ['', '찻잎 바구니', '찻잎 받침대', '찻잎 채반', '덖음 가마솥', '황금 다실'], chain: 'tea', cost: 1, drops: DROPS },
   dew: { n: '이슬 항아리', free: true, charges: [0, 6], recharge: 300 },        // 무료: 에너지 없이 아무 계열 1~2단계
   gift: { n: '선물 상자', temp: true, uses: 5 },                                   // 임시: 2~3단계, 5번 쓰면 사라짐
 };
+// 특별 물건 (원작의 에너지·코인·보석 아이템 · 도구 · 상자): 재화는 같은 것끼리 합치면 커지고 누르면 받음
+export const SPECIAL = {
+  en1: { n: '에너지 약병', chain: 'en', l: 1, give: { energy: 3 } }, en2: { n: '에너지 물약', chain: 'en', l: 2, give: { energy: 10 } }, en3: { n: '에너지 크리스털 병', chain: 'en', l: 3, give: { energy: 25 } },
+  co1: { n: '코인 더미', chain: 'co', l: 1, give: { coins: 5 } }, co2: { n: '코인 주머니', chain: 'co', l: 2, give: { coins: 15 } }, co3: { n: '코인 상자', chain: 'co', l: 3, give: { coins: 40 } },
+  ge1: { n: '보석 한 알', chain: 'ge', l: 1, give: { gems: 1 } }, ge2: { n: '보석 세 알', chain: 'ge', l: 2, give: { gems: 3 } }, ge3: { n: '보석함', chain: 'ge', l: 3, give: { gems: 8 } },
+  scissors: { n: '황금 가위', tool: true, help: '물건 위에 끌어 놓으면 한 단계 낮은 물건 두 개로 나눠요' },
+  ribbon: { n: '만능 리본', tool: true, help: '물건 위에 끌어 놓으면 바로 한 단계 올라가요' },
+  hourglass: { n: '모래시계', help: '누르면 기다리는 손님이 바로 오고 이슬 항아리가 다시 차요' },
+  pickbox: { n: '고르기 상자', help: '누르면 재료 세 가지 중 하나를 골라 가져요' },
+  chest: { n: '화장품 보물 상자', help: '누르면 재료 · 재화 · 도구가 쏟아져 나와요' },
+};
+export const specialNext = k => { const s = SPECIAL[k]; return s && s.chain && s.l < 3 ? `${s.chain}${s.l + 1}` : null; };
 export const genImg = (g, l) => g === 'dew' ? 'gen_dew' : g === 'gift' ? 'gen_gift' : `gen_${g}${l}`;
 
 // 레벨: 필요 경험치 · 레벨업 보상
 export const LEVELS = [0, 15, 40, 80, 130, 190, 260, 340, 430, 530, 640, 760, 890, 1030, 1180, 1340];
-export const levelReward = lv => ({ gems: 3 + Math.floor(lv / 2), coins: 10 + lv * 5, gift: lv % 3 === 0 });
+export const levelReward = lv => {
+  const r = { gems: 3 + Math.floor(lv / 2), coins: 10 + lv * 5, gift: lv % 3 === 0, items: [] };
+  if (lv % 2 === 0) r.items.push({ t: 'g', gl: lv < 10 ? 1 : lv < 20 ? 2 : 3 });   // 짝수 레벨: 생산기 하나 (같은 것끼리 합쳐 업그레이드)
+  if (lv % 4 === 0) r.items.push({ t: 's', k: 'scissors' });
+  if (lv % 5 === 0) r.items.push({ t: 's', k: 'ribbon' });
+  if (lv % 3 === 1 && lv > 1) r.items.push({ t: 's', k: 'pickbox' });
+  if (lv % 6 === 0) r.items.push({ t: 's', k: 'chest' });
+  return r;
+};
 
 // 에너지
 export const ENERGY = { max: 100, regenSec: 120, gemPack: { gems: 10, amount: 50 } };

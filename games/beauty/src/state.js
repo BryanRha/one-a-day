@@ -1,6 +1,6 @@
 // 경제 · 진행 규칙: 에너지 회복 · 경험치/레벨 · 해금 계열 · 주문 만들기 · 하루 목표 · 월간 시즌
-import { load, save } from './save.js?v=0.28.0';
-import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, TASKS, STORAGE } from './data.js?v=0.28.0';
+import { load, save } from './save.js?v=0.29.0';
+import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, TASKS, STORAGE, MAX_LV } from './data.js?v=0.29.0';
 
 export const today = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; };
 export const seasonId = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}`; };
@@ -20,7 +20,9 @@ export function spendEnergy(n) { tickEnergy(); const d = load(); if (d.energy < 
 export const xpNeed = lv => LEVELS[Math.min(lv, LEVELS.length - 1)] + Math.max(0, lv - LEVELS.length + 1) * 150;
 export function addXp(n) {
   const d = load(); d.xp += n; const ups = [];
-  while (d.xp >= xpNeed(d.lv)) { d.xp -= xpNeed(d.lv); d.lv++; const r = levelReward(d.lv); d.gems += r.gems; d.coins += r.coins; d.energy = Math.max(d.energy, ENERGY.max); d.eAt = Date.now(); if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + 1; ups.push({ lv: d.lv, ...r }); }
+  while (d.xp >= xpNeed(d.lv)) { d.xp -= xpNeed(d.lv); d.lv++; const r = levelReward(d.lv); d.gems += r.gems; d.coins += r.coins; d.energy = Math.max(d.energy, ENERGY.max); d.eAt = Date.now(); if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + 1;
+    for (const it of r.items) { if (it.t === 'g') { const ch = unlockedChains(); d.pendingItems.push({ t: 'g', g: ch[Math.floor(Math.random() * ch.length)], l: it.gl }); } else d.pendingItems.push({ ...it }); }
+    ups.push({ lv: d.lv, ...r }); }
   save(); return ups;
 }
 
@@ -31,7 +33,7 @@ export const storageSize = () => { const d = load(); return STORAGE.base + (d.st
 // 주문: 손님 1명 · 물건 1~2개 · 레벨이 오를수록 높은 단계
 export function makeOrder(easy = false, board = null) {
   const d = load(), chains = unlockedChains(), lv = d.lv;
-  const top = Math.min(7, 2 + Math.floor(lv / 2)), lo = easy ? 2 : Math.max(2, top - 2);
+  const top = Math.min(MAX_LV - 1, 2 + Math.floor(lv / 2.5)), lo = easy ? 2 : Math.max(2, top - 2);
   const pick = () => { const c = chains[Math.floor(Math.random() * chains.length)], l = lo + Math.floor(Math.random() * (top - lo + 1)); return { c, l: easy ? Math.min(l, 3) : l }; };
   // 작업대에 이미 있는 2단계 이상 물건을 원하는 손님 (원작처럼 막힌 물건이 쌓이지 않게)
   const onBoard = (board || []).filter(c => c && c.t === 'i' && !c.b && c.l >= 2 && c.l <= top + 1 && chains.includes(c.c));
@@ -40,7 +42,9 @@ export function makeOrder(easy = false, board = null) {
   const val = items.reduce((a, it) => a + Math.round(3 * Math.pow(1.85, it.l - 1)), 0);
   const cu = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
   d.orderSeq++;
-  return { id: d.orderSeq, face: cu.face, who: cu.n, say: cu.say[Math.floor(Math.random() * cu.say.length)], items, coins: val, xp: Math.max(1, Math.round(val / 4)), at: 0 };
+  // 원작처럼 가끔 덤 보상 (에너지 · 코인 · 보석 아이템)
+  const bonus = !easy && Math.random() < 0.12 ? ['en1', 'co1', 'ge1', 'en1', 'en2'][Math.floor(Math.random() * 5)] : null;
+  return { id: d.orderSeq, face: cu.face, who: cu.n, say: cu.say[Math.floor(Math.random() * cu.say.length)], items, coins: val, xp: Math.max(1, Math.round(val / 4)), at: 0, bonus };
 }
 // 주문판 3장 채우기 · 대기시간(완료 후 새 손님까지) · 오래 쉬었다 오면 쉬운 주문부터
 export function fillOrders() {
@@ -71,3 +75,6 @@ export function season() { const d = load(); if (d.season.id !== seasonId()) { d
 export function claimGoal(i) { const d = load(), dl = daily(), g = dl.goals[i]; if (!g || g.have < g.need || dl.done.includes(i)) return 0; dl.done.push(i); season().pts += g.pts; save(); return g.pts; }
 export function giveReward(r) { const d = load(); if (r.energy) d.energy += r.energy; if (r.coins) d.coins += r.coins; if (r.gems) d.gems += r.gems; if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + r.gift; save(); }
 export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`].filter(Boolean).join(' ');
+
+// 도감: 처음 만든 물건이면 보석 보상 (원작의 새 물건 발견 보상)
+export function discover(key, l) { const d = load(); if (d.seen[key]) return 0; d.seen[key] = 1; const g = l >= 3 ? 1 + Math.floor(l / 3) : 0; d.gems += g; save(); return g || -1; }

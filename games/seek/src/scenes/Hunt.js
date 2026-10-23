@@ -1,14 +1,14 @@
 // 숨은 물건 맵 (Find It Out® 식): 고밀도 세로 맵 · 아래 아이콘 5칸(찾으면 다음 물건이 채워짐) · 실패·시간 제한 없음
 // + 이야기 단서: 분홍 테두리 아이콘 · 찾으면 서윤 혼잣말 · 물건마다 코인 · 힌트는 코인
-import { W, H } from '../config.js?v=0.25.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.0';
-import { audio } from '../audio.js?v=0.25.0';
-import { goPrev } from '../nav.js?v=0.25.0';
-import { load, save } from '../save.js?v=0.25.0';
-import { Viewer } from '../viewer.js?v=0.25.0';
-import { EPISODES } from '../episodes.js?v=0.25.0';
-import { starOnce } from '../cafe/state.js?v=0.25.0';
-import { advance, passed, replayResult, medal, TIERS } from '../replay.js?v=0.25.0';
+import { W, H } from '../config.js?v=0.25.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.1';
+import { audio } from '../audio.js?v=0.25.1';
+import { goPrev } from '../nav.js?v=0.25.1';
+import { load, save } from '../save.js?v=0.25.1';
+import { Viewer } from '../viewer.js?v=0.25.1';
+import { EPISODES } from '../episodes.js?v=0.25.1';
+import { starOnce } from '../cafe/state.js?v=0.25.1';
+import { advance, passed, stepOf, replayResult, medal, TIERS } from '../replay.js?v=0.25.1';
 
 const SLOTS = 5, HINT_COST = 10, SPAM = { n: 3, t: 2, lock: 3 };
 export class HuntScene extends Phaser.Scene {
@@ -16,13 +16,14 @@ export class HuntScene extends Phaser.Scene {
   create(data) {
     const ep = this.ep = EPISODES.find(e => e.id === data.id), hu = ep.hunt, d = load();
     // 이미 끝낸 판이면 새 판(다시 하기): 진행 저장 없이 처음부터 · 시간 · 힌트로 등급
-    this.replay = passed(ep.id, 'hunt'); if (!this.replay) advance(ep.id, 'hunt');
+    // 다 본 화(done): 등급 · 기록이 붙는 다시 하기 / 진행 중인 화에서 이미 지난 판: 새 판으로 다시 (컷씬 · 흐름 그대로, 보상 없음)
+    const again = passed(ep.id, 'hunt'); this.replay = again && stepOf(ep.id) === 'done'; this.fresh = again; if (!again) advance(ep.id, 'hunt');
     const prog = d.ep[ep.id] ||= { step: 'hunt' }; prog.found ||= []; save();
     Object.assign(this, { misses: [], lock: 0, t: 0, ended: false, paused: false, blur: null, got: 0, hints: 0 });
     // 순서: 일반 물건 사이사이에 단서 · 결정적 단서(last)는 맨 끝
     const normal = hu.items.filter(i => !i.clue).sort(() => Math.random() - 0.5), clues = hu.items.filter(i => i.clue && !i.last), last = hu.items.find(i => i.last);
     const q = [...normal]; clues.forEach((c, k) => q.splice(Math.min(q.length, 3 + k * 4), 0, c)); if (last) q.push(last);
-    this.queue = this.replay ? q : q.filter(i => !prog.found.includes(i.n)); this.total = hu.items.length; this.got = this.total - this.queue.length;
+    this.queue = this.fresh ? q : q.filter(i => !prog.found.includes(i.n)); this.total = hu.items.length; this.got = this.total - this.queue.length;
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     const top = 150, trayH = 300;
     this.v = new Viewer(this, hu.map, 0, top, W, H - top - trayH, { maxZoom: 4, onTap: (ip, p, later) => this.tap(ip, p, later) });
@@ -77,16 +78,16 @@ export class HuntScene extends Phaser.Scene {
     if (this.misses.length >= SPAM.n) { this.misses = []; this.lock = SPAM.lock; this.blur = this.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.4).setDepth(50); toast(this, '천천히 살펴봐요 · 잠깐 숨 고르기'); }
   }
   found(s) {
-    const it = s.it, d = load(); s.it = null; this.got++; if (!this.replay) { d.ep[this.ep.id].found.push(it.n); d.coins += it.clue ? 5 : 1; save(); }
+    const it = s.it, d = load(); s.it = null; this.got++; if (!this.fresh) { d.ep[this.ep.id].found.push(it.n); d.coins += it.clue ? 5 : 1; save(); }
     audio.play('sfx_find', { volume: 0.7 });
     const ring = this.add.image(it.x, it.y, 'ring').setTint(it.clue ? 0xFF7FA6 : 0xFFE08A); ring.setScale(it.r * 2.8 / 160); this.v.layer.add(ring); this.tweens.add({ targets: ring, scale: it.r * 2.2 / 160, duration: 280, ease: 'Back.easeOut' });
     const sp = this.v.toScreen(it.x, it.y);
     for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, gg = this.add.image(sp.x, sp.y, 'spark').setTint(it.clue ? 0xFFB6CB : 0xFFE9A0).setScale(0.4).setDepth(40); this.tweens.add({ targets: gg, x: sp.x + Math.cos(a) * 90, y: sp.y + Math.sin(a) * 90, alpha: 0, scale: 0.1, duration: 500, onComplete: () => gg.destroy() }); }
     const fly = this.add.image(sp.x, sp.y, this.thumb(it)).setDepth(45); fly.setDisplaySize(it.r * 2 * this.v.s, it.r * 2 * this.v.s);
     this.tweens.add({ targets: fly, x: s.x, y: s.y, displayWidth: 130, displayHeight: 130, alpha: 0.2, duration: 450, ease: 'Cubic.easeIn', onComplete: () => { fly.destroy(); this.fill(); } });
-    const cn = T(this, sp.x, sp.y - 40, this.replay ? '찾았다!' : `● +${it.clue ? 5 : 1}`, 30, C.gold, { w: 900, shadow: true }).setDepth(46); this.tweens.add({ targets: cn, y: sp.y - 110, alpha: 0, duration: 800, onComplete: () => cn.destroy() });
+    const cn = T(this, sp.x, sp.y - 40, this.fresh ? '찾았다!' : `● +${it.clue ? 5 : 1}`, 30, C.gold, { w: 900, shadow: true }).setDepth(46); this.tweens.add({ targets: cn, y: sp.y - 110, alpha: 0, duration: 800, onComplete: () => cn.destroy() });
     this.ui();
-    if (it.clue && !this.replay) this.time.delayedCall(500, () => this.monologue(it));
+    if (it.clue) this.time.delayedCall(500, () => this.monologue(it));
     else if (this.got >= this.total) this.time.delayedCall(700, () => this.win());
   }
   // 단서를 찾으면 서윤의 혼잣말

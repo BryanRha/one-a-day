@@ -1,5 +1,5 @@
 // 자동 비행 판단 (봇 밸런싱·브라우저 자동 테스트 공용)
-import { LANES, LANE_W, W } from './run.js?v=0.25.0';
+import { LANES, LANE_W, W } from './run.js?v=0.25.1';
 
 export function decideX(run, skill) { return decide(run, skill); }
 function decide(run, skill) {

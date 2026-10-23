@@ -1,20 +1,20 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.25.0';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.25.0';
-import { audio } from '../audio.js?v=0.25.0';
-import { load } from '../save.js?v=0.25.0';
-import { SERIES, EPISODES } from '../episodes.js?v=0.25.0';
-import { loadEp } from './Boot.js?v=0.25.0';
-import { medal, TIERS } from '../replay.js?v=0.25.0';
-import { cafeData } from '../cafe/state.js?v=0.25.0';
-import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.25.0';
-import { buildLook } from '../coord/look.js?v=0.25.0';
+import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.25.1';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.25.1';
+import { audio } from '../audio.js?v=0.25.1';
+import { load } from '../save.js?v=0.25.1';
+import { SERIES, EPISODES } from '../episodes.js?v=0.25.1';
+import { loadEp } from './Boot.js?v=0.25.1';
+import { medal, TIERS } from '../replay.js?v=0.25.1';
+import { cafeData } from '../cafe/state.js?v=0.25.1';
+import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.25.1';
+import { buildLook } from '../coord/look.js?v=0.25.1';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }
   create(data) {
     // 새 버전이 배포됐으면 다시 불러옴 (열어 둔 채로 배포되면 옛 정답 데이터 + 새 그림이 섞여 정답이 안 맞음)
-    fetch(`src/config.js?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.text()).then(t => { const m = t.match(/VERSION = '([^']+)'/); if (m && m[1] !== VERSION) location.reload(); }).catch(() => {});
+    fetch(`src/config.js?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.text()).then(t => { const m = t.match(/VERSION = '([^']+)'/); if (m && m[1] !== VERSION && this.scene.isActive()) location.reload(); }).catch(() => {});   // 게임 중에는 새로고침하지 않음 (서재에 있을 때만)
     const d = load();
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     // 표지: 웹툰 2컷(도현) 크게 + 어둡게 + 제목

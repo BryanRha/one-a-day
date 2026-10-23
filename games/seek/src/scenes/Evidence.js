@@ -1,21 +1,21 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.25.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.0';
-import { audio } from '../audio.js?v=0.25.0';
-import { goPrev } from '../nav.js?v=0.25.0';
-import { load, save } from '../save.js?v=0.25.0';
-import { Viewer } from '../viewer.js?v=0.25.0';
-import { EPISODES } from '../episodes.js?v=0.25.0';
-import { starOnce } from '../cafe/state.js?v=0.25.0';
-import { advance, passed, replayResult } from '../replay.js?v=0.25.0';
+import { W, H } from '../config.js?v=0.25.1';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.1';
+import { audio } from '../audio.js?v=0.25.1';
+import { goPrev } from '../nav.js?v=0.25.1';
+import { load, save } from '../save.js?v=0.25.1';
+import { Viewer } from '../viewer.js?v=0.25.1';
+import { EPISODES } from '../episodes.js?v=0.25.1';
+import { starOnce } from '../cafe/state.js?v=0.25.1';
+import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.25.1';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }
   create(data) {
     const ep = this.ep = EPISODES.find(e => e.id === data.id), ev = this.ev = ep.evidence;
-    Object.assign(this, { hearts: ev.hearts, found: 0, done: new Set(), ended: false, paused: false, replay: passed(ep.id, 'evidence'), t0: Date.now() });
-    if (!this.replay) advance(ep.id, 'evidence');
+    Object.assign(this, { hearts: ev.hearts, found: 0, done: new Set(), ended: false, paused: false, replay: passed(ep.id, 'evidence') && stepOf(ep.id) === 'done', t0: Date.now() });
+    advance(ep.id, 'evidence');
     this.add.rectangle(W / 2, H / 2, W, H, 0x2E1A2A);
     const top = 150, bottom = 260, gap = 70, avail = H - top - bottom - gap * 2, vh = Math.min(avail / 2, W * 0.75);
     const y1 = top + gap, y2 = y1 + vh + gap;

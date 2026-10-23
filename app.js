@@ -1,11 +1,11 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.25.1';
-import * as R from './rules.js?v=0.25.1';
-import * as I from './install.js?v=0.25.1';
+import { PLANNED } from './catalog.js?v=0.25.2';
+import * as R from './rules.js?v=0.25.2';
+import * as I from './install.js?v=0.25.2';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.25.1';
+const VERSION = '0.25.2';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -184,7 +184,7 @@ function play(id) {
   if (!R.canPlay(id)) return detail(id);
   closeSheet();
   R.recordPlay(id);
-  frame = document.createElement('iframe');
+  frame = document.createElement('iframe'); backReady = false;
   frame.id = 'frame'; frame.title = G(id).title; frame.allow = 'autoplay; fullscreen; vibrate';
   frame.src = `${G(id).path}${G(id).path.includes('?') ? '&' : '?'}v=${VERSION}`;
   player.prepend(frame);
@@ -201,20 +201,21 @@ function closeGame() {
   if (!I.installed() && !localStorage.getItem('oad_nudged')) { localStorage.setItem('oad_nudged', '1'); setTimeout(() => openSheet(I.env.inApp || !I.canPrompt() ? I.guide() : `<div class="intro"><h2>📲 내일도 쉽게 만나요</h2><p style="color:var(--sub)">홈 화면에 추가하면 매일 새 게임을 한 번에 열 수 있어요.</p><div class="stack"><button class="btn" data-install>홈 화면에 추가</button><button class="btn ghost" data-close>나중에</button></div></div>`), 500); }
 }
 // 뒤로가기: 먼저 게임에게 물어봄 (팝업 닫기 · 이전 화면 · 일시정지) → 게임이 처리하면 다시 막아 두고, 게임 첫 화면이면 원어데이로
-let forceExit = false, backWait = null;
+let forceExit = false, backWait = null, backReady = false;   // backReady: 게임이 뒤로가기를 직접 처리한다고 알려 옴
 function exitGame() { forceExit = true; history.back(); }
 addEventListener('popstate', () => {
   if (player.hidden) return;
   if (!$('#sheet').hidden && !forceExit) { closeSheet(); history.pushState({ game: true }, ''); return; }   // 나가기 확인 창이 떠 있으면 그 창만 닫음
   if (forceExit || !frame || !frame.contentWindow) { forceExit = false; closeGame(); return; }
   clearTimeout(backWait);
-  backWait = setTimeout(() => { backWait = null; closeGame(); }, 450);   // 응답 없는 게임(옛 버전)은 바로 닫음
+  backWait = setTimeout(() => { backWait = null; closeGame(); }, backReady ? 3000 : 450);   // 응답 없는 게임(옛 버전)은 바로 닫음 · 처리하는 게임은 넉넉히 기다림
   frame.contentWindow.postMessage({ type: 'oad:back' }, '*');
 });
 // 게임 쪽에서 보내는 메시지: { type: 'oad:exit' } → 원어데이로 · { type: 'oad:back-result', handled } → 뒤로가기 처리 결과
 addEventListener('message', e => {
   const d = e.data; if (!d || player.hidden) return;
   if (d.type === 'oad:exit') exitGame();
+  else if (d.type === 'oad:ready') backReady = !!d.back;
   else if (d.type === 'oad:back-result' && backWait) { clearTimeout(backWait); backWait = null; if (d.handled) history.pushState({ game: true }, ''); else closeGame(); }
 });
 

@@ -10,6 +10,8 @@ const stack = [];   // 열린 팝업마다 { back } — 위에 있는 것부터 
 export function pushBack(back) { const e = { back }; stack.push(e); return () => { const i = stack.indexOf(e); if (i >= 0) stack.splice(i, 1); }; }
 
 export function installBack(game, { home, roots = [] }) {
+  // 원어데이에 '뒤로가기를 직접 처리하는 게임'이라고 알림 → 앱이 응답을 넉넉히 기다림 (무거운 화면에서 늦게 답해도 게임이 닫히지 않게)
+  try { window.parent.postMessage({ type: 'oad:ready', back: true }, '*'); } catch { /* */ }
   window.addEventListener('message', e => {
     if (!e.data || e.data.type !== 'oad:back') return;
     let handled = false;

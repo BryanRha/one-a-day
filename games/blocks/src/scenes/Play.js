@@ -1,15 +1,15 @@
 // 게임 화면 (클래식 · 어드벤처 공용): 8×8 판 + 조각 3개 끌어 놓기. 로직은 core/board.js, 여기는 그림·소리·손맛.
-import { W, H } from '../config.js?v=0.25.1';
-import { Board, N, COMBO_KEEP } from '../core/board.js?v=0.25.1';
-import { choose } from '../core/ai.js?v=0.25.1';
-import { makeLevel } from '../core/levels.js?v=0.25.1';
-import { TINT, THEMES } from './Boot.js?v=0.25.1';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.25.1';
-import { audio } from '../audio.js?v=0.25.1';
-import { load, save } from '../save.js?v=0.25.1';
-import * as M from '../meta.js?v=0.25.1';
-import { evaluateMoves, rateMove } from '../core/value.js?v=0.25.1';
-import { inOAD, exitToOAD } from '../oad.js?v=0.25.1';
+import { W, H } from '../config.js?v=0.25.2';
+import { Board, N, COMBO_KEEP } from '../core/board.js?v=0.25.2';
+import { choose } from '../core/ai.js?v=0.25.2';
+import { makeLevel } from '../core/levels.js?v=0.25.2';
+import { TINT, THEMES } from './Boot.js?v=0.25.2';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.25.2';
+import { audio } from '../audio.js?v=0.25.2';
+import { load, save } from '../save.js?v=0.25.2';
+import * as M from '../meta.js?v=0.25.2';
+import { evaluateMoves, rateMove } from '../core/value.js?v=0.25.2';
+import { inOAD, exitToOAD } from '../oad.js?v=0.25.2';
 
 // 성우 대사: 상황별 버전 수 (같은 말이 연달아 나오지 않게 번갈아)
 const VO = { hype: 3, good: 2, great: 2, excellent: 2, amazing: 2, unbelievable: 2, best: 4, allclear: 2, record: 2, levelclear: 2, onfire: 1, unstoppable: 1, comeback: 2 };

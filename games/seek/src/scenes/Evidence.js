@@ -1,14 +1,14 @@
 // 증거 대조 (Easybrain Differences 식): 위아래 두 사진 · 다른 곳 찾기 · 하트 3 · 시간 제한 없음
 // 찾을 때마다 서윤의 한 줄 추리가 뜸 · 하트를 다 잃으면 부드럽게 다시
-import { W, H } from '../config.js?v=0.25.1';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.1';
-import { audio } from '../audio.js?v=0.25.1';
-import { goPrev } from '../nav.js?v=0.25.1';
-import { load, save } from '../save.js?v=0.25.1';
-import { Viewer } from '../viewer.js?v=0.25.1';
-import { EPISODES } from '../episodes.js?v=0.25.1';
-import { starOnce } from '../cafe/state.js?v=0.25.1';
-import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.25.1';
+import { W, H } from '../config.js?v=0.25.2';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.25.2';
+import { audio } from '../audio.js?v=0.25.2';
+import { goPrev } from '../nav.js?v=0.25.2';
+import { load, save } from '../save.js?v=0.25.2';
+import { Viewer } from '../viewer.js?v=0.25.2';
+import { EPISODES } from '../episodes.js?v=0.25.2';
+import { starOnce } from '../cafe/state.js?v=0.25.2';
+import { advance, passed, stepOf, replayResult } from '../replay.js?v=0.25.2';
 
 export class EvidenceScene extends Phaser.Scene {
   constructor() { super('Evidence'); }

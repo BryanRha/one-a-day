@@ -1,13 +1,14 @@
-import { W, BASE_H, setH } from './config.js?v=0.31.0';
-import { audio } from './audio.js?v=0.31.0';
-import { BootScene } from './scenes/Boot.js?v=0.31.0';
-import { HomeScene } from './scenes/Home.js?v=0.31.0';
-import { BoardScene } from './scenes/Board.js?v=0.31.0';
-import { StoryScene } from './scenes/Story.js?v=0.31.0';
-import { SeasonScene } from './scenes/Season.js?v=0.31.0';
-import { ShopScene } from './scenes/Shop.js?v=0.31.0';
-import { installBack } from './oad.js?v=0.31.0';
-import { installNav } from './nav.js?v=0.31.0';
+import { W, BASE_H, setH } from './config.js?v=0.32.0';
+import { audio } from './audio.js?v=0.32.0';
+import { BootScene } from './scenes/Boot.js?v=0.32.0';
+import { HomeScene } from './scenes/Home.js?v=0.32.0';
+import { BoardScene } from './scenes/Board.js?v=0.32.0';
+import { StoryScene } from './scenes/Story.js?v=0.32.0';
+import { SeasonScene } from './scenes/Season.js?v=0.32.0';
+import { ShopScene } from './scenes/Shop.js?v=0.32.0';
+import { AlbumScene } from './scenes/Album.js?v=0.32.0';
+import { installBack } from './oad.js?v=0.32.0';
+import { installNav } from './nav.js?v=0.32.0';
 
 async function start() {
   installNav();
@@ -16,7 +17,7 @@ async function start() {
     type: Phaser.AUTO, parent: 'game', width: W, height: BASE_H, backgroundColor: '#FBEFE8',
     scale: { mode: innerHeight / innerWidth > BASE_H / W ? Phaser.Scale.EXPAND : Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     render: { antialias: true, powerPreference: 'high-performance' }, input: { activePointers: 3 }, fps: { target: 60 },
-    scene: [BootScene, HomeScene, BoardScene, StoryScene, SeasonScene, ShopScene],
+    scene: [BootScene, HomeScene, BoardScene, StoryScene, SeasonScene, ShopScene, AlbumScene],
   });
   const step = game.step; let errN = 0;
   game.step = function (t, d) { try { step.call(this, t, d); } catch (err) { if (errN++ < 5) console.warn('프레임 오류', String(err && err.stack || err).slice(0, 400)); } };

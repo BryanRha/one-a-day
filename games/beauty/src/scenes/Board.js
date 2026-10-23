@@ -1,13 +1,14 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.31.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.31.0';
-import { audio } from '../audio.js?v=0.31.0';
-import { load, save } from '../save.js?v=0.31.0';
-import { goPrev } from '../nav.js?v=0.31.0';
-import { hud } from '../hud.js?v=0.31.0';
-import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.31.0';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.31.0';
-import { adsOpen, rewardAd } from '../store.js?v=0.31.0';
+import { W, H } from '../config.js?v=0.32.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.32.0';
+import { audio } from '../audio.js?v=0.32.0';
+import { load, save } from '../save.js?v=0.32.0';
+import { goPrev } from '../nav.js?v=0.32.0';
+import { hud } from '../hud.js?v=0.32.0';
+import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.32.0';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.32.0';
+import { adsOpen, rewardAd } from '../store.js?v=0.32.0';
+import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.32.0';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);
@@ -319,13 +320,14 @@ export class BoardScene extends Phaser.Scene {
     for (const it of o.items) { const i = this.d.board.findIndex((c, j) => c && c.t === 'i' && !c.b && c.c === it.c && c.l === it.l && !used.includes(j)); if (i < 0) return; used.push(i); }
     const ox = 30 + k * 345 + 165, oy = 146 + 170;
     used.forEach(i => { const cell = this.d.board[i], im = this.add.image(cx(i), cy(i), itemKey(cell.c, cell.l)).setDepth(55); im.setScale((CS - 22) / Math.max(im.width, im.height)); this.tweens.add({ targets: im, x: ox, y: oy, scale: im.scale * 0.6, duration: 380, ease: 'Cubic.easeIn', onComplete: () => { im.destroy(); } }); this.fx(i, 0xFFD6E4); this.d.board[i] = null; });
-    this.d.coins += o.coins; this.d.stats.orders++; addGoal('orders');
+    this.d.coins += o.coins; this.d.stats.orders++; addGoal('orders'); piggyAdd();
+    { const a = album(); a.orders++; if (a.orders % ORDERS_PER_PACK === 0) { addPack('basic'); this.time.delayedCall(900, () => this.packFly()); } }
     if (o.bonus) { const e = this.nearestEmpty(used[0]); if (e >= 0) this.d.board[e] = { t: 's', k: o.bonus }; else this.d.pendingItems.push({ t: 's', k: o.bonus }); }
     this.d.orders[k] = { ...makeOrder(false, this.d.board), at: Date.now() + 6000 }; save();
     audio.play('sfx_order', { volume: 0.7 }); audio.buzz([20, 40, 20]);
     const ups = addXp(o.xp); this.time.delayedCall(300, () => this.flyCoins(ox, 400, o.coins));
     this.redraw(); this.hud.update();
-    if (ups.length) this.time.delayedCall(600, () => this.levelUp(ups.reduce((a, u) => ({ ...u, gems: a.gems + u.gems, coins: a.coins + u.coins, gift: a.gift || u.gift, items: [...a.items, ...u.items] }), { gems: 0, coins: 0, gift: false, items: [] })));
+    if (ups.length) this.time.delayedCall(600, () => this.levelUp(ups.reduce((a, u) => ({ ...u, gems: a.gems + u.gems, coins: a.coins + u.coins, gift: a.gift || u.gift, items: [...a.items, ...u.items], pack: u.pack === 'diamond' || a.pack === 'diamond' ? 'diamond' : u.pack === 'gold' || a.pack === 'gold' ? 'gold' : u.pack || a.pack }), { gems: 0, coins: 0, gift: false, items: [], pack: null })));
     if (this.d.tut === 2) { this.d.tut = 3; save(); this.tutorial(); }
   }
   // 코인이 흩어졌다가 위 막대로 날아가고, 닿을 때마다 짤랑 (원작의 보상 연출)
@@ -333,6 +335,11 @@ export class BoardScene extends Phaser.Scene {
     for (let k = 0; k < m; k++) { const s = this.add.image(x, y, 'coin').setDepth(60); s.setScale(46 / s.width); const a = Math.random() * Math.PI * 2, r = 40 + Math.random() * 50;
       this.tweens.chain({ targets: s, tweens: [{ x: x + Math.cos(a) * r, y: y + Math.sin(a) * r, duration: 220, ease: 'Cubic.easeOut' }, { x: t.x, y: t.y, scale: s.scale * 0.8, duration: 420 + k * 50, ease: 'Cubic.easeIn', onComplete: () => { s.destroy(); if (k % 2 === 0) audio.play('sfx_coin', { volume: 0.35, rate: 1 + k * 0.03, gap: 30 }); if (k === m - 1) this.hud.update(); } }] }); }
     const tx = T(this, x, y - 40, `+${n}`, small ? 30 : 40, C.gold, { w: 900, shadow: true }).setDepth(60); this.tweens.add({ targets: tx, y: tx.y - 60, alpha: 0, duration: 900, delay: 400, onComplete: () => tx.destroy() }); }
+  // 주문 5번마다 카드 팩: 팩이 떠올랐다가 날아감
+  packFly() { const im = this.add.image(W / 2, H / 2, 'pack_basic').setDepth(70); im.setScale(0.1); audio.play('sfx_box', { volume: 0.5, rate: 1.2 });
+    const t = T(this, W / 2, H / 2 + 170, '카드 팩을 받았어요! 앨범에서 열어요', 30, '#FFFFFF', { w: 900, shadow: true }).setDepth(70);
+    this.tweens.add({ targets: im, scale: 220 / im.height, angle: 360, duration: 500, ease: 'Back.easeOut', onComplete: () => this.tweens.add({ targets: im, x: this.homeB.x, y: this.homeB.y, scale: 0.05, duration: 600, delay: 700, ease: 'Cubic.easeIn', onComplete: () => im.destroy() }) });
+    this.tweens.add({ targets: t, alpha: 0, delay: 1400, duration: 400, onComplete: () => t.destroy() }); }
   levelUp(u) {
     audio.play('sfx_levelup', { volume: 0.75 }); audio.duck(2600); audio.buzz([30, 50, 30, 50, 60]); this.cameras.main.flash(250, 255, 240, 230); this.ensureGens(); this.placeGifts(); this.redraw();
     const p = popup(this, 760, 640);
@@ -343,7 +350,7 @@ export class BoardScene extends Phaser.Scene {
     p.content.add(T(this, 0, -220, `레벨 ${u.lv}!`, 64, C.rose, { w: 900 }));
     p.content.add(T(this, 0, -120, '에너지가 가득 찼어요', 32, C.ink, { w: 900 }));
     p.content.add(T(this, 0, -40, `◆ ${u.gems}   ● ${u.coins}${u.gift ? '   선물 상자 1' : ''}`, 34, C.brown, { w: 900 }));
-    const its = (u.items || []).map(it => it.t === 'g' ? { key: genImg(unlockedChains()[0], it.gl), n: `생산기 ${it.gl}단계` } : { key: it.k, n: SPECIAL[it.k].n });
+    const its = [...(u.pack ? [{ t: 'p', k: u.pack }] : []), ...(u.items || [])].map(it => it.t === 'p' ? { key: `pack_${it.k}`, n: { basic: '기본 팩', gold: '골드 팩', diamond: '다이아 팩' }[it.k] } : it.t === 'g' ? { key: genImg(unlockedChains()[0], it.gl), n: `생산기 ${it.gl}단계` } : { key: it.k, n: SPECIAL[it.k].n });
     its.forEach((it, k) => { const x = (k - (its.length - 1) / 2) * 150, im = this.add.image(x, 50, it.key); im.setScale(90 / Math.max(im.width, im.height)); p.content.add([im, T(this, x, 108, it.n, 20, C.dim, { w: 800 })]); });
     p.content.add(btn(this, 0, 205, 400, 100, '좋아요!', () => { p.close(); this.placeGifts(); this.redraw(); }, { size: 34 }));
   }

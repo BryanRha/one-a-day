@@ -1,5 +1,5 @@
 // 효과음
-import { load, save } from './save.js?v=0.31.0';
+import { load, save } from './save.js?v=0.32.0';
 export const SFX = ['sfx_find', 'sfx_combo', 'sfx_miss', 'sfx_hint', 'sfx_clear', 'sfx_shutter', 'sfx_page', 'sfx_tick', 'sfx_click'];
 class AudioManager {
   constructor() { this.game = null; this.last = {}; }

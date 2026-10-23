@@ -2,7 +2,7 @@
 // 지금: 결제 · 광고 모두 꺼짐(enabled=false) → 화면에는 '곧 열려요'.
 // 나중에 결제를 켤 때: PROVIDER 를 실제 결제 연결(원어데이 앱 postMessage 등)로 바꾸고 enabled=true 만 하면
 //   상품 지급(grant) · 화면 · 저장 기록은 그대로 동작하도록 만들어 둠.
-import { load, save } from './save.js?v=0.31.0';
+import { load, save } from './save.js?v=0.32.0';
 
 export const PRODUCTS = [
   { id: 'gems_s', n: '보석 한 줌', price: 1200, gems: 80, tag: '' },
@@ -12,6 +12,8 @@ export const PRODUCTS = [
   { id: 'starter', n: '스타터 패키지', price: 3300, gems: 150, energy: 100, gift: 2, once: true, tag: '1회 한정' },
   { id: 'pass', n: '프리미엄 시즌 패스', price: 9900, ent: 'pass', tag: '이번 시즌' },
   { id: 'storage', n: '창고 +4칸', price: 2500, ent: 'storage4', once: true, tag: '' },
+  { id: 'piggy', n: '보석 저금통 깨기', price: 4900, piggy: true, tag: '모은 만큼' },
+  { id: 'cards', n: '카드 팩 묶음', price: 3900, packs: { gold: 3, diamond: 1 }, tag: '앨범' },
 ];
 export const won = p => `₩${p.toLocaleString()}`;
 
@@ -38,6 +40,8 @@ export function grant(p) {
   if (p.gems) d.gems += p.gems;
   if (p.energy) d.energy += p.energy;
   if (p.gift) d.pendingGifts = (d.pendingGifts || 0) + p.gift;
+  if (p.piggy) { d.gems += d.piggy || 0; d.piggy = 0; }
+  if (p.packs) { d.album = d.album || { have: {}, stars: 0, jokers: 0, packs: { basic: 0, gold: 0, diamond: 0 }, done: [], all: false, orders: 0 }; for (const [k, n] of Object.entries(p.packs)) d.album.packs[k] = (d.album.packs[k] || 0) + n; }
   if (p.ent) d.ent[p.ent] = true;
   save();
 }

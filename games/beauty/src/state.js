@@ -1,6 +1,7 @@
 // 경제 · 진행 규칙: 에너지 회복 · 경험치/레벨 · 해금 계열 · 주문 만들기 · 하루 목표 · 월간 시즌
-import { load, save } from './save.js?v=0.31.0';
-import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.31.0';
+import { load, save } from './save.js?v=0.32.0';
+import { album, addPack, PACKS } from './album.js?v=0.32.0';
+import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.32.0';
 
 export const today = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; };
 export const seasonId = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}`; };
@@ -21,6 +22,7 @@ export const xpNeed = lv => LEVELS[Math.min(lv, LEVELS.length - 1)] + Math.max(0
 export function addXp(n) {
   const d = load(); d.xp += n; const ups = [];
   while (d.xp >= xpNeed(d.lv)) { d.xp -= xpNeed(d.lv); d.lv++; const r = levelReward(d.lv); d.gems += r.gems; d.coins += r.coins; d.energy = Math.max(d.energy, ENERGY.max); d.eAt = Date.now(); if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + 1;
+    if (r.pack) addPack(r.pack);
     for (const it of r.items) { if (it.t === 'g') { const ch = unlockedChains(); d.pendingItems.push({ t: 'g', g: ch[Math.floor(Math.random() * ch.length)], l: it.gl }); } else d.pendingItems.push({ ...it }); }
     ups.push({ lv: d.lv, ...r }); }
   save(); return ups;
@@ -75,12 +77,14 @@ export function daily() {
 export function addGoal(k, n = 1) { const d = load(), dl = daily(); for (const g of dl.goals) if (g.k === k && g.have < g.need) g.have = Math.min(g.need, g.have + n); save(); }
 // 월간 시즌: 무료 · 프리미엄 두 줄 (프리미엄은 결제 열리면 사용)
 export const SEASON = { goal: [20, 50, 90, 140, 200, 270, 350, 440],
-  free: [{ energy: 30 }, { coins: 50 }, { gems: 10 }, { gift: 1 }, { energy: 60 }, { coins: 150 }, { gems: 25 }, { gift: 3, gems: 40 }],
-  prem: [{ gems: 15 }, { energy: 60 }, { gift: 1 }, { gems: 30 }, { coins: 200 }, { gift: 2 }, { energy: 120 }, { gems: 100 }] };
+  free: [{ energy: 30 }, { coins: 50 }, { pack: 'basic' }, { gift: 1 }, { energy: 60 }, { pack: 'basic', coins: 100 }, { gems: 25 }, { pack: 'gold', gems: 40 }],
+  prem: [{ gems: 15 }, { pack: 'basic' }, { gift: 1 }, { pack: 'gold' }, { coins: 200 }, { gift: 2, pack: 'gold' }, { energy: 120 }, { pack: 'diamond', gems: 100 }] };
 export function season() { const d = load(); if (d.season.id !== seasonId()) { d.season = { id: seasonId(), pts: 0, claimed: [], pclaimed: [] }; d.ent.pass = false; save(); } return d.season; }
 export function claimGoal(i) { const d = load(), dl = daily(), g = dl.goals[i]; if (!g || g.have < g.need || dl.done.includes(i)) return 0; dl.done.push(i); season().pts += g.pts; save(); return g.pts; }
-export function giveReward(r) { const d = load(); if (r.energy) d.energy += r.energy; if (r.coins) d.coins += r.coins; if (r.gems) d.gems += r.gems; if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + r.gift; save(); }
-export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`].filter(Boolean).join(' ');
+export function giveReward(r) { const d = load(); if (r.energy) d.energy += r.energy; if (r.coins) d.coins += r.coins; if (r.gems) d.gems += r.gems; if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + r.gift;
+  if (r.pack) addPack(r.pack); if (r.joker) album().jokers += r.joker; if (r.items) for (const k of r.items) d.pendingItems.push({ t: 's', k }); save(); }
+const ITEM_N = { scissors: '가위', ribbon: '리본', chest: '보물 상자', pickbox: '고르기 상자', hourglass: '모래시계' };
+export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`, r.pack && PACKS[r.pack].n, r.joker && `조커 ${r.joker}`, r.items && r.items.map(k => ITEM_N[k] || k).join('·')].filter(Boolean).join(' ');
 
 // 도감: 처음 만든 물건이면 보석 보상 (원작의 새 물건 발견 보상)
 export function discover(key, l) { const d = load(); if (d.seen[key]) return 0; d.seen[key] = 1; const g = l >= 3 ? 1 + Math.floor(l / 3) : 0; d.gems += g; save(); return g || -1; }

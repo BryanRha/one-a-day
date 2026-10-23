@@ -1,12 +1,13 @@
 // 매장 (원작의 식당 꾸미기): 낡은 가게 → 할 일(코인)로 이야기 · 수리 · 디자인 3종 선택(언제든 무료 변경)
-import { W, H } from '../config.js?v=0.31.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.31.0';
-import { load as loadSave } from '../save.js?v=0.31.0';
-import { audio } from '../audio.js?v=0.31.0';
-import { load, save } from '../save.js?v=0.31.0';
-import { hud } from '../hud.js?v=0.31.0';
-import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.31.0';
-import { daily, season, chapter, curTask, canNextChapter, nextChapter } from '../state.js?v=0.31.0';
+import { W, H } from '../config.js?v=0.32.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.32.0';
+import { load as loadSave } from '../save.js?v=0.32.0';
+import { audio } from '../audio.js?v=0.32.0';
+import { load, save } from '../save.js?v=0.32.0';
+import { hud } from '../hud.js?v=0.32.0';
+import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.32.0';
+import { daily, season, chapter, curTask, canNextChapter, nextChapter, giveReward, rewardText } from '../state.js?v=0.32.0';
+import { packCount, claimable, albumClaimable, loginCheck, LOGIN } from '../album.js?v=0.32.0';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -23,9 +24,12 @@ export class HomeScene extends Phaser.Scene {
     if (this.view > 0) this.arrow(W / 2 - lt.width / 2 - 90, ay, -1); if (this.view < (d.ch || 0)) this.arrow(W / 2 + lt.width / 2 + 90, ay, 1);
     // 왼쪽 아이콘: 하루 목표 · 시즌 · 상점
     const dl = daily(), dn = dl.goals.filter((g, i) => g.have >= g.need && !dl.done.includes(i)).length;
+    const login = loginCheck();
     this.side(80, top + 110, '📅', '목표', () => this.scene.start('Season'), dn);
-    this.side(80, top + 260, '🛍', '상점', () => this.scene.start('Shop'), 0);
-    this.side(80, top + 410, '⚙', '설정', () => this.settings(), 0);
+    this.side(80, top + 250, 'img:album', '앨범', () => this.scene.start('Album'), packCount() + claimable().length + (albumClaimable() ? 1 : 0));
+    this.side(80, top + 390, 'img:calendar', '출석', () => this.attend(), login.claimed ? 0 : 1);
+    this.side(80, top + 530, '🛍', '상점', () => this.scene.start('Shop'), 0);
+    this.side(80, top + 670, '⚙', '설정', () => this.settings(), 0);
     // 아래: 다음 할 일 카드 + 작업대 버튼
     const by = H - bot, g = this.add.graphics().setDepth(20); g.fillStyle(0xFFFFFF, 0.96).fillRoundedRect(30, by, W - 60, bot - 30, 36).lineStyle(4, 0xF1C6CF, 1).strokeRoundedRect(30, by, W - 60, bot - 30, 36);
     const task = this.view === (d.ch || 0) ? curTask() : null, tl = chapter().tasks.length;
@@ -44,6 +48,7 @@ export class HomeScene extends Phaser.Scene {
     btn(this, W / 2, by + 260, W - 140, 120, '작업대로 가기 · 주문 받기', () => this.scene.start('Board'), { size: 36, style: 'gold' }).setDepth(21);
     this.cameras.main.fadeIn(250, 255, 244, 236); window.__home = this; audio.music(this.C.bgm);
     if (d.task === 0 && this.view === (d.ch || 0) && curTask()) this.time.delayedCall(500, () => this.doTask());
+    else if (!login.claimed && d.tut >= 3) this.time.delayedCall(600, () => this.attend());   // 하루 첫 방문: 출석 보상
   }
   arrow(x, y, dir) { const c = this.add.container(x, y).setDepth(30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 0.92).fillCircle(0, 0, 32).lineStyle(3, 0xF1C6CF, 1).strokeCircle(0, 0, 32); c.add([g, T(this, dir * 2, -2, dir < 0 ? '◀' : '▶', 24, C.rose, { w: 900 })]);
     c.setSize(90, 90).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (this.busy) return; audio.play('sfx_tap', { volume: 0.6 }); this.scene.restart({ view: this.view + dir }); }); }
@@ -59,7 +64,8 @@ export class HomeScene extends Phaser.Scene {
   side(x, y, ic, n, fn, badge) {
     const c = this.add.container(x, y).setDepth(30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 0.95).fillCircle(0, 0, 56).lineStyle(4, 0xF1C6CF, 1).strokeCircle(0, 0, 56);
     const lg = this.add.graphics(); lg.fillStyle(0xE86A8E, 1).fillRoundedRect(-44, 50, 88, 38, 19);
-    c.add([g, T(this, 0, -6, ic, 48, '#000', { w: 900 }), lg, T(this, 0, 68, n, 22, '#FFFFFF', { w: 900 })]);
+    let icon; if (ic.startsWith('img:')) { icon = this.add.image(0, -4, ic.slice(4)); icon.setScale(78 / Math.max(icon.width, icon.height)); } else icon = T(this, 0, -6, ic, 48, '#000', { w: 900 });
+    c.add([g, icon, lg, T(this, 0, 68, n, 22, '#FFFFFF', { w: 900 })]);
     if (badge) c.add([this.add.circle(40, -40, 18, 0xD9573B), T(this, 40, -41, String(badge), 20, '#FFFFFF', { w: 900 })]);
     c.setSize(120, 120).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (!this.busy) { audio.play('sfx_tap', { volume: 0.6 }); this.tweens.add({ targets: c, scale: 0.9, duration: 70, yoyo: true }); fn(); } });
   }
@@ -113,6 +119,18 @@ export class HomeScene extends Phaser.Scene {
     for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, s = this.add.image(x, y, 'spark').setTint([0xFFE27A, 0xFF9DB6, 0xFFFFFF][k % 3]).setScale(0.5).setDepth(40), r = 120 + (k % 3) * 50; this.tweens.add({ targets: s, x: x + Math.cos(a) * r, y: y + Math.sin(a) * r, angle: 200, alpha: 0, scale: 0.15, duration: 700, ease: 'Cubic.easeOut', onComplete: () => s.destroy() }); }
     for (let k = 0; k < 6; k++) { const p = this.add.circle(x + (k - 2.5) * 40, y + 60, 26, 0xFFFFFF, 0.8).setDepth(39); this.tweens.add({ targets: p, y: p.y - 60, scale: 2, alpha: 0, duration: 800, delay: k * 40, onComplete: () => p.destroy() }); }
     const t = T(this, x, y - 120, '완성!', 60, C.rose, { w: 900, shadow: true }).setDepth(41).setScale(0.3); this.tweens.add({ targets: t, scale: 1, duration: 360, ease: 'Back.easeOut' });
+  }
+  // 7일 출석: 오늘 칸 강조 · 받기
+  attend() {
+    const lg = loginCheck(), p = popup(this, 980, 900);
+    p.content.add(T(this, 0, -380, '7일 출석 선물', 44, C.ink, { w: 900 })); p.content.add(T(this, 0, -325, '매일 들어오면 선물이 커져요 · 7일마다 다시', 24, C.dim, { w: 800 }));
+    LOGIN.forEach((r, i) => { const day = i + 1, big = day === 7, x = big ? 0 : (i % 3 - 1) * 290, y = big ? 230 : -190 + Math.floor(i / 3) * 190, w = big ? 860 : 260, h = 160;
+      const past = day < lg.day || day === lg.day && lg.claimed, now = day === lg.day && !lg.claimed, g = this.add.graphics();
+      g.fillStyle(now ? 0xFFE3EC : past ? 0xF3ECE8 : 0xFFF4EC, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, 26).lineStyle(now ? 6 : 3, now ? 0xE86A8E : 0xF1D2C8, 1).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 26); p.content.add(g);
+      p.content.add(T(this, x, y - 48, `${day}일째`, 24, now ? C.rose : C.dim, { w: 900 }));
+      p.content.add(T(this, x, y + 10, past ? '받음 ✓' : rewardText(r), big ? 32 : 24, past ? C.green : C.ink, { w: 900, wrap: w - 30 }));
+      if (now) this.tweens.add({ targets: g, alpha: 0.75, duration: 500, yoyo: true, repeat: -1 }); });
+    p.content.add(btn(this, 0, 380, 420, 100, lg.claimed ? '내일 또 만나요' : '받기', () => { if (lg.claimed) return p.close(); const r = LOGIN[lg.day - 1]; lg.claimed = true; giveReward(r); save(); audio.play('sfx_levelup', { volume: 0.7 }); audio.duck(2400); p.close(); toast(this, `${rewardText(r)} 받았어요!`, H / 2); this.time.delayedCall(900, () => this.scene.restart({ view: this.view })); }, { size: 32, style: lg.claimed ? 'cream' : 'rose' }));
   }
   // 설정: 배경음 · 효과음 · 진동
   settings() {

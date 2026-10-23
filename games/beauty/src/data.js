@@ -1,4 +1,4 @@
-import { SPOTS2, SPOTS3, TASKS2, TASKS3, STORY23 } from './chapters.js?v=0.31.0';
+import { SPOTS2, SPOTS3, TASKS2, TASKS3, STORY23 } from './chapters.js?v=0.32.0';
 // 게임 데이터 — 재료 계열 · 생산기 · 레벨 · 주문 손님 · 매장 자리 · 1장 이야기
 // 원작(Gossip Harbor) 구조: 계열별 단계 머지 · 생산기(에너지) · 무료/임시 생산기 · 주문 · 코인=이야기·수리 · 레벨업=에너지 가득
 
@@ -50,7 +50,7 @@ export const genImg = (g, l) => g === 'dew' ? 'gen_dew' : g === 'gift' ? 'gen_gi
 // 레벨: 필요 경험치 · 레벨업 보상
 export const LEVELS = [0, 15, 40, 80, 130, 190, 260, 340, 430, 530, 640, 760, 890, 1030, 1180, 1340];
 export const levelReward = lv => {
-  const r = { gems: 3 + Math.floor(lv / 2), coins: 10 + lv * 5, gift: lv % 3 === 0, items: [] };
+  const r = { gems: 3 + Math.floor(lv / 2), coins: 10 + lv * 5, gift: lv % 3 === 0, items: [], pack: lv % 10 === 0 ? 'diamond' : lv % 5 === 0 ? 'gold' : 'basic' };   // 레벨업마다 카드 팩
   if (lv % 2 === 0) r.items.push({ t: 'g', gl: lv < 10 ? 1 : lv < 20 ? 2 : 3 });   // 짝수 레벨: 생산기 하나 (같은 것끼리 합쳐 업그레이드)
   if (lv % 4 === 0) r.items.push({ t: 's', k: 'scissors' });
   if (lv % 5 === 0) r.items.push({ t: 's', k: 'ribbon' });

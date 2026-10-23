@@ -1,15 +1,15 @@
 // 매장 (원작의 식당 꾸미기): 낡은 가게 → 할 일(코인)로 이야기 · 수리 · 디자인 3종 선택(언제든 무료 변경)
-import { W, H } from '../config.js?v=0.34.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.34.0';
-import { load as loadSave } from '../save.js?v=0.34.0';
-import { audio } from '../audio.js?v=0.34.0';
-import { load, save } from '../save.js?v=0.34.0';
-import { hud } from '../hud.js?v=0.34.0';
-import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.34.0';
-import { daily, season, chapter, curTask, canNextChapter, nextChapter, giveReward, rewardText } from '../state.js?v=0.34.0';
-import { packCount, claimable, albumClaimable, loginCheck, LOGIN } from '../album.js?v=0.34.0';
-import { bingo, spin, dig, DUO, duoState, duoJoin, duoClaim } from '../minigames.js?v=0.34.0';
-import { RACE, raceState, raceJoin, raceClaim, LADDER, DECO, ladder, ladderReady, ladderClaim, ladderEndsIn, VIP, vip, vipClaim, vipEndsIn, fmtLeft } from '../events.js?v=0.34.0';
+import { W, H } from '../config.js?v=0.35.0';
+import { T, C, btn, popup, toast, firstTip } from '../ui.js?v=0.35.0';
+import { load as loadSave } from '../save.js?v=0.35.0';
+import { audio } from '../audio.js?v=0.35.0';
+import { load, save } from '../save.js?v=0.35.0';
+import { hud } from '../hud.js?v=0.35.0';
+import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.35.0';
+import { daily, season, chapter, curTask, canNextChapter, nextChapter, giveReward, rewardText } from '../state.js?v=0.35.0';
+import { packCount, claimable, albumClaimable, loginCheck, LOGIN } from '../album.js?v=0.35.0';
+import { bingo, spin, dig, DUO, duoState, duoJoin, duoClaim } from '../minigames.js?v=0.35.0';
+import { RACE, raceState, raceJoin, raceClaim, LADDER, theme, decoInfo, decoName, THEMES, ladder, ladderReady, ladderClaim, ladderEndsIn, VIP, vip, vipClaim, vipEndsIn, fmtLeft } from '../events.js?v=0.35.0';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }
@@ -35,7 +35,7 @@ export class HomeScene extends Phaser.Scene {
     // 오른쪽: 동시에 열리는 이벤트 (레이스 · 꾸미기 사다리 · VIP)
     const rs = raceState(), vp = vip();
     this.evRace = this.side(W - 80, top + 110, 'img:ev_race', rs.joined && !rs.ended ? `${rs.rank}등` : '레이스', () => this.raceView(), rs.joined ? (rs.ended && !rs.claimed ? 1 : 0) : rs.left > 0 ? '!' : 0);
-    this.side(W - 80, top + 250, 'img:ev_ladder', '축제', () => this.ladderView(), ladderReady());
+    this.side(W - 80, top + 250, `img:${theme().icon}`, '축제', () => this.ladderView(), ladderReady());
     this.side(W - 80, top + 390, 'img:ev_vip', `VIP ${vp.done}/${VIP.goal}`, () => this.vipView(), vp.done >= VIP.goal && !vp.claimed ? 1 : 0);
     const mg = bingo().balls + spin().tokens + dig().shovels, du = duoState();
     this.side(W - 80, top + 530, 'img:roulette', '놀이', () => this.scene.start('Mini'), mg > 0 ? mg : 0);
@@ -55,7 +55,7 @@ export class HomeScene extends Phaser.Scene {
       if (d.coins >= task.cost) this.tweens.add({ targets: this.taskB, scale: 1.06, duration: 600, yoyo: true, repeat: -1 });
     } else if (canNextChapter()) { const nx = CHAPTERS[(d.ch || 0) + 1]; T(this, 70, by + 60, `${(d.ch || 0) + 1}장 완성!`, 26, C.dim, { ox: 0, w: 800 }).setDepth(21); T(this, 70, by + 115, `다음: ${(d.ch || 0) + 2}장 「${nx.n}」`, 36, C.ink, { ox: 0, w: 800 }).setDepth(21);
       const nb = btn(this, 830, by + 95, 300, 110, '열기!', () => this.goNext(), { size: 36, style: 'rose' }).setDepth(21); this.tweens.add({ targets: nb, scale: 1.07, duration: 600, yoyo: true, repeat: -1 }); }
-    else { T(this, W / 2, by + 90, `${CHAPTERS.length}장까지 모두 완성!`, 36, C.ink, { w: 900 }).setDepth(21); T(this, W / 2, by + 145, '4장 「명동 플래그십」을 준비하고 있어요', 26, C.dim, { w: 900 }).setDepth(21); }
+    else { T(this, W / 2, by + 90, `${CHAPTERS.length}장까지 모두 완성!`, 36, C.ink, { w: 900 }).setDepth(21); T(this, W / 2, by + 145, '다음 이야기를 준비하고 있어요', 26, C.dim, { w: 900 }).setDepth(21); }
     btn(this, W / 2, by + 260, W - 140, 120, '작업대로 가기 · 주문 받기', () => this.scene.start('Board'), { size: 36, style: 'gold' }).setDepth(21);
     this.cameras.main.fadeIn(250, 255, 244, 236); window.__home = this; audio.music(this.C.bgm);
     if (d.task === 0 && this.view === (d.ch || 0) && curTask()) this.time.delayedCall(500, () => this.doTask());
@@ -95,8 +95,9 @@ export class HomeScene extends Phaser.Scene {
     this.drawDeco();
   }
   // 축제 장식 (꾸미기 사다리 보상): 어느 방에서나 같은 자리
-  drawDeco() { const r = this.room, dc = this.d.deco || [], pos = { garland: [512, 330, 560, true], tree: [925, 1180, 190], booth: [110, 1260, 210] };
-    for (const k of dc) { const [x, y, w, hang] = pos[k], im = this.add.image(x, y, DECO[k].img).setOrigin(0.5, hang ? 0.5 : 1); im.setScale(w / im.width); if (hang) r.add(im); else r.addAt(im, 1); } }   // 바닥 장식은 가구 뒤 · 등불은 맨 위
+  drawDeco() { const r = this.room, show = this.d.decoShow || 'spring', pos = { garland: [512, 330, 560, true], tree: [925, 1180, 190], booth: [110, 1260, 210] };
+    if (show === 'off') return; const dc = (this.d.deco || []).map(decoInfo).filter(x => x.theme === show);
+    for (const di of dc) { const [x, y, w, hang] = pos[di.slot], im = this.add.image(x, y, di.img).setOrigin(0.5, hang ? 0.5 : 1); im.setScale(w / im.width); if (hang) r.add(im); else r.addAt(im, 1); } }   // 바닥 장식은 가구 뒤 · 등불은 맨 위
   doTask() {
     const t = curTask(); if (!t || this.busy || this.view !== (this.d.ch || 0)) return;
     if (this.d.coins < t.cost) return toast(this, `코인이 ${t.cost - this.d.coins} 부족해요 · 작업대에서 주문을 받아요`, H - 470);
@@ -139,6 +140,7 @@ export class HomeScene extends Phaser.Scene {
   }
   // ── 이벤트 창
   raceView() {
+    if (firstTip(this, 'race', '뷰티 박람회 레이스', ['5명이 동시에 25점을 향해 달려요', '주문 1개 = 1점 · 물건 2개짜리는 2점', '상대는 시간이 지나면 점수가 올라요 · 4시간 안에!'], 'ev_race')) return;
     const s = raceState(), p = popup(this, 980, 1240);
     p.content.add(T(this, 0, -560, '뷰티 박람회 레이스', 44, C.ink, { w: 900 }));
     if (!s.joined || s.claimed) {
@@ -160,18 +162,20 @@ export class HomeScene extends Phaser.Scene {
     else p.content.add(btn(this, 0, 480, 420, 110, '작업대로 가기', () => { p.close(); this.scene.start('Board'); }, { size: 32, style: 'gold' }));
   }
   ladderView() {
+    if (firstTip(this, 'ladder', '주간 축제 꾸미기', ['주문하면 물건 단계만큼 축제 토큰이 모여요', '10단계 보상 중 3개는 가게에 놓는 장식!', '축제 테마는 매주 바뀌어요'], theme().icon)) return;
     const l = ladder(), p = popup(this, 980, 1560);
-    p.content.add(T(this, 0, -720, `${LADDER.name} 꾸미기`, 44, C.ink, { w: 900 })); p.content.add(T(this, 0, -665, `주문하면 꽃잎이 모여요 (물건 단계만큼) · 남은 ${fmtLeft(ladderEndsIn())}`, 24, C.dim, { w: 900 }));
-    const pi = this.add.image(-90, -605, 'petal'); pi.setScale(56 / pi.height); p.content.add([pi, T(this, -50, -605, `${l.pts}`, 36, C.rose, { ox: 0, w: 900 })]);
+    const th = theme(); p.content.add(T(this, 0, -720, `${th.name} 꾸미기`, 44, C.ink, { w: 900 })); p.content.add(T(this, 0, -665, `주문하면 ${th.emoji}이 모여요 (물건 단계만큼) · 이번 주 남은 ${fmtLeft(ladderEndsIn())}`, 24, C.dim, { w: 900 }));
+    const pi = this.add.image(-90, -605, th.token); pi.setScale(56 / pi.height); p.content.add([pi, T(this, -50, -605, `${l.pts}`, 36, C.rose, { ox: 0, w: 900 })]);
     LADDER.tiers.forEach((need, i) => { const y = -510 + i * 112, r = LADDER.rewards[i], got = l.got.includes(i), ok = l.pts >= need, g = this.add.graphics();
       g.fillStyle(got ? 0xF3ECE8 : r.deco ? 0xFFF1D6 : 0xFFF4EC, 1).fillRoundedRect(-440, y - 48, 880, 96, 24).lineStyle(ok && !got ? 5 : 2, ok && !got ? 0xE86A8E : 0xF1D2C8, 1).strokeRoundedRect(-440, y - 48, 880, 96, 24); p.content.add(g);
-      p.content.add(T(this, -400, y, `🌸${need}`, 26, C.rose, { ox: 0, w: 900 }));
-      if (r.deco) { const di = this.add.image(-200, y, DECO[r.deco].img); di.setScale(80 / Math.max(di.width, di.height)); p.content.add(di); }
+      p.content.add(T(this, -400, y, `${th.emoji}${need}`, 26, C.rose, { ox: 0, w: 900 }));
+      if (r.deco) { const di = this.add.image(-200, y, th.img[r.deco]); di.setScale(80 / Math.max(di.width, di.height)); p.content.add(di); }
       p.content.add(T(this, r.deco ? -140 : -230, y, rewardText(r), 26, C.ink, { ox: 0, w: 900 }));
       if (got) p.content.add(T(this, 360, y, '받음 ✓', 26, C.green, { w: 900 }));
-      else p.content.add(btn(this, 360, y, 150, 72, '받기', () => { if (!ok) return toast(this, `꽃잎 ${need - l.pts}개 더 모아요`); const rr = ladderClaim(i); if (!rr) return; const { deco, ...rest } = rr; giveReward(rest); audio.play(deco ? 'sfx_repair' : 'sfx_coin', { volume: 0.7 }); p.close(); if (deco) toast(this, `「${DECO[deco].n}」이 가게에 놓였어요!`, H / 2); this.time.delayedCall(deco ? 900 : 200, () => this.scene.restart({ view: this.view })); }, { size: 24, style: ok ? 'rose' : 'cream' })); });
+      else p.content.add(btn(this, 360, y, 150, 72, '받기', () => { if (!ok) return toast(this, `${th.emoji} ${need - l.pts}개 더 모아요`); const rr = ladderClaim(i); if (!rr) return; const { deco, ...rest } = rr; giveReward(rest); audio.play(deco ? 'sfx_repair' : 'sfx_coin', { volume: 0.7 }); p.close(); if (deco) toast(this, `「${decoName(deco)}」이 가게에 놓였어요!`, H / 2); this.time.delayedCall(deco ? 900 : 200, () => this.scene.restart({ view: this.view })); }, { size: 24, style: ok ? 'rose' : 'cream' })); });
   }
   duoView() {
+    if (firstTip(this, 'duo', '듀오 뷰티 배틀', ['나와 짝꿍 팀 대 상대 팀 (2대2)', '24시간 동안 주문 점수를 합쳐 겨뤄요', '이기면 골드 팩 · 져도 기본 팩'], 'duo')) return;
     const s = duoState(), p = popup(this, 980, 1060);
     p.content.add(T(this, 0, -470, '듀오 뷰티 배틀 (2대2)', 44, C.ink, { w: 900 }));
     if (!s.joined || s.claimed) {
@@ -192,6 +196,7 @@ export class HomeScene extends Phaser.Scene {
     else p.content.add(btn(this, 0, 380, 420, 110, '작업대로 가기', () => { p.close(); this.scene.start('Board'); }, { size: 32, style: 'gold' }));
   }
   vipView() {
+    if (firstTip(this, 'vip', 'VIP 손님', ['금테를 두른 주문이 VIP 손님이에요', '한 단계 높은 물건 · 코인 1.5배', '이틀 동안 5번 완료하면 다이아 팩!'], 'ev_vip')) return;
     const v = vip(), p = popup(this, 900, 900);
     p.content.add(T(this, 0, -380, 'VIP 손님 주문', 44, C.ink, { w: 900 })); p.content.add(T(this, 0, -325, `금테 두른 VIP 주문을 ${VIP.goal}번 완료해요 · 남은 ${fmtLeft(vipEndsIn())}`, 24, C.dim, { w: 900 }));
     const cr = this.add.image(0, -170, 'ev_vip'); cr.setScale(200 / cr.height); p.content.add(cr);
@@ -213,15 +218,22 @@ export class HomeScene extends Phaser.Scene {
   }
   // 설정: 배경음 · 효과음 · 진동
   settings() {
-    const p = popup(this, 760, 640), rows = [['배경음', () => loadSave().music !== false, () => audio.toggleMusic()], ['효과음', () => loadSave().sfx !== false, () => audio.toggleSfx()], ['진동', () => loadSave().haptic !== false, () => audio.toggleHaptic()]];
-    p.content.add(T(this, 0, -230, '설정', 44, C.ink, { w: 900 }));
+    const p = popup(this, 760, 1100), rows = [['배경음', () => loadSave().music !== false, () => audio.toggleMusic()], ['효과음', () => loadSave().sfx !== false, () => audio.toggleSfx()], ['진동', () => loadSave().haptic !== false, () => audio.toggleHaptic()]];
+    p.content.add(T(this, 0, -400, '설정', 44, C.ink, { w: 900 }));
     rows.forEach(([n, get, flip], k) => {
-      const y = -110 + k * 120, c = this.add.container(0, y), g = this.add.graphics(); c.add(g); c.add(T(this, -250, 0, n, 36, C.ink, { ox: 0, w: 800 }));
+      const y = -260 + k * 120, c = this.add.container(0, y), g = this.add.graphics(); c.add(g); c.add(T(this, -250, 0, n, 36, C.ink, { ox: 0, w: 800 }));
       const draw = () => { const on = get(); g.clear().fillStyle(on ? 0xE86A8E : 0xE3D3CC, 1).fillRoundedRect(110, -34, 140, 68, 34).fillStyle(0xFFFFFF, 1).fillCircle(on ? 216 : 144, 0, 28); };
       draw(); const hit = this.add.rectangle(180, 0, 160, 80, 0, 0).setInteractive({ useHandCursor: true }); c.add(hit);
       hit.on('pointerup', () => { flip(); draw(); audio.play('sfx_tap', { volume: 0.6 }); }); p.content.add(c);
     });
-    p.content.add(btn(this, 0, 240, 360, 100, '닫기', () => p.close(), { style: 'cream', size: 30 }));
+    // 가게 장식 테마 (받은 축제 장식 중에서 고르기)
+    const owned = [...new Set((this.d.deco || []).map(k => decoInfo(k).theme))];
+    if (owned.length) { const opts = [...owned, 'off'], nm = id => id === 'off' ? '끄기' : THEMES.find(t => t.id === id).name; const lab = T(this, -250, 220, '가게 장식', 36, C.ink, { ox: 0, w: 800 }); p.content.add(lab);
+      const b = btn(this, 180, 220, 300, 80, nm(this.d.decoShow || owned[0]), () => { const i = opts.indexOf(this.d.decoShow || owned[0]); this.d.decoShow = opts[(i + 1) % opts.length]; save(); b.setLabel(nm(this.d.decoShow)); this.drawRoom(); }, { style: 'cream', size: 24 }); p.content.add(b); }
+    // 저장 백업: 코드로 복사 · 붙여 넣어 불러오기 (폰을 바꾸거나 기록을 지웠을 때)
+    p.content.add(btn(this, -170, 360, 300, 84, '백업 코드 복사', async () => { const code = 'KB1' + btoa(unescape(encodeURIComponent(localStorage.getItem('kbeauty_v1') || ''))); try { await navigator.clipboard.writeText(code); toast(this, '백업 코드를 복사했어요 · 메모장 등에 보관해요', H / 2); } catch { window.prompt('이 코드를 복사해 보관해요', code); } }, { style: 'cream', size: 24 }));
+    p.content.add(btn(this, 170, 360, 300, 84, '백업 불러오기', () => { const code = (window.prompt('백업 코드를 붙여 넣어요') || '').trim(); if (!code) return; try { if (!code.startsWith('KB1')) throw 0; const js = decodeURIComponent(escape(atob(code.slice(3)))); const o = JSON.parse(js); if (!o || o.v !== 1) throw 0; localStorage.setItem('kbeauty_v1', js); location.reload(); } catch { toast(this, '코드가 올바르지 않아요', H / 2); } }, { style: 'cream', size: 24 }));
+    p.content.add(btn(this, 0, 470, 360, 96, '닫기', () => p.close(), { style: 'cream', size: 30 }));
   }
   // 뒤로가기: 디자인 고르기 취소 → 지난 장을 보고 있으면 지금 장으로 → 첫 화면이면 원어데이로
   onBack() { if (this.picker) { this.picker.cancel(); return true; } if (this.busy) return true; if (this.view !== (this.d.ch || 0)) { this.scene.restart({ view: this.d.ch || 0 }); return true; } return false; }

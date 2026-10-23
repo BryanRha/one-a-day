@@ -1,4 +1,5 @@
-import { SPOTS2, SPOTS3, TASKS2, TASKS3, STORY23 } from './chapters.js?v=0.34.0';
+import { SPOTS2, SPOTS3, TASKS2, TASKS3, STORY23 } from './chapters.js?v=0.35.0';
+import { SPOTS4, SPOTS5, SPOTS6, TASKS4, TASKS5, TASKS6, STORY456 } from './chapters2.js?v=0.35.0';
 // 게임 데이터 — 재료 계열 · 생산기 · 레벨 · 주문 손님 · 매장 자리 · 1장 이야기
 // 원작(Gossip Harbor) 구조: 계열별 단계 머지 · 생산기(에너지) · 무료/임시 생산기 · 주문 · 코인=이야기·수리 · 레벨업=에너지 가득
 
@@ -10,6 +11,10 @@ export const CHAINS = {
   heartleaf: { n: '어성초', color: 0x4FB8A0, items: ['어성초 새싹', '하트 잎', '어성초 다발', '어성초 즙', '어성초 토너', '어성초 진정 패드', '어성초 앰플', '어성초 클렌징 오일', '트러블 케어 세트', '설화당 어성초 시그니처'] },
   cica: { n: '병풀', color: 0x6CCB8A, items: ['병풀 잎', '병풀 포기', '병풀 화분', '병풀 추출액', '시카 크림', '시카 밤', '시카 세럼', '시카 마스크팩', '시카 리페어 키트', '설화당 시카 시그니처'] },
   yuja: { n: '유자', color: 0xF2C230, items: ['유자꽃', '풋유자', '유자', '유자 바구니', '유자청', '유자 비타 토너', '유자 브라이트닝 세럼', '유자 수면팩', '유자 비타 선물 세트', '설화당 유자 시그니처'] },
+  snail: { n: '달팽이', color: 0xB9A6E0, items: ['꼬마 달팽이', '달팽이 친구들', '이끼 위 달팽이', '달팽이 점액', '스네일 에센스', '스네일 크림', '스네일 앰플', '스네일 마스크팩', '스네일 리페어 세트', '설화당 스네일 시그니처'] },
+  propolis: { n: '프로폴리스', color: 0xE8A93A, items: ['꿀벌', '벌집 조각', '꿀단지', '프로폴리스 원액', '허니 토너', '프로폴리스 앰플', '허니 크림', '허니 립밤 세트', '꿀벌 정원 바구니', '설화당 허니 시그니처'] },
+  volcanic: { n: '화산송이', color: 0x4A4A50, items: ['화산석 조각', '화산송이 한 줌', '현무암 돌', '화산 클레이 가루', '화산송이 클렌징폼', '화산 클레이 마스크', '블랙 필링젤', '모공 케어 세트', '한라산 스파 세트', '설화당 화산 시그니처'] },
+  seaweed: { n: '해초', color: 0x3E9CC8, items: ['미역 줄기', '다시마', '해초 다발', '해초 추출액', '바다 미네랄 토너', '해초 젤 크림', '바다 미스트', '해초 시트팩 세트', '제주 바다 스파 바구니', '설화당 바다 시그니처'] },
   tea: { n: '녹차', color: 0x7CC67A, items: ['찻씨', '찻잎', '찻잎 다발', '말차 한 잔', '녹차 마스크팩', '녹차 토너', '녹차 클레이 팩', '녹차 스파 바구니', '녹차 다실 세트', '설화당 녹차 시그니처'] },
 };
 export const MAX_LV = 10;
@@ -30,6 +35,10 @@ export const GENS = {
   heartleaf: { n: '어성초', names: ['', '어성초 화분', '어성초 화단', '어성초 물통', '어성초 연못', '황금 하트 분수'], chain: 'heartleaf', cost: 1, drops: DROPS },
   cica: { n: '병풀', names: ['', '병풀 화분', '병풀 유리 돔', '병풀 재배대', '병풀 추출기', '황금 식물 연구소'], chain: 'cica', cost: 1, drops: DROPS, rare: 0.08 },
   yuja: { n: '유자', names: ['', '유자 묘목', '유자 바구니', '유자나무 화분', '큰 유자나무', '황금 유자 정자'], chain: 'yuja', cost: 1, drops: DROPS },
+  snail: { n: '달팽이', names: ['', '이끼 화분', '달팽이 테라리움', '달팽이 정원 상자', '달팽이 온실', '황금 달팽이 정원'], chain: 'snail', cost: 1, drops: DROPS },
+  propolis: { n: '프로폴리스', names: ['', '작은 벌통', '꽃 벌통', '양봉 상자 탑', '꿀벌 정원', '황금 벌집 정자'], chain: 'propolis', cost: 1, drops: DROPS },
+  volcanic: { n: '화산송이', names: ['', '화산석 바구니', '돌 수레', '현무암 돌담', '화산석 동굴', '황금 한라산'], chain: 'volcanic', cost: 1, drops: DROPS },
+  seaweed: { n: '해초', names: ['', '해초 바구니', '해녀 망사리', '해초 건조대', '해녀 불턱', '황금 바다 정자'], chain: 'seaweed', cost: 1, drops: DROPS },
   dew: { n: '이슬 항아리', free: true, charges: [0, 6], recharge: 300 },        // 무료: 에너지 없이 아무 계열 1~2단계
   gift: { n: '선물 상자', temp: true, uses: 5 },                                   // 임시: 2~3단계, 5번 쓰면 사라짐
 };
@@ -130,12 +139,15 @@ export const STORY = {
   s9: { bg: 'room', lines: [{ who: '동네 할머니', face: 'u4', t: '30년을 썼는데 무슨 소리야! 내가 증인이다!' }, P('wink', '제 라이브에서 직접 써 볼게요. 거짓말은 화면이 다 알아요~'), { who: '여행객 에밀리', face: 'u6', t: 'I came all the way from London for this!' }, S('smile', '다들… 고마워요.')] },
   s10: { bg: 'room', lines: [S('smile', '설화당, 다시 문을 엽니다! 와 주셔서 감사해요!'), D('shy', '…축하해요. 오늘 정말 예뻐요. 아니, 가게가요.'), R('angry', '이번엔 운이 좋았네요. 하지만 할머니 노트, 마지막 장이 없죠?'), S('shock', '…마지막 장이 찢겨 있어. 할머니는 거기에 뭘 적으셨던 걸까?'), { who: '', face: null, t: '1장 완료 · 2장 「골목 정원」이 열렸어요' }] },
 };
-Object.assign(STORY, STORY23);
+Object.assign(STORY, STORY23, STORY456);
 
 // 장(지역): 방 그림 · 고칠 자리 · 할 일 · 배경음 — 원작의 지역 확장처럼 장을 끝내면 다음 장이 열림
 export const CHAPTERS = [
   { n: '할머니의 레시피', room: 'room', spots: SPOTS, tasks: TASKS, bgm: 'bgm_shop' },
   { n: '골목 정원', room: 'room2', spots: SPOTS2, tasks: TASKS2, bgm: 'bgm_garden' },
   { n: '2층 공방', room: 'room3', spots: SPOTS3, tasks: TASKS3, bgm: 'bgm_workshop' },
+  { n: '명동 플래그십', room: 'room4', spots: SPOTS4, tasks: TASKS4, bgm: 'bgm_flagship' },
+  { n: '제주 원료 농장', room: 'room5', spots: SPOTS5, tasks: TASKS5, bgm: 'bgm_jeju' },
+  { n: '글로벌 런칭', room: 'room6', spots: SPOTS6, tasks: TASKS6, bgm: 'bgm_paris' },
 ];
 export const ALL_SPOTS = CHAPTERS.flatMap(c => c.spots);

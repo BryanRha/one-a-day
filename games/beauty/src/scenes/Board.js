@@ -1,16 +1,16 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.34.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.34.0';
-import { audio } from '../audio.js?v=0.34.0';
-import { load, save } from '../save.js?v=0.34.0';
-import { goPrev } from '../nav.js?v=0.34.0';
-import { hud } from '../hud.js?v=0.34.0';
-import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.34.0';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.34.0';
-import { adsOpen, rewardAd } from '../store.js?v=0.34.0';
-import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.34.0';
-import { raceAdd, ladderAdd, vipAdd, VIP } from '../events.js?v=0.34.0';
-import { bingoAdd, digAddOrder, digAdd, spinAdd, duoAdd } from '../minigames.js?v=0.34.0';
+import { W, H } from '../config.js?v=0.35.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.35.0';
+import { audio } from '../audio.js?v=0.35.0';
+import { load, save } from '../save.js?v=0.35.0';
+import { goPrev } from '../nav.js?v=0.35.0';
+import { hud } from '../hud.js?v=0.35.0';
+import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.35.0';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.35.0';
+import { adsOpen, rewardAd } from '../store.js?v=0.35.0';
+import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.35.0';
+import { raceAdd, ladderAdd, vipAdd, VIP, theme } from '../events.js?v=0.35.0';
+import { bingoAdd, digAddOrder, digAdd, spinAdd, duoAdd } from '../minigames.js?v=0.35.0';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);
@@ -307,7 +307,8 @@ export class BoardScene extends Phaser.Scene {
       const x = 30 + k * 345, y = 146, c = this.add.container(x, y), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 0.96).fillRoundedRect(0, 0, 330, 278, 28).lineStyle(3, 0xF1D2C8, 1).strokeRoundedRect(0, 0, 330, 278, 28); c.add(g);
       if (o.at > now) { o.shown = false; c.add(T(this, 165, 120, '손님 오는 중…', 26, C.dim, { w: 800 })); c.add(T(this, 165, 168, `${Math.ceil((o.at - now) / 1000)}초`, 24, C.sub, { w: 800 })); this.orderL.add(c); return; }
       o.shown = true;
-      const f = this.add.image(62, 70, o.face); f.setScale(104 / f.width); c.add([this.add.circle(62, 70, 54, 0xFCE4EC), f]);
+      if (o.npc) { const fm = this.add.graphics(); fm.fillStyle(0xFFF1D6, 1).fillRoundedRect(8, 14, 108, 112, 24); c.add(fm); const tx = this.textures.get(o.face).getSourceImage(), cw = tx.width, f = this.add.image(62, 70, o.face); f.setCrop(cw * 0.12, 0, cw * 0.76, cw * 0.8).setOrigin(0.5, 0.4 * cw / tx.height); f.setScale(104 / (cw * 0.76)); c.add(f); g.lineStyle(5, 0xE86A8E, 1).strokeRoundedRect(0, 0, 330, 278, 28); }
+      else { const f = this.add.image(62, 70, o.face); f.setScale(104 / f.width); c.add([this.add.circle(62, 70, 54, 0xFCE4EC), f]); }
       c.add(T(this, 128, 40, o.who, 20, C.brown, { ox: 0, w: 800 })); c.add(T(this, 128, 82, `"${o.say}"`, 17, C.dim, { ox: 0, w: 700, wrap: 190, align: 'left' }));
       o.items.forEach((it, j) => { const ix = o.items.length === 1 ? 165 : 100 + j * 130, im = this.add.image(ix, 176, itemKey(it.c, it.l)); im.setScale(96 / Math.max(im.width, im.height)); c.add(im); it.ok = this.has(it); c.add(this.add.circle(ix + 40, 206, 18, it.ok ? 0x5FA65A : 0xD9C2CC).setStrokeStyle(3, 0xFFFFFF)); c.add(T(this, ix + 40, 205, it.ok ? '✓' : '', 20, '#FFFFFF', { w: 900 })); });
       if (o.vip) { g.lineStyle(6, 0xF0B65A, 1).strokeRoundedRect(0, 0, 330, 278, 28); const cr = this.add.image(30, 26, 'ev_vip'); cr.setScale(56 / cr.height); c.add(cr); }
@@ -328,11 +329,12 @@ export class BoardScene extends Phaser.Scene {
     // 이벤트 점수: 레이스 +1(두 개짜리 +2) · 꽃잎 = 물건 단계 합 · VIP
     bingoAdd(1); digAddOrder(); duoAdd(o.items.length);
     { const rp = raceAdd(o.items.length), lp = ladderAdd(o.items.reduce((a, it) => a + it.l, 0)); let vp = 0; if (o.vip) vp = vipAdd();
-      this.time.delayedCall(450, () => { const t = T(this, 30 + k * 345 + 165, 460, [rp && `🏆+${rp}`, `🌸+${lp}`, o.vip && `👑 ${vp}/${VIP.goal}`].filter(Boolean).join('  '), 28, '#C2408A', { w: 900, shadow: true }).setDepth(61); this.tweens.add({ targets: t, y: t.y - 60, alpha: 0, duration: 1300, delay: 400, onComplete: () => t.destroy() }); }); }
+      this.time.delayedCall(450, () => { const t = T(this, 30 + k * 345 + 165, 460, [rp && `🏆+${rp}`, `${theme().emoji}+${lp}`, o.vip && `👑 ${vp}/${VIP.goal}`].filter(Boolean).join('  '), 28, '#C2408A', { w: 900, shadow: true }).setDepth(61); this.tweens.add({ targets: t, y: t.y - 60, alpha: 0, duration: 1300, delay: 400, onComplete: () => t.destroy() }); }); }
     { const a = album(); a.orders++; if (a.orders % ORDERS_PER_PACK === 0) { addPack('basic'); this.time.delayedCall(900, () => this.packFly()); } }
     if (o.bonus) { const e = this.nearestEmpty(used[0]); if (e >= 0) this.d.board[e] = { t: 's', k: o.bonus }; else this.d.pendingItems.push({ t: 's', k: o.bonus }); }
     this.d.orders[k] = { ...makeOrder(false, this.d.board), at: Date.now() + 6000 }; save();
     audio.play('sfx_order', { volume: 0.7 }); audio.buzz([20, 40, 20]);
+    if (o.npc) this.time.delayedCall(700, () => { const bx = this.add.container(W / 2, 520).setDepth(65), tt = T(this, 40, 0, `${o.who}: ${o.thanks}`, 28, C.ink, { w: 800, wrap: 760, align: 'left', ox: 0.5 }), bg = this.add.graphics(); bg.fillStyle(0xFFFFFF, 0.97).fillRoundedRect(-460, -60, 920, 120, 40).lineStyle(4, 0xE86A8E, 1).strokeRoundedRect(-460, -60, 920, 120, 40); const pf = this.add.image(-390, 0, o.face); pf.setScale(110 / pf.width).setCrop(0, 0, pf.width, pf.width); bx.add([bg, pf, tt]); bx.setAlpha(0); this.tweens.add({ targets: bx, alpha: 1, y: 500, duration: 250, hold: 2200, yoyo: true, onComplete: () => bx.destroy() }); });
     const ups = addXp(o.xp); if (ups.length) { spinAdd(ups.length); digAdd(ups.length * 2); } this.time.delayedCall(300, () => this.flyCoins(ox, 400, o.coins));
     this.redraw(); this.hud.update();
     if (ups.length) this.time.delayedCall(600, () => this.levelUp(ups.reduce((a, u) => ({ ...u, gems: a.gems + u.gems, coins: a.coins + u.coins, gift: a.gift || u.gift, items: [...a.items, ...u.items], pack: u.pack === 'diamond' || a.pack === 'diamond' ? 'diamond' : u.pack === 'gold' || a.pack === 'gold' ? 'gold' : u.pack || a.pack }), { gems: 0, coins: 0, gift: false, items: [], pack: null })));

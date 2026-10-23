@@ -1,8 +1,8 @@
 // 경제 · 진행 규칙: 에너지 회복 · 경험치/레벨 · 해금 계열 · 주문 만들기 · 하루 목표 · 월간 시즌
-import { load, save } from './save.js?v=0.34.0';
-import { album, addPack, PACKS } from './album.js?v=0.34.0';
-import { vipWants, DECO } from './events.js?v=0.34.0';
-import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.34.0';
+import { load, save } from './save.js?v=0.35.0';
+import { album, addPack, PACKS } from './album.js?v=0.35.0';
+import { vipWants, decoName } from './events.js?v=0.35.0';
+import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.35.0';
 
 export const today = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; };
 export const seasonId = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}`; };
@@ -56,7 +56,11 @@ export function makeOrder(easy = false, board = null) {
   const isVip = !easy && vipWants() && !(d.orders || []).some(o => o && o.vip) && Math.random() < 0.3;
   if (isVip) items.forEach(it => { it.l = Math.min(MAX_LV - 1, it.l + 1); });
   const bonus = !easy && Math.random() < 0.12 ? ['en1', 'co1', 'ge1', 'en1', 'en2'][Math.floor(Math.random() * 5)] : null;
+  // 인물 의뢰 (이야기 인물이 가끔 직접 주문 · 완료하면 한마디 + 보석)
+  const CH = [['도윤', 'c_doyun_smile', '농장 일 끝나고 쓸 크림 하나만요.', '고마워요. …소윤 씨가 만든 거라 더 좋네요.'], ['하늘', 'c_haneul_smile', '정원 손님들 선물로 주고 싶어요!', '역시 설화당! 손님들이 좋아하겠어요~'], ['핑크리', 'c_pinky_wink', '라이브 협찬템 필요해요~', '꺅 대박! 오늘 라이브 터지겠다!'], ['세라', 'c_sera_smug', '시장 조사용이에요. 오해하지 마요.', '…품질은 인정할게요.'], ['지호', 'c_jiho_calm', '어머니 드릴 겁니다.', '감사합니다. 어머니가 기뻐하실 겁니다.']];
+  const ci = load().ch || 0, cast = CH.filter((c, i) => i < 2 + ci), npc = !easy && !isVip && !(d.orders || []).some(o => o && o.npc) && d.task > 2 && Math.random() < 0.12 ? cast[Math.floor(Math.random() * cast.length)] : null;
   const v2 = items.reduce((a, it) => a + Math.round(3 * Math.pow(1.85, it.l - 1)), 0), coins = isVip ? Math.round(v2 * 1.5) : val;
+  if (npc) return { id: d.orderSeq, face: npc[1], who: npc[0], say: npc[2], thanks: npc[3], npc: true, items, coins, xp: Math.max(1, Math.round(coins / 4)), at: 0, bonus: 'ge2' };
   return { id: d.orderSeq, face: cu.face, who: isVip ? `VIP ${cu.n}` : cu.n, say: isVip ? '특별한 날이라 최고급으로 부탁해요!' : cu.say[Math.floor(Math.random() * cu.say.length)], items, coins, xp: Math.max(1, Math.round(coins / 4)), at: 0, bonus, vip: isVip || undefined };
 }
 // 주문판 3장 채우기 · 대기시간(완료 후 새 손님까지) · 오래 쉬었다 오면 쉬운 주문부터
@@ -89,7 +93,7 @@ export function claimGoal(i) { const d = load(), dl = daily(), g = dl.goals[i]; 
 export function giveReward(r) { const d = load(); if (r.energy) d.energy += r.energy; if (r.coins) d.coins += r.coins; if (r.gems) d.gems += r.gems; if (r.gift) d.pendingGifts = (d.pendingGifts || 0) + r.gift;
   if (r.pack) addPack(r.pack); if (r.joker) album().jokers += r.joker; if (r.items) for (const k of r.items) d.pendingItems.push({ t: 's', k }); save(); }
 const ITEM_N = { scissors: '가위', ribbon: '리본', chest: '보물 상자', pickbox: '고르기 상자', hourglass: '모래시계' };
-export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`, r.pack && PACKS[r.pack].n, r.joker && `조커 ${r.joker}`, r.items && r.items.map(k => ITEM_N[k] || k).join('·'), r.deco && DECO[r.deco].n].filter(Boolean).join(' ');
+export const rewardText = r => [r.energy && `⚡${r.energy}`, r.coins && `●${r.coins}`, r.gems && `◆${r.gems}`, r.gift && `선물상자 ${r.gift}`, r.pack && PACKS[r.pack].n, r.joker && `조커 ${r.joker}`, r.items && r.items.map(k => ITEM_N[k] || k).join('·'), r.deco && decoName(r.deco)].filter(Boolean).join(' ');
 
 // 도감: 처음 만든 물건이면 보석 보상 (원작의 새 물건 발견 보상)
 export function discover(key, l) { const d = load(); if (d.seen[key]) return 0; d.seen[key] = 1; const g = l >= 3 ? 1 + Math.floor(l / 3) : 0; d.gems += g; save(); return g || -1; }

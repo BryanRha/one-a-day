@@ -1,7 +1,7 @@
 // 군용 UI 키트 (워스토리풍): 올리브 철판 패널 · 리벳 · 카키 버튼 · 선 아이콘 (모두 코드로 그림)
-import { W, H, FONT } from './config.js?v=0.34.0';
-import { audio } from './audio.js?v=0.34.0';
-import { pushBack } from './oad.js?v=0.34.0';
+import { W, H, FONT } from './config.js?v=0.35.0';
+import { audio } from './audio.js?v=0.35.0';
+import { pushBack } from './oad.js?v=0.35.0';
 
 export const C = {
   ink: '#2B2416', text: '#FFF8E6', sub: '#D8CFA8', dim: '#9A9272', gold: '#FFD45A', cyan: '#8FE3FF', pink: '#FF8A7A', green: '#A6E07A', red: '#FF6A55', blue: '#7FB2FF',

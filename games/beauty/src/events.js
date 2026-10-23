@@ -2,8 +2,8 @@
 //  · 뷰티 박람회 레이스: 5명 중 먼저 목표 점수 (상대는 AI — 나중에 서버를 붙이면 rivals 만 바꾸면 됨)
 //  · 벚꽃 축제 꾸미기 사다리: 주문으로 꽃잎 모으기 → 10단계 보상 · 축제 장식
 //  · VIP 손님: 이틀마다 VIP 주문 5개 → 큰 보상
-import { load, save } from './save.js?v=0.34.0';
-import { CUSTOMERS } from './data.js?v=0.34.0';
+import { load, save } from './save.js?v=0.35.0';
+import { CUSTOMERS } from './data.js?v=0.35.0';
 
 const DAY = 864e5, dayNo = (t = Date.now()) => Math.floor((t - new Date().getTimezoneOffset() * 6e4) / DAY);
 
@@ -31,18 +31,29 @@ export function raceState() {
   return { joined: true, ended, rows, rank, left: RACE.perDay - r.n, timeLeft: Math.max(0, c.end - now), claimed: c.claimed };
 }
 export function raceAdd(n) { const r = race(), c = r.cur; if (!c || c.at || Date.now() >= c.end) return 0; c.pts = Math.min(RACE.goal, c.pts + n); if (c.pts >= RACE.goal) c.at = Date.now(); save(); return n; }
-export function raceClaim() { const r = race(), s = raceState(); if (!s.joined || !s.ended || s.claimed) return null; r.cur.claimed = true; save(); return RACE.rewards[s.rank - 1]; }
+export function raceClaim() { const r = race(), s = raceState(); if (!s.joined || !s.ended || s.claimed) return null; r.cur.claimed = true; if (s.rank === 1) { const d = load(); d.stats.raceWins = (d.stats.raceWins || 0) + 1; } save(); return RACE.rewards[s.rank - 1]; }
 
 // ── 꾸미기 사다리 (주마다 새로)
-export const LADDER = { name: '벚꽃 축제', tiers: [20, 50, 90, 140, 200, 270, 350, 440, 540, 650],
+// 주마다 바뀌는 축제 테마 (원작처럼 매주 새 테마 · 테마마다 장식 3종)
+export const THEMES = [
+  { id: 'spring', name: '벚꽃 축제', token: 'petal', icon: 'ev_ladder', emoji: '🌸', names: { tree: '벚꽃 소원 나무', booth: '벚꽃 포토 부스', garland: '축제 등불 장식' }, img: { tree: 'deco_tree', booth: 'deco_booth', garland: 'deco_garland' } },
+  { id: 'summer', name: '여름 바다 축제', token: 'petal_summer', icon: 'ev_ladder_summer', emoji: '🐚', names: { tree: '야자수 화분', booth: '바다 포토 부스', garland: '조개 가랜드' }, img: { tree: 'deco_summer_tree', booth: 'deco_summer_booth', garland: 'deco_summer_garland' } },
+  { id: 'autumn', name: '단풍 달맞이 축제', token: 'petal_autumn', icon: 'ev_ladder_autumn', emoji: '🍁', names: { tree: '감나무 화분', booth: '보름달 포토 부스', garland: '단풍 가랜드' }, img: { tree: 'deco_autumn_tree', booth: 'deco_autumn_booth', garland: 'deco_autumn_garland' } },
+  { id: 'winter', name: '눈꽃 연말 축제', token: 'petal_winter', icon: 'ev_ladder_winter', emoji: '❄️', names: { tree: '눈꽃 트리', booth: '스노볼 포토 부스', garland: '눈꽃 가랜드' }, img: { tree: 'deco_winter_tree', booth: 'deco_winter_booth', garland: 'deco_winter_garland' } },
+];
+export const theme = () => THEMES[weekNoE() % THEMES.length];
+const weekNoE = () => Math.floor((dayNo() + 3) / 7);
+// 장식 키: '테마_자리' (예전 저장의 'tree' 는 벚꽃)
+export const decoInfo = key => { const [t, slot] = key.includes('_') ? key.split('_') : ['spring', key], th = THEMES.find(x => x.id === t) || THEMES[0]; return { n: th.names[slot], img: th.img[slot], slot, theme: th.id }; };
+export const LADDER = { tiers: [20, 50, 90, 140, 200, 270, 350, 440, 540, 650],
   rewards: [{ energy: 20 }, { pack: 'basic' }, { deco: 'tree' }, { gems: 10 }, { items: ['chest'] }, { deco: 'booth' }, { pack: 'gold' }, { gems: 25, energy: 40 }, { pack: 'diamond' }, { deco: 'garland', gems: 30 }] };
-export const DECO = { tree: { n: '벚꽃 소원 나무', img: 'deco_tree' }, booth: { n: '벚꽃 포토 부스', img: 'deco_booth' }, garland: { n: '축제 등불 장식', img: 'deco_garland' } };
+export const decoName = slot => theme().names[slot];
 const weekNo = () => Math.floor((dayNo() + 3) / 7);
 export function ladder() { const d = load(); if (!d.ladder || d.ladder.week !== weekNo()) { d.ladder = { week: weekNo(), pts: 0, got: [] }; save(); } return d.ladder; }
 export function ladderAdd(n) { const l = ladder(); l.pts += n; save(); return n; }
 export const ladderReady = () => { const l = ladder(); return LADDER.tiers.filter((t, i) => l.pts >= t && !l.got.includes(i)).length; };
 export const ladderEndsIn = () => (weekNo() + 1) * 7 * DAY - 3 * DAY - (Date.now() - new Date().getTimezoneOffset() * 6e4);
-export function ladderClaim(i) { const l = ladder(), d = load(); if (l.pts < LADDER.tiers[i] || l.got.includes(i)) return null; l.got.push(i); const r = LADDER.rewards[i]; if (r.deco) { d.deco = d.deco || []; if (!d.deco.includes(r.deco)) d.deco.push(r.deco); } save(); return r; }
+export function ladderClaim(i) { const l = ladder(), d = load(); if (l.pts < LADDER.tiers[i] || l.got.includes(i)) return null; l.got.push(i); const r = LADDER.rewards[i]; if (r.deco) { const key = `${theme().id}_${r.deco}`; d.deco = d.deco || []; if (!d.deco.includes(key)) d.deco.push(key); d.decoShow = theme().id; } save(); return r; }
 
 // ── VIP 손님 (이틀마다 5주문)
 export const VIP = { goal: 5, reward: { pack: 'diamond', gems: 30, items: ['chest'] } };

@@ -1,11 +1,11 @@
 // 미니게임 화면: 빙고 · 룰렛 · 보물 찾기 (위 탭으로 바꿈)
-import { W, H } from '../config.js?v=0.34.0';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.34.0';
-import { audio } from '../audio.js?v=0.34.0';
-import { goPrev } from '../nav.js?v=0.34.0';
-import { hud } from '../hud.js?v=0.34.0';
-import { giveReward, rewardText } from '../state.js?v=0.34.0';
-import { BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.34.0';
+import { W, H } from '../config.js?v=0.35.0';
+import { T, C, btn, iconBtn, popup, toast, firstTip } from '../ui.js?v=0.35.0';
+import { audio } from '../audio.js?v=0.35.0';
+import { goPrev } from '../nav.js?v=0.35.0';
+import { hud } from '../hud.js?v=0.35.0';
+import { giveReward, rewardText } from '../state.js?v=0.35.0';
+import { BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.35.0';
 
 const TABS = [['bingo', '설화 빙고', 'bingo_ball'], ['wheel', '행운 룰렛', 'roulette'], ['dig', '보물 찾기', 'shovel']];
 export class MiniScene extends Phaser.Scene {
@@ -18,6 +18,8 @@ export class MiniScene extends Phaser.Scene {
       const im = this.add.image(x - 100, 210, ic); im.setScale(64 / im.height); T(this, x + 30, 210, n, 28, on ? '#FFFFFF' : C.ink, { w: 900 });
       this.add.zone(x, 210, 320, 100).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (!this.busy && k !== this.tab) { audio.play('sfx_tap', { volume: 0.6 }); this.scene.restart({ tab: k }); } }); });
     this.root = this.add.container(0, 0); this[this.tab]();
+    const TIP = { bingo: ['설화 빙고', ['주문을 하나 완료할 때마다 빙고 공 1개', '공을 뽑으면 칸에 도장 · 한 줄마다 보상', '매주 새 판이 열려요'], 'bingo_ball'], wheel: ['행운 룰렛', ['5단계 이상을 만들거나 레벨업하면 토큰', '칸마다 확률이 적혀 있어요', '보물 상자 대박을 노려 봐요!'], 'roulette'], dig: ['공방 보물 찾기', ['주문 3번마다 삽 1개 · 레벨업하면 삽 2개', '흙을 파서 열쇠 조각 3개를 찾으면 보물', '보물을 열면 다음 마당이 열려요'], 'shovel'] }[this.tab];
+    firstTip(this, `mini_${this.tab}`, TIP[0], TIP[1], TIP[2]);
     this.cameras.main.fadeIn(200, 255, 244, 236); window.__mini = this;
   }
   reward(r, x, y) { giveReward(r); this.hud.update(); const t = T(this, x, y, `${rewardText(r)}!`, 34, C.rose, { w: 900, shadow: true }).setDepth(60); this.tweens.add({ targets: t, y: y - 90, alpha: 0, duration: 1600, delay: 500, onComplete: () => t.destroy() }); }

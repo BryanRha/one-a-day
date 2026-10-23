@@ -1,7 +1,8 @@
 // K뷰티 레시피 UI: 크림 패널 · 장미색 버튼 · 금빛 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.34.0';
-import { audio } from './audio.js?v=0.34.0';
-import { pushBack } from './oad.js?v=0.34.0';
+import { W, H } from './config.js?v=0.35.0';
+import { audio } from './audio.js?v=0.35.0';
+import { pushBack } from './oad.js?v=0.35.0';
+import { load as loadSave, save as saveSave } from './save.js?v=0.35.0';
 
 export const C = { ink: '#4A2C2A', text: '#FFFFFF', cream: '#FFF4EC', paper: '#FFFBF6', brown: '#8A5A44', sub: '#C99A86', dim: '#A08878', gold: '#E8A93A', rose: '#E86A8E', plum: '#5A3A34', red: '#D9573B', green: '#5FA65A', blue: '#4E86C6', mint: '#7CC6A8' };
 export const FONT = 'Pretendard, sans-serif';
@@ -90,4 +91,13 @@ export function makeTextures(sc) {
   tex(sc, 'glow', 128, 128, g => { const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.4, 'rgba(255,255,255,0.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
   tex(sc, 'spark', 64, 64, g => { g.translate(32, 32); g.fillStyle = '#fff'; g.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, r = i % 2 ? 7 : 30; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); });
   tex(sc, 'ring', 160, 160, g => { g.lineWidth = 10; g.strokeStyle = '#fff'; g.beginPath(); g.arc(80, 80, 72, 0, Math.PI * 2); g.stroke(); });
+}
+
+// 처음 여는 기능 안내 (한 번만): firstTip(scene, 'album', '카드 앨범', ['줄1', '줄2'], 'pack_basic')
+export function firstTip(sc, key, title, lines, img) {
+  const d = loadSave(); d.tips = d.tips || {}; if (d.tips[key]) return false; d.tips[key] = 1; saveSave();
+  const p = popup(sc, 900, 760 + lines.length * 20, { depth: 1500 }); p.content.add(T(sc, 0, -300, title, 44, C.rose, { w: 900 }));
+  if (img) { const im = sc.add.image(0, -150, img); im.setScale(170 / Math.max(im.width, im.height)); p.content.add(im); }
+  lines.forEach((l, i) => p.content.add(T(sc, 0, (img ? 0 : -160) + i * 62, l, 28, C.ink, { w: 800, wrap: 780 })));
+  p.content.add(btn(sc, 0, 300 + lines.length * 8, 360, 100, '알겠어요', () => p.close(), { size: 32 })); return true;
 }

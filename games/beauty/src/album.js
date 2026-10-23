@@ -1,7 +1,7 @@
 // 카드 앨범 (원작의 카드 수집): 9세트 × 9장 · 별 1~5 · 카드 팩 3종 · 중복 카드 → 별 금고 · 조커 카드 · 세트 완성 보상
 //   + 7일 출석 · 저금통(결제가 열리면 깰 수 있음)
-import { load, save } from './save.js?v=0.34.0';
-import { today } from './state.js?v=0.34.0';
+import { load, save } from './save.js?v=0.35.0';
+import { today } from './state.js?v=0.35.0';
 
 const RARITY = [1, 1, 1, 2, 2, 3, 3, 4, 5];   // 세트 안 카드 순서별 별 (마지막 카드가 가장 귀함)
 const def = (id, n, names, reward) => ({ id, n, reward, cards: names.map((cn, i) => ({ key: `${id}${i + 1}`, n: cn, r: RARITY[i] })) });
@@ -31,7 +31,16 @@ export const PACKS = {
 export const VAULT = [{ cost: 40, pack: 'basic' }, { cost: 100, pack: 'gold' }, { cost: 220, joker: 1 }];
 export const ORDERS_PER_PACK = 5;   // 주문 5번마다 기본 팩
 
-export function album() { const d = load(); if (!d.album) { d.album = { have: {}, stars: 0, jokers: 0, packs: { basic: 1, gold: 0, diamond: 0 }, done: [], all: false, orders: 0 }; save(); } return d.album; }
+// 앨범 시즌 (원작처럼 약 40일마다 새 시즌): 모은 카드·세트는 새로 · 팩·별·조커는 그대로 · 시즌이 오를수록 보상 1.2배씩
+export const SEASON_DAYS = 40;
+const seasonNo = () => Math.floor((Date.now() / 864e5 - 20745) / SEASON_DAYS) + 1;   // 2026-10-19 시즌 1
+export function album() { const d = load(); if (!d.album) { d.album = { have: {}, stars: 0, jokers: 0, packs: { basic: 1, gold: 0, diamond: 0 }, done: [], all: false, orders: 0, season: seasonNo() }; save(); }
+  const a = d.album; if (!a.season) a.season = seasonNo();
+  if (a.season !== seasonNo()) { d.albumHist = d.albumHist || []; d.albumHist.push({ season: a.season, count: ALL_CARDS.filter(c => (a.have[c.key] || 0) > 0).length, sets: a.done.length }); a.have = {}; a.done = []; a.all = false; a.season = seasonNo(); a.packs.basic += 2; save(); }
+  return a; }
+export const seasonLeft = () => { const s = album().season; return Math.max(0, ((s - 1) * SEASON_DAYS + 20745 + SEASON_DAYS) * 864e5 - Date.now()); };
+export const seasonMul = () => 1 + 0.2 * Math.max(0, album().season - 1);
+export const scaled = r => { const m = seasonMul(), o = { ...r }; for (const k of ['gems', 'coins', 'energy']) if (o[k]) o[k] = Math.round(o[k] * m); return o; };
 export const owned = k => (album().have[k] || 0) > 0;
 export const setCount = s => s.cards.filter(c => owned(c.key)).length;
 export const totalCount = () => ALL_CARDS.filter(c => owned(c.key)).length;

@@ -1,11 +1,11 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.30.1';
-import * as R from './rules.js?v=0.30.1';
-import * as I from './install.js?v=0.30.1';
+import { PLANNED } from './catalog.js?v=0.31.0';
+import * as R from './rules.js?v=0.31.0';
+import * as I from './install.js?v=0.31.0';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.30.1';
+const VERSION = '0.31.0';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -187,13 +187,14 @@ function play(id) {
   // 게임용 기록 여러 칸을 '누른 순간', 게임 화면(iframe)을 넣기 '전에' 만들어 둠
   //   · 폰 크롬은 터치 없이 만든 기록을 뒤로가기 때 건너뛰어 앱이 꺼짐 → 터치 순간에 미리 쌓고, 하나씩 씀
   //   · iframe 을 먼저 넣으면 게임이 불러와지면서 방금 만든 기록이 사라질 수 있음
-  for (let i = 1; i <= DEPTH; i++) history.pushState({ game: id, g: i }, '');
+  history.pushState({ game: id, g: 1 }, '');
   frame = document.createElement('iframe'); backReady = false;
   frame.id = 'frame'; frame.title = G(id).title; frame.allow = 'autoplay; fullscreen; vibrate';
   frame.src = `${G(id).path}${G(id).path.includes('?') ? '&' : '?'}v=${VERSION}`;
   player.prepend(frame);
   player.hidden = false;
   document.body.style.overflow = 'hidden';
+  watch();
 }
 function closeGame() {
   player.hidden = true;
@@ -204,29 +205,36 @@ function closeGame() {
   if (!I.installed() && !localStorage.getItem('oad_nudged')) { localStorage.setItem('oad_nudged', '1'); setTimeout(() => openSheet(I.env.inApp || !I.canPrompt() ? I.guide() : `<div class="intro"><h2>📲 내일도 쉽게 만나요</h2><p style="color:var(--sub)">홈 화면에 추가하면 매일 새 게임을 한 번에 열 수 있어요.</p><div class="stack"><button class="btn" data-install>홈 화면에 추가</button><button class="btn ghost" data-close>나중에</button></div></div>`), 500); }
 }
 // 뒤로가기: 먼저 게임에게 물어봄 (팝업 닫기 · 이전 화면 · 일시정지) → 게임이 처리하면 다시 막아 두고, 게임 첫 화면이면 원어데이로
-let forceExit = false, backWait = null, backReady = false;   // backReady: 게임이 뒤로가기를 직접 처리한다고 알려 옴
-const DEPTH = 4, gDepth = () => (history.state && history.state.game ? history.state.g || 1 : 0);
-let needArm = false;
-// 남은 게임 칸 다시 채우기: 사용자가 방금 화면을 만졌을 때만 (게임 안을 터치해도 원어데이에 '활성'이 전해짐) — 아니면 다음 터치 때
-function rearm() { const ua = navigator.userActivation; if (ua && !ua.isActive) { needArm = true; return; } needArm = false; for (let i = gDepth() + 1; i <= DEPTH; i++) history.pushState({ game: true, g: i }, ''); }
-setInterval(() => { if (needArm && !player.hidden && navigator.userActivation && navigator.userActivation.isActive) rearm(); }, 250);
-// 게임 닫기: 남은 게임 칸을 한 번에 되돌려 원어데이 첫 기록으로
-function leaveGame() { const g = gDepth(); closeGame(); needArm = false; if (g) history.go(-g); }
-function exitGame() { const g = gDepth(); if (!g) return closeGame(); forceExit = true; history.go(-g); }
-addEventListener('popstate', () => {
+let backWait = null, backReady = false;   // backReady: 게임이 뒤로가기를 직접 처리한다고 알려 옴
+// 뒤로가기 받기 두 가지:
+//  ① CloseWatcher (안드로이드 크롬 120+ 등): 폰의 뒤로가기를 방문 기록보다 먼저 받음 → 기록을 쓰지 않으니 앱이 꺼질 일이 없음
+//  ② 방문 기록 한 칸 (그 밖의 브라우저): 폰 크롬은 터치 없이 만든 기록을 건너뛰므로, 기록은 '터치가 있을 때만' 다시 채움
+const DEPTH = 1, gDepth = () => (history.state && history.state.game ? history.state.g || 1 : 0);
+let cw = null, needArm = false;
+const active = () => !navigator.userActivation || navigator.userActivation.isActive;
+function watch() { if (!('CloseWatcher' in window) || player.hidden) return; try { if (cw) cw.destroy(); cw = new CloseWatcher(); cw.onclose = () => { cw = null; askGame(); }; } catch { cw = null; } }
+function rearm() { if (player.hidden) return; if (!active()) { needArm = true; return; } needArm = false; if (!cw) watch(); if (gDepth() < DEPTH) history.pushState({ game: true, g: gDepth() + 1 }, ''); }
+// 게임을 만지면(터치 활성) 비어 있던 받침을 다시 채움
+setInterval(() => { if (!player.hidden && (needArm || !cw && 'CloseWatcher' in window) && navigator.userActivation && navigator.userActivation.isActive) rearm(); }, 250);
+// 게임 닫기: 받침 정리 · 남은 게임 기록을 되돌려 원어데이 첫 기록으로
+function leaveGame() { const g = gDepth(); if (cw) { const c = cw; cw = null; c.onclose = null; try { c.destroy(); } catch { /* */ } } needArm = false; closeGame(); if (g) history.go(-g); }
+function exitGame() { leaveGame(); }
+// 뒤로가기 한 번: 확인 창 → 게임에게 묻기(팝업 닫기 · 이전 화면) → 게임 첫 화면이면 원어데이로
+function askGame() {
   if (player.hidden) return;
-  if (!$('#sheet').hidden && !forceExit) { closeSheet(); rearm(); return; }   // 나가기 확인 창이 떠 있으면 그 창만 닫음
-  if (forceExit || !frame || !frame.contentWindow) { forceExit = false; leaveGame(); return; }
+  if (!$('#sheet').hidden) { closeSheet(); watch(); rearm(); return; }
+  if (!frame || !frame.contentWindow) return leaveGame();
   clearTimeout(backWait);
   backWait = setTimeout(() => { backWait = null; leaveGame(); }, backReady ? 3000 : 450);   // 응답 없는 게임(옛 버전)은 바로 닫음 · 처리하는 게임은 넉넉히 기다림
   frame.contentWindow.postMessage({ type: 'oad:back' }, '*');
-});
+}
+addEventListener('popstate', () => { if (!player.hidden) askGame(); });
 // 게임 쪽에서 보내는 메시지: { type: 'oad:exit' } → 원어데이로 · { type: 'oad:back-result', handled } → 뒤로가기 처리 결과
 addEventListener('message', e => {
   const d = e.data; if (!d || player.hidden) return;
   if (d.type === 'oad:exit') exitGame();
   else if (d.type === 'oad:ready') backReady = !!d.back;
-  else if (d.type === 'oad:back-result' && backWait) { clearTimeout(backWait); backWait = null; if (d.handled) rearm(); else leaveGame(); }
+  else if (d.type === 'oad:back-result' && backWait) { clearTimeout(backWait); backWait = null; if (d.handled) { watch(); rearm(); } else leaveGame(); }
 });
 
 // ── 공통 클릭 처리 ─────────────────────────────────

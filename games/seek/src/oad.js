@@ -18,6 +18,13 @@ export function installBack(game, { home, roots = [] }) {
     try { handled = goBack(game, home, roots); } catch (err) { console.warn(err); handled = false; }
     try { window.parent.postMessage({ type: 'oad:back-result', handled }, '*'); } catch { /* */ }
   });
+  // 폰의 뒤로가기를 게임 안에서 바로 받기 (CloseWatcher: 안드로이드 크롬 120+) — 방문 기록을 쓰지 않아 앱이 꺼지지 않음
+  //   처리했으면 다시 받을 준비 · 게임 첫 화면이면 원어데이로 나가기
+  if (inOAD && 'CloseWatcher' in window) {
+    let w = null;
+    const arm = () => { if (w) return; try { w = new CloseWatcher(); w.onclose = () => { w = null; let h = false; try { h = goBack(game, home, roots); } catch { h = false; } if (h) arm(); else exitToOAD(); }; } catch { w = null; } };
+    arm(); addEventListener('pointerdown', arm, true);   // 터치할 때마다 빠진 받침을 채움
+  }
 }
 export function goBack(game, home, roots) {
   // 1) 열린 팝업 (위에서부터)

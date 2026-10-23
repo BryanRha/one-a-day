@@ -1,12 +1,12 @@
 // 매장 (원작의 식당 꾸미기): 낡은 가게 → 할 일(코인)로 이야기 · 수리 · 디자인 3종 선택(언제든 무료 변경)
-import { W, H } from '../config.js?v=0.30.1';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.30.1';
-import { load as loadSave } from '../save.js?v=0.30.1';
-import { audio } from '../audio.js?v=0.30.1';
-import { load, save } from '../save.js?v=0.30.1';
-import { hud } from '../hud.js?v=0.30.1';
-import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.30.1';
-import { daily, season, chapter, curTask, canNextChapter, nextChapter } from '../state.js?v=0.30.1';
+import { W, H } from '../config.js?v=0.31.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.31.0';
+import { load as loadSave } from '../save.js?v=0.31.0';
+import { audio } from '../audio.js?v=0.31.0';
+import { load, save } from '../save.js?v=0.31.0';
+import { hud } from '../hud.js?v=0.31.0';
+import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.31.0';
+import { daily, season, chapter, curTask, canNextChapter, nextChapter } from '../state.js?v=0.31.0';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }

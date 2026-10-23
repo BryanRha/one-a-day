@@ -1,11 +1,11 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.29.2';
-import * as R from './rules.js?v=0.29.2';
-import * as I from './install.js?v=0.29.2';
+import { PLANNED } from './catalog.js?v=0.30.0';
+import * as R from './rules.js?v=0.30.0';
+import * as I from './install.js?v=0.30.0';
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.29.2';
+const VERSION = '0.30.0';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -190,7 +190,8 @@ function play(id) {
   player.prepend(frame);
   player.hidden = false;
   document.body.style.overflow = 'hidden';
-  history.pushState({ game: id }, '');
+  // 게임용 기록 두 칸 (누른 순간 만들어 둠): 폰 브라우저가 기록 한 칸을 건너뛰어도 앱이 꺼지지 않게 여유를 둠
+  history.pushState({ game: id, g: 1 }, ''); history.pushState({ game: id, g: 2 }, '');
 }
 function closeGame() {
   player.hidden = true;
@@ -203,12 +204,17 @@ function closeGame() {
 // 뒤로가기: 먼저 게임에게 물어봄 (팝업 닫기 · 이전 화면 · 일시정지) → 게임이 처리하면 다시 막아 두고, 게임 첫 화면이면 원어데이로
 let forceExit = false, backWait = null, backReady = false;   // backReady: 게임이 뒤로가기를 직접 처리한다고 알려 옴
 function exitGame() { forceExit = true; history.back(); }
+const gameEntry = () => !!(history.state && history.state.game);
+// 게임 기록 칸 다시 채우기 (두 칸 유지) · 게임을 닫을 땐 남은 칸을 조용히 지움
+function rearm() { if (!history.state || history.state.g !== 1) history.pushState({ game: true, g: 1 }, ''); history.pushState({ game: true, g: 2 }, ''); }
+function leaveGame() { closeGame(); if (gameEntry()) history.back(); }
 addEventListener('popstate', () => {
   if (player.hidden) return;
-  if (!$('#sheet').hidden && !forceExit) { closeSheet(); history.pushState({ game: true }, ''); return; }   // 나가기 확인 창이 떠 있으면 그 창만 닫음
-  if (forceExit || !frame || !frame.contentWindow) { forceExit = false; closeGame(); return; }
+  if (!$('#sheet').hidden && !forceExit) { closeSheet(); rearm(); return; }   // 나가기 확인 창이 떠 있으면 그 창만 닫음
+  if (forceExit && gameEntry()) { history.back(); return; }   // 원어데이로 나가기: 남은 게임 칸까지 되돌림
+  if (forceExit || !frame || !frame.contentWindow) { forceExit = false; leaveGame(); return; }
   clearTimeout(backWait);
-  backWait = setTimeout(() => { backWait = null; closeGame(); }, backReady ? 3000 : 450);   // 응답 없는 게임(옛 버전)은 바로 닫음 · 처리하는 게임은 넉넉히 기다림
+  backWait = setTimeout(() => { backWait = null; leaveGame(); }, backReady ? 3000 : 450);   // 응답 없는 게임(옛 버전)은 바로 닫음 · 처리하는 게임은 넉넉히 기다림
   frame.contentWindow.postMessage({ type: 'oad:back' }, '*');
 });
 // 게임 쪽에서 보내는 메시지: { type: 'oad:exit' } → 원어데이로 · { type: 'oad:back-result', handled } → 뒤로가기 처리 결과
@@ -216,7 +222,7 @@ addEventListener('message', e => {
   const d = e.data; if (!d || player.hidden) return;
   if (d.type === 'oad:exit') exitGame();
   else if (d.type === 'oad:ready') backReady = !!d.back;
-  else if (d.type === 'oad:back-result' && backWait) { clearTimeout(backWait); backWait = null; if (d.handled) history.pushState({ game: true }, ''); else closeGame(); }
+  else if (d.type === 'oad:back-result' && backWait) { clearTimeout(backWait); backWait = null; if (d.handled) rearm(); else leaveGame(); }
 });
 
 // ── 공통 클릭 처리 ─────────────────────────────────

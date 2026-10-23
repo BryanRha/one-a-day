@@ -1,3 +1,4 @@
+import { SPOTS2, SPOTS3, TASKS2, TASKS3, STORY23 } from './chapters.js?v=0.30.0';
 // 게임 데이터 — 재료 계열 · 생산기 · 레벨 · 주문 손님 · 매장 자리 · 1장 이야기
 // 원작(Gossip Harbor) 구조: 계열별 단계 머지 · 생산기(에너지) · 무료/임시 생산기 · 주문 · 코인=이야기·수리 · 레벨업=에너지 가득
 
@@ -5,6 +6,10 @@ export const CHAINS = {
   camellia: { n: '동백', color: 0xE8505B, items: ['동백 잎', '동백 꽃봉오리', '동백꽃', '동백 꽃다발', '동백 오일', '동백 세럼', '동백 크림', '동백 선물 세트', '동백 스파 트레이', '설화당 동백 시그니처'] },
   rice: { n: '쌀', color: 0xF2E6CF, items: ['쌀알', '쌀밥 한 그릇', '쌀뜨물', '쌀 폼클렌저', '쌀 토너', '진주 크림', '쌀 스킨케어 듀오', '진주 쌀 컬렉션', '진주 화장대 세트', '설화당 진주 시그니처'] },
   ginseng: { n: '인삼', color: 0xE0B055, items: ['인삼 새싹', '인삼 뿌리', '인삼 묶음', '인삼 진액', '골드 앰플', '인삼 에센스', '인삼 골드 크림', '인삼 명품 세트', '궁중 약재함', '설화당 인삼 시그니처'] },
+  mugwort: { n: '쑥', color: 0x8FAE84, items: ['쑥 잎', '쑥 한 줌', '쑥 다발', '말린 쑥', '쑥 찜질 주머니', '쑥 에센스', '쑥 진정 크림', '쑥 힐링 키트', '쑥 스파 바구니', '설화당 쑥 시그니처'] },
+  heartleaf: { n: '어성초', color: 0x4FB8A0, items: ['어성초 새싹', '하트 잎', '어성초 다발', '어성초 즙', '어성초 토너', '어성초 진정 패드', '어성초 앰플', '어성초 클렌징 오일', '트러블 케어 세트', '설화당 어성초 시그니처'] },
+  cica: { n: '병풀', color: 0x6CCB8A, items: ['병풀 잎', '병풀 포기', '병풀 화분', '병풀 추출액', '시카 크림', '시카 밤', '시카 세럼', '시카 마스크팩', '시카 리페어 키트', '설화당 시카 시그니처'] },
+  yuja: { n: '유자', color: 0xF2C230, items: ['유자꽃', '풋유자', '유자', '유자 바구니', '유자청', '유자 비타 토너', '유자 브라이트닝 세럼', '유자 수면팩', '유자 비타 선물 세트', '설화당 유자 시그니처'] },
   tea: { n: '녹차', color: 0x7CC67A, items: ['찻씨', '찻잎', '찻잎 다발', '말차 한 잔', '녹차 마스크팩', '녹차 토너', '녹차 클레이 팩', '녹차 스파 바구니', '녹차 다실 세트', '설화당 녹차 시그니처'] },
 };
 export const MAX_LV = 10;
@@ -21,6 +26,10 @@ export const GENS = {
   rice: { n: '쌀', names: ['', '쌀독', '꽃 장식 쌀독', '쌀 궤짝', '물레방아', '황금 곳간'], chain: 'rice', cost: 1, drops: DROPS },
   ginseng: { n: '인삼', names: ['', '약재 서랍', '약재 장', '약재 궤', '약방 계산대', '궁중 약장'], chain: 'ginseng', cost: 1, drops: DROPS, rare: 0.1 },
   tea: { n: '녹차', names: ['', '찻잎 바구니', '찻잎 받침대', '찻잎 채반', '덖음 가마솥', '황금 다실'], chain: 'tea', cost: 1, drops: DROPS },
+  mugwort: { n: '쑥', names: ['', '쑥 소쿠리', '쑥 수레', '쑥 건조대', '쑥 찜질 가마', '황금 쑥 정자'], chain: 'mugwort', cost: 1, drops: DROPS },
+  heartleaf: { n: '어성초', names: ['', '어성초 화분', '어성초 화단', '어성초 물통', '어성초 연못', '황금 하트 분수'], chain: 'heartleaf', cost: 1, drops: DROPS },
+  cica: { n: '병풀', names: ['', '병풀 화분', '병풀 유리 돔', '병풀 재배대', '병풀 추출기', '황금 식물 연구소'], chain: 'cica', cost: 1, drops: DROPS, rare: 0.08 },
+  yuja: { n: '유자', names: ['', '유자 묘목', '유자 바구니', '유자나무 화분', '큰 유자나무', '황금 유자 정자'], chain: 'yuja', cost: 1, drops: DROPS },
   dew: { n: '이슬 항아리', free: true, charges: [0, 6], recharge: 300 },        // 무료: 에너지 없이 아무 계열 1~2단계
   gift: { n: '선물 상자', temp: true, uses: 5 },                                   // 임시: 2~3단계, 5번 쓰면 사라짐
 };
@@ -119,5 +128,14 @@ export const STORY = {
   s7: { bg: 'room', lines: [P('wow', '꺅! 여기 진짜 있었네! 「할머니 동백 세럼」 맞죠?!'), P('wink', '저 핑크리예요~ 구독자 80만! 리뷰해도 돼요?'), S('shock', '네? 네! 물론이죠!'), P('wow', '녹차 라인도 만들어 주세요! 제 팬들이 녹차 덕후거든요~')] },
   s8: { bg: 'bg_office', lines: [R('smug', '「설화당 세럼 쓰고 피부 뒤집어졌어요」… 리뷰 100개면 충분하겠죠.'), S('shock', '가게 리뷰가 하룻밤 새 별 하나로… 이게 무슨 일이야.'), D('smile', '소윤 씨, 같은 시간에 같은 말투로 올라왔어요. 누가 일부러 쓴 거예요.'), S('fight', '진짜 손님들 이야기를 들려줄 거예요.')] },
   s9: { bg: 'room', lines: [{ who: '동네 할머니', face: 'u4', t: '30년을 썼는데 무슨 소리야! 내가 증인이다!' }, P('wink', '제 라이브에서 직접 써 볼게요. 거짓말은 화면이 다 알아요~'), { who: '여행객 에밀리', face: 'u6', t: 'I came all the way from London for this!' }, S('smile', '다들… 고마워요.')] },
-  s10: { bg: 'room', lines: [S('smile', '설화당, 다시 문을 엽니다! 와 주셔서 감사해요!'), D('shy', '…축하해요. 오늘 정말 예뻐요. 아니, 가게가요.'), R('angry', '이번엔 운이 좋았네요. 하지만 할머니 노트, 마지막 장이 없죠?'), S('shock', '…마지막 장이 찢겨 있어. 할머니는 거기에 뭘 적으셨던 걸까?'), { who: '', face: null, t: '1장 완료 · 2장 「찢겨 나간 마지막 장」 곧 공개' }] },
+  s10: { bg: 'room', lines: [S('smile', '설화당, 다시 문을 엽니다! 와 주셔서 감사해요!'), D('shy', '…축하해요. 오늘 정말 예뻐요. 아니, 가게가요.'), R('angry', '이번엔 운이 좋았네요. 하지만 할머니 노트, 마지막 장이 없죠?'), S('shock', '…마지막 장이 찢겨 있어. 할머니는 거기에 뭘 적으셨던 걸까?'), { who: '', face: null, t: '1장 완료 · 2장 「골목 정원」이 열렸어요' }] },
 };
+Object.assign(STORY, STORY23);
+
+// 장(지역): 방 그림 · 고칠 자리 · 할 일 · 배경음 — 원작의 지역 확장처럼 장을 끝내면 다음 장이 열림
+export const CHAPTERS = [
+  { n: '할머니의 레시피', room: 'room', spots: SPOTS, tasks: TASKS, bgm: 'bgm_shop' },
+  { n: '골목 정원', room: 'room2', spots: SPOTS2, tasks: TASKS2, bgm: 'bgm_garden' },
+  { n: '2층 공방', room: 'room3', spots: SPOTS3, tasks: TASKS3, bgm: 'bgm_workshop' },
+];
+export const ALL_SPOTS = CHAPTERS.flatMap(c => c.spots);

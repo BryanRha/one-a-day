@@ -1,9 +1,9 @@
 // 효과음 · 배경음 (ElevenLabs 로 만든 K뷰티 레시피 전용 소리, tools/gen_audio.sh)
-import { load, save } from './save.js?v=0.29.2';
+import { load, save } from './save.js?v=0.30.0';
 export const SFX = ['sfx_click',
   'sfx_gen', 'sfx_merge', 'sfx_merge_big', 'sfx_order', 'sfx_coin', 'sfx_levelup', 'sfx_box', 'sfx_bubble', 'sfx_repair', 'sfx_pick', 'sfx_drop', 'sfx_error', 'sfx_tap', 'sfx_blip'];
-export const BGM = ['bgm_shop', 'bgm_board', 'bgm_story'];
-const BGM_VOL = { bgm_shop: 0.38, bgm_board: 0.32, bgm_story: 0.4 };
+export const BGM = ['bgm_shop', 'bgm_board', 'bgm_story', 'bgm_garden', 'bgm_workshop'];
+const BGM_VOL = { bgm_shop: 0.38, bgm_board: 0.32, bgm_story: 0.4, bgm_garden: 0.38, bgm_workshop: 0.38 };
 class AudioManager {
   constructor() { this.game = null; this.last = {}; this.cur = null; this.curKey = null; }
   attach(game) { this.game = game; }

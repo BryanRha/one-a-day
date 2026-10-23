@@ -1,13 +1,13 @@
 // 로딩: 재료 · 생산기 · 인물 · 매장 · 배경 · 효과음
-import { W, H, TITLE } from '../config.js?v=0.29.2';
-import { SFX, BGM, audio } from '../audio.js?v=0.29.2';
-import { makeTextures } from '../ui.js?v=0.29.2';
-import { CHAINS, MAX_LV, SPOTS } from '../data.js?v=0.29.2';
+import { W, H, TITLE } from '../config.js?v=0.30.0';
+import { SFX, BGM, audio } from '../audio.js?v=0.30.0';
+import { makeTextures } from '../ui.js?v=0.30.0';
+import { CHAINS, MAX_LV, ALL_SPOTS } from '../data.js?v=0.30.0';
 
 const ITEMS = ['gen_dew', 'gen_gift', 'box', 'bubble', 'coin', 'gem', 'energy', 'en1', 'en2', 'en3', 'co1', 'co2', 'co3', 'ge1', 'ge2', 'ge3', 'scissors', 'ribbon', 'hourglass', 'pickbox', 'chest', 'cardpack'];
-for (const g of ['camellia', 'rice', 'ginseng', 'tea']) for (let l = 1; l <= 5; l++) ITEMS.push(`gen_${g}${l}`);
+for (const g of Object.keys(CHAINS)) for (let l = 1; l <= 5; l++) ITEMS.push(`gen_${g}${l}`);
 for (const c of Object.keys(CHAINS)) for (let l = 1; l <= MAX_LV; l++) ITEMS.push(`${c}${l}`);
-const CHARS = ['c_soyun_smile', 'c_soyun_shock', 'c_soyun_fight', 'c_grandma', 'c_doyun_smile', 'c_doyun_shy', 'c_sera_smug', 'c_sera_angry', 'c_pinky_wink', 'c_pinky_wow', ...Array.from({ length: 10 }, (_, i) => `u${i + 1}`)];
+const CHARS = ['c_soyun_smile', 'c_soyun_shock', 'c_soyun_fight', 'c_grandma', 'c_doyun_smile', 'c_doyun_shy', 'c_sera_smug', 'c_sera_angry', 'c_pinky_wink', 'c_pinky_wow', 'c_haneul_smile', 'c_haneul_worry', 'c_jiho_calm', 'c_jiho_guilty', ...Array.from({ length: 10 }, (_, i) => `u${i + 1}`)];
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
@@ -18,8 +18,8 @@ export class BootScene extends Phaser.Scene {
     this.load.on('progress', v => { bar.width = 480 * v; });
     for (const k of ITEMS) this.load.image(k, `assets/items/${k}.webp`);
     for (const k of CHARS) this.load.image(k, `assets/chars/${k}.webp`);
-    for (const s of SPOTS) for (let v = 0; v < 4; v++) this.load.image(`${s.id}_${v}`, `assets/furn/${s.id}_${v}.webp`);
-    for (const b of ['room', 'bg_alley', 'bg_farm', 'bg_office']) this.load.image(b, `assets/bg/${b}.webp`);
+    for (const s of ALL_SPOTS) for (let v = 0; v < 4; v++) this.load.image(`${s.id}_${v}`, `assets/furn/${s.id}_${v}.webp`);
+    for (const b of ['room', 'room2', 'room3', 'bg_alley', 'bg_farm', 'bg_office']) this.load.image(b, `assets/bg/${b}.webp`);
     for (const n of [...SFX, ...BGM]) this.load.audio(n, [`assets/audio/${n}.m4a`]);
     this.load.on('loaderror', () => {});
   }

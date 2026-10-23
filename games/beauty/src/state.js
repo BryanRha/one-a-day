@@ -1,6 +1,6 @@
 // 경제 · 진행 규칙: 에너지 회복 · 경험치/레벨 · 해금 계열 · 주문 만들기 · 하루 목표 · 월간 시즌
-import { load, save } from './save.js?v=0.29.2';
-import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, TASKS, STORAGE, MAX_LV } from './data.js?v=0.29.2';
+import { load, save } from './save.js?v=0.30.0';
+import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.30.0';
 
 export const today = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; };
 export const seasonId = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}`; };
@@ -27,7 +27,13 @@ export function addXp(n) {
 }
 
 // 해금 계열: 기본 동백 · 쌀, 이야기로 인삼 · 녹차
-export function unlockedChains() { const d = load(), out = ['camellia', 'rice']; for (let i = 0; i < d.task; i++) if (TASKS[i].unlock) out.push(TASKS[i].unlock); return out; }
+export function unlockedChains() { const d = load(), out = ['camellia', 'rice'];
+  CHAPTERS.forEach((c, k) => { if (k > (d.ch || 0)) return; const n = k < (d.ch || 0) ? c.tasks.length : d.task; for (let i = 0; i < n; i++) if (c.tasks[i].unlock) out.push(c.tasks[i].unlock); }); return out; }
+// 지금 장 · 할 일 (장을 다 끝내면 다음 장으로 넘어갈 수 있음)
+export const chapter = () => CHAPTERS[load().ch || 0];
+export const curTask = () => chapter().tasks[load().task];
+export const canNextChapter = () => { const d = load(); return !curTask() && (d.ch || 0) < CHAPTERS.length - 1; };
+export function nextChapter() { const d = load(); if (!canNextChapter()) return false; d.ch = (d.ch || 0) + 1; d.task = 0; save(); return true; }
 export const storageSize = () => { const d = load(); return STORAGE.base + (d.storeExtra || 0) + (d.ent.storage4 ? 4 : 0); };
 
 // 주문: 손님 1명 · 물건 1~2개 · 레벨이 오를수록 높은 단계

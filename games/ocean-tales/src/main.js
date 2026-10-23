@@ -29,7 +29,14 @@ async function start() {
   game.scale.on('resize', gs => setH(gs.height));
   // 화면 회전: 브라우저가 회전 직후 예전 크기를 알려 주는 경우가 있어서, 잠시 뒤 몇 번 더 크기를 다시 잰다
   // (안 그러면 가로→세로로 돌아와도 가로 크기에 머무름)
-  const refresh = () => [60, 250, 600, 1200].forEach(ms => setTimeout(() => game.scale.refresh(), ms));
+  // 화면이 넓어지면(폴더블 펼침 · 가로 회전) EXPAND 가 가로로 늘어나 화면이 왼쪽으로 쏠림
+  //   → 넓을 땐 지금까지의 세로 길이 그대로 FIT(가운데 정렬), 다시 길어지면 EXPAND
+  let tallH = game.scale.height;
+  const fitMode = () => { const sm = game.scale, tall = innerHeight / innerWidth > BASE_H / W;
+    if (tall) { if (sm.scaleMode !== Phaser.Scale.EXPAND) { sm.scaleMode = Phaser.Scale.EXPAND; sm.displaySize.setAspectMode(Phaser.Scale.EXPAND); sm.setGameSize(W, BASE_H); } }
+    else if (sm.scaleMode !== Phaser.Scale.FIT || sm.width !== W) { sm.scaleMode = Phaser.Scale.FIT; sm.displaySize.setAspectMode(Phaser.Scale.FIT); sm.setGameSize(W, tallH); }
+    sm.refresh(); if (sm.scaleMode === Phaser.Scale.EXPAND) tallH = sm.height; };
+  const refresh = () => [60, 250, 600, 1200].forEach(ms => setTimeout(fitMode, ms));
   addEventListener('resize', refresh);
   addEventListener('orientationchange', refresh);
   screen.orientation?.addEventListener?.('change', refresh);

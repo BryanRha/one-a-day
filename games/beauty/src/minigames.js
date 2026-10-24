@@ -3,7 +3,7 @@
 //  · 행운의 룰렛: 5단계 이상 합치기 · 레벨업마다 룰렛 토큰 → 8칸 룰렛 (확률 공개)
 //  · 공방 보물 찾기: 주문 3번마다 삽 1개 → 5×5 흙을 파서 열쇠 조각 3개 찾기 → 보물 · 다음 판
 //  · 듀오 뷰티 배틀(2대2): 나+AI 짝꿍 대 AI 두 명, 24시간 동안 주문 점수 합
-import { load, save } from './save.js?v=0.36.2';
+import { load, save } from './save.js?v=0.37.0';
 
 const DAY = 864e5, dayNo = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 6e4) / DAY), weekNo = () => Math.floor((dayNo() + 3) / 7);
 const pick = a => a[Math.floor(Math.random() * a.length)];

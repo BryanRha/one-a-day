@@ -60,6 +60,13 @@ export const GAMES = {
     path: 'games/beauty/', logo: true, cover: 'covers/beauty.png', icon: 'covers/beauty_icon.png', time: '10~20분',
   },
 
+  farm: {
+    title: '더팜', en: 'The Farm', genre: '농장 SNG', color: '#3E8E2A',
+    tagline: '공주가 맡은 시골 농장을 왕국 최고의 마을로',
+    desc: '배추왕국의 라벤더 공주가 시골 농장을 맡았다! 밭에 작물을 심어 거두고, 젖소·닭을 키우고, 빵집·낙농 공방에서 물건을 만들어 마을 사람들의 주문과 왕국 기차에 실어 보내요. 집을 지어 주민을 늘리고 숲을 정리해 땅을 넓히는 농장 마을 만들기. 피처폰 명작 「더팜」 시리즈가 새로 돌아왔어요.',
+    path: 'games/farm/', logo: true, cover: 'covers/farm.png', icon: 'covers/farm_icon.png', time: '10~15분',
+  },
+
   tour: {
     title: 'K-다이스 투어', en: 'K-Dice Tour', genre: '보드게임', color: '#2E5FB8',
     tagline: '주사위를 굴려 한국 팔도의 땅을 사고 지어요',
@@ -68,5 +75,5 @@ export const GAMES = {
   },
 };
 // 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'farm'];
 // K-다이스 투어(tour)는 2026-10-24 사용자 요청으로 목록에서 내림 — 대전 네트워크(서버)가 붙으면 다시 올림 (CATALOG 항목·소스는 남겨 둠)

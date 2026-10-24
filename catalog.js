@@ -68,4 +68,5 @@ export const GAMES = {
   },
 };
 // 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'tour'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty'];
+// K-다이스 투어(tour)는 2026-10-24 사용자 요청으로 목록에서 내림 — 대전 네트워크(서버)가 붙으면 다시 올림 (CATALOG 항목·소스는 남겨 둠)

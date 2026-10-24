@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.41.1';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.41.1';
-import { audio } from '../audio.js?v=0.41.1';
-import { goPrev } from '../nav.js?v=0.41.1';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS } from '../data.js?v=0.41.1';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.41.1';
+import { W, H } from '../config.js?v=0.42.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.42.0';
+import { audio } from '../audio.js?v=0.42.0';
+import { goPrev } from '../nav.js?v=0.42.0';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.42.0';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.42.0';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }
@@ -25,6 +25,7 @@ export class MineScene extends Phaser.Scene {
   lab() { const d = load(); this.pB.setLabel(`⛏ 곡괭이 ${d.items.pickaxe || 0}${this.tool === 'pickaxe' ? ' ✓' : ''}`); this.dB.setLabel(`🧨 다이너마이트 ${d.items.dynamite || 0}${this.tool === 'dynamite' ? ' ✓' : ''}`); }
   hit(i) {
     const boom = this.tool === 'dynamite', out = mineHit(i, boom); if (!out) return toast(this, boom ? '다이너마이트가 없어요' : '곡괭이가 없어요 · 대장간에서 만들어요', H / 2);
+    if (out.relic) { this.time.delayedCall(300, () => { audio.play('sfx_levelup', { volume: 0.6 }); const im = icon(this, W / 2, H / 2 - 40, out.relic, 180).setDepth(50); toast(this, `🏛 유물 발견! ${RELIC_N[out.relic]} · 박물관에 모여요`, H / 2 + 90); this.tweens.add({ targets: im, y: im.y - 60, alpha: 0, delay: 900, duration: 700, onComplete: () => im.destroy() }); }); }
     save(); audio.play(boom ? 'sfx_box' : 'sfx_drop', { volume: 0.8, rate: boom ? 0.7 : 1 }); audio.buzz(boom ? [30, 40, 30] : 15); if (boom) this.cameras.main.shake(250, 0.01);
     for (const { j, r } of out) { const im = this.cells[j]; if (!im) continue; this.cells[j] = null; this.tweens.add({ targets: im, scale: im.scale * 1.3, alpha: 0, angle: 20, duration: 250, onComplete: () => im.destroy() }); if (r) { const t = T(this, im.x, im.y, rewardText(r), 28, '#FFE27A', { w: 900 }).setStroke('#3E2A14', 6); this.tweens.add({ targets: t, y: t.y - 80, alpha: 0, duration: 1200, delay: 200, onComplete: () => t.destroy() }); } }
     this.lab(); if (load().mine.depth !== mine().depth || mine().cells.every(c => c)) this.time.delayedCall(600, () => { toast(this, '새 층이 열렸어요!', H / 2); this.scene.restart(); });
@@ -92,7 +93,7 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.41.1';
+import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.42.0';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
@@ -135,8 +136,8 @@ export class EventsScene extends Phaser.Scene {
 }
 
 // ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
-import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.41.1';
-import { ISLE } from '../data.js?v=0.41.1';
+import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.42.0';
+import { ISLE } from '../data.js?v=0.42.0';
 export class IslandScene extends Phaser.Scene {
   constructor() { super('Island'); }
   create() {
@@ -156,6 +157,7 @@ export class IslandScene extends Phaser.Scene {
   lab() { const d = load(); this.toolT.setText(`🪓 도끼 ${d.items.axe || 0}   ⛏ 곡괭이 ${d.items.pickaxe || 0}   🪣 삽 ${d.items.shovel || 0}`); }
   hit(i, im) { const r = isleHit(i); if (!r) return; if (r.need) return toast(this, `${ITEMS[r.need].n}이(가) 필요해요 · 대장간에서 만들어요`, H / 2);
     save(); audio.buzz(12); this.lab();
+    if (r.relic) this.time.delayedCall(300, () => toast(this, `🏛 유물 발견! ${RELIC_N[r.relic]} · 박물관에 모여요`, H / 2 + 90));
     if (r.bossHit !== undefined) { audio.play('sfx_drop', { volume: 0.9 }); this.cameras.main.shake(120, 0.006); this.tweens.add({ targets: im, angle: { from: -8, to: 8 }, duration: 70, yoyo: true, repeat: 2, onComplete: () => im.setAngle(0) }); this.drawHp(); return; }
     audio.play('sfx_drop', { volume: 0.8 }); if (im.tl) im.tl.destroy();
     if (r.boss) { this.hpG.clear(); this.hpT.destroy(); this.bossGlow.destroy(); audio.play('sfx_levelup', { volume: 0.9 }); this.cameras.main.flash(300, 255, 240, 180); this.tweens.add({ targets: im, scale: im.scale * 1.4, alpha: 0, duration: 600, onComplete: () => im.destroy() });

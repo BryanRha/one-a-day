@@ -1,8 +1,8 @@
 // 로딩: 건물 · 물건 · 땅 · 인물 · 소리
-import { W, H, TITLE } from '../config.js?v=0.41.1';
-import { SFX, BGM, audio } from '../audio.js?v=0.41.1';
-import { makeTextures } from '../ui.js?v=0.41.1';
-import { ITEMS, BUILDS, CROPS } from '../data.js?v=0.41.1';
+import { W, H, TITLE } from '../config.js?v=0.42.0';
+import { SFX, BGM, audio } from '../audio.js?v=0.42.0';
+import { makeTextures } from '../ui.js?v=0.42.0';
+import { ITEMS, BUILDS, CROPS } from '../data.js?v=0.42.0';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -13,6 +13,9 @@ export class BootScene extends Phaser.Scene {
     this.add.text(W / 2, H / 2 - 20, TITLE, { fontFamily: 'Pretendard', fontStyle: '900', fontSize: '140px', color: '#FFFFFF', stroke: '#3E2A14', strokeThickness: 18 }).setOrigin(0.5);
     this.load.on('progress', v => { bar.width = 480 * v; });
     for (const [k, B] of Object.entries(BUILDS)) if (k !== 'field') this.load.image(k, `assets/${B.k === 'deco' ? 'd' : 'b'}/${k}.webp`);
+    for (let v = 1; v <= 4; v++) for (const f of ['f', 'b']) this.load.image(`car${v}_${f}`, `assets/s/car${v}_${f}.webp`);
+    this.load.image('site', 'assets/b/site.webp');
+    for (const k of ['hourglass', 'marketbasket', 'art_crown', 'art_seal', 'art_coin', 'art_scepter', 'art_conch', 'art_compass', 'art_bell', 'art_comb', 'art_ammonite', 'art_tooth', 'art_amber', 'art_leaf', 'art_sickle', 'art_lantern', 'art_clog']) this.load.image(k, `assets/i/${k}.webp`);
     for (let v = 1; v <= 5; v++) for (const f of ['f1', 'f2', 'b1', 'b2']) this.load.image(`w${v}_${f}`, `assets/s/w${v}_${f}.webp`);
     for (const k of ['sparrow', 'bully', 'leak', 'plank', 'heart', 'gift', 'rock', 'rock_iron', 'rock_gold', 'rock_gem', 'dirt', 'chest', 'bush', 'sand', 'stump', 'boulder', 'vines', 'treasure']) this.load.image(k, `assets/s/${k}.webp`);
     this.load.image('island_bg', 'assets/bg/island.webp');

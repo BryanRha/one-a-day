@@ -1,6 +1,6 @@
 // 누적 기록 · 바다 친구 도감 · 업적. missions.track() 이 사건마다 여기 count() 를 부른다.
 // 도감: 3등급(동·은·금), 첫 등급에서 카드가 열림. 업적: 한 번 달성. 보상은 화면에서 직접 받는다.
-import { load, save, addCoins, totalStars } from './save.js?v=0.41.0';
+import { load, save, addCoins, totalStars } from './save.js?v=0.41.1';
 
 function stats() {
   const d = load();

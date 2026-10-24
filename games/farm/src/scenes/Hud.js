@@ -1,12 +1,12 @@
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.41.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.41.0';
-import { audio } from '../audio.js?v=0.41.0';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.41.0';
-import { onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.41.0';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats } from '../state.js?v=0.41.0';
-import { FUP, TRAINS } from '../data.js?v=0.41.0';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.41.0';
+import { W, H } from '../config.js?v=0.41.1';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.41.1';
+import { audio } from '../audio.js?v=0.41.1';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.41.1';
+import { onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.41.1';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats } from '../state.js?v=0.41.1';
+import { FUP, TRAINS } from '../data.js?v=0.41.1';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.41.1';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -70,9 +70,17 @@ export class HudScene extends Phaser.Scene {
   // 심기 모드 (타운십처럼): 고른 작물로 누르거나 문지른 빈 밭에 한 칸씩 · '그만' 이나 다른 곳을 누르면 끝
   plantOne(f, k) { if (!f || f.b !== 'field' || f.crop) return false; const cost = seedCost(k); if (this.d.coins < cost) { toast(this, `코인이 부족해요 · 씨앗 값 🪙${cost}`, H * 0.72); this.endPlant(); return false; }
     this.d.coins -= cost; f.crop = k; f.at = Date.now() + cropTime(k) * 1000; f.ripe = false; save(); audio.play('sfx_plant', { volume: 0.55 }); this.town.drawObjs(); this.refresh(); if (this.plantBar) { if (!this.d.objs.some(x => x.b === 'field' && !x.crop)) this.endPlant(); else this.plantBarT.setText(this.plantText(k)); } return true; }
-  plantText(k) { const n = this.d.objs.filter(f => f.b === 'field' && !f.crop).length, c = seedCost(k); return `🌱 ${ITEMS[k].n} 심는 중 · 빈 밭 ${n}칸${c ? ` · 한 칸 🪙${c}` : ''}\n빈 밭을 누르거나 문질러 심어요`; }
-  startPlant(k) { this.endPlant(); if (!this.d.objs.some(f => f.b === 'field' && !f.crop)) return; this.town.plantK = k; const y = H - 330, c = this.plantBar = this.add.container(W / 2, y), g = this.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(-480, -70, 960, 140, 40);
-    c.add([g, icon(this, -400, 0, k, 96)]); this.plantBarT = T(this, -40, 0, this.plantText(k), 26, '#FFFFFF', { w: 900, wrap: 600 }); c.add(this.plantBarT); c.add(btn(this, 360, 0, 180, 90, '그만', () => this.endPlant(), { size: 28, style: 'cream' })); this.plantZone = { x: W / 2 - 480, y: y - 70, w: 960, h: 140 }; this.zones.push(this.plantZone); }
+  plantText(k) { const n = this.d.objs.filter(f => f.b === 'field' && !f.crop).length, c = seedCost(k); return `🌱 ${ITEMS[k].n} 심는 중 · 빈 밭 ${n}칸${c ? ` · 한 칸 🪙${c}` : ' · 무료'}  ·  아래에서 작물을 바꿀 수 있어요`; }
+  // 심기 막대: 작물 줄(눌러서 바꾸기) · 빈 밭을 누르거나 문지르면 고른 작물이 그 칸에 심김
+  startPlant(k) { this.endPlant(); if (!this.d.objs.some(f => f.b === 'field' && !f.crop)) return; this.town.plantK = k;
+    const crops = Object.keys(CROPS).filter(c => CROPS[c].lv <= this.d.lv), per = 7, rows = Math.ceil(crops.length / per), bh = 120 + rows * 150, y = H - 210 - bh / 2, c = this.plantBar = this.add.container(W / 2, y), g = this.add.graphics();
+    g.fillStyle(0x3E2A14, 0.94).fillRoundedRect(-500, -bh / 2, 1000, bh, 40); c.add(g);
+    this.plantBarT = T(this, -90, -bh / 2 + 48, this.plantText(k), 24, '#FFFFFF', { w: 900, wrap: 780 }); c.add(this.plantBarT); c.add(btn(this, 400, -bh / 2 + 48, 160, 72, '그만', () => this.endPlant(), { size: 26, style: 'cream' }));
+    this.seedBtns = crops.map((ck, i) => { const x = -390 + (i % per) * 130, yy = -bh / 2 + 160 + Math.floor(i / per) * 150, b = this.add.container(x, yy), bg = this.add.graphics(), cost = seedCost(ck);
+      b.add([bg, icon(this, 0, -14, ck, 84), T(this, 0, 50, cost ? `🪙${cost}` : '무료', 20, '#FFE27A', { w: 900 })]); b.bg = bg; b.k = ck;
+      b.setSize(120, 140).setInteractive({ useHandCursor: true }).on('pointerup', () => { this.town.plantK = ck; audio.play('sfx_tap', { volume: 0.6 }); this.plantBarT.setText(this.plantText(ck)); this.seedHi(); }); c.add(b); return b; });
+    this.seedHi(); this.plantZone = { x: W / 2 - 500, y: y - bh / 2, w: 1000, h: bh }; this.zones.push(this.plantZone); }
+  seedHi() { for (const b of this.seedBtns || []) { const on = b.k === this.town.plantK; b.bg.clear().fillStyle(on ? 0xFFE27A : 0xFFF6E0, on ? 1 : 0.9).fillRoundedRect(-60, -70, 120, 140, 22); if (on) b.bg.lineStyle(6, 0x5AAE3C, 1).strokeRoundedRect(-60, -70, 120, 140, 22); b.list[2].setColor(on ? '#3E2A14' : '#8A5A2B'); } }
   endPlant() { this.town.plantK = null; if (this.plantBar) { this.plantBar.destroy(); this.plantBar = null; this.zones = this.zones.filter(z => z !== this.plantZone); } }
   // 밭: 다 익은 같은 작물을 한 번에 거둠 (1개 심어 2개)
   harvest(o) {

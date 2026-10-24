@@ -1,11 +1,11 @@
-import { W, BASE_H, setH } from './config.js?v=0.42.0';
-import { audio } from './audio.js?v=0.42.0';
-import { BootScene } from './scenes/Boot.js?v=0.42.0';
-import { TownScene } from './scenes/Town.js?v=0.42.0';
-import { HudScene } from './scenes/Hud.js?v=0.42.0';
-import { MineScene, MiniScene, PeopleScene, EventsScene, IslandScene } from './scenes/Extra.js?v=0.42.0';
-import { installBack } from './oad.js?v=0.42.0';
-import { installNav } from './nav.js?v=0.42.0';
+import { W, BASE_H, setH } from './config.js?v=0.42.1';
+import { audio } from './audio.js?v=0.42.1';
+import { BootScene } from './scenes/Boot.js?v=0.42.1';
+import { TownScene } from './scenes/Town.js?v=0.42.1';
+import { HudScene } from './scenes/Hud.js?v=0.42.1';
+import { MineScene, MiniScene, PeopleScene, EventsScene, IslandScene } from './scenes/Extra.js?v=0.42.1';
+import { installBack } from './oad.js?v=0.42.1';
+import { installNav } from './nav.js?v=0.42.1';
 
 async function start() {
   installNav();

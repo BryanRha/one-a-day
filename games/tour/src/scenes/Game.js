@@ -1,16 +1,17 @@
 // 한 판: 세로형 7×11 판(32칸) · 위 4인 상태 카드 · 가운데 주사위 · AI 3명
 //   카메라 두 대: 판(확대 · 말 따라가기) / 화면 고정 UI(상태 카드 · 주사위 · 창)
-import { W, H } from '../config.js?v=0.36.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.36.0';
-import { audio } from '../audio.js?v=0.36.0';
-import { load, save } from '../save.js?v=0.36.0';
-import { Engine, REASON } from '../engine.js?v=0.36.0';
-import { TILES, N_TILES, GROUPS, CHARS, LEVEL_N, TOLL_K, TOUR, MAX_ROUNDS, ISLAND_FEE, fmt, landPrice } from '../data.js?v=0.36.0';
-import { DIFF } from './Lobby.js?v=0.36.0';
+import { W, H } from '../config.js?v=0.36.1';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.36.1';
+import { audio } from '../audio.js?v=0.36.1';
+import { load, save } from '../save.js?v=0.36.1';
+import { Engine, REASON } from '../engine.js?v=0.36.1';
+import { TILES, N_TILES, GROUPS, CHARS, LEVEL_N, TOLL_K, TOUR, MAX_ROUNDS, ISLAND_FEE, fmt, landPrice } from '../data.js?v=0.36.1';
+import { DIFF } from './Lobby.js?v=0.36.1';
 
 const TOP = 236, COLS = 7, ROWS = 11;
-const PCOL = [0xF27BA0, 0x4E8FE6, 0x52B87A, 0xF0A030];   // 말 · 땅 색 (나 · AI1 · AI2 · AI3)
-const PCOLS = ['#E25586', '#3C7FD8', '#3E9E66', '#D9861C'];
+const PCOL = [0xE8352E, 0x2F7BEA, 0x22B04B, 0xF2B300];   // 말 · 땅 색 (나 · AI1 · AI2 · AI3)
+const PCOLS = ['#FF5A52', '#5AA0FF', '#3ED46A', '#FFC928'];
+const NAVY = 0x14213D, INK = '#14213D', STROKE = '#0B1428';
 const AI_NAMES = { attack: '공격형', saver: '짠돌이', landmark: '랜드마크파', gambler: '도박형' };
 
 export class GameScene extends Phaser.Scene {
@@ -22,25 +23,25 @@ export class GameScene extends Phaser.Scene {
     // 카메라: 판은 main · UI 는 uiCam (만들어지는 물체를 지금 모드 쪽 카메라에만 보이게)
     this.uiCam = this.cameras.add(0, 0, W, H); this.mode = 'board'; this.cameras.main.setBounds(0, 0, W, H);   // 확대해도 판 밖은 안 보이게
     this.events.on('addedtoscene', go => { if (this.mode === 'board') this.uiCam.ignore(go); else this.cameras.main.ignore(go); });
-    this.add.rectangle(W / 2, H / 2, W, H, 0xBFE6F5);
+    { const bg = this.add.graphics(); bg.fillGradientStyle(0x1B2E57, 0x1B2E57, 0x0C1630, 0x0C1630, 1).fillRect(0, 0, W, H); }
     // 가운데 지도
     const cx0 = this.tw, cy0 = TOP + this.th, cw = this.tw * 5, ch = this.th * 9, mp = this.add.image(cx0 + cw / 2, cy0 + ch / 2, 'map'); mp.setScale(Math.max(cw / mp.width, ch / mp.height)); mp.setCrop((mp.width - cw / mp.scale) / 2, (mp.height - ch / mp.scale) / 2, cw / mp.scale, ch / mp.scale);
-    this.add.rectangle(cx0 + cw / 2, cy0 + ch / 2, cw, ch, 0xFFFFFF, 0.12);
+    this.add.rectangle(cx0 + cw / 2, cy0 + ch / 2, cw, ch, 0x0E1A33, 0.42);   // 지도는 어둡게 깔아 글씨·주사위가 잘 보이게
     // 칸
     this.tiles = TILES.map((t, i) => this.makeTile(i));
     // 플레이어 (나 + AI 3) · 말
     const me = CHARS.find(c => c.id === d.char) || CHARS[0], others = CHARS.filter(c => c.id !== me.id).sort(() => Math.random() - 0.5).slice(0, 3), ais = DIFF[d.diff][1];
     const players = [{ name: me.n, char: me.id }, ...others.map((c, k) => ({ name: c.n, char: c.id, ai: ais[k] }))];
     this.eng = new Engine({ players, io: this });
-    this.tokens = this.eng.P.map((p, k) => { const im = this.add.image(0, 0, p.char.img).setOrigin(0.5, 0.92); im.setScale(this.th * 0.62 / im.height); const sh = this.add.ellipse(0, 0, this.tw * 0.32, this.th * 0.1, 0x000000, 0.25); const c = this.add.container(0, 0, [sh, im]); c.im = im; return c; });
+    this.tokens = this.eng.P.map((p, k) => { const im = this.add.image(0, 0, p.char.img).setOrigin(0.5, 0.92); im.setScale(this.th * 0.5 / im.height); const sh = this.add.ellipse(0, 0, this.tw * 0.32, this.th * 0.1, 0x000000, 0.25); const c = this.add.container(0, 0, [sh, im]); c.im = im; return c; });
     this.eng.P.forEach(p => this.placeToken(p, 0));
     this.selZones = [];
     // UI
     this.mode = 'ui';
     this.cards = this.eng.P.map((p, k) => this.makeCard(p, k)); this.refresh();
-    this.roundT = T(this, W / 2, TOP + this.th * 1.45, `1 / ${MAX_ROUNDS} 바퀴`, 26, '#FFFFFF', { w: 900, shadow: true });
-    this.banner = T(this, W / 2, TOP + this.th * 2.15, '', 44, '#FFFFFF', { w: 900, shadow: true }).setStroke('#2E5FB8', 10);
-    this.msg = T(this, W / 2, TOP + this.th * 8.6, '', 26, '#FFFFFF', { w: 800, shadow: true, wrap: this.tw * 4.6 });
+    this.roundT = T(this, W / 2, TOP + this.th * 1.45, `1 / ${MAX_ROUNDS} 바퀴`, 30, '#FFE27A', { w: 900 }).setStroke(STROKE, 8);
+    this.banner = T(this, W / 2, TOP + this.th * 2.15, '', 50, '#FFFFFF', { w: 900, shadow: true }).setStroke(STROKE, 12);
+    this.msg = T(this, W / 2, TOP + this.th * 8.6, '', 30, '#FFFFFF', { w: 900, wrap: this.tw * 4.6 }).setStroke(STROKE, 8);
     this.warn = this.add.container(W / 2, TOP + this.th * 2.95).setVisible(false);
     this.dice = [0, 1].map(k => this.makeDie(W / 2 + (k - 0.5) * 170, TOP + this.th * 4.6));
     this.makeRoll();
@@ -54,47 +55,53 @@ export class GameScene extends Phaser.Scene {
   screen(x, y) { const cam = this.cameras.main; return [(x - cam.worldView.x) * cam.zoom, (y - cam.worldView.y) * cam.zoom]; }
   makeTile(i) {
     const [x, y] = this.xy(i), t = TILES[i], w = this.tw - 6, h = this.th - 6, c = this.add.container(x, y), g = this.add.graphics(); c.add(g); c.g = g; c.w = w; c.h = h;
-    const corner = ['start', 'island', 'festival', 'ktx'].includes(t.k), im = this.add.image(0, -h * 0.08, t.img); im.setScale(Math.min((w - 10) / im.width, (h * (corner ? 0.74 : 0.6)) / im.height)); c.add(im); c.im = im; c.base = im.scale;
-    c.name = T(this, 0, h / 2 - (corner ? 22 : 40), t.n, corner ? 22 : 19, C.ink, { w: 900 }); c.add(c.name);
-    c.sub = T(this, 0, h / 2 - 17, '', 16, C.dim, { w: 800 }); c.add(c.sub);
+    const corner = ['start', 'island', 'festival', 'ktx'].includes(t.k), land = t.k === 'c' || t.k === 't'; c.band = land ? 40 : 0;
+    const im = this.add.image(0, land ? 4 : -h * 0.08, t.img); im.setScale(Math.min((w - 12) / im.width, (h * (corner ? 0.72 : land ? 0.5 : 0.62)) / im.height)); c.add(im); c.im = im; c.base = im.scale;
+    // 이름: 땅은 위 색 띠 안에 흰 글씨 · 나머지는 아래
+    c.name = land ? T(this, 0, -h / 2 + 21, t.n, 23, '#FFFFFF', { w: 900 }).setStroke(STROKE, 6) : T(this, 0, h / 2 - 22, t.n, 24, INK, { w: 900 }); c.add(c.name);
+    c.sub = T(this, 0, h / 2 - 19, '', 21, INK, { w: 900 }); c.add(c.sub);
     c.bld = this.add.container(0, 0); c.add(c.bld);
     this.drawTile(i, c); return c;
   }
   drawTile(i, c = this.tiles[i]) { const m = this.mode; this.mode = 'board'; try { this.drawTile0(i, c); } finally { this.mode = m; } }
   drawTile0(i, c) {
-    const t = TILES[i], e = this.eng, w = c.w, h = c.h, g = c.g, o = e ? e.own[i] : -1, lv = e ? e.lv[i] : -1;
-    const bgc = { start: 0xFFF1C9, island: 0xD6F2FF, festival: 0xFFE3EC, ktx: 0xE6E9FF, ch: 0xFFF6E0, tax: 0xF0F0F0, t: 0xFFF6D6 }[t.k] || 0xFFFFFF;
-    g.clear().fillStyle(0x000000, 0.12).fillRoundedRect(-w / 2 + 2, -h / 2 + 4, w, h, 14).fillStyle(bgc, 1).fillRoundedRect(-w / 2, -h / 2, w, h, 14);
-    if (t.k === 'c') g.fillStyle(GROUPS[t.g].c, 1).fillRoundedRect(-w / 2, -h / 2, w, 14, { tl: 14, tr: 14, bl: 0, br: 0 });
-    if (t.k === 't') g.fillStyle(0xF0B65A, 1).fillRoundedRect(-w / 2, -h / 2, w, 14, { tl: 14, tr: 14, bl: 0, br: 0 });
-    if (o >= 0) { g.lineStyle(7, PCOL[o], 1).strokeRoundedRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6, 12); g.fillStyle(PCOL[o], 0.16).fillRoundedRect(-w / 2, -h / 2, w, h, 14); }
-    if (e && e.festival === i) g.lineStyle(5, 0xFF5C8A, 1).strokeRoundedRect(-w / 2 + 10, -h / 2 + 10, w - 20, h - 20, 10);
+    const t = TILES[i], e = this.eng, w = c.w, h = c.h, g = c.g, o = e ? e.own[i] : -1, lv = e ? e.lv[i] : -1, land = t.k === 'c' || t.k === 't';
+    const bgc = { start: 0xFFE680, island: 0x9EE3FF, festival: 0xFFB3D1, ktx: 0xC9D2FF, ch: 0xFFF0C2, tax: 0xE3E7EE }[t.k] || 0xFFFFFF;
+    g.clear().fillStyle(0x000000, 0.45).fillRoundedRect(-w / 2 + 2, -h / 2 + 5, w, h, 12).fillStyle(bgc, 1).fillRoundedRect(-w / 2, -h / 2, w, h, 12);
+    if (land) { const bc = t.k === 't' ? 0xD99A00 : GROUPS[t.g].c; g.fillStyle(bc, 1).fillRoundedRect(-w / 2, -h / 2, w, c.band, { tl: 12, tr: 12, bl: 0, br: 0 });
+      // 아래 값 칸: 빈 땅은 연회색 · 주인 있으면 주인 색
+      g.fillStyle(o >= 0 ? PCOL[o] : 0xEEF1F6, 1).fillRoundedRect(-w / 2, h / 2 - 36, w, 36, { tl: 0, tr: 0, bl: 12, br: 12 }); }
+    g.lineStyle(3, NAVY, 1).strokeRoundedRect(-w / 2, -h / 2, w, h, 12);
+    if (o >= 0) g.lineStyle(6, PCOL[o], 1).strokeRoundedRect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4, 11);
+    if (e && e.festival === i) g.lineStyle(6, 0xFF2D7A, 1).strokeRoundedRect(-w / 2 + 9, -h / 2 + 9, w - 18, h - 18, 9);
     c.bld.removeAll(true);
-    if (t.k === 'c' || t.k === 't') c.sub.setText(o >= 0 ? `💸${fmt(e.toll(i))}` : fmt(landPrice(i))).setColor(o >= 0 ? PCOLS[o] : C.dim);
-    if (o >= 0 && t.k === 'c') { if (lv >= 4) { c.im.setScale(c.base * 1.25); const cr = this.add.image(w / 2 - 22, -h / 2 + 26, 'crown'); cr.setScale(36 / cr.height); c.bld.add(cr); }
-      else { c.im.setScale(c.base); ['villa', 'building', 'hotel'].forEach((k, j) => { if (lv > j) { const b = this.add.image(-w / 2 + 22 + j * 30, -h / 2 + 34, k).setTint(PCOL[o]); b.setScale(32 / b.height); c.bld.add(b); } }); const f = this.add.image(w / 2 - 18, -h / 2 + 30, 'flag').setTint(PCOL[o]); f.setScale(30 / f.height); c.bld.add(f); } }
-    if (o >= 0 && t.k === 't') { const f = this.add.image(w / 2 - 18, -h / 2 + 30, 'flag').setTint(PCOL[o]); f.setScale(30 / f.height); c.bld.add(f); }
-    if (e && e.festival === i) { const ln = this.add.image(-w / 2 + 24, -h / 2 + 34, 'lantern'); ln.setScale(38 / ln.height); c.bld.add(ln); }
+    if (land) c.sub.setText(o >= 0 ? fmt(e.toll(i)) : fmt(landPrice(i))).setColor(o >= 0 ? '#FFFFFF' : INK).setStroke(o >= 0 ? STROKE : '#FFFFFF', o >= 0 ? 5 : 0);
+    const by = -h / 2 + c.band + 22;
+    if (o >= 0 && t.k === 'c') { if (lv >= 4) { c.im.setScale(c.base * 1.2); const cr = this.add.image(w / 2 - 24, by, 'crown'); cr.setScale(40 / cr.height); c.bld.add(cr); }
+      else { c.im.setScale(c.base); ['villa', 'building', 'hotel'].forEach((k, j) => { if (lv > j) { const b = this.add.image(-w / 2 + 22 + j * 32, by, k).setTint(PCOL[o]); b.setScale(36 / b.height); c.bld.add(b); } }); const f = this.add.image(w / 2 - 20, by, 'flag').setTint(PCOL[o]); f.setScale(34 / f.height); c.bld.add(f); } }
+    if (o >= 0 && t.k === 't') { const f = this.add.image(w / 2 - 20, by, 'flag').setTint(PCOL[o]); f.setScale(34 / f.height); c.bld.add(f); }
+    if (e && e.festival === i) { const ln = this.add.image(-w / 2 + 24, by, 'lantern'); ln.setScale(40 / ln.height); c.bld.add(ln); }
   }
-  placeToken(p, i, anim) { const [x, y] = this.xy(i), k = p.i, dx = [-0.2, 0.2, -0.2, 0.2][k] * this.tw, dy = [-0.02, -0.02, 0.2, 0.2][k] * this.th, tk = this.tokens[k]; if (!anim) tk.setPosition(x + dx, y + dy); tk.setDepth(10 + y / 100); return [x + dx, y + dy]; }
+  placeToken(p, i, anim) { const [x, y] = this.xy(i), k = p.i, dx = [-0.24, 0.24, -0.08, 0.08][k] * this.tw, dy = [0.22, 0.22, 0.28, 0.28][k] * this.th, tk = this.tokens[k]; if (!anim) tk.setPosition(x + dx, y + dy); tk.setDepth(10 + y / 100); return [x + dx, y + dy]; }
   // ── 위 상태 카드
   makeCard(p, k) {
     const cw = 258, x = 12 + k * 266 + cw / 2, y = 120, c = this.add.container(x, y), g = this.add.graphics(); c.add(g); c.g = g;
-    const im = this.add.image(-cw / 2 + 58, 6, p.char.img); im.setScale(150 / im.height); im.setCrop(0, 0, im.width, im.height * 0.55); c.add(im); c.im = im;
-    c.nm = T(this, -cw / 2 + 112, -50, k === 0 ? `나 · ${p.name}` : p.name, 24, C.ink, { ox: 0, w: 900 }); c.add(c.nm);
-    c.ty = T(this, -cw / 2 + 112, -18, k === 0 ? p.char.perkN : AI_NAMES[p.aiKey], 15, C.dim, { ox: 0, w: 800, wrap: 140, align: 'left' }); c.add(c.ty);
-    c.cash = T(this, -cw / 2 + 112, 22, '', 26, PCOLS[k], { ox: 0, w: 900 }); c.add(c.cash);
-    c.as = T(this, -cw / 2 + 112, 54, '', 16, C.dim, { ox: 0, w: 800 }); c.add(c.as);
-    c.badge = T(this, cw / 2 - 16, -62, '', 22, C.ink, { ox: 1, w: 900 }); c.add(c.badge);
+    const im = this.add.image(-cw / 2 + 56, 8, p.char.img); im.setScale(150 / im.height); im.setCrop(0, 0, im.width, im.height * 0.55); c.add(im); c.im = im;
+    c.nm = T(this, -cw / 2 + 108, -54, k === 0 ? `나 · ${p.name}` : p.name, 24, '#FFFFFF', { ox: 0, w: 900 }).setStroke(STROKE, 5); c.add(c.nm);
+    c.ty = T(this, -cw / 2 + 108, -22, k === 0 ? p.char.perkN : AI_NAMES[p.aiKey], 16, '#C9D6F0', { ox: 0, w: 800, wrap: 145, align: 'left' }); c.add(c.ty);
+    c.cash = T(this, -cw / 2 + 108, 20, '', 32, '#FFE27A', { ox: 0, w: 900 }).setStroke(STROKE, 6); c.add(c.cash);
+    c.as = T(this, -cw / 2 + 108, 56, '', 17, '#C9D6F0', { ox: 0, w: 800 }); c.add(c.as);
+    c.badge = T(this, cw / 2 - 14, -60, '', 22, '#FFFFFF', { ox: 1, w: 900 }); c.add(c.badge);
     c.w = cw; return c;
   }
   drawCard(k) {
     if (!this.cards) return; const c = this.cards[k], p = this.eng.P[k], on = this.eng.cur === k && !p.out, g = c.g, cw = c.w;
-    g.clear().fillStyle(0x000000, 0.15).fillRoundedRect(-cw / 2 + 3, -88, cw, 184, 26).fillStyle(p.out ? 0xD8D8D8 : 0xFFFFFF, 1).fillRoundedRect(-cw / 2, -92, cw, 184, 26).fillStyle(PCOL[k], 1).fillRoundedRect(-cw / 2, -92, cw, 16, { tl: 26, tr: 26, bl: 0, br: 0 });
-    if (on) g.lineStyle(7, 0xF0B65A, 1).strokeRoundedRect(-cw / 2, -92, cw, 184, 26);
-    c.cash.setText(p.out ? '파산' : fmt(p.cash)); c.as.setText(p.out ? '' : `자산 ${fmt(this.eng.assets(p))}`);
+    g.clear().fillStyle(0x000000, 0.4).fillRoundedRect(-cw / 2 + 3, -86, cw, 184, 24).fillStyle(p.out ? 0x3A4050 : 0x22355F, 1).fillRoundedRect(-cw / 2, -92, cw, 184, 24)
+      .fillStyle(PCOL[k], 1).fillRoundedRect(-cw / 2, -92, cw, 20, { tl: 24, tr: 24, bl: 0, br: 0 }).fillStyle(PCOL[k], 0.35).fillCircle(-cw / 2 + 56, 4, 46);
+    g.lineStyle(on ? 7 : 3, on ? 0xFFE27A : PCOL[k], 1).strokeRoundedRect(-cw / 2, -92, cw, 184, 24);
+    c.cash.setText(p.out ? '파산' : fmt(p.cash)).setColor(p.out ? '#FF8A8A' : '#FFE27A'); c.as.setText(p.out ? '' : `자산 ${fmt(this.eng.assets(p))}`);
     c.badge.setText([p.angel ? `😇${p.angel}` : '', p.island ? `🏝${p.island}` : '', p.ktx ? '🚄' : ''].join(''));
-    c.setAlpha(p.out ? 0.6 : 1); c.setScale(on ? 1.04 : 1); c.setDepth(on ? 5 : 1);
+    c.setAlpha(p.out ? 0.65 : 1); c.setScale(on ? 1.04 : 1); c.setDepth(on ? 5 : 1);
   }
   refresh() { this.eng.P.forEach((p, k) => this.drawCard(k)); }
   // ── 주사위
@@ -106,7 +113,7 @@ export class GameScene extends Phaser.Scene {
     const y = TOP + this.th * 6.5; this.rollB = btn(this, W / 2, y, 440, 130, '주사위 굴리기', () => this.onRoll(), { size: 40, style: 'gold' }).setVisible(false);
     // 더블 노리기 게이지: 바늘이 금색 칸에 있을 때 누르면 더블 확률 UP
     const gy = y - 120, gw = 440; this.gauge = this.add.container(W / 2, gy).setVisible(false); const gg = this.add.graphics(); gg.fillStyle(0xFFFFFF, 0.95).fillRoundedRect(-gw / 2, -18, gw, 36, 18).fillStyle(0xF0B65A, 1).fillRoundedRect(-gw * 0.12, -18, gw * 0.24, 36, 4);
-    this.needle = this.add.rectangle(-gw / 2, 0, 10, 52, 0xE8574F); this.gauge.add([gg, this.needle, T(this, 0, -46, '금색에서 누르면 더블 확률 UP', 20, '#FFFFFF', { w: 900, shadow: true })]); this.gw = gw;
+    this.needle = this.add.rectangle(-gw / 2, 0, 12, 56, 0xE8352E).setStrokeStyle(3, 0xFFFFFF); this.gauge.add([gg, this.needle, T(this, 0, -48, '금색에서 누르면 더블 확률 UP', 24, '#FFE27A', { w: 900 }).setStroke(STROKE, 6)]); this.gw = gw;
   }
   onRoll() { if (!this.rollWait) return; const aim = Math.abs(this.needle.x) < this.gw * 0.12; this.needleTw?.stop(); this.rollB.setVisible(false); this.gauge.setVisible(false); const r = this.rollWait; this.rollWait = null; audio.buzz(15); r({ d1: 1 + Math.floor(Math.random() * 6), d2: 1 + Math.floor(Math.random() * 6), aim }); if (aim) this.say('더블 노리기 성공!', 700); }
   // ── 기다리기 · 안내
@@ -114,7 +121,7 @@ export class GameScene extends Phaser.Scene {
   sp() { const p = this.eng.P[this.eng.cur]; return p && p.ai ? 0.55 : 1; }
   say(s, ms = 1200, col = '#FFFFFF') { this.banner.setText(s).setColor(col).setScale(0.6).setAlpha(1); this.tweens.add({ targets: this.banner, scale: 1, duration: 220, ease: 'Back.easeOut' }); this.tweens.add({ targets: this.banner, alpha: 0, delay: ms, duration: 300 }); }
   note(s) { this.msg.setText(s); }
-  float(x, y, s, col) { const t = T(this, x, y, s, 34, col, { w: 900, shadow: true }).setDepth(90); this.tweens.add({ targets: t, y: y - 80, alpha: 0, duration: 1300, delay: 300, onComplete: () => t.destroy() }); }
+  float(x, y, s, col) { const t = T(this, x, y, s, 36, col, { w: 900 }).setStroke(STROKE, 7).setDepth(90); this.tweens.add({ targets: t, y: y - 80, alpha: 0, duration: 1300, delay: 300, onComplete: () => t.destroy() }); }
   cardXY(p) { const c = this.cards[p.i]; return [c.x, c.y]; }
   coins(from, to, n = 6) { for (let k = 0; k < n; k++) { const s = this.add.image(from[0], from[1], 'cash').setDepth(95); s.setScale(54 / s.height); this.tweens.add({ targets: s, x: to[0] + (Math.random() - 0.5) * 40, y: to[1], duration: 500 + k * 60, ease: 'Cubic.easeIn', delay: k * 40, onComplete: () => s.destroy() }); } }
   // ── 엔진이 보내는 일들
@@ -127,7 +134,7 @@ export class GameScene extends Phaser.Scene {
       case 'round': this.roundT.setText(`${Math.min(ev.n, MAX_ROUNDS)} / ${MAX_ROUNDS} 바퀴`); if (ev.n === MAX_ROUNDS) this.say('마지막 바퀴!', 1200, '#FFB4C8'); break;
       case 'roll': await this.rollAnim(ev.d1, ev.d2); break;
       case 'move': await this.moveAnim(p, ev.path, ev.fast, ev.back); break;
-      case 'salary': { const [x, y] = this.cardXY(p); this.float(x, y + 60, `+${fmt(ev.amt)} 월급`, C.green); audio.play('sfx_cashin', { volume: 0.5 }); await this.wait(400); break; }
+      case 'salary': { const [x, y] = this.cardXY(p); this.float(x, y + 60, `+${fmt(ev.amt)} 월급`, '#5BFF8A'); audio.play('sfx_cashin', { volume: 0.5 }); await this.wait(400); break; }
       case 'island': this.say('🏝 무인도에 갇혔어요', 1100); audio.play('sfx_lose', { volume: 0.4 }); await this.wait(900); break;
       case 'stay': this.note(`${p.name} · 무인도 ${ev.left}턴 남음`); await this.wait(600); break;
       case 'escape': this.say('더블! 무인도 탈출', 900, '#FFE27A'); await this.wait(700); break;
@@ -136,7 +143,7 @@ export class GameScene extends Phaser.Scene {
       case 'ktxready': this.say('🚄 다음 차례에 KTX로 원하는 곳까지!', 1200); audio.play('sfx_train', { volume: 0.6 }); await this.wait(900); break;
       case 'build': await this.buildAnim(ev); break;
       case 'pay': await this.payAnim(ev); break;
-      case 'cash': { const [x, y] = this.cardXY(p); this.float(x, y + 60, `${ev.amt > 0 ? '+' : ''}${fmt(ev.amt)} ${ev.why}`, ev.amt > 0 ? C.green : C.red); audio.play(ev.amt > 0 ? 'sfx_cashin' : 'sfx_cashout', { volume: 0.5 }); await this.wait(600); break; }
+      case 'cash': { const [x, y] = this.cardXY(p); this.float(x, y + 60, `${ev.amt > 0 ? '+' : ''}${fmt(ev.amt)} ${ev.why}`, ev.amt > 0 ? '#5BFF8A' : '#FF7A7A'); audio.play(ev.amt > 0 ? 'sfx_cashin' : 'sfx_cashout', { volume: 0.5 }); await this.wait(600); break; }
       case 'angel': this.say('😇 천사 카드! 통행료 면제', 1100, '#FFE27A'); audio.play('sfx_levelup', { volume: 0.5 }); await this.wait(900); break;
       case 'take': { this.drawTile(ev.i); const tl = this.tiles[ev.i]; tl.scaleX = 0; this.tweens.add({ targets: tl, scaleX: 1, duration: 300 }); this.say(`${p.name}, ${TILES[ev.i].n} 인수!`, 1200, PCOLS[p.i]); audio.play('sfx_merge_big', { volume: 0.6 }); this.coins(this.cardXY(p), this.cardXY(ev.from)); await this.wait(1000); break; }
       case 'chance': await this.chanceAnim(p, ev.c, ev.reroll); break;
@@ -167,7 +174,7 @@ export class GameScene extends Phaser.Scene {
   async buildAnim(ev) {
     const tl = this.tiles[ev.i]; this.drawTile(ev.i); const [sx, sy] = this.screen(tl.x, tl.y);
     tl.setScale(0.7); this.tweens.add({ targets: tl, scale: 1, duration: 360, ease: 'Back.easeOut' }); audio.play('sfx_build', { volume: 0.6 });
-    if (ev.cost) this.float(sx, sy - 40, `-${fmt(ev.cost)}`, C.red);
+    if (ev.cost) this.float(sx, sy - 40, `-${fmt(ev.cost)}`, '#FF7A7A');
     if (ev.to === 4) { this.say(`👑 ${TILES[ev.i].n} 랜드마크!`, 1400, '#FFE27A'); audio.play('sfx_levelup', { volume: 0.7 }); this.d.stats.landmarks++; }
     else if (ev.free) this.say('무료 리모델링!', 900, '#FFE27A');
     else this.note(`${ev.p.name} · ${TILES[ev.i].n} ${LEVEL_N[ev.to]}${ev.from < 0 ? ' 구입' : '까지 건설'}`);
@@ -178,7 +185,7 @@ export class GameScene extends Phaser.Scene {
     if (!ev.amt) return; const from = this.cardXY(ev.from), to = ev.to ? this.cardXY(ev.to) : [W / 2, TOP + this.th * 5];
     this.coins(from, to, Math.min(9, 3 + Math.floor(ev.amt / 60)));
     const human = !ev.from.ai || ev.to && !ev.to.ai, big = ev.why === '통행료';
-    if (big) { const t = T(this, W / 2, TOP + this.th * 3.2, `💸 통행료 ${fmt(ev.amt)}`, human ? 60 : 44, !ev.from.ai ? '#FFB4C8' : '#FFFFFF', { w: 900, shadow: true }).setStroke('#2E3448', 10).setScale(0.4); this.tweens.add({ targets: t, scale: 1, duration: 260, ease: 'Back.easeOut' }); this.tweens.add({ targets: t, alpha: 0, delay: 900, duration: 300, onComplete: () => t.destroy() }); if (ev.to && !ev.to.ai) this.d.stats.tolls++; }
+    if (big) { const t = T(this, W / 2, TOP + this.th * 3.2, `💸 통행료 ${fmt(ev.amt)}`, human ? 60 : 44, !ev.from.ai ? '#FF7A7A' : '#FFFFFF', { w: 900 }).setStroke(STROKE, 12).setScale(0.4); this.tweens.add({ targets: t, scale: 1, duration: 260, ease: 'Back.easeOut' }); this.tweens.add({ targets: t, alpha: 0, delay: 900, duration: 300, onComplete: () => t.destroy() }); if (ev.to && !ev.to.ai) this.d.stats.tolls++; }
     else this.note(`${ev.from.name} → ${ev.to ? ev.to.name : '은행'} · ${ev.why} ${fmt(ev.amt)}`);
     audio.play(!ev.from.ai ? 'sfx_cashout' : ev.to && !ev.to.ai ? 'sfx_cashin' : 'sfx_coin', { volume: 0.6 }); if (!ev.from.ai && big) audio.buzz([20, 40, 20]);
     await this.wait(big ? 1100 : 600);

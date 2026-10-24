@@ -1,5 +1,5 @@
 // 화면: 가로 1080 고정, 세로는 기기 비율대로 (최소 1920)
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 export const TITLE = 'K-다이스 투어';
 export const TITLE_EN = 'K-DICE TOUR';
 export const W = 1080;

@@ -1,11 +1,11 @@
-import { W, BASE_H, setH } from './config.js?v=0.36.0';
-import { audio } from './audio.js?v=0.36.0';
-import { BootScene } from './scenes/Boot.js?v=0.36.0';
-import { LobbyScene } from './scenes/Lobby.js?v=0.36.0';
-import { GameScene } from './scenes/Game.js?v=0.36.0';
-import { ResultScene } from './scenes/Result.js?v=0.36.0';
-import { installBack } from './oad.js?v=0.36.0';
-import { installNav } from './nav.js?v=0.36.0';
+import { W, BASE_H, setH } from './config.js?v=0.36.1';
+import { audio } from './audio.js?v=0.36.1';
+import { BootScene } from './scenes/Boot.js?v=0.36.1';
+import { LobbyScene } from './scenes/Lobby.js?v=0.36.1';
+import { GameScene } from './scenes/Game.js?v=0.36.1';
+import { ResultScene } from './scenes/Result.js?v=0.36.1';
+import { installBack } from './oad.js?v=0.36.1';
+import { installNav } from './nav.js?v=0.36.1';
 
 async function start() {
   installNav();

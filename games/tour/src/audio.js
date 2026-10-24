@@ -1,5 +1,5 @@
 // 효과음 · 배경음 (ElevenLabs, tools/gen_audio.sh)
-import { load, save } from './save.js?v=0.36.0';
+import { load, save } from './save.js?v=0.36.1';
 export const SFX = ['sfx_click', 'sfx_tap', 'sfx_coin', 'sfx_order', 'sfx_levelup', 'sfx_error', 'sfx_drop', 'sfx_pick', 'sfx_merge', 'sfx_merge_big', 'sfx_box', 'sfx_bubble', 'sfx_repair', 'sfx_gen', 'sfx_blip',
   'sfx_dice', 'sfx_step', 'sfx_cashin', 'sfx_cashout', 'sfx_build', 'sfx_chance', 'sfx_win', 'sfx_lose', 'sfx_alarm', 'sfx_train'];
 export const BGM = ['bgm_lobby', 'bgm_game'];

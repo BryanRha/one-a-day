@@ -1,8 +1,8 @@
 // 로딩: 명소 칸 · 캐릭터 · 아이콘 · 배경 · 소리
-import { W, H, TITLE } from '../config.js?v=0.36.0';
-import { SFX, BGM, audio } from '../audio.js?v=0.36.0';
-import { makeTextures } from '../ui.js?v=0.36.0';
-import { TILES, CHARS } from '../data.js?v=0.36.0';
+import { W, H, TITLE } from '../config.js?v=0.36.1';
+import { SFX, BGM, audio } from '../audio.js?v=0.36.1';
+import { makeTextures } from '../ui.js?v=0.36.1';
+import { TILES, CHARS } from '../data.js?v=0.36.1';
 
 const ITEMS = ['flag', 'villa', 'building', 'hotel', 'crown', 'chance', 'angel', 'cash', 'tax', 'trophy', 'dice', 'bankrupt', 'lantern', 'ktx', 'island'];
 export class BootScene extends Phaser.Scene {

@@ -1,6 +1,6 @@
 // 판 진행 엔진 (화면 없이도 돌아감 · 봇 시험용): 차례 → 주사위 → 이동 → 칸 처리 → 승리 판정
 // 화면은 io 로 연결: io.anim(event) 를 기다림 · 사람 차례 결정은 io.ask(kind, info) 로 받음
-import { TILES, N_TILES, GROUPS, SIDES, BUILD_K, TOLL_K, TOUR, START_CASH, SALARY, MAX_ROUNDS, ISLAND_TURNS, ISLAND_FEE, CHARS, AI, CHANCE, drawChance, landPrice } from './data.js?v=0.36.0';
+import { TILES, N_TILES, GROUPS, SIDES, BUILD_K, TOLL_K, TOUR, START_CASH, SALARY, MAX_ROUNDS, ISLAND_TURNS, ISLAND_FEE, CHARS, AI, CHANCE, drawChance, landPrice } from './data.js?v=0.36.1';
 
 const rnd6 = () => 1 + Math.floor(Math.random() * 6);
 export class Engine {

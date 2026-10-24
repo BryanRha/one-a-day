@@ -1,9 +1,9 @@
 // 로비: 로고 · 캐릭터 고르기 · 난이도 · 랭크 · 기록 · 시작
-import { W, H, TITLE_EN } from '../config.js?v=0.36.0';
-import { T, C, btn, popup } from '../ui.js?v=0.36.0';
-import { audio } from '../audio.js?v=0.36.0';
-import { load, save } from '../save.js?v=0.36.0';
-import { CHARS } from '../data.js?v=0.36.0';
+import { W, H, TITLE_EN } from '../config.js?v=0.36.1';
+import { T, C, btn, popup } from '../ui.js?v=0.36.1';
+import { audio } from '../audio.js?v=0.36.1';
+import { load, save } from '../save.js?v=0.36.1';
+import { CHARS } from '../data.js?v=0.36.1';
 
 export const TIERS = [[0, '브론즈', 0xC98A5A], [100, '실버', 0xA8B4C4], [250, '골드', 0xF0B65A], [450, '플래티넘', 0x6FD6C8], [700, '다이아', 0x8FA8FF]];
 export const tierOf = r => { let t = TIERS[0]; for (const x of TIERS) if (r >= x[0]) t = x; return t; };

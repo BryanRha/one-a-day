@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.37.0';
-import { T, C } from '../ui.js?v=0.37.0';
-import { audio } from '../audio.js?v=0.37.0';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.37.0';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train } from '../state.js?v=0.37.0';
+import { W, H } from '../config.js?v=0.38.0';
+import { T, C } from '../ui.js?v=0.38.0';
+import { audio } from '../audio.js?v=0.38.0';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.38.0';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train } from '../state.js?v=0.38.0';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -17,7 +17,7 @@ export class TownScene extends Phaser.Scene {
   create() {
     this.d = load(); this.mode = null; this.sel = null; this.dead = false; this.events.once('shutdown', () => { this.dead = true; });
     this.add.rectangle(WORLD_W / 2, WORLD_H / 2, WORLD_W * 3, WORLD_H * 3, 0x7CC26A);
-    this.ground = this.add.container(0, 0); this.layer = this.add.container(0, 0);
+    this.ground = this.add.container(0, 0); this.layer = this.add.container(0, 0); this.walkLayer = this.add.container(0, 0);   // 주민은 건물을 다시 그려도 지워지지 않게 따로
     this.drawGround(); this.drawObjs(); this.drawStation();
     const cam = this.cameras.main; cam.setBounds(0, 0, WORLD_W, WORLD_H); cam.setZoom(1.05); const [cx, cy] = iso(10, 10); cam.centerOn(cx, cy);
     this.input.addPointer(1);
@@ -25,7 +25,17 @@ export class TownScene extends Phaser.Scene {
     this.input.on('wheel', (p, o, dx, dy) => this.zoom(cam.zoom * (dy > 0 ? 0.9 : 1.1)));
     this.time.addEvent({ delay: 1000, loop: true, callback: () => this.tick() });
     this.scene.launch('Hud'); this.hud = this.scene.get('Hud'); window.__town = this;
+    this.walkers = []; this.time.addEvent({ delay: 2500, loop: true, callback: () => this.walk() });
     audio.music('bgm_farm');
+  }
+  // 마을 주민이 길을 걸어 다님 (주민 10명당 1명 · 최대 6명)
+  walk() {
+    if (this.dead || this.mode) return; const want = Math.min(6, Math.floor(this.d.objs.filter(o => BUILDS[o.b].give).length * 1.5)); this.walkers = this.walkers.filter(w => w.active);
+    if (this.walkers.length >= want) return; const pick = () => { for (let k = 0; k < 40; k++) { const x = Math.floor(Math.random() * MAP), y = Math.floor(Math.random() * MAP); if (open(x, y) && !objAt(x, y)) return [x, y]; } return null; };
+    const a = pick(), b = pick(); if (!a || !b) return; const [x0, y0] = iso(a[0] + 0.5, a[1] + 0.5), [x1, y1] = iso(b[0] + 0.5, b[1] + 0.5), im = this.add.image(x0, y0, `v${1 + Math.floor(Math.random() * 6)}`).setOrigin(0.5, 0.95);
+    im.setScale(TH * 1.15 / im.height).setFlipX(x1 > x0).setAlpha(0); this.walkLayer.add(im); this.walkers.push(im); const dur = Math.hypot(x1 - x0, y1 - y0) * 14;
+    this.tweens.add({ targets: im, alpha: 1, duration: 300 }); this.tweens.add({ targets: im, x: x1, y: y1, duration: dur, onComplete: () => this.tweens.add({ targets: im, alpha: 0, duration: 300, onComplete: () => im.destroy() }) });
+    this.tweens.add({ targets: im, angle: { from: -4, to: 4 }, duration: 260, yoyo: true, repeat: Math.floor(dur / 520) });
   }
   zoom(z) { this.cameras.main.setZoom(Phaser.Math.Clamp(z, 0.5, 1.6)); }
   // ── 땅: 열린 구역은 풀 · 닫힌 구역은 숲
@@ -49,7 +59,7 @@ export class TownScene extends Phaser.Scene {
     const B = BUILDS[o.b], c = this.add.container(0, 0); c.o = o;
     if (o.b === 'field') { const ripe = cropReady(o), img = !o.crop ? 'soil' : ripe ? `ripe_${o.crop}` : 'sprouts', im = this.add.image(0, 0, img); place(im, o.x, o.y, 1, img === 'soil' || img === 'sprouts' ? 0.1 : 0.12); c.add(im);
       if (o.crop && !ripe) { const [x, y] = iso(o.x + 0.5, o.y + 0.5), t = Math.max(0, (o.at - Date.now()) / 1000), k = 1 - t / CROPS[o.crop].t, g = this.add.graphics(); g.fillStyle(0x000000, 0.4).fillRoundedRect(x - 40, y - 20, 80, 14, 7).fillStyle(0x8BE36A, 1).fillRoundedRect(x - 40, y - 20, Math.max(8, 80 * k), 14, 7); c.add(g); c.bar = g; } }
-    else { const im = this.add.image(0, 0, o.b); place(im, o.x, o.y, B.sz, 0.08); c.add(im); c.im = im;
+    else { const im = this.add.image(0, 0, o.b === 'mine' ? 'mine_b' : o.b); place(im, o.x, o.y, B.sz, 0.08); c.add(im); c.im = im;
       // 다 된 물건 말풍선
       let ready = null; if (B.k === 'factory') { tickFactory(o); if (o.done.length) ready = o.done[0]; } if (B.k === 'animal') { tickAnimal(o); if (o.ready) ready = productOf(o.b); }
       const busy = B.k === 'factory' && o.q && o.q.length || B.k === 'animal' && o.s && o.s.some(Boolean);
@@ -91,13 +101,13 @@ export class TownScene extends Phaser.Scene {
   }
   select(o) { this.sel = o; this.drawObjs(); }
   tick() { if (this.dead) return; let ch = false; for (const o of this.d.objs) { if (o.b === 'field' && o.crop && !o.ripe && cropReady(o)) { o.ripe = true; ch = true; } if (o.b === 'field' && o.crop && !cropReady(o)) ch = true; if (BUILDS[o.b].k === 'factory' && tickFactory(o)) ch = true; if (BUILDS[o.b].k === 'animal' && tickAnimal(o)) ch = true; }
-    const t = train(); if (t && t.away !== this.trainAway) { this.trainAway = t.away; this.drawStation(); if (!t.away) audio.play('sfx_whistle', { volume: 0.5 }); }
+    const t = train(); if (t && t.away !== this.trainAway) { const leaving = t.away && this.trainAway === false && this.trainC; this.trainAway = t.away; if (leaving) { const tc = this.trainC; this.tweens.add({ targets: tc, x: tc.x - 1400, y: tc.y + 700, duration: 2200, ease: 'Cubic.easeIn', onComplete: () => this.drawStation() }); } else this.drawStation(); if (!t.away) audio.play('sfx_whistle', { volume: 0.5 }); }
     if (ch && !this.mode) this.drawObjs(); save(); this.hud && this.hud.refresh(); }
   // ── 놓기 · 옮기기
   startPlace(b, moving) {
     const B = BUILDS[b], cam = this.cameras.main, w = cam.getWorldPoint(W / 2, H / 2), [gx, gy] = grid(w.x, w.y);
     this.mode = moving ? 'move' : 'place'; this.placing = { b, moving }; this.ghost = this.add.container(0, 0); this.ghost.sz = B.sz; this.ghost.setDepth(5);
-    this.ghostIm = this.add.image(0, 0, b === 'field' ? 'soil' : b).setAlpha(0.85); this.ghostG = this.add.graphics(); this.ghost.add([this.ghostG, this.ghostIm]);
+    this.ghostIm = this.add.image(0, 0, b === 'field' ? 'soil' : b === 'mine' ? 'mine_b' : b).setAlpha(0.85); this.ghostG = this.add.graphics(); this.ghost.add([this.ghostG, this.ghostIm]);
     this.layer.add(this.ghost); this.moveGhost(moving ? moving.x : gx - 1, moving ? moving.y : gy - 1);
     this.ghostIm.setInteractive({ draggable: false }); this.input.on('gameobjectdown', (p, go) => { if (go === this.ghostIm) this.dragGhost = true; });
   }

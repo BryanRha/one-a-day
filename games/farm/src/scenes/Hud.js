@@ -1,9 +1,9 @@
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.37.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.37.0';
-import { audio } from '../audio.js?v=0.37.0';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP } from '../data.js?v=0.37.0';
-import { load, save, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.37.0';
+import { W, H } from '../config.js?v=0.38.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.38.0';
+import { audio } from '../audio.js?v=0.38.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS } from '../data.js?v=0.38.0';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.38.0';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -20,7 +20,7 @@ export class HudScene extends Phaser.Scene {
     this.coinT = pill(310, 'coin'); this.gemT = pill(510, 'gem'); this.toolT = pill(680, 'tools'); this.popT = pill(850, 'pop');
     this.zone(0, 0, W, 140);
     // 오른쪽 버튼 · 아래 막대
-    this.sideBtns = [['quest', '📜', '퀘스트', () => this.questPanel()], ['orders', 'orderboard', '주문', () => this.ordersPanel()], ['train', 'loco', '기차', () => this.trainPanel()], ['rent', 'pachulo', '월세', () => this.rentPanel()]].map(([id, ic, n, fn], k) => this.side(W - 80, 230 + k * 160, ic, n, fn));
+    this.sideBtns = [['quest', '📜', '퀘스트', () => this.questPanel()], ['orders', 'orderboard', '주문', () => this.ordersPanel()], ['train', 'loco', '기차', () => this.trainPanel()], ['rent', 'pachulo', '월세', () => this.rentPanel()], ['people', 'heart', '사람들', () => this.go('People')], ['mini', 'sparrow', '놀이', () => this.miniPanel()]].map(([id, ic, n, fn], k) => this.side(W - 80, 230 + k * 160, ic, n, fn));
     const by = H - 120, bg = this.add.graphics(); bg.fillStyle(0x3E2A14, 0.88).fillRoundedRect(16, by - 76, W - 32, 160, 40); this.zone(0, by - 80, W, 200);
     [['🏗', '건설', () => this.buildPanel()], ['barn', '헛간', () => this.barnPanel()], ['🔨', '땅', () => toast(this, '숲(넓히기 팻말)을 눌러 땅을 넓혀요', H / 2)], ['⚙', '설정', () => this.settings()]].forEach(([ic, n, fn], k) => this.bottom(150 + k * 260, by, ic, n, fn));
     this.qBanner = this.add.container(W / 2, 200); this.zone(W / 2 - 300, 160, 600, 80, () => this.questPanel());
@@ -57,6 +57,7 @@ export class HudScene extends Phaser.Scene {
     if (B.k === 'field') { if (o.crop && cropReady(o)) return this.harvest(o); if (o.crop) return toast(this, `${ITEMS[o.crop].n} · ${fmtT((o.at - Date.now()) / 1000)} 남음`, H * 0.7); return this.plantPanel(o); }
     if (B.k === 'factory') { tickFactory(o); if (o.done.length) return this.collect(o); return this.factoryPanel(o); }
     if (B.k === 'animal') { tickAnimal(o); if (o.ready) return this.collect(o); return this.animalPanel(o); }
+    if (B.k === 'mine') return this.go('Mine'); if (B.k === 'wedding') return this.go('People');
     this.infoPanel(o);
   }
   // 밭: 다 익은 같은 작물을 한 번에 거둠 (1개 심어 2개)
@@ -71,7 +72,7 @@ export class HudScene extends Phaser.Scene {
     p.content.add(T(this, 0, -170 - Math.ceil(crops.length / 4) * 115, '무엇을 심을까요?', 42, C.ink, { w: 900 })); p.content.add(T(this, 0, -115 - Math.ceil(crops.length / 4) * 115, `작물 1개를 심으면 2개 · 빈 밭 ${empty.length}칸에 한 번에 심어요`, 22, C.dim, { w: 900 }));
     crops.forEach(([k, c], i) => { const x = -345 + (i % 4) * 230, y = -40 - Math.ceil(crops.length / 4) * 115 + 150 + Math.floor(i / 4) * 230, cc = this.add.container(x, y), g = this.add.graphics(), n = this.d.items[k] || 0;
       g.fillStyle(n ? 0xFFF6E0 : 0xEEE6DC, 1).fillRoundedRect(-100, -100, 200, 200, 26).lineStyle(3, 0xC9A27A, 1).strokeRoundedRect(-100, -100, 200, 200, 26); cc.add([g, icon(this, 0, -24, k, 100), T(this, 0, 50, `${ITEMS[k].n} ${n}개`, 22, n ? C.ink : C.dim, { w: 900 }), T(this, 0, 80, fmtT(c.t), 18, C.dim, { w: 800 })]);
-      cc.setSize(200, 200).setInteractive({ useHandCursor: true }).on('pointerup', () => { let m = 0; for (const f of [o, ...empty.filter(f => f !== o)]) { if (!has(k)) break; if (f.crop) continue; add(k, -1); f.crop = k; f.at = Date.now() + c.t * 1000; f.ripe = false; m++; } if (!m) return toast(this, `${ITEMS[k].n}이(가) 없어요 · 주문하거나 사 와요`); save(); audio.play('sfx_plant', { volume: 0.7 }); p.close(); this.town.drawObjs(); toast(this, `${ITEMS[k].n} ${m}칸 심었어요`, H * 0.72); }); p.content.add(cc); });
+      cc.setSize(200, 200).setInteractive({ useHandCursor: true }).on('pointerup', () => { let m = 0; for (const f of [o, ...empty.filter(f => f !== o)]) { if (!has(k)) break; if (f.crop) continue; add(k, -1); f.crop = k; f.at = Date.now() + cropTime(k) * 1000; f.ripe = false; m++; } if (!m) return toast(this, `${ITEMS[k].n}이(가) 없어요 · 주문하거나 사 와요`); save(); audio.play('sfx_plant', { volume: 0.7 }); p.close(); this.town.drawObjs(); toast(this, `${ITEMS[k].n} ${m}칸 심었어요`, H * 0.72); }); p.content.add(cc); });
   }
   collect(o) { const B = BUILDS[o.b]; let it, n = 0;
     if (B.k === 'factory') { while (o.done.length && canFit(1)) { it = o.done.shift(); add(it, 1); n++; progress('make', { it, n: 1 }); } }
@@ -100,11 +101,22 @@ export class HudScene extends Phaser.Scene {
   infoPanel(o) { const B = BUILDS[o.b], p = popup(this, 800, 560); p.content.add(T(this, 0, -200, B.n, 44, C.ink, { w: 900 })); p.content.add(icon(this, 0, -60, o.b, 200)); p.content.add(T(this, 0, 80, B.give ? `주민 ${B.give}명이 살아요` : B.cap ? `인구 상한 +${B.cap}` : '', 26, C.dim, { w: 900 }));
     p.content.add(btn(this, 0, 190, 300, 96, '옮기기', () => { p.close(); this.startMove(o); }, { size: 28, style: 'cream' })); }
   // ── 건설
-  buildPanel() {
-    const list = Object.entries(BUILDS), p = popup(this, 1020, 1640), top = -760; p.content.add(T(this, 0, top + 30, '건설', 46, C.ink, { w: 900 }));
-    list.forEach(([k, B], i) => { const x = -340 + (i % 3) * 340, y = top + 210 + Math.floor(i / 3) * 290, why = canBuild(k), cc = this.add.container(x, y), g = this.add.graphics(); g.fillStyle(why ? 0xEEE6DC : 0xFFFBF2, 1).fillRoundedRect(-155, -130, 310, 260, 26).lineStyle(3, why ? 0xD8C8B8 : 0x5AAE3C, 1).strokeRoundedRect(-155, -130, 310, 260, 26);
-      cc.add([g, icon(this, 0, -46, k === 'field' ? 'soil' : k, 150), T(this, 0, 52, B.n, 24, C.ink, { w: 900 }), T(this, 0, 86, why || `🪙${B.cost}${B.give ? ` · 주민 +${B.give}` : B.cap ? ` · 상한 +${B.cap}` : ''}`, 18, why ? C.red : C.brown, { w: 800, wrap: 290 })]); if (why) cc.list[1].setAlpha(0.5);
+  buildPanel(tab = 'make', page = 0) {
+    const TABS = [['make', '생산'], ['town', '마을'], ['deco', '장식']], kinds = { make: ['field', 'factory', 'animal', 'mine'], town: ['house', 'public', 'wedding'], deco: ['deco'] };
+    const all = Object.entries(BUILDS).filter(([k, B]) => kinds[tab].includes(B.k)).sort((a, b) => a[1].lv - b[1].lv), per = 12, pages = Math.ceil(all.length / per), list = all.slice(page * per, page * per + per);
+    const p = popup(this, 1020, 1640), top = -760; p.content.add(T(this, 0, top + 30, '건설', 46, C.ink, { w: 900 }));
+    TABS.forEach(([t, n], k) => p.content.add(btn(this, (k - 1) * 300, top + 110, 270, 80, n, () => { if (t !== tab) { p.close(); this.buildPanel(t, 0); } }, { size: 28, style: t === tab ? 'gold' : 'cream' })));
+    if (tab === 'deco') p.content.add(T(this, 0, top + 170, `매력 ${joy()} · 주문 코인 +${Math.round(joyBonus() * 100)}%`, 24, '#E8507A', { w: 900 }));
+    list.forEach(([k, B], i) => { const x = -340 + (i % 3) * 340, y = top + 330 + Math.floor(i / 3) * 290, why = canBuild(k), cc = this.add.container(x, y), g = this.add.graphics(); g.fillStyle(why ? 0xEEE6DC : 0xFFFBF2, 1).fillRoundedRect(-155, -130, 310, 260, 26).lineStyle(3, why ? 0xD8C8B8 : 0x5AAE3C, 1).strokeRoundedRect(-155, -130, 310, 260, 26);
+      cc.add([g, icon(this, 0, -46, k === 'field' ? 'soil' : k === 'mine' ? 'mine_b' : k, 150), T(this, 0, 52, B.n, 24, C.ink, { w: 900 }), T(this, 0, 86, why || `🪙${costOf(k)}${B.give ? ` · 주민 +${B.give}` : B.cap ? ` · 상한 +${B.cap}` : B.joy ? ` · 매력 +${B.joy}` : ''}`, 18, why ? C.red : C.brown, { w: 800, wrap: 290 })]); if (why) cc.list[1].setAlpha(0.5);
       cc.setSize(310, 260).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (why) return toast(this, why); p.close(); this.startBuild(k); }); p.content.add(cc); });
+    if (pages > 1) { p.content.add(btn(this, -200, 720, 200, 80, '◀', () => { if (page > 0) { p.close(); this.buildPanel(tab, page - 1); } }, { size: 30, style: 'cream' })); p.content.add(T(this, 0, 720, `${page + 1} / ${pages}`, 28, C.ink, { w: 900 })); p.content.add(btn(this, 200, 720, 200, 80, '▶', () => { if (page < pages - 1) { p.close(); this.buildPanel(tab, page + 1); } }, { size: 30, style: 'cream' })); }
+  }
+  go(key, data) { this.scene.stop(); this.town.scene.start(key, data); }
+  miniPanel() { const p = popup(this, 900, 900); p.content.add(T(this, 0, -370, '마을 놀이', 44, C.ink, { w: 900 })); p.content.add(T(this, 0, -310, `오늘 ${miniLeft()}번 남음 · 30초 동안 많이 누를수록 보상이 커요`, 24, C.dim, { w: 900 }));
+    Object.entries(MINIS).forEach(([k, M], i) => { const y = -170 + i * 200, g = this.add.graphics(); g.fillStyle(0xFFF6E0, 1).fillRoundedRect(-400, y - 85, 800, 170, 30); p.content.add(g); const f = this.add.image(-320, y, M.who); f.setScale(150 / f.height); p.content.add(f);
+      p.content.add(T(this, -220, y - 30, `${M.n} · ${CHARS[M.who]}`, 32, C.ink, { ox: 0, w: 900 })); p.content.add(T(this, -220, y + 22, M.d, 20, C.dim, { ox: 0, w: 800, wrap: 400, align: 'left' }));
+      p.content.add(btn(this, 300, y, 160, 90, '하기', () => { if (miniLeft() <= 0) return toast(this, '오늘은 다 했어요'); p.close(); this.go('Mini', { k }); }, { size: 28, style: 'gold' })); });
   }
   startBuild(k) { this.town.startPlace(k, null); this.placeUi(k); }
   startMove(o) { this.town.startPlace(o.b, o); this.placeUi(o.b, o); }
@@ -118,9 +130,9 @@ export class HudScene extends Phaser.Scene {
   placeOk2(k, moving) {
     const t = this.town; if (!t.ghostOk) return toast(this, '여기엔 놓을 수 없어요', H / 2); const gx = t.ghost.gx, gy = t.ghost.gy;
     if (moving) { moving.x = gx; moving.y = gy; }
-    else { const why = canBuild(k); if (why) return toast(this, why); const B = BUILDS[k]; this.d.coins -= B.cost; const o = { id: ++this.d.seq, b: k, x: gx, y: gy }; if (B.k === 'factory') { o.q = []; o.done = []; } if (B.k === 'animal') { o.s = [0, 0, 0]; o.ready = 0; } if (k === 'field') o.crop = null; this.d.objs.push(o); progress('build', k); gainXp(B.k === 'field' ? 1 : 5); audio.play('sfx_build', { volume: 0.7 }); }
+    else { const why = canBuild(k); if (why) return toast(this, why); const B = BUILDS[k]; this.d.coins -= costOf(k); const o = { id: ++this.d.seq, b: k, x: gx, y: gy }; if (B.k === 'factory') { o.q = []; o.done = []; } if (B.k === 'animal') { o.s = [0, 0, 0]; o.ready = 0; } if (k === 'field') o.crop = null; this.d.objs.push(o); progress('build', k); gainXp(B.k === 'field' ? 1 : 5); audio.play('sfx_build', { volume: 0.7 }); }
     save(); t.endPlace(); this.placeBar.destroy(); this.placeBar = null; this.zones = this.zones.filter(z => z !== this.pz); this.refresh();
-    if (!moving && k === 'field' && canBuild('field') === null) this.startBuild('field');   // 밭은 이어서 여러 칸
+    if (!moving && (k === 'field' || BUILDS[k].k === 'deco') && canBuild(k) === null) this.startBuild(k);   // 밭 · 장식은 이어서 여러 개   // 밭은 이어서 여러 칸
   }
   // ── 주문 게시판
   ordersPanel() {
@@ -131,7 +143,7 @@ export class HudScene extends Phaser.Scene {
       const f = this.add.image(-160, -130, o.face); f.setScale(110 / f.height); f.setCrop(0, 0, f.width, f.height * 0.75); cc.add(f); cc.add(T(this, -90, -150, CHARS[o.face] + (o.brook ? ' ★' : ''), 24, C.ink, { ox: 0, w: 900 }));
       Object.entries(o.items).forEach(([k, n], j, arr) => { const ix = (j - (arr.length - 1) / 2) * 130; cc.add(icon(this, ix, -20, k, 90)); const hv = this.d.items[k] || 0; cc.add(T(this, ix, 44, `${hv}/${n}`, 22, hv >= n ? C.green : C.red, { w: 900 })); });
       cc.add(T(this, 0, 100, `🪙${o.coins}  ⭐${o.xp}${o.tools ? `  🔨${o.tools}` : ''}`, 26, C.brown, { w: 900 }));
-      cc.add(btn(this, 60, 160, 260, 70, '보내기', () => { const r = doOrder(i); if (!r) return toast(this, '물건이 모자라요'); save(); audio.play('sfx_order', { volume: 0.7 }); audio.buzz([20, 40, 20]); p.close(); this.fly([W / 2, H / 2], 'coin', `+${r.o.coins}`); this.refresh(); this.levelUps(r.ups); this.ordersPanel(); }, { size: 24, style: ok ? 'green' : 'cream' }));
+      cc.add(btn(this, 60, 160, 260, 70, '보내기', () => { const r = doOrder(i); if (!r) return toast(this, '물건이 모자라요'); save(); audio.play('sfx_order', { volume: 0.7 }); audio.buzz([20, 40, 20]); p.close(); this.fly([W / 2, H / 2], 'coin', `+${r.o.coins}${r.o.bonusC ? ` (+${r.o.bonusC} 매력)` : ''}`); this.refresh(); this.levelUps(r.ups); this.ordersPanel(); }, { size: 24, style: ok ? 'green' : 'cream' }));
       cc.add(btn(this, -160, 160, 90, 70, '🗑', () => { dropOrder(i); save(); p.close(); this.ordersPanel(); }, { size: 24, style: 'cream' })); p.content.add(cc); });
   }
   // ── 기차

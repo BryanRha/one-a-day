@@ -2,7 +2,7 @@
 // 지금: 결제 · 광고 모두 꺼짐(enabled=false) → 화면에는 '곧 열려요'.
 // 나중에 결제를 켤 때: PROVIDER 를 실제 결제 연결(원어데이 앱 postMessage 등)로 바꾸고 enabled=true 만 하면
 //   상품 지급(grant) · 화면 · 저장 기록은 그대로 동작하도록 만들어 둠.
-import { load, save } from './save.js?v=0.37.0';
+import { load, save } from './save.js?v=0.38.0';
 
 export const PRODUCTS = [
   { id: 'gems_s', n: '보석 한 줌', price: 1200, gems: 80, tag: '' },

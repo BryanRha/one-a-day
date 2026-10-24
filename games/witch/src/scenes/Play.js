@@ -1,13 +1,13 @@
 // 비행 화면: core/run.js 시뮬레이션을 고정 간격으로 돌리고, 상태(s)와 사건(events)을 그림·소리로 옮긴다.
-import { W, H } from '../config.js?v=0.37.0';
-import { Run, LANE_W, LANES, ITEM_TIME, ZONE_EVERY } from '../core/run.js?v=0.37.0';
-import { decideX } from '../core/ai.js?v=0.37.0';
-import { txt, fmt, fit, iconButton, button, popup } from '../ui.js?v=0.37.0';
-import { audio } from '../audio.js?v=0.37.0';
-import { load, save } from '../save.js?v=0.37.0';
-import { wind, tipOf, ELEMENT } from '../fx.js?v=0.37.0';
-import { ZONES, BOSS_NAME, ITEM_NAME, REVIVE_COST, BOOSTERS, pay } from '../meta.js?v=0.37.0';
-import { inOAD, exitToOAD } from '../oad.js?v=0.37.0';
+import { W, H } from '../config.js?v=0.38.0';
+import { Run, LANE_W, LANES, ITEM_TIME, ZONE_EVERY } from '../core/run.js?v=0.38.0';
+import { decideX } from '../core/ai.js?v=0.38.0';
+import { txt, fmt, fit, iconButton, button, popup } from '../ui.js?v=0.38.0';
+import { audio } from '../audio.js?v=0.38.0';
+import { load, save } from '../save.js?v=0.38.0';
+import { wind, tipOf, ELEMENT } from '../fx.js?v=0.38.0';
+import { ZONES, BOSS_NAME, ITEM_NAME, REVIVE_COST, BOOSTERS, pay } from '../meta.js?v=0.38.0';
+import { inOAD, exitToOAD } from '../oad.js?v=0.38.0';
 
 const DT = 1 / 60;
 const SHOT_KEY = { star: 'bolt_star', fire: 'bolt_fire', ice: 'bolt_ice', bolt: 'bolt_bolt', furball: 'furball' };

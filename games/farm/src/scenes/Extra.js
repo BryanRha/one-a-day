@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.38.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.38.0';
-import { audio } from '../audio.js?v=0.38.0';
-import { goPrev } from '../nav.js?v=0.38.0';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS } from '../data.js?v=0.38.0';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.38.0';
+import { W, H } from '../config.js?v=0.38.1';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.38.1';
+import { audio } from '../audio.js?v=0.38.1';
+import { goPrev } from '../nav.js?v=0.38.1';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS } from '../data.js?v=0.38.1';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.38.1';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }

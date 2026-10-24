@@ -16,7 +16,9 @@ export const ITEMS = {
   applejuice: { n: '사과 주스', v: 44 }, grapejuice: { n: '포도 주스', v: 40 }, muffin: { n: '블루베리 머핀', v: 64 }, applepie: { n: '사과 파이', v: 72 }, bluejam: { n: '블루베리잼', v: 60 },
   ironore: { n: '철광석', v: 15 }, goldore: { n: '금광석', v: 35 }, ironbar: { n: '철 막대', v: 40 }, goldbar: { n: '금 막대', v: 90 }, pickaxe: { n: '곡괭이', v: 10 }, dynamite: { n: '다이너마이트', v: 25 },
 };
-export const CROPS = {   // 밭: 1개 심어 2개 수확 (타운십 규칙)
+// 씨앗 값 (타운십처럼 심을 때 코인을 냄 · 밀은 무료) — 가진 작물이 없어도 언제든 심을 수 있음
+export const seedCost = k => k === 'wheat' ? 0 : Math.max(1, Math.round(ITEMS[k].v * 0.6));
+export const CROPS = {   // 밭: 씨앗 값을 내고 심어 2개 수확
   wheat: { t: 30, lv: 1, xp: 1 }, corn: { t: 90, lv: 1, xp: 1 }, carrot: { t: 180, lv: 3, xp: 2 }, strawberry: { t: 300, lv: 5, xp: 2 },
   sugarcane: { t: 420, lv: 7, xp: 3 }, cabbage: { t: 600, lv: 9, xp: 3 }, cotton: { t: 900, lv: 11, xp: 4 }, pumpkin: { t: 1500, lv: 14, xp: 5 },
   tomato: { t: 1200, lv: 15, xp: 5 }, potato: { t: 1500, lv: 17, xp: 5 }, onion: { t: 1800, lv: 19, xp: 6 }, grape: { t: 2100, lv: 21, xp: 6 }, apple: { t: 2400, lv: 23, xp: 7 }, blueberry: { t: 2700, lv: 25, xp: 7 },

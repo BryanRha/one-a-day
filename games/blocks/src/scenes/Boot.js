@@ -1,9 +1,9 @@
 // 로딩 + 코드로 그리는 그림들: 블록 스킨 5종 × 7색 · 보석 3종 · 배경 테마 · 아이콘
-import { W, H, TITLE } from '../config.js?v=0.38.0';
-import { SFX } from '../audio.js?v=0.38.0';
-import { makeTextures } from '../fx.js?v=0.38.0';
-import { makeIcons } from '../pui.js?v=0.38.0';
-import { load } from '../save.js?v=0.38.0';
+import { W, H, TITLE } from '../config.js?v=0.38.1';
+import { SFX } from '../audio.js?v=0.38.1';
+import { makeTextures } from '../fx.js?v=0.38.1';
+import { makeIcons } from '../pui.js?v=0.38.1';
+import { load } from '../save.js?v=0.38.1';
 
 // 블록 색: [기본, 밝은 면, 어두운 면]
 export const PALETTE = [

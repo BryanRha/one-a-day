@@ -1,13 +1,13 @@
 // 상점: 하루 무료 선물 + 유료 상품(지금은 '곧 열려요') — 결제가 열리면 store.js 만 켜면 됨
-import { W, H } from '../config.js?v=0.43.0';
-import { T, C, btn, iconBtn, toast } from '../ui.js?v=0.43.0';
-import { audio } from '../audio.js?v=0.43.0';
-import { load, save } from '../save.js?v=0.43.0';
-import { goPrev } from '../nav.js?v=0.43.0';
-import { hud } from '../hud.js?v=0.43.0';
-import { PRODUCTS, won, storeOpen, purchase } from '../store.js?v=0.43.0';
-import { today } from '../state.js?v=0.43.0';
-import { PIGGY } from '../album.js?v=0.43.0';
+import { W, H } from '../config.js?v=0.44.0';
+import { T, C, btn, iconBtn, toast } from '../ui.js?v=0.44.0';
+import { audio } from '../audio.js?v=0.44.0';
+import { load, save } from '../save.js?v=0.44.0';
+import { goPrev } from '../nav.js?v=0.44.0';
+import { hud } from '../hud.js?v=0.44.0';
+import { PRODUCTS, won, storeOpen, purchase } from '../store.js?v=0.44.0';
+import { today } from '../state.js?v=0.44.0';
+import { PIGGY } from '../album.js?v=0.44.0';
 
 export class ShopScene extends Phaser.Scene {
   constructor() { super('Shop'); }

@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.43.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.43.0';
-import { audio } from '../audio.js?v=0.43.0';
-import { goPrev } from '../nav.js?v=0.43.0';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.43.0';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.43.0';
+import { W, H } from '../config.js?v=0.44.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.44.0';
+import { audio } from '../audio.js?v=0.44.0';
+import { goPrev } from '../nav.js?v=0.44.0';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.44.0';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.44.0';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }
@@ -93,7 +93,7 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.43.0';
+import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.44.0';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
@@ -136,8 +136,8 @@ export class EventsScene extends Phaser.Scene {
 }
 
 // ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
-import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.43.0';
-import { ISLE } from '../data.js?v=0.43.0';
+import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.44.0';
+import { ISLE } from '../data.js?v=0.44.0';
 export class IslandScene extends Phaser.Scene {
   constructor() { super('Island'); }
   create() {
@@ -165,5 +165,57 @@ export class IslandScene extends Phaser.Scene {
     else { this.tweens.add({ targets: im, scale: 0, angle: 30, duration: 250, onComplete: () => im.destroy() });
       if (r.r) { const t = T(this, im.x, im.y, rewardText(r.r), 28, '#FFE27A', { w: 900 }).setStroke('#3E2A14', 6); this.tweens.add({ targets: t, y: t.y - 80, alpha: 0, duration: 1300, delay: 200, onComplete: () => t.destroy() }); audio.play('sfx_coin', { volume: 0.6 }); } }
     if (r.done) { audio.play('sfx_levelup', { volume: 0.8 }); toast(this, '섬을 모두 탐험했어요! 다음 섬으로 ⛵', H / 2); this.time.delayedCall(1600, () => this.scene.restart()); } }
+  onBack() { return goPrev(this); }
+}
+
+// ── 협동조합: 레가타(주간 팀 경주) · 도움 요청
+import { coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.44.0';
+const fmtH = ms => { const m = Math.floor(ms / 6e4); return m >= 1440 ? `${Math.floor(m / 1440)}일 ${Math.floor(m % 1440 / 60)}시간` : m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
+export class CoopScene extends Phaser.Scene {
+  constructor() { super('Coop'); }
+  create(data) {
+    this.tab = (data && data.tab) || 'race'; this.add.rectangle(W / 2, H / 2, W, H, 0xE6F2FA); top(this, '협동조합'); window.__coop = this;
+    [['race', '⛵ 레가타'], ['help', '🤝 도움 요청']].forEach(([k, n], i) => btn(this, W / 2 - 220 + i * 440, 190, 400, 84, n, () => { if (k !== this.tab) this.scene.restart({ tab: k }); }, { size: 28, style: k === this.tab ? 'gold' : 'cream' }));
+    if (load().lv < COOP_LV) { T(this, W / 2, H / 2, `레벨 ${COOP_LV}부터 협동조합에 들어갈 수 있어요`, 34, C.ink, { w: 900 }); return; }
+    this[this.tab]();
+    const pv = load().coopPrev; if (pv) this.time.delayedCall(300, () => { const p = popup(this, 820, 620); p.content.add(T(this, 0, -230, '지난주 레가타 결과', 40, C.ink, { w: 900 })); p.content.add(T(this, 0, -130, `${pv.rank}위 · 내 점수 ${pv.pts}`, 46, pv.rank <= 3 ? '#E8A33A' : C.brown, { w: 900 })); p.content.add(icon(this, 0, 0, 'trophy', 150)); p.content.add(T(this, 0, 110, rewardText(RANK_R[pv.rank - 1]), 30, C.brown, { w: 900 }));
+      p.content.add(btn(this, 0, 220, 320, 96, '받기', () => { prevClaim(); save(); audio.play('sfx_levelup'); p.close(); this.scene.restart({ tab: this.tab }); }, { size: 30, style: 'gold' })); });
+  }
+  race() {
+    const c = coop(), st = standings(c); let y = 290;
+    T(this, W / 2, y, `이번 주 남은 시간 ${fmtH(weekLeft())} · 우리 조합 ${st.rank}위`, 28, C.ink, { w: 900 }); y += 50;
+    const maxP = Math.max(1, ...st.rows.map(r => r.pts));
+    st.rows.forEach((r, i) => { const yy = y + 40 + i * 78, g = this.add.graphics(); g.fillStyle(r.me ? 0xFFF1C9 : 0xFFFFFF, 1).fillRoundedRect(60, yy - 32, W - 120, 64, 20).lineStyle(r.me ? 4 : 2, r.me ? 0xF0B65A : 0xD0DDE6, 1).strokeRoundedRect(60, yy - 32, W - 120, 64, 20);
+      g.fillStyle(r.me ? 0xF0B65A : 0x7FB8DA, 0.35).fillRoundedRect(64, yy - 28, Math.max(20, (W - 128) * r.pts / maxP), 56, 18);
+      T(this, 110, yy, `${i + 1}`, 30, i < 3 ? '#E8A33A' : C.dim, { w: 900 }); T(this, 160, yy, r.n, 26, C.ink, { ox: 0, w: 900 }); T(this, W - 90, yy, `${r.pts}`, 28, C.brown, { ox: 1, w: 900 }); });
+    y += 40 + st.rows.length * 78 + 10;
+    T(this, W / 2, y, `팀원 ${c.mates.map(m => m.n).join(' · ')} · 팀원 점수 ${st.mates}`, 20, C.dim, { w: 900, wrap: 960 }); y += 60;
+    // 지금 과제
+    const g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(50, y, W - 100, 170, 26).lineStyle(3, 0x7FB8DA, 1).strokeRoundedRect(50, y, W - 100, 170, 26);
+    if (c.cur) { const pr = taskProg(); icon(this, 130, y + 85, c.cur.ic, 100); T(this, 200, y + 45, `지금 과제: ${c.cur.d}`, 28, C.ink, { ox: 0, w: 900 }); T(this, 200, y + 88, `⭐ ${c.cur.pts}점 · 남은 시간 ${fmtH(c.cur.end - Date.now())}`, 22, C.dim, { ox: 0, w: 800 });
+      const bg = this.add.graphics(); bg.fillStyle(0xE2E8EE, 1).fillRoundedRect(200, y + 118, 560, 26, 13).fillStyle(0x5AAE3C, 1).fillRoundedRect(200, y + 118, Math.max(26, 560 * pr / c.cur.n), 26, 13); T(this, 790, y + 131, `${pr}/${c.cur.n}`, 22, C.ink, { ox: 0, w: 900 });
+      btn(this, W - 140, y + 60, 140, 70, '포기', () => { dropTask(); save(); this.scene.restart({ tab: 'race' }); }, { size: 22, style: 'cream' }); }
+    else T(this, W / 2, y + 85, `아래에서 과제를 하나 골라요 · 오늘 ${c.dn}/${TASKS_DAY}개`, 28, C.brown, { w: 900 });
+    y += 210;
+    // 과제 카드 6장
+    c.tasks.forEach((t, i) => { const x = 200 + (i % 3) * 340, yy = y + 150 + Math.floor(i / 3) * 320, cg = this.add.graphics(); cg.fillStyle(0xFFFFFF, 1).fillRoundedRect(x - 155, yy - 145, 310, 290, 24).lineStyle(2, 0xD0DDE6, 1).strokeRoundedRect(x - 155, yy - 145, 310, 290, 24);
+      icon(this, x, yy - 65, t.ic, 100); T(this, x, yy + 20, t.d, 22, C.ink, { w: 900, wrap: 280 }); T(this, x, yy + 62, `⭐${t.pts} · ${Math.round(t.t / 36e5)}시간`, 20, C.dim, { w: 800 });
+      btn(this, x, yy + 110, 200, 64, '받기', () => { const e = takeTask(i); if (e) return toast(this, e, H / 2); save(); audio.play('sfx_tap'); this.scene.restart({ tab: 'race' }); }, { size: 24, style: c.cur ? 'cream' : 'green' }); });
+    y += 680;
+    // 개인 보상 단계
+    T(this, W / 2, y, `내 점수 ${c.myPts} · 점수가 쌓이면 상자를 열어요`, 26, C.ink, { w: 900 }); y += 110;
+    COOP_TIERS.forEach((tp, i) => { const x = 140 + i * 200, got = c.got.includes(i), ok = c.myPts >= tp, cg = this.add.graphics(); cg.fillStyle(got ? 0xE3F5DA : ok ? 0xFFF1C9 : 0xFFFFFF, 1).fillRoundedRect(x - 85, y - 70, 170, 190, 22).lineStyle(ok && !got ? 5 : 2, ok && !got ? 0xF0B65A : 0xD0DDE6, 1).strokeRoundedRect(x - 85, y - 70, 170, 190, 22);
+      const im = icon(this, x, y - 10, 'chest', 90); if (!ok) im.setAlpha(0.45); T(this, x, y + 62, got ? '받음 ✓' : `⭐${tp}`, 22, got ? C.green : C.brown, { w: 900 }); T(this, x, y + 96, rewardText(TIER_R[i]), 14, C.dim, { w: 800, wrap: 160 });
+      if (ok && !got) { const z = this.add.zone(x, y + 25, 170, 190).setInteractive({ useHandCursor: true }); z.on('pointerup', () => { tierClaim(i); save(); audio.play('sfx_levelup', { volume: 0.7 }); toast(this, `🎁 ${rewardText(TIER_R[i])}`, H / 2); this.time.delayedCall(600, () => this.scene.restart({ tab: 'race' })); }); } });
+  }
+  help() {
+    const c = coop(); T(this, W / 2, 300, '조합 팀원들이 물건을 부탁해요 · 매일 새로 와요', 28, C.ink, { w: 900 });
+    c.reqs.forEach((q, i) => { const y = 520 + i * 360, m = c.mates[q.who], g = this.add.graphics(), hv = load().items[q.it] || 0; g.fillStyle(q.done ? 0xE3F5DA : 0xFFFFFF, 1).fillRoundedRect(60, y - 150, W - 120, 300, 28).lineStyle(2, 0xD0DDE6, 1).strokeRoundedRect(60, y - 150, W - 120, 300, 28);
+      const av = this.add.image(170, y + 40, `w${m.v}_f1`); av.setScale(240 / av.height); T(this, 170, y - 120, m.n, 22, C.brown, { w: 900 });
+      T(this, 300, y - 80, `"${ITEMS[q.it].n} ${q.n}개만 보내 줄래요?"`, 28, C.ink, { ox: 0, w: 900 }); icon(this, 360, y + 30, q.it, 110); T(this, 430, y + 30, `${hv}/${q.n}`, 30, hv >= q.n ? C.green : C.red, { ox: 0, w: 900 });
+      T(this, 300, y + 110, `보내면 🪙${Math.round(ITEMS[q.it].v * q.n * 1.8 + 20)} · 조합 점수 ⭐8`, 22, C.dim, { ox: 0, w: 800 });
+      if (q.done) T(this, W - 190, y + 30, '보냄 ✓', 30, C.green, { w: 900 });
+      else btn(this, W - 190, y + 30, 220, 90, '보내기', () => { const r = helpSend(i); if (typeof r === 'string') return toast(this, r, H / 2); save(); audio.play('sfx_coin'); toast(this, `${m.n}: 고마워요! ${rewardText(r.r)}`, H / 2); this.time.delayedCall(700, () => this.scene.restart({ tab: 'help' })); }, { size: 28, style: hv >= q.n ? 'green' : 'cream' }); });
+  }
   onBack() { return goPrev(this); }
 }

@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.43.0';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.43.0';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.44.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.44.0';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -41,7 +41,7 @@ export function take(need) { if (!hasAll(need)) return false; for (const [k, n] 
 
 // ── 경험치 · 레벨 (레벨업 보상 목록 돌려줌)
 export function gainXp(n) { const s = load(); s.xp += n; const ups = []; while (s.lv < MAX_LV && s.xp >= XP_NEED(s.lv)) { s.xp -= XP_NEED(s.lv); s.lv++; const r = LV_REWARD(s.lv); s.coins += r.coins; s.gems += r.gems; giveMats(r.tools); if (s.lv >= 4) r.bm = giveBm(2); ups.push({ lv: s.lv, ...r }); } return ups; }
-export function give(r) { const s = load(); if (r.coins) s.coins += r.coins; if (r.gems) s.gems += r.gems; if (r.tools) giveMats(r.tools); if (r.items) for (const [k, n] of Object.entries(r.items)) add(k, n); return r.xp ? gainXp(r.xp) : []; }
+export function give(r) { const s = load(); if (r.bm && typeof r.bm === 'number') giveBm(r.bm); if (r.coins) s.coins += r.coins; if (r.gems) s.gems += r.gems; if (r.tools) giveMats(r.tools); if (r.items) for (const [k, n] of Object.entries(r.items)) add(k, n); return r.xp ? gainXp(r.xp) : []; }
 
 // ── 건축 재료: 헛간용(망치·못·페인트) · 땅용(톱·널빤지·밧줄) · 보상의 tools n = 재료 n개를 고르게 섞어서
 export let lastMats = {};
@@ -113,7 +113,7 @@ export function loadCar(k, ti = 0) { const t = trainN(ti); if (!t || t.away) ret
 
 // ── 퀘스트 (이야기 1장)
 export const quest = () => QUESTS[load().quest] || null;
-export function progress(kind, v) { const s = load(), q = quest(); if (!q) return; const g = q.goal; if (kind in g || kind === 'make' && g.make) { if (kind === 'make') { s.qp.make = s.qp.make || {}; s.qp.make[v.it] = (s.qp.make[v.it] || 0) + v.n; } else s.qp[kind] = (s.qp[kind] || 0) + (typeof v === 'number' ? v : 1); } }
+export function progress(kind, v) { const s = load(), q = quest(); if (kind === 'make') { s.stats.mk = s.stats.mk || {}; s.stats.mk[v.it] = (s.stats.mk[v.it] || 0) + v.n; } if (kind === 'isle') s.stats.isle = (s.stats.isle || 0) + 1; if (!q) return; const g = q.goal; if (kind in g || kind === 'make' && g.make) { if (kind === 'make') { s.qp.make = s.qp.make || {}; s.qp.make[v.it] = (s.qp.make[v.it] || 0) + v.n; } else s.qp[kind] = (s.qp[kind] || 0) + (typeof v === 'number' ? v : 1); } }
 export function questDone() { const s = load(), q = quest(); if (!q) return false; const g = q.goal, p = s.qp;
   if (g.site) return (p.site || 0) >= g.site; if (g.road) return s.objs.filter(o => o.b === 'road').length >= g.road; if (g.relic) return relic().done.length >= g.relic;
   if (g.harvest) return (p.harvest || 0) >= g.harvest; if (g.build) return countOf(g.build) > 0; if (g.order) return (p.order || 0) >= g.order; if (g.train) return (p.train || 0) >= g.train;

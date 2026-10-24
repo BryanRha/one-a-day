@@ -1,6 +1,6 @@
 // 이벤트 묶음 (타운십 · K뷰티 레시피 틀): 7일 출석 · 주간 축제(티켓 사다리) · 이웃 농장 레이스(AI) · 스티커 앨범 · 시즌 패스 · 항구 무역
-import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.43.0';
-import { VOYAGES } from './data.js?v=0.43.0';
+import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.44.0';
+import { VOYAGES } from './data.js?v=0.44.0';
 
 const now = () => Date.now();
 function ev() { const d = load(); if (!d.ev) d.ev = {}; return d.ev; }
@@ -56,7 +56,7 @@ export function passClaim(i) { const p = pass(); if (p.pts < PASS_TIERS[i] || p.
 
 // 활동 한 번 → 축제 · 레이스 · 패스 점수
 export function onOrder() { festAdd(3); raceAdd(2); passAdd(3); return albumOrder(); }
-export function onTrainCar() { festAdd(4); raceAdd(3); passAdd(4); }
+export function onTrainCar() { load().stats.cars = (load().stats.cars || 0) + 1; festAdd(4); raceAdd(3); passAdd(4); }
 export function onHarvest(n) { festAdd(Math.floor(n / 4)); passAdd(Math.floor(n / 6)); }
 
 // ── 항구 무역

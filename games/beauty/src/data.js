@@ -1,5 +1,5 @@
-import { SPOTS2, SPOTS3, TASKS2, TASKS3, STORY23 } from './chapters.js?v=0.40.0';
-import { SPOTS4, SPOTS5, SPOTS6, TASKS4, TASKS5, TASKS6, STORY456 } from './chapters2.js?v=0.40.0';
+import { SPOTS2, SPOTS3, TASKS2, TASKS3, STORY23 } from './chapters.js?v=0.41.0';
+import { SPOTS4, SPOTS5, SPOTS6, TASKS4, TASKS5, TASKS6, STORY456 } from './chapters2.js?v=0.41.0';
 // 게임 데이터 — 재료 계열 · 생산기 · 레벨 · 주문 손님 · 매장 자리 · 1장 이야기
 // 원작(Gossip Harbor) 구조: 계열별 단계 머지 · 생산기(에너지) · 무료/임시 생산기 · 주문 · 코인=이야기·수리 · 레벨업=에너지 가득
 

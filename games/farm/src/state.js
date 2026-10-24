@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE } from './data.js?v=0.40.0';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.40.0';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS } from './data.js?v=0.41.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.41.0';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -12,7 +12,7 @@ function fresh() {
   const c = 8;
   for (let k = 0; k < 6; k++) objs.push({ id: id(), b: 'field', x: c + (k % 3), y: c + Math.floor(k / 3), crop: 'wheat', at: 0 });
   objs.push({ id: id(), b: 'cottage', x: c + 4, y: c - 1 });
-  return { v: 1, sfx: true, music: true, coins: 60, gems: 20, tools: 2, xp: 0, lv: 1, items: { wheat: 4, corn: 4 }, objs, seq: objs.length,
+  return { v: 1, sfx: true, music: true, coins: 60, gems: 20, tools: 0, xp: 0, lv: 1, items: { wheat: 4, corn: 4 }, objs, seq: objs.length,
     zones: [...START_ZONES], barnLv: 0, orders: [], orderSeq: 0, train: null, quest: 0, qp: {}, talked: -1, rent: { week: weekNo(), paid: false }, dig: { day: -1, n: 0, spot: null }, brook: -1, stats: { harvest: 0, orders: 0, trains: 0 }, tut: 0, love: { hans: 0, sam: 0, ian: 0 }, spouse: null, proposed: null, mine: null, mini: { day: -1, n: 0 } };
 }
 export function load() {
@@ -20,6 +20,8 @@ export function load() {
   try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { d = null; }
   const f = fresh(); if (!d || d.v !== 1) d = f;
   for (const k of Object.keys(f)) if (d[k] === undefined) d[k] = f[k];
+  // v0.5: 공구(하나로 묶인 재화) → 건축 재료 6종으로 나눠 줌
+  if (d.tools > 0) { const n = d.tools; d.tools = 0; giveMats(n); }
   return d;
 }
 export function save() { try { localStorage.setItem(KEY, JSON.stringify(load())); } catch { /* */ } }
@@ -35,8 +37,22 @@ export const hasAll = need => Object.entries(need).every(([k, n]) => has(k, n));
 export function take(need) { if (!hasAll(need)) return false; for (const [k, n] of Object.entries(need)) add(k, -n); return true; }
 
 // ── 경험치 · 레벨 (레벨업 보상 목록 돌려줌)
-export function gainXp(n) { const s = load(); s.xp += n; const ups = []; while (s.lv < MAX_LV && s.xp >= XP_NEED(s.lv)) { s.xp -= XP_NEED(s.lv); s.lv++; const r = LV_REWARD(s.lv); s.coins += r.coins; s.gems += r.gems; s.tools += r.tools; ups.push({ lv: s.lv, ...r }); } return ups; }
-export function give(r) { const s = load(); if (r.coins) s.coins += r.coins; if (r.gems) s.gems += r.gems; if (r.tools) s.tools += r.tools; if (r.items) for (const [k, n] of Object.entries(r.items)) add(k, n); return r.xp ? gainXp(r.xp) : []; }
+export function gainXp(n) { const s = load(); s.xp += n; const ups = []; while (s.lv < MAX_LV && s.xp >= XP_NEED(s.lv)) { s.xp -= XP_NEED(s.lv); s.lv++; const r = LV_REWARD(s.lv); s.coins += r.coins; s.gems += r.gems; giveMats(r.tools); ups.push({ lv: s.lv, ...r }); } return ups; }
+export function give(r) { const s = load(); if (r.coins) s.coins += r.coins; if (r.gems) s.gems += r.gems; if (r.tools) giveMats(r.tools); if (r.items) for (const [k, n] of Object.entries(r.items)) add(k, n); return r.xp ? gainXp(r.xp) : []; }
+
+// ── 건축 재료: 헛간용(망치·못·페인트) · 땅용(톱·널빤지·밧줄) · 보상의 tools n = 재료 n개를 고르게 섞어서
+export let lastMats = {};
+export function giveMats(n) { lastMats = {}; if (!n) return lastMats; const it = load().items;
+  for (let k = 0; k < n; k++) { const pool = ALL_MATS.map(m => [m, 1 / (1 + (it[m] || 0))]), tot = pool.reduce((a, [, w]) => a + w, 0); let r = Math.random() * tot, pick = pool[0][0]; for (const [m, w] of pool) { if (r < w) { pick = m; break; } r -= w; } add(pick, 1); lastMats[pick] = (lastMats[pick] || 0) + 1; }   // 적게 가진 재료가 잘 나옴
+  return lastMats; }
+export const matCount = () => ALL_MATS.reduce((a, m) => a + (load().items[m] || 0), 0);
+export const missing = need => Object.entries(need).reduce((a, [k, n]) => a + Math.max(0, n - (load().items[k] || 0)), 0);
+export const gemFill = need => missing(need) * 4;   // 모자란 재료 1개 = 보석 4
+// 코인 + 재료 지불 · useGems 면 모자란 재료를 보석으로 채움
+export function payCost(c, useGems) { const s = load(), need = c.mats || {}, g = useGems ? gemFill(need) : 0; if (s.coins < (c.coins || 0)) return '코인이 모자라요'; if (!useGems && missing(need)) return '재료가 모자라요'; if (s.gems < g) return '보석이 모자라요';
+  s.coins -= c.coins || 0; s.gems -= g; for (const [k, n] of Object.entries(need)) add(k, -Math.min(n, s.items[k] || 0)); return null; }
+// 수확할 때 가끔 건축 재료가 떨어짐 (타운십처럼)
+export function matDrop(fields) { let out = null; for (let k = 0; k < fields; k++) if (Math.random() < 0.05) { const m = giveMats(1); out = Object.keys(m)[0]; } return out; }
 
 // ── 인구
 export const popNow = () => load().objs.reduce((s, o) => s + (BUILDS[o.b].give || 0), 0);
@@ -97,7 +113,7 @@ export const quest = () => QUESTS[load().quest] || null;
 export function progress(kind, v) { const s = load(), q = quest(); if (!q) return; const g = q.goal; if (kind in g || kind === 'make' && g.make) { if (kind === 'make') { s.qp.make = s.qp.make || {}; s.qp.make[v.it] = (s.qp.make[v.it] || 0) + v.n; } else s.qp[kind] = (s.qp[kind] || 0) + (typeof v === 'number' ? v : 1); } }
 export function questDone() { const s = load(), q = quest(); if (!q) return false; const g = q.goal, p = s.qp;
   if (g.harvest) return (p.harvest || 0) >= g.harvest; if (g.build) return countOf(g.build) > 0; if (g.order) return (p.order || 0) >= g.order; if (g.train) return (p.train || 0) >= g.train;
-  if (g.make) return Object.entries(g.make).every(([k, n]) => (p.make && p.make[k] || 0) >= n); if (g.zone) return s.zones.length - 4 >= g.zone; if (g.rent) return s.rent.paid || (p.rent || 0) >= 1; if (g.level) return s.lv >= g.level; if (g.deco) return s.objs.filter(o => BUILDS[o.b].k === 'deco').length >= g.deco; if (g.mini) return (p.mini || 0) >= g.mini; if (g.gift) return (p.gift || 0) >= g.gift; if (g.hearts) return Math.max(...Object.values(s.love)) >= HEARTS * HEART_PTS; if (g.married) return !!s.spouse; if (g.plane) return (p.plane || 0) >= g.plane; if (g.isle) return (p.isle || 0) >= g.isle; return false; }
+  if (g.make) return Object.entries(g.make).every(([k, n]) => (p.make && p.make[k] || 0) >= n); if (g.zone) return s.zones.length - 4 >= g.zone; if (g.rent) return s.rent.paid || (p.rent || 0) >= 1; if (g.level) return s.lv >= g.level; if (g.deco) return s.objs.filter(o => BUILDS[o.b].k === 'deco').length >= g.deco; if (g.mini) return (p.mini || 0) >= g.mini; if (g.gift) return (p.gift || 0) >= g.gift; if (g.hearts) return Math.max(...Object.values(s.love)) >= HEARTS * HEART_PTS; if (g.married) return !!s.spouse; if (g.plane) return (p.plane || 0) >= g.plane; if (g.isle) return (p.isle || 0) >= g.isle; if (g.boss) return (p.boss || 0) >= g.boss; return false; }
 export const questProg = () => { const s = load(), q = quest(); if (!q) return ''; const g = q.goal, p = s.qp; if (g.harvest) return `${Math.min(p.harvest || 0, g.harvest)}/${g.harvest}`; if (g.order) return `${Math.min(p.order || 0, g.order)}/${g.order}`; if (g.make) { const [k, n] = Object.entries(g.make)[0]; return `${Math.min(p.make && p.make[k] || 0, n)}/${n}`; } if (g.level) return `${s.lv}/${g.level}`; return questDone() ? '완료' : ''; };
 export function claimQuest() { const s = load(), q = quest(); if (!q || !questDone()) return null; s.quest++; s.qp = {}; return { q, ups: give(q.reward) }; }
 
@@ -112,11 +128,11 @@ export function digSpot() {
   return s.dig.spot;
 }
 export function digUp() { const s = load(); if (!s.dig.spot) return null; s.dig.spot = null; s.dig.n++; const opts = [{ coins: 20 + s.lv * 5 }, { tools: 1 }, { gems: 2 }, { items: { corn: 3 } }, { items: { wheat: 5 } }, { coins: 40 }]; const r = opts[Math.floor(Math.random() * opts.length)]; give(r); return r; }
-export const rewardText = r => [r.coins && `🪙${r.coins}`, r.gems && `💎${r.gems}`, r.tools && `🔨${r.tools}`, r.xp && `⭐${r.xp}`, r.items && Object.entries(r.items).map(([k, n]) => `${ITEMS[k].n} ${n}`).join(' ')].filter(Boolean).join('  ');
+export const rewardText = r => [r.coins && `🪙${r.coins}`, r.gems && `💎${r.gems}`, r.tools && `🧰재료 ${r.tools}`, r.xp && `⭐${r.xp}`, r.items && Object.entries(r.items).map(([k, n]) => `${ITEMS[k].n} ${n}`).join(' ')].filter(Boolean).join('  ');
 
 // ── 매력(장식) → 주문 코인 보너스 (최대 +30%)
 export const joy = () => load().objs.reduce((t, o) => t + (BUILDS[o.b].joy || 0), 0);
-export const joyBonus = () => Math.min(0.3, joy() / 400);
+export const joyBonus = () => Math.min(0.5, joy() / 400);   // 최대 +50%
 // ── 호감도 · 결혼
 export function giftTo(who, it) { const s = load(); if (s.spouse || !has(it)) return null; add(it, -1); const liked = SUITORS[who].likes.includes(it), pts = liked ? 25 + Math.round(ITEMS[it].v / 3) : 8; s.love[who] = Math.min(HEARTS * HEART_PTS, s.love[who] + pts); progress('gift', 1); return { pts, liked }; }
 export const hearts = who => Math.floor(load().love[who] / HEART_PTS);
@@ -134,7 +150,7 @@ export function miniLeft() { const s = load(); if (s.mini.day !== dayNo()) s.min
 export function miniDone(score) { const s = load(); miniLeft(); s.mini.n++; progress('mini', 1); const r = { coins: 20 + score * 6, xp: 3 + score, tools: score >= 12 ? 1 : 0 }; return { r, ups: give(r) }; }
 
 // ── 공장 업그레이드
-export function upgradeFactory(o) { const s = load(), lv = o.up || 0; if (lv >= FUP.max) return '최고 단계예요'; const c = FUP.cost(o.b, lv); if (s.coins < c.coins || s.tools < c.tools) return `🪙${c.coins} · 🔨${c.tools} 필요`; s.coins -= c.coins; s.tools -= c.tools; o.up = lv + 1; return null; }
+export function upgradeFactory(o, useGems) { const lv = o.up || 0; if (lv >= FUP.max) return '최고 단계예요'; const e = payCost(FUP.cost(o.b, lv), useGems); if (e) return e; o.up = lv + 1; return null; }
 // ── 비행기 주문 (공항): 화물 6칸 · 칸마다 보상 · 다 채우면 큰 보상 · 1시간 뒤 다음 비행기
 export function plane() { const s = load(); if (!countOf('airport')) return null; let p = s.plane; if (!p || (p.away && p.back <= now())) { const g = unlockedGoods(); p = s.plane = { away: false, crates: [0, 1, 2, 3, 4, 5].map(() => { const it = g[Math.floor(Math.random() * g.length)], n = ITEMS[it].v <= 6 ? 3 + Math.floor(Math.random() * 3) : 1 + Math.floor(Math.random() * 2); return { it, n, done: false, r: { coins: Math.round(ITEMS[it].v * n * 1.8 + 10), xp: 3 + Math.round(ITEMS[it].v * n / 5) } }; }) }; } return p; }
 export const PLANE_BONUS = { gems: 6, tools: 3 };
@@ -142,10 +158,16 @@ export function loadCrate(i) { const p = plane(); if (!p || p.away) return null;
 // ── 동물원: 동물 우리마다 방문객 코인이 쌓임
 export function zooCoins(o) { if (!countOf('zoogate')) return 0; o.at = o.at || now(); const h = Math.min(ZOO_CAP_H, (now() - o.at) / 36e5); return Math.floor(h * BUILDS[o.b].rate); }
 export function zooCollect(o) { const c = zooCoins(o); if (c < 1) return 0; load().coins += c; o.at = now(); gainXp(Math.ceil(c / 40)); return c; }
-// ── 섬 원정
-function newIsle(n) { const cells = []; for (let i = 0; i < ISLE.cols * ISLE.rows; i++) { let r = Math.random(), t = ISLE.tiles[0][0]; for (const [k, , w] of ISLE.tiles) { if (r < w) { t = k; break; } r -= w; } cells.push(t); } return { n, cells }; }
-export function isle() { const s = load(); if (!s.isle) s.isle = newIsle(0); return s.isle; }
-export const isleTool = t => (ISLE.tiles.find(x => x[0] === t) || [])[1];
-export function isleHit(i) { const m = isle(), t = m.cells[i]; if (!t) return null; const tool = isleTool(t); if (!take({ [tool]: 1 })) return { need: tool }; m.cells[i] = null; progress('isle', 1);
-  let r = null; if (t === 'treasure') { const rare = ['pineapple', 'coconut', 'coffee', 'cocoa', 'spice', 'silk', 'pearl']; const it = rare[Math.floor(Math.random() * rare.length)]; r = { items: { [it]: 1 + Math.floor(Math.random() * 2) }, gems: 3 }; } else if (Math.random() < 0.25) r = [{ coins: 30 + load().lv * 3 }, { tools: 1 }, { items: { wood: 0 } }][Math.floor(Math.random() * 2)];
-  if (r) give(r); let done = false; if (m.cells.every(c => !c)) { done = true; give({ gems: 25, tools: 5, coins: 500 }); load().isle = newIsle(m.n + 1); } return { r, done }; }
+// ── 섬 원정: 섬마다 테마 · 가운데 2×2 보스 보물 (정해진 도구로 hp 번 두드림)
+export const isleTheme = n => ISLE.themes[n % ISLE.themes.length];
+const BOSS_CELLS = [2 + 3 * ISLE.cols, 3 + 3 * ISLE.cols, 2 + 4 * ISLE.cols, 3 + 4 * ISLE.cols];
+function newIsle(n) { const th = isleTheme(n), ws = Object.entries(th.w), cells = []; for (let i = 0; i < ISLE.cols * ISLE.rows; i++) { if (BOSS_CELLS.includes(i)) { cells.push('boss'); continue; } let r = Math.random(), t = ws[0][0]; for (const [k, w] of ws) { if (r < w) { t = k; break; } r -= w; } cells.push(t); } return { n, cells, hp: th.boss.hp }; }
+export function isle() { const s = load(); if (!s.isle) s.isle = newIsle(0); if (s.isle.hp === undefined) s.isle = newIsle(s.isle.n || 0); return s.isle; }
+export const isleTool = t => t === 'boss' ? isleTheme(isle().n).boss.tool : (ISLE.tiles.find(x => x[0] === t) || [])[1];
+export const BOSS = BOSS_CELLS;
+export function isleHit(i) { const m = isle(), t = m.cells[i]; if (!t) return null; const tool = isleTool(t); if (!take({ [tool]: 1 })) return { need: tool };
+  let r = null, boss = null;
+  if (t === 'boss') { m.hp--; if (m.hp > 0) return { r: null, bossHit: m.hp }; for (const j of BOSS_CELLS) m.cells[j] = null; boss = isleTheme(m.n).boss; r = boss.r; progress('boss', 1); progress('isle', 1); }
+  else { m.cells[i] = null; progress('isle', 1);
+    if (t === 'treasure') { const rare = ['pineapple', 'coconut', 'coffee', 'cocoa', 'spice', 'silk', 'pearl']; const it = rare[Math.floor(Math.random() * rare.length)]; r = { items: { [it]: 1 + Math.floor(Math.random() * 2) }, gems: 3 }; } else if (Math.random() < 0.25) r = [{ coins: 30 + load().lv * 3 }, { tools: 1 }][Math.floor(Math.random() * 2)]; }
+  if (r) give(r); let done = false; if (m.cells.every(c => !c)) { done = true; give({ gems: 25, tools: 5, coins: 500 }); load().isle = newIsle(m.n + 1); } return { r, done, boss }; }

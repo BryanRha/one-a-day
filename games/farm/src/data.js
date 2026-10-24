@@ -24,7 +24,22 @@ export const ITEMS = {
   noodles: { n: '국수', v: 70 }, dumplings: { n: '만두', v: 90 }, pickles: { n: '피클', v: 50 }, kimchi: { n: '김치', v: 70 }, cider: { n: '사과 사이다', v: 70 }, ham: { n: '꿀 햄', v: 110 }, tart: { n: '과일 타르트', v: 100 },
   axe: { n: '도끼', v: 12 }, shovel: { n: '삽', v: 12 },
   ironore: { n: '철광석', v: 15 }, goldore: { n: '금광석', v: 35 }, ironbar: { n: '철 막대', v: 40 }, goldbar: { n: '금 막대', v: 90 }, pickaxe: { n: '곡괭이', v: 10 }, dynamite: { n: '다이너마이트', v: 25 },
+  // v0.5 새 상품 (레벨 33~)
+  waffle: { n: '버터 와플', v: 90 }, berrywaffle: { n: '베리 와플', v: 140 }, caramel: { n: '캐러멜', v: 80 },
+  strawpop: { n: '딸기 아이스바', v: 70 }, grapepop: { n: '포도 아이스바', v: 80 }, popbox: { n: '아이스바 상자', v: 180 },
+  tea: { n: '홍차', v: 60 }, lemontea: { n: '꿀 레몬티', v: 110 }, teapot: { n: '찻주전자', v: 150 },
+  fonduepot: { n: '치즈 퐁뒤', v: 150 }, cheeseplate: { n: '치즈 플래터', v: 130 }, cornsoup: { n: '옥수수 수프', v: 90 },
+  croissant: { n: '크루아상', v: 100 }, strudel: { n: '사과 슈트루델', v: 160 }, creampuff: { n: '슈크림', v: 130 }, cinnaroll: { n: '시나몬 롤', v: 150 },
+  pretzel: { n: '프레첼', v: 90 }, trailmix: { n: '견과 믹스', v: 120 },
+  grilledcorn: { n: '구운 옥수수', v: 70 }, skewer: { n: '꼬치구이', v: 140 }, grillplatter: { n: '바비큐 한 상', v: 220 },
+  boots: { n: '가죽 부츠', v: 200 }, sandals: { n: '여름 샌들', v: 140 }, slippers: { n: '털 실내화', v: 160 },
+  // 건축 재료 (타운십처럼 헛간 3종 · 땅 3종) — 주문 · 기차 · 수확 · 이벤트에서 얻음
+  hammer: { n: '망치', v: 10, mat: 'barn' }, nails: { n: '못', v: 10, mat: 'barn' }, paint: { n: '페인트', v: 10, mat: 'barn' },
+  saw: { n: '톱', v: 10, mat: 'land' }, planks: { n: '널빤지', v: 10, mat: 'land' }, rope: { n: '밧줄', v: 10, mat: 'land' },
 };
+export const MATS = { barn: ['hammer', 'nails', 'paint'], land: ['saw', 'planks', 'rope'] };
+export const ALL_MATS = [...MATS.barn, ...MATS.land];
+const each = (ks, n) => Object.fromEntries(ks.map(k => [k, n]));
 // 씨앗 값 (타운십처럼 심을 때 코인을 냄 · 밀은 무료) — 가진 작물이 없어도 언제든 심을 수 있음
 export const seedCost = k => k === 'wheat' ? 0 : Math.max(1, Math.round(ITEMS[k].v * 0.6));
 export const CROPS = {   // 밭: 씨앗 값을 내고 심어 2개 수확
@@ -65,6 +80,14 @@ export const RECIPES = {
   pickles: { b: 'pickleshop', in: { onion: 2, sugar: 1 }, t: 480, xp: 8 }, kimchi: { b: 'pickleshop', in: { cabbage: 3, onion: 1 }, t: 600, xp: 10 },
   cider: { b: 'juicebar', in: { apple: 3, sugar: 1 }, t: 600, xp: 10 }, ham: { b: 'smokehouse', in: { bacon: 2, honey: 1 }, t: 900, xp: 14 }, tart: { b: 'bakery', in: { wheat: 2, strawberry: 1, blueberry: 1, apple: 1 }, t: 840, xp: 13, lv: 26 },
   axe: { b: 'forge', in: { ironbar: 1, sugarcane: 1 }, t: 300, xp: 4 }, shovel: { b: 'forge', in: { ironbar: 1, corn: 2 }, t: 300, xp: 4 },
+  waffle: { b: 'wafflehouse', in: { wheat: 2, egg: 1, butter: 1 }, t: 720, xp: 12 }, berrywaffle: { b: 'wafflehouse', in: { wheat: 2, egg: 1, strawberry: 2, blueberry: 1 }, t: 1080, xp: 17 }, caramel: { b: 'wafflehouse', in: { sugar: 2, butter: 1 }, t: 600, xp: 10 },
+  strawpop: { b: 'icepopstand', in: { strawberry: 2, sugar: 1, milk: 1 }, t: 600, xp: 10 }, grapepop: { b: 'icepopstand', in: { grape: 2, sugar: 1 }, t: 660, xp: 11 }, popbox: { b: 'icepopstand', in: { strawpop: 1, grapepop: 1, apple: 1 }, t: 1200, xp: 20, lv: 40 },
+  tea: { b: 'tearoom', in: { blueberry: 1, sugar: 1 }, t: 540, xp: 9 }, lemontea: { b: 'tearoom', in: { honey: 1, apple: 1, sugar: 1 }, t: 840, xp: 14 }, teapot: { b: 'pottery', in: { clay: 4, blueberry: 1 }, t: 1080, xp: 17, lv: 38 },
+  fonduepot: { b: 'fondue', in: { cheese: 2, bread: 1, onion: 1 }, t: 1080, xp: 17 }, cheeseplate: { b: 'fondue', in: { cheese: 2, grape: 2 }, t: 900, xp: 15 }, cornsoup: { b: 'fondue', in: { corn: 4, milk: 1, butter: 1 }, t: 720, xp: 12 },
+  croissant: { b: 'pastryshop', in: { wheat: 3, butter: 1 }, t: 780, xp: 13 }, strudel: { b: 'pastryshop', in: { wheat: 2, apple: 2, sugar: 1, butter: 1 }, t: 1200, xp: 19 }, creampuff: { b: 'pastryshop', in: { wheat: 1, egg: 2, milk: 1, sugar: 1 }, t: 960, xp: 16 }, cinnaroll: { b: 'pastryshop', in: { wheat: 2, honey: 1, butter: 1, caramel: 1 }, t: 1140, xp: 18, lv: 44 },
+  pretzel: { b: 'pretzelshop', in: { wheat: 3, butter: 1, sugar: 1 }, t: 720, xp: 12 }, trailmix: { b: 'pretzelshop', in: { corn: 2, blueberry: 1, honey: 1 }, t: 900, xp: 15 },
+  grilledcorn: { b: 'bbqgrill', in: { corn: 3, butter: 1 }, t: 600, xp: 10 }, skewer: { b: 'bbqgrill', in: { bacon: 1, onion: 1, tomato: 2 }, t: 1080, xp: 17 }, grillplatter: { b: 'bbqgrill', in: { sausage: 1, potato: 2, grilledcorn: 1 }, t: 1500, xp: 25, lv: 50 },
+  boots: { b: 'cobbler', in: { fabric: 2, ironbar: 1, wool: 1 }, t: 1500, xp: 25 }, sandals: { b: 'cobbler', in: { fabric: 1, cotton: 3 }, t: 1080, xp: 17 }, slippers: { b: 'cobbler', in: { wool: 2, fabric: 1 }, t: 1200, xp: 19 },
   ironbar: { b: 'forge', in: { ironore: 3 }, t: 420, xp: 6 }, goldbar: { b: 'forge', in: { goldore: 3 }, t: 600, xp: 9 }, pickaxe: { b: 'forge', in: { ironbar: 1, wheat: 2 }, t: 300, xp: 4 }, dynamite: { b: 'forge', in: { ironbar: 1, sugarcane: 2 }, t: 360, xp: 5 },
 };
 // 건물: 종류 · 크기(칸) · 값 · 필요 레벨 · 필요 인구 · 주는 인구 / 인구 상한
@@ -131,25 +154,51 @@ export const BUILDS = {
   hedge: { n: '산울타리', k: 'deco', sz: 1, cost: 15, lv: 6, joy: 1 }, rosearch: { n: '장미 아치', k: 'deco', sz: 1, cost: 220, lv: 11, joy: 6 }, pond: { n: '오리 연못', k: 'deco', sz: 1, cost: 350, lv: 14, joy: 8 },
   cherry: { n: '벚나무', k: 'deco', sz: 1, cost: 160, lv: 13, joy: 5 }, bonfire: { n: '모닥불', k: 'deco', sz: 1, cost: 120, lv: 16, joy: 4 }, bunny: { n: '토끼 동상', k: 'deco', sz: 1, cost: 600, lv: 20, joy: 12 },
   kingstatue: { n: '배추왕 동상', k: 'deco', sz: 1, cost: 800, lv: 12, joy: 15 }, gazebo: { n: '정자', k: 'deco', sz: 1, cost: 500, lv: 10, joy: 10 }, windmill: { n: '풍차', k: 'deco', sz: 1, cost: 400, lv: 8, joy: 8 },
+  // ── v0.5: 집 6 · 공공 4 · 공장 8 · 동물 4 · 장식 20
+  bluecottage: { n: '파란 지붕 집', k: 'house', sz: 2, cost: 80, lv: 3, give: 15 }, stonehouse: { n: '담쟁이 돌집', k: 'house', sz: 2, cost: 300, lv: 8, give: 35 }, bungalow: { n: '노란 방갈로', k: 'house', sz: 2, cost: 600, lv: 12, give: 50 },
+  townhouse: { n: '타운하우스', k: 'house', sz: 2, cost: 1500, lv: 20, give: 85 }, villa: { n: '하얀 빌라', k: 'house', sz: 2, cost: 3500, lv: 30, give: 140 }, towerhouse: { n: '탑 있는 집', k: 'house', sz: 2, cost: 7000, lv: 42, give: 220 },
+  clocktower: { n: '시계탑', k: 'public', sz: 2, cost: 12000, lv: 34, cap: 850 }, library: { n: '마을 도서관', k: 'public', sz: 2, cost: 16000, lv: 40, cap: 1050 },
+  guardpost: { n: '기사단 초소', k: 'public', sz: 2, cost: 21000, lv: 46, cap: 1300 }, clinic: { n: '마을 병원', k: 'public', sz: 2, cost: 28000, lv: 54, cap: 1600 },
+  wafflehouse: { n: '와플 하우스', k: 'factory', sz: 2, cost: 8000, lv: 33, pop: 600, slots: 2 }, icepopstand: { n: '아이스바 가게', k: 'factory', sz: 2, cost: 9500, lv: 36, pop: 680, slots: 2 },
+  tearoom: { n: '찻집', k: 'factory', sz: 2, cost: 10500, lv: 38, pop: 740, slots: 2 }, fondue: { n: '퐁뒤 산장', k: 'factory', sz: 2, cost: 12000, lv: 40, pop: 800, slots: 2 },
+  pastryshop: { n: '페이스트리 가게', k: 'factory', sz: 2, cost: 13500, lv: 42, pop: 880, slots: 2 }, pretzelshop: { n: '프레첼 빵집', k: 'factory', sz: 2, cost: 15000, lv: 45, pop: 960, slots: 2 },
+  bbqgrill: { n: '바비큐 그릴', k: 'factory', sz: 2, cost: 17000, lv: 48, pop: 1050, slots: 2 }, cobbler: { n: '구둣방', k: 'factory', sz: 2, cost: 20000, lv: 52, pop: 1150, slots: 2 },
+  lion: { n: '사자 언덕', k: 'exhibit', sz: 2, cost: 12000, lv: 34, rate: 160 }, monkey: { n: '원숭이 숲', k: 'exhibit', sz: 2, cost: 15000, lv: 38, rate: 200 },
+  zebra: { n: '얼룩말 초원', k: 'exhibit', sz: 2, cost: 19000, lv: 44, rate: 250 }, kangaroo: { n: '캥거루 들판', k: 'exhibit', sz: 2, cost: 24000, lv: 50, rate: 310 },
+  mailbox: { n: '빨간 우체통', k: 'deco', sz: 1, cost: 60, lv: 5, joy: 2 }, swing: { n: '나무 그네', k: 'deco', sz: 1, cost: 150, lv: 7, joy: 4 }, flowercart: { n: '꽃수레', k: 'deco', sz: 1, cost: 260, lv: 9, joy: 5 },
+  birdbath: { n: '새 물받이', k: 'deco', sz: 1, cost: 200, lv: 11, joy: 4 }, lanternpost: { n: '꽃 등불', k: 'deco', sz: 1, cost: 240, lv: 13, joy: 5 }, sunflowers: { n: '해바라기 밭', k: 'deco', sz: 1, cost: 180, lv: 15, joy: 4 },
+  picnic: { n: '소풍 돗자리', k: 'deco', sz: 1, cost: 320, lv: 17, joy: 6 }, pumpkinpile: { n: '호박 더미', k: 'deco', sz: 1, cost: 380, lv: 19, joy: 7 }, bridge: { n: '돌다리', k: 'deco', sz: 1, cost: 700, lv: 22, joy: 11 },
+  topiary: { n: '토끼 정원수', k: 'deco', sz: 1, cost: 900, lv: 25, joy: 13 }, bellarch: { n: '종 아치', k: 'deco', sz: 1, cost: 1100, lv: 28, joy: 15 }, icecart: { n: '아이스크림 수레', k: 'deco', sz: 1, cost: 1300, lv: 31, joy: 16 },
+  lemonade: { n: '레모네이드 가판', k: 'deco', sz: 1, cost: 1500, lv: 34, joy: 18 }, cabbagestatue: { n: '황금 배추상', k: 'deco', sz: 1, cost: 2000, lv: 37, joy: 22 }, balloon: { n: '열기구', k: 'deco', sz: 1, cost: 2600, lv: 40, joy: 26 },
+  carousel: { n: '회전목마', k: 'deco', sz: 1, cost: 3200, lv: 43, joy: 30 }, hearthedge: { n: '하트 산울타리', k: 'deco', sz: 1, cost: 3800, lv: 46, joy: 34 }, pirateship: { n: '해적선 놀이터', k: 'deco', sz: 1, cost: 4500, lv: 50, joy: 40 },
+  ferris: { n: '작은 관람차', k: 'deco', sz: 1, cost: 5500, lv: 54, joy: 46 }, goldstatue: { n: '라벤더 공주 금상', k: 'deco', sz: 1, cost: 8000, lv: 58, joy: 60 },
 };
 export const BASE_CAP = 20;
 // 레벨: 필요 경험치 · 레벨업 보상
 export const XP_NEED = lv => Math.round(10 + lv * lv * 3.4);   // 봇(하루 3번 10분): 레벨 10 약 1주 · 20 약 3주 · 30 약 7주
-export const MAX_LV = 50;
+export const MAX_LV = 60;
 // 공장 업그레이드: 단계마다 만드는 시간 -15% (최대 3단계)
-export const FUP = { max: 3, cost: (b, lv) => ({ coins: Math.round(BUILDS[b].cost * 0.6 * (lv + 1)), tools: 3 + lv * 3 }), k: lv => 1 - 0.15 * lv };
+export const FUP = { max: 3, cost: (b, lv) => ({ coins: Math.round(BUILDS[b].cost * 0.6 * (lv + 1)), mats: each(MATS.barn, 1 + lv) }), k: lv => 1 - 0.15 * lv };
 // 기차: 레벨 2 · 12 · 22 에 하나씩
 export const TRAINS = [2, 12, 22];
 // 동물원: 동물 우리마다 시간당 방문객 코인 (최대 8시간 쌓임) · 입구가 있어야 손님이 옴
 export const ZOO_CAP_H = 8;
 // 섬 원정: 6×8 칸 · 덤불/덩굴/그루터기=도끼 · 모래/보물=삽 · 바위=곡괭이
-export const ISLE = { cols: 6, rows: 8, tiles: [['bush', 'axe', 0.28], ['vines', 'axe', 0.14], ['stump', 'axe', 0.12], ['sand', 'shovel', 0.26], ['boulder', 'pickaxe', 0.14], ['treasure', 'shovel', 0.06]], names: ['야자 섬', '폭포 섬', '화산 섬', '산호 섬', '달빛 섬'] };
-export const LV_REWARD = lv => ({ coins: 20 + lv * 10, gems: lv % 2 ? 2 : 4, tools: lv >= 3 ? 1 : 0 });
+export const ISLE = { cols: 6, rows: 8, tiles: [['bush', 'axe', 0.28], ['vines', 'axe', 0.14], ['stump', 'axe', 0.12], ['sand', 'shovel', 0.26], ['boulder', 'pickaxe', 0.14], ['treasure', 'shovel', 0.06]], names: ['야자 섬', '폭포 섬', '화산 섬', '산호 섬', '달빛 섬'],
+  // 섬마다 테마: 칸 구성 · 배경 빛깔 · 가운데 2×2 보스 보물 (정해진 도구로 여러 번 두드려야 열림)
+  themes: [
+    { n: '야자 섬', tint: 0xFFFFFF, w: { bush: 0.3, sand: 0.3, stump: 0.15, boulder: 0.1, vines: 0.1, treasure: 0.05 }, boss: { n: '해적의 보물상자', tool: 'shovel', hp: 5, r: { gems: 20, coins: 600, items: { pineapple: 3, coconut: 3 } } } },
+    { n: '폭포 섬', tint: 0xBFEAFF, w: { vines: 0.35, bush: 0.2, boulder: 0.2, stump: 0.1, sand: 0.1, treasure: 0.05 }, boss: { n: '폭포 뒤 황금 상자', tool: 'axe', hp: 6, r: { gems: 25, coins: 800, items: { coffee: 3, cocoa: 2 } } } },
+    { n: '화산 섬', tint: 0xFFB896, w: { boulder: 0.45, sand: 0.2, stump: 0.15, bush: 0.1, vines: 0.05, treasure: 0.05 }, boss: { n: '용암 속 보석함', tool: 'pickaxe', hp: 7, r: { gems: 35, coins: 1000, items: { goldbar: 2, pearl: 1 } } } },
+    { n: '산호 섬', tint: 0xB4F2E6, w: { sand: 0.5, bush: 0.15, boulder: 0.15, vines: 0.1, treasure: 0.1 }, boss: { n: '인어의 진주함', tool: 'shovel', hp: 6, r: { gems: 30, coins: 900, items: { pearl: 3 } } } },
+    { n: '달빛 섬', tint: 0xA8B4FF, w: { bush: 0.2, vines: 0.2, stump: 0.15, sand: 0.2, boulder: 0.18, treasure: 0.07 }, boss: { n: '달빛 왕관 상자', tool: 'axe', hp: 8, r: { gems: 50, coins: 1500, items: { silk: 3, spice: 3 } } } },
+  ] };
+export const LV_REWARD = lv => ({ coins: 20 + lv * 10, gems: lv % 2 ? 2 : 4, tools: lv >= 3 ? 2 : 0 });
 // 헛간 · 땅
-export const BARN = { base: 60, step: 25, toolCost: lv => 2 + lv };
+export const BARN = { base: 60, step: 25, matCost: lv => each(MATS.barn, 1 + Math.floor(lv / 3)) };
 export const MAP = 20, ZONE = 5;    // 20×20 칸, 5×5 구역 16개 · 가운데 4개로 시작
 export const START_ZONES = [5, 6, 9, 10];
-export const ZONE_COST = n => ({ coins: 80 + n * 60, tools: 2 + n });
+export const ZONE_COST = n => ({ coins: 80 + n * 60, mats: each(MATS.land, 1 + Math.floor(n / 3)) });
 
 // 인물
 export const CHARS = { princess: '라벤더 공주', hans: '한스', sam: '샘', ian: '이안', pachulo: '파출로', brook: '브룩', king: '배추왕' };
@@ -188,6 +237,17 @@ export const QUESTS = [
   { id: 'q28', n: '섬 원정 10칸 열기', goal: { isle: 10 }, reward: { gems: 20, xp: 80 }, talk: [L('샘', 'sam', '도끼랑 삽만 있으면 정글도 문제없어요! 대장간에서 만들어 가요!')] },
   { id: 'q29', n: '동물원 열기', goal: { build: 'zoogate' }, reward: { coins: 600, xp: 90 }, talk: [L('한스', 'hans', '섬에서 데려온 동물들을 위해 동물원을 지어 볼까요? 손님들이 몰려올 거예요.')] },
   { id: 'q30', n: '판다 데려오기', goal: { build: 'panda' }, reward: { gems: 30, xp: 100 }, talk: [L('라벤더 공주', 'princess', '판다다! 마을 아이들이 정말 좋아하겠어!'), L('배추왕', 'king', '네가 일군 농장이 이제 왕국의 자랑이구나.')] },
+  // ── 4장 「왕국 제일의 마을」
+  { id: 'q31', n: '섬의 보스 보물 열기', goal: { boss: 1 }, reward: { gems: 20, xp: 120, tools: 6 }, talk: [L('샘', 'sam', '섬 한가운데 커다란 보물상자가 있대요! 정해진 도구로 여러 번 두드려야 열린대요!')] },
+  { id: 'q32', n: '레벨 34 달성', goal: { level: 34 }, reward: { coins: 1500, xp: 0, gems: 15 }, talk: [L('파출로', 'pachulo', '흠흠, 이웃 왕국에서 이 마을을 “왕국 제일의 마을”로 뽑는다더군. 시계탑 하나쯤은 있어야지!')] },
+  { id: 'q33', n: '시계탑 세우기', goal: { build: 'clocktower' }, reward: { coins: 2000, xp: 150 }, talk: [L('한스', 'hans', '마을 한가운데 시계탑을 세우면 사람들이 모여들 거예요. 제가 정성껏 지을게요.')] },
+  { id: 'q34', n: '사자 언덕 열기', goal: { build: 'lion' }, reward: { gems: 25, xp: 160 }, talk: [L('브룩', 'brook', '동물원에 사자가 오면 손님이 두 배래요~ 입장료도 두 배!')] },
+  { id: 'q35', n: '와플 10개 굽기', goal: { make: { waffle: 10 } }, reward: { coins: 2500, xp: 180 }, talk: [L('이안', 'ian', '기사단 아침은 이제 와플입니다. 공주님, 넉넉히 부탁드립니다.')] },
+  { id: 'q36', n: '장식 30개 놓기', goal: { deco: 30 }, reward: { gems: 30, xp: 200 }, talk: [L('라벤더 공주', 'princess', '심사단이 온대요. 마을 곳곳을 꽃과 등불로 꾸며 볼까요?')] },
+  { id: 'q37', n: '레벨 45 달성', goal: { level: 45 }, reward: { coins: 4000, xp: 0, gems: 30 }, talk: [L('배추왕', 'king', '라벤더야, 네 마을 소문이 바다 건너까지 퍼졌단다.')] },
+  { id: 'q38', n: '바비큐 그릴 짓기', goal: { build: 'bbqgrill' }, reward: { coins: 5000, xp: 260 }, talk: [L('샘', 'sam', '축제엔 역시 바비큐죠! 마을 사람 모두 불러요!')] },
+  { id: 'q39', n: '마을 병원 세우기', goal: { build: 'clinic' }, reward: { gems: 50, xp: 320 }, talk: [L('한스', 'hans', '사람이 이렇게 많아졌으니 병원이 있어야 해요. 다들 건강하게 지내야죠.')] },
+  { id: 'q40', n: '라벤더 공주 금상 세우기', goal: { build: 'goldstatue' }, reward: { gems: 100, xp: 400 }, talk: [L('배추왕', 'king', '“왕국 제일의 마을”. 이 금상은 네가 해낸 일의 증표란다.'), L('라벤더 공주', 'princess', '모두 함께 만든 마을이에요. 고마워요, 여러분!')] },
 ];
 // 결혼 (원작 더팜3: 호감도 미션 → 결혼) — 선물(제품)로 호감도, 하트 5개면 프러포즈 → 결혼식장에서 결혼
 export const SUITORS = {

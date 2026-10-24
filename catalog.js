@@ -59,6 +59,13 @@ export const GAMES = {
     desc: '할머니가 남긴 서울 골목의 한방 화장품 가게 「설화당」. 동백·쌀·인삼·녹차를 합쳐 손님 주문을 해결하고, 번 코인으로 가게를 고치고 꾸며요. 라이벌 화장품 회사의 방해와 원료 농장 청년과의 설렘까지, 이야기가 이어지는 머지 게임.',
     path: 'games/beauty/', logo: true, cover: 'covers/beauty.png', icon: 'covers/beauty_icon.png', time: '10~20분',
   },
+
+  tour: {
+    title: 'K-다이스 투어', en: 'K-Dice Tour', genre: '보드게임', color: '#2E5FB8',
+    tagline: '주사위를 굴려 한국 팔도의 땅을 사고 지어요',
+    desc: '경복궁부터 제주 한라산까지, 한국 명소 32칸을 도는 여행 보드게임. 주사위를 굴려 땅을 사고 빌라·빌딩·호텔·랜드마크를 올려 통행료를 받아요. 상대 셋을 파산시키거나 한 줄·색 3개·관광지 4곳을 독점하면 우승! 성격이 다른 AI 상대와 한 판 15분.',
+    path: 'games/tour/', logo: true, cover: 'covers/tour.png', icon: 'covers/tour_icon.png', time: '10~15분',
+  },
 };
 // 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'tour'];

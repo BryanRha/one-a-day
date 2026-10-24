@@ -1,8 +1,8 @@
 // 이야기: 배경 · 인물 상반신 · 이름표 말풍선 · 한 글자씩 · 건너뛰기 (원작처럼 건너뛸 수 있음)
-import { W, H } from '../config.js?v=0.44.0';
-import { T, C, btn } from '../ui.js?v=0.44.0';
-import { audio } from '../audio.js?v=0.44.0';
-import { STORY } from '../data.js?v=0.44.0';
+import { W, H } from '../config.js?v=0.44.1';
+import { T, C, btn } from '../ui.js?v=0.44.1';
+import { audio } from '../audio.js?v=0.44.1';
+import { STORY } from '../data.js?v=0.44.1';
 
 export class StoryScene extends Phaser.Scene {
   constructor() { super('Story'); }

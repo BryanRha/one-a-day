@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.44.0';
-import { T, C } from '../ui.js?v=0.44.0';
-import { audio } from '../audio.js?v=0.44.0';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.44.0';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.44.0';
+import { W, H } from '../config.js?v=0.44.1';
+import { T, C } from '../ui.js?v=0.44.1';
+import { audio } from '../audio.js?v=0.44.1';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.44.1';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.44.1';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -108,7 +108,8 @@ export class TownScene extends Phaser.Scene {
   }
   drawObj(o) {
     const B = BUILDS[o.b], c = this.add.container(0, 0); c.o = o;
-    if (o.b === 'field') { const ripe = cropReady(o), img = !o.crop ? 'soil' : ripe ? `ripe_${o.crop}` : 'sprouts', im = this.add.image(0, 0, img); place(im, o.x, o.y, 1, img === 'soil' || img === 'sprouts' ? 0.1 : 0.12); c.add(im);
+    if (o.b === 'field') { const ripe = cropReady(o); this.drawSoil(o);   // 밭 바닥은 땅 높이에 평평하게 · 작물만 그 위에
+      if (o.crop) { const im = this.add.image(0, 0, ripe ? `crop_${o.crop}` : 'crop_sprouts'), [bx, by] = iso(o.x + 1, o.y + 1); im.setOrigin(0.5, 1).setScale(TW * (ripe ? 0.94 : 0.8) / im.width).setPosition(bx, by - TH * (ripe ? 0.04 : 0.1)); c.add(im); c.im = im; }
       if (o.crop && !ripe) { const [x, y] = iso(o.x + 0.5, o.y + 0.5), t = Math.max(0, (o.at - Date.now()) / 1000), k = 1 - t / CROPS[o.crop].t, g = this.add.graphics(); g.fillStyle(0x000000, 0.4).fillRoundedRect(x - 40, y - 20, 80, 14, 7).fillStyle(0x8BE36A, 1).fillRoundedRect(x - 40, y - 20, Math.max(8, 80 * k), 14, 7); c.add(g); c.bar = g; } }
     else if (o.b === 'road') this.drawRoad(c, o);
     else if (o.site) { const im = this.add.image(0, 0, 'site'); place(im, o.x, o.y, B.sz, 0.08); c.add(im); c.im = im; const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), bb = this.add.container(x, y - im.displayHeight * 0.62 - 30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillCircle(0, 0, 46).lineStyle(5, 0xE89A2E, 1).strokeCircle(0, 0, 46).fillTriangle(-14, 38, 14, 38, 0, 62); const pi = this.add.image(0, 0, 'brick'); pi.setScale(60 / Math.max(pi.width, pi.height)); bb.add([g, pi]); c.add(bb); this.tweens.add({ targets: bb, y: bb.y - 14, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
@@ -123,6 +124,15 @@ export class TownScene extends Phaser.Scene {
     if (this.sel && this.sel.id === o.id && this.mode !== 'move') { const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), g = this.add.graphics(); this.diamond(g, o.x, o.y, B.sz, 0xFFE27A, 0.35); c.addAt(g, 0); }
     c.dk = o.b === 'path' || o.b === 'road' ? -1 : o.x + o.y + B.sz; this.layer.add(c); return c;
   }
+  // 밭 바닥: 이웃 밭과 이어진 평평한 흙 (고랑 줄무늬 · 바깥쪽에만 얇은 두께)
+  drawSoil(o) { const x = o.x, y = o.y, isF = (a, b) => { const q = objAt(a, b); return q && q.b === 'field'; }, P = (a, b) => { const [px, py] = iso(a, b); return { x: px, y: py }; };
+    const T0 = P(x, y), R0 = P(x + 1, y), B0 = P(x + 1, y + 1), L0 = P(x, y + 1), g = this.add.graphics(), th = 9, lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    if (!isF(x, y + 1)) g.fillStyle(0x4E2E18, 1).fillPoints([L0, B0, { x: B0.x, y: B0.y + th }, { x: L0.x, y: L0.y + th }], true);
+    if (!isF(x + 1, y)) g.fillStyle(0x3F2412, 1).fillPoints([B0, R0, { x: R0.x, y: R0.y + th }, { x: B0.x, y: B0.y + th }], true);
+    g.fillStyle(0x7B4B2A, 1).fillPoints([T0, R0, B0, L0], true);
+    for (let k = 1; k < 5; k++) { const t = k / 5, a = lerp(T0, L0, t), b = lerp(R0, B0, t); g.lineStyle(7, 0x5F3820, 0.9).lineBetween(a.x, a.y, b.x, b.y); g.lineStyle(3, 0x9A6640, 0.7).lineBetween(a.x, a.y - 5, b.x, b.y - 5); }
+    const edge = (a, b) => g.lineStyle(4, 0x5A3A1E, 0.9).lineBetween(a.x, a.y, b.x, b.y); if (!isF(x, y - 1)) edge(T0, R0); if (!isF(x + 1, y)) edge(R0, B0); if (!isF(x, y + 1)) edge(B0, L0); if (!isF(x - 1, y)) edge(L0, T0);
+    g.dk = -0.5; this.layer.add(g); }
   // 도로: 이웃 도로와 이어지게 직접 그림 (끊긴 쪽에만 연석 · 곧은 길엔 가운데 점선)
   drawRoad(c, o) { const x = o.x, y = o.y, isR = (a, b) => { const q = objAt(a, b); return q && q.b === 'road'; }, nx = [isR(x - 1, y), isR(x + 1, y)], ny = [isR(x, y - 1), isR(x, y + 1)];
     const P = (a, b) => { const [px, py] = iso(a, b); return { x: px, y: py }; }, T0 = P(x, y), R0 = P(x + 1, y), B0 = P(x + 1, y + 1), L0 = P(x, y + 1), g = this.add.graphics(), th = 10;

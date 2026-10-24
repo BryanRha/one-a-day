@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.38.1';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.38.1';
-import { audio } from '../audio.js?v=0.38.1';
-import { goPrev } from '../nav.js?v=0.38.1';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS } from '../data.js?v=0.38.1';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.38.1';
+import { W, H } from '../config.js?v=0.39.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.39.0';
+import { audio } from '../audio.js?v=0.39.0';
+import { goPrev } from '../nav.js?v=0.39.0';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS } from '../data.js?v=0.39.0';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.39.0';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }
@@ -88,5 +88,48 @@ export class PeopleScene extends Phaser.Scene {
     const p = popup(this, 900, 900, { closable: false }), f = this.add.image(0, -150, k); f.setScale(420 / f.height); p.content.add(f); p.content.add(T(this, 0, 120, `"${S.line[1]}"`, 30, C.ink, { w: 800, wrap: 760 }));
     p.content.add(btn(this, -180, 320, 320, 100, '네, 좋아요!', () => { marry(k); progress('married', 1); save(); audio.play('sfx_levelup', { volume: 0.9 }); audio.duck(3000); p.close(); this.cameras.main.flash(500, 255, 220, 230); this.time.delayedCall(600, () => this.scene.restart()); }, { size: 30, style: 'rose' }));
     p.content.add(btn(this, 180, 320, 300, 100, '조금만 더…', () => p.close(), { size: 28, style: 'cream' })); }
+  onBack() { return goPrev(this); }
+}
+
+// ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
+import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.39.0';
+const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
+export class EventsScene extends Phaser.Scene {
+  constructor() { super('Events'); }
+  create(data) {
+    this.tab = (data && data.tab) || 'login'; this.add.rectangle(W / 2, H / 2, W, H, 0xFFF3E0); top(this, '이벤트'); this.y0 = 300;
+    const TABS = [['login', '출석'], ['fest', '축제'], ['race', '레이스'], ['album', '스티커'], ['pass', '패스']];
+    TABS.forEach(([k, n], i) => btn(this, 112 + i * 214, 190, 200, 84, n, () => { if (k !== this.tab) this.scene.restart({ tab: k }); }, { size: 28, style: k === this.tab ? 'gold' : 'cream' }));
+    this[this.tab](); window.__events = this;
+  }
+  done(ups, msg) { save(); audio.play('sfx_levelup', { volume: 0.7 }); if (msg) toast(this, msg, H / 2); this.time.delayedCall(700, () => this.scene.restart({ tab: this.tab })); }
+  card(x, y, w, h, on, done) { const g = this.add.graphics(); g.fillStyle(done ? 0xE3F5DA : on ? 0xFFF1C9 : 0xFFFFFF, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, 24).lineStyle(on ? 5 : 2, on ? 0xF0B65A : 0xE0D0C0, 1).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 24); return g; }
+  login() { const l = login(), y0 = this.y0 + 60; T(this, W / 2, y0, '7일 출석 선물 · 매일 들어오면 커져요', 30, C.ink, { w: 900 });
+    LOGIN.forEach((r, i) => { const d = i + 1, big = d === 7, x = big ? W / 2 : 200 + (i % 3) * 340, y = big ? y0 + 820 : y0 + 200 + Math.floor(i / 3) * 300, past = d < l.day || d === l.day && l.got, now = d === l.day && !l.got;
+      this.card(x, y, big ? 960 : 310, 260, now, past); T(this, x, y - 90, `${d}일째`, 28, now ? '#E8507A' : C.dim, { w: 900 }); T(this, x, y + 10, past ? '받음 ✓' : rewardText(r), big ? 36 : 26, past ? C.green : C.ink, { w: 900, wrap: big ? 900 : 290 }); });
+    btn(this, W / 2, y0 + 1090, 440, 120, l.got ? '내일 또 만나요' : '받기', () => { const u = loginClaim(); if (u) this.done(u, `${rewardText(LOGIN[l.day - 1])} 받았어요!`); }, { size: 36, style: l.got ? 'cream' : 'gold' }); }
+  fest() { const f = fest(), y0 = this.y0 + 40, g = this.add.graphics(); g.fillStyle(f.theme.c, 1).fillRoundedRect(40, y0 - 30, W - 80, 150, 30); T(this, W / 2, y0 + 20, f.theme.n, 44, '#FFFFFF', { w: 900 }).setStroke('#3E2A14', 8); T(this, W / 2, y0 + 80, `티켓 ${f.pts} · 수확 · 주문 · 기차로 모아요 · 주마다 새 축제`, 24, '#3E2A14', { w: 900 });
+    FEST_TIERS.forEach((need, i) => { const y = y0 + 220 + i * 118, ok = f.pts >= need, got = f.got.includes(i); this.card(W / 2, y, W - 100, 104, ok && !got, got); icon(this, 110, y, 'ticket', 60); T(this, 160, y, `${need}`, 30, C.ink, { ox: 0, w: 900 }); T(this, 300, y, rewardText(FEST_R[i]), 28, C.brown, { ox: 0, w: 900 });
+      if (got) T(this, W - 140, y, '받음 ✓', 26, C.green, { w: 900 }); else btn(this, W - 150, y, 180, 74, '받기', () => { const u = festClaim(i); if (!u) return toast(this, `티켓 ${need - f.pts}장 더 필요해요`); this.done(u); }, { size: 26, style: ok ? 'gold' : 'cream' }); }); }
+  race() { const s = raceState(), y0 = this.y0 + 40;
+    if (!s || s.claimed) { T(this, W / 2, y0 + 40, '이웃 농장 레이스', 46, C.ink, { w: 900 }); T(this, W / 2, y0 + 110, `24시간 안에 ${RACE.goal}점 먼저! · 주문 2점 · 기차 칸 3점`, 26, C.dim, { w: 900 }); icon(this, W / 2, y0 + 360, 'trophy', 280);
+      RACE.rewards.slice(0, 3).forEach((r, i) => T(this, W / 2, y0 + 580 + i * 70, `${i + 1}등 · ${rewardText(r)}`, 30, C.brown, { w: 900 }));
+      btn(this, W / 2, y0 + 880, 440, 120, '참가하기', () => { if (!raceJoin()) return toast(this, '오늘 레이스는 이미 했어요 · 내일 다시'); save(); this.scene.restart({ tab: 'race' }); }, { size: 36, style: 'gold' }); return; }
+    T(this, W / 2, y0 + 30, s.ended ? '레이스 끝!' : `남은 시간 ${fmtL(s.left)} · 목표 ${RACE.goal}점`, 32, s.ended ? '#E8507A' : C.ink, { w: 900 });
+    s.rows.forEach((r, i) => { const y = y0 + 160 + i * 160; this.card(W / 2, y, W - 100, 140, r.me, false); T(this, 110, y, `${i + 1}`, 48, i === 0 ? C.gold : C.dim, { w: 900 }); T(this, 180, y - 28, r.n, 30, C.ink, { ox: 0, w: 900 }); const g = this.add.graphics(); g.fillStyle(0xEEE6DC, 1).fillRoundedRect(180, y + 10, 640, 26, 13).fillStyle(r.me ? 0xE8507A : 0x5AAE3C, 1).fillRoundedRect(180, y + 10, Math.max(26, 640 * r.pts / RACE.goal), 26, 13); T(this, W - 120, y, `${r.pts}`, 38, r.me ? '#E8507A' : C.brown, { w: 900 }); });
+    if (s.ended) btn(this, W / 2, y0 + 1000, 460, 120, `${s.rank}등 보상 받기`, () => { const r = raceClaim(); if (r) this.done(r.ups, `${rewardText(r.r)} 받았어요!`); }, { size: 34, style: 'gold' }); }
+  album() { const a = album(), y0 = this.y0 + 40; T(this, W / 2, y0, `스티커 앨범 · 팩 ${a.packs}개 · 주문 4번마다 팩 1개`, 28, C.ink, { w: 900 });
+    btn(this, W / 2, y0 + 80, 380, 96, `📦 팩 열기 (${a.packs})`, () => this.openP(), { size: 30, style: a.packs ? 'gold' : 'cream' });
+    STICKERS.forEach((S, i) => { const y = y0 + 300 + i * 290, full = S.s.every(k => a.have[k]), got = a.done.includes(i); this.card(W / 2, y, W - 80, 270, full && !got, got); T(this, 80, y - 100, `${S.n}  ${S.s.filter(k => a.have[k]).length}/6`, 28, C.ink, { ox: 0, w: 900 }); T(this, W - 80, y - 100, got ? '완성 ✓' : rewardText(S.r), 24, got ? C.green : C.brown, { ox: 1, w: 900 });
+      S.s.forEach((k, j) => { const x = 140 + j * 160, im = icon(this, x, y + 20, k, 110); if (!a.have[k]) im.setTintFill(0xD8CCC0).setAlpha(0.5); });
+      if (full && !got) btn(this, W - 180, y + 100, 240, 70, '보상 받기', () => { const u = albumClaim(i); if (u) this.done(u, `${S.n} 완성!`); }, { size: 24, style: 'gold' }); });
+    if (a.done.length === STICKERS.length && !a.all) btn(this, W / 2, H - 120, 520, 110, `앨범 완성 보상 · ${rewardText(ALBUM_R)}`, () => { const u = albumAll(); if (u) this.done(u); }, { size: 28, style: 'rose' }); }
+  openP() { const out = openPack(); if (!out) return toast(this, '팩이 없어요 · 주문을 끝내면 받아요', H / 2); save(); audio.play('sfx_box', { volume: 0.7 }); const p = popup(this, 900, 620, { closable: false }); p.content.add(T(this, 0, -230, '스티커 팩', 44, C.ink, { w: 900 }));
+    out.forEach((o, i) => { const x = (i - 1) * 260, c = this.add.container(x, -20), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(-110, -130, 220, 260, 24).lineStyle(5, o.isNew ? 0xF0B65A : 0xE0D0C0, 1).strokeRoundedRect(-110, -130, 220, 260, 24); c.add([g, icon(this, 0, -20, o.it, 140), T(this, 0, 96, o.isNew ? 'NEW!' : '중복', 26, o.isNew ? '#E8507A' : C.dim, { w: 900 })]); c.scaleX = 0; p.content.add(c); this.tweens.add({ targets: c, scaleX: 1, duration: 200, delay: 200 + i * 220, onStart: () => audio.play('sfx_pick', { volume: 0.6 }) }); });
+    p.content.add(btn(this, 0, 220, 320, 96, '좋아요', () => { p.close(); this.scene.restart({ tab: 'album' }); }, { size: 30 })); }
+  pass() { const ps = pass(), y0 = this.y0 + 40; T(this, W / 2, y0, `이달의 시즌 패스 · 점수 ${ps.pts}`, 32, C.ink, { w: 900 }); T(this, 280, y0 + 60, '무료', 26, C.brown, { w: 900 }); T(this, 800, y0 + 60, '프리미엄 · 곧 열려요', 24, '#C2408A', { w: 900 });
+    PASS_TIERS.forEach((need, i) => { const y = y0 + 150 + i * 122, ok = ps.pts >= need, got = ps.got.includes(i); const g = this.add.graphics(); g.fillStyle(ok ? 0xE8507A : 0xD8CCC0, 1).fillCircle(W / 2 + 0, y, 34); T(this, W / 2, y, `${need}`, 20, '#FFFFFF', { w: 900 });
+      this.card(280, y, 400, 104, ok && !got, got); T(this, 280, y, got ? '받음 ✓' : rewardText(PASS_FREE[i]), 24, got ? C.green : C.ink, { w: 900 }); this.add.zone(280, y, 400, 104).setInteractive().on('pointerup', () => { const u = passClaim(i); if (!u) return toast(this, got ? '이미 받았어요' : `패스 점수 ${need}에 받아요`); this.done(u); });
+      const g2 = this.add.graphics(); g2.fillStyle(0xF6E6EE, 1).fillRoundedRect(600, y - 52, 400, 104, 24); T(this, 800, y, rewardText(PASS_PREM[i]), 24, '#C9A2B8', { w: 900 }); }); }
   onBack() { return goPrev(this); }
 }

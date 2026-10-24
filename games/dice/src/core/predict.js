@@ -1,7 +1,7 @@
 // AI 예측: 실제 게임 규칙(Sim)을 봇으로 여러 판 빠르게 돌려 "기록 경신 확률"을 계산 · 보유 룬으로 덱 추천
-import { Sim, RUNES, RUNE_ORDER, RARITY, synergiesOf } from './sim.js?v=0.38.1';
-import { act } from './ai.js?v=0.38.1';
-import { RATING } from './rating.js?v=0.38.1';
+import { Sim, RUNES, RUNE_ORDER, RARITY, synergiesOf } from './sim.js?v=0.39.0';
+import { act } from './ai.js?v=0.39.0';
+import { RATING } from './rating.js?v=0.39.0';
 
 // 한 판 빠르게 (시간 간격을 키워 계산량을 줄임 · 결과는 일반 판과 거의 같음)
 export function quickRun(deck, tiers, critBonus, seed, skill = 0.6) {

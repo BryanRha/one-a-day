@@ -1,5 +1,5 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.38.1';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.39.0';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -71,7 +71,9 @@ function makeOrder(brook) {
   const s = load(), g = unlockedGoods(), kinds = 1 + Math.floor(Math.random() * Math.min(3, 1 + s.lv / 4)), items = {};
   for (let k = 0; k < kinds; k++) { const it = g[Math.floor(Math.random() * g.length)]; const cheap = ITEMS[it].v <= 3; items[it] = (items[it] || 0) + (cheap ? 2 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 2)); }
   const val = Object.entries(items).reduce((a, [k, n]) => a + ITEMS[k].v * n, 0), faces = ['hans', 'sam', 'ian', 'brook', 'pachulo'];
-  return { id: ++s.orderSeq, face: brook ? 'brook' : faces[Math.floor(Math.random() * faces.length)], items, coins: Math.round(val * (brook ? 2.4 : 1.5) + 5), xp: Math.max(2, Math.round(val / 4)) * (brook ? 2 : 1), at: 0, brook: !!brook, tools: brook ? 2 : Math.random() < 0.15 ? 1 : 0 };
+  if (brook && countOf('harbor')) { const rare = ['pineapple', 'coconut', 'spice', 'coffee', 'cocoa', 'silk'].filter(k => s.lv >= 16); const it = rare[Math.floor(Math.random() * rare.length)]; if (it) items[it] = 1; }
+  const val2 = Object.entries(items).reduce((a, [k, n]) => a + ITEMS[k].v * n, 0);
+  return { id: ++s.orderSeq, face: brook ? 'brook' : faces[Math.floor(Math.random() * faces.length)], items, coins: Math.round(val2 * (brook ? 2.4 : 1.5) + 5), xp: Math.max(2, Math.round(val2 / 4)) * (brook ? 2 : 1), at: 0, brook: !!brook, tools: brook ? 2 : Math.random() < 0.15 ? 1 : 0 };
 }
 export function fillOrders() {
   const s = load(); while (s.orders.length < 6) s.orders.push({ ...makeOrder(false), at: 0 });
@@ -84,10 +86,10 @@ export function dropOrder(i) { const s = load(); s.orders[i] = { ...makeOrder(fa
 // ── 기차: 3칸 · 다 채우면 떠났다가 3분 뒤 새 주문으로 돌아옴
 export function train() {
   const s = load(); if (s.lv < 2) return null;
-  if (!s.train || (s.train.away && s.train.back <= now())) { const g = unlockedGoods(); s.train = { away: false, cars: [0, 1, 2].map(k => { const it = g[Math.floor(Math.random() * g.length)], n = ITEMS[it].v <= 3 ? 4 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 3); return { it, n, done: false, r: k === 2 ? { tools: 1 + Math.floor(s.lv / 6) } : { coins: Math.round(ITEMS[it].v * n * 1.6 + 8), xp: 2 + Math.round(ITEMS[it].v * n / 6) } }; }) }; }
+  if (!s.train || (s.train.away && s.train.back <= now())) { const g = unlockedGoods(); s.train = { away: false, cars: [0, 1, 2].map(k => { const it = g[Math.floor(Math.random() * g.length)], n = ITEMS[it].v <= 3 ? 3 + Math.floor(Math.random() * 3) : ITEMS[it].v <= 12 ? 2 + Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 2); return { it, n, done: false, r: k === 2 ? { tools: 1 + Math.floor(s.lv / 6) } : { coins: Math.round(ITEMS[it].v * n * 1.6 + 8), xp: 2 + Math.round(ITEMS[it].v * n / 6) } }; }) }; }
   return s.train;
 }
-export function loadCar(k) { const t = train(); if (!t || t.away) return null; const c = t.cars[k]; if (c.done || !take({ [c.it]: c.n })) return null; c.done = true; const ups = give(c.r); if (t.cars.every(x => x.done)) { t.away = true; t.back = now() + 180000; load().stats.trains++; progress('train', 1); } return { r: c.r, ups, left: t.away }; }
+export function loadCar(k) { const t = train(); if (!t || t.away) return null; const c = t.cars[k]; if (c.done || !take({ [c.it]: c.n })) return null; c.done = true; const ups = give(c.r); if (t.cars.every(x => x.done)) { t.away = true; t.back = now() + 120000; load().stats.trains++; progress('train', 1); } return { r: c.r, ups, left: t.away }; }
 
 // ── 퀘스트 (이야기 1장)
 export const quest = () => QUESTS[load().quest] || null;
@@ -121,7 +123,7 @@ export function marry(who) { const s = load(); if (s.spouse || hearts(who) < HEA
 // ── 광산: 바위 판 (곡괭이 1개 = 1칸 · 다이너마이트 = 3×3) · 다 캐면 새 층
 function newMine(depth) { const cells = []; for (let i = 0; i < MINE.cols * MINE.rows; i++) { let r = Math.random(), k = 'rock'; for (const [kk, w] of MINE.rocks) { if (r < w) { k = kk; break; } r -= w; } cells.push(k); } return { depth, cells }; }
 export function mine() { const s = load(); if (!s.mine) s.mine = newMine(1); return s.mine; }
-const LOOT = { rock: null, dirt: null, rock_iron: { items: { ironore: 1 } }, rock_gold: { items: { goldore: 1 } }, rock_gem: { gems: 2 }, chest: { coins: 80, tools: 1 } };
+const LOOT = { rock: null, rock_iron: { items: { ironore: 1 } }, rock_gold: { items: { goldore: 1 } }, rock_gem: { gems: 2 }, chest: { coins: 80, tools: 1 }, dirt: { items: { clay: 2 } } };
 export function mineHit(i, boom) { const m = mine(), out = []; const hit = j => { if (j < 0 || j >= m.cells.length || !m.cells[j]) return; const r = LOOT[m.cells[j]]; m.cells[j] = null; if (r) { give(r); if (r.items) for (const [k, n] of Object.entries(r.items)) progress('make', { it: k, n }); out.push({ j, r }); } else out.push({ j, r: null }); };
   if (boom) { if (!take({ dynamite: 1 })) return null; const c = i % MINE.cols, r = Math.floor(i / MINE.cols); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (c + dx >= 0 && c + dx < MINE.cols) hit(i + dy * MINE.cols + dx); }
   else { if (!m.cells[i] || !take({ pickaxe: 1 })) return null; hit(i); }

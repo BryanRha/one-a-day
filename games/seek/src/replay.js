@@ -1,10 +1,10 @@
 // 진행 단계 · 다시 하기 등급(브론즈/실버/골드) · 보상
 // 단계는 앞으로만 감(다시 보기로 진행이 되돌아가지 않게) · 이미 지난 단계(숨은 물건 · 증거)는 들어갈 때마다 새 판 = 다시 하기
-import { W, H } from './config.js?v=0.38.1';
-import { T, C, btn, popup } from './ui.js?v=0.38.1';
-import { audio } from './audio.js?v=0.38.1';
-import { load, save } from './save.js?v=0.38.1';
-import { goPrev } from './nav.js?v=0.38.1';
+import { W, H } from './config.js?v=0.39.0';
+import { T, C, btn, popup } from './ui.js?v=0.39.0';
+import { audio } from './audio.js?v=0.39.0';
+import { load, save } from './save.js?v=0.39.0';
+import { goPrev } from './nav.js?v=0.39.0';
 
 const ORDER = ['intro', 'hunt', 'mid', 'evidence', 'after', 'toon', 'done'];
 export const stepOf = id => (load().ep[id] || {}).step || null;
@@ -36,7 +36,7 @@ async function reward(id, kind, tier, sec) {
     if (t === 1) { d.coins += 30; d.stars = (d.stars || 0) + 1; out.push('실버 첫 달성 · ● +30 · ★ +1'); }
     if (t === 2) {
       d.stars = (d.stars || 0) + 2; let gift = null;
-      try { const { OUTFITS, ACCS } = await import('./coord/data.js?v=0.38.1'), { coordData, owned } = await import('./coord/state.js?v=0.38.1'); const c = coordData().coord; gift = [...ACCS, ...OUTFITS].find(it => it.get === 'shop' && !owned(it.id)); if (gift) c.own.push(gift.id); } catch { /* */ }
+      try { const { OUTFITS, ACCS } = await import('./coord/data.js?v=0.39.0'), { coordData, owned } = await import('./coord/state.js?v=0.39.0'); const c = coordData().coord; gift = [...ACCS, ...OUTFITS].find(it => it.get === 'shop' && !owned(it.id)); if (gift) c.own.push(gift.id); } catch { /* */ }
       if (gift) out.push(`골드 첫 달성 · ★ +2 · 코디 선물 「${gift.n}」`); else { d.coins += 60; out.push('골드 첫 달성 · ★ +2 · ● +60'); }
     }
   }

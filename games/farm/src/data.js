@@ -14,6 +14,10 @@ export const ITEMS = {
   candy: { n: '사탕', v: 34 }, lollipop: { n: '막대사탕', v: 46 }, dress: { n: '드레스', v: 90 }, hat: { n: '밀짚모자', v: 60 },
   pizza: { n: '피자', v: 70 }, fries: { n: '감자튀김', v: 40 }, bakedpotato: { n: '구운 감자', v: 46 }, tomatosauce: { n: '토마토소스', v: 34 },
   applejuice: { n: '사과 주스', v: 44 }, grapejuice: { n: '포도 주스', v: 40 }, muffin: { n: '블루베리 머핀', v: 64 }, applepie: { n: '사과 파이', v: 72 }, bluejam: { n: '블루베리잼', v: 60 },
+  pigfeed: { n: '돼지 사료', v: 6 }, bacon: { n: '베이컨', v: 22 }, honeycomb: { n: '벌집', v: 20 }, honey: { n: '꿀', v: 30 }, candle: { n: '밀랍 초', v: 46 }, sausage: { n: '소시지', v: 60 }, honeycake: { n: '꿀 케이크', v: 80 },
+  bouquet: { n: '꽃다발', v: 40 }, wreath: { n: '꽃 화관', v: 66 }, clay: { n: '점토', v: 8 }, vase: { n: '꽃병', v: 36 }, plate: { n: '도자기 접시', v: 56 },
+  teddy: { n: '곰 인형', v: 70 }, toytrain: { n: '장난감 기차', v: 84 }, pigplush: { n: '돼지 인형', v: 76 }, perfume: { n: '향수', v: 96 }, soap: { n: '꽃비누', v: 64 },
+  pineapple: { n: '파인애플', v: 40, rare: 1 }, coconut: { n: '코코넛', v: 40, rare: 1 }, coffee: { n: '커피콩', v: 55, rare: 1 }, cocoa: { n: '카카오', v: 55, rare: 1 }, silk: { n: '비단', v: 70, rare: 1 }, spice: { n: '향신료', v: 70, rare: 1 }, pearl: { n: '진주', v: 120, rare: 1 }, map: { n: '보물 지도', v: 10, rare: 1 },
   ironore: { n: '철광석', v: 15 }, goldore: { n: '금광석', v: 35 }, ironbar: { n: '철 막대', v: 40 }, goldbar: { n: '금 막대', v: 90 }, pickaxe: { n: '곡괭이', v: 10 }, dynamite: { n: '다이너마이트', v: 25 },
 };
 // 씨앗 값 (타운십처럼 심을 때 코인을 냄 · 밀은 무료) — 가진 작물이 없어도 언제든 심을 수 있음
@@ -39,6 +43,11 @@ export const RECIPES = {
   dress: { b: 'tailor', in: { fabric: 2, wool: 1 }, t: 900, xp: 11 }, hat: { b: 'tailor', in: { wheat: 6, fabric: 1 }, t: 600, xp: 8 },
   pizza: { b: 'pizzeria', in: { wheat: 3, tomatosauce: 1, cheese: 1 }, t: 600, xp: 9 }, tomatosauce: { b: 'pizzeria', in: { tomato: 3 }, t: 300, xp: 4 }, fries: { b: 'pizzeria', in: { potato: 2, butter: 1 }, t: 360, xp: 5, lv: 17 }, bakedpotato: { b: 'pizzeria', in: { potato: 2, cheese: 1 }, t: 420, xp: 6, lv: 18 },
   applejuice: { b: 'juicebar', in: { apple: 3 }, t: 420, xp: 6 }, grapejuice: { b: 'juicebar', in: { grape: 3 }, t: 420, xp: 6 }, muffin: { b: 'bakery', in: { wheat: 2, blueberry: 2, egg: 1 }, t: 600, xp: 9, lv: 25 }, applepie: { b: 'bakery', in: { wheat: 2, apple: 2, sugar: 1 }, t: 660, xp: 10, lv: 23 },
+  pigfeed: { b: 'feedmill', in: { corn: 2, potato: 1 }, t: 120, xp: 2, lv: 18 }, bacon: { b: 'pigpen', in: { pigfeed: 1 }, t: 360, xp: 4 }, honeycomb: { b: 'beehive', in: { strawberry: 1 }, t: 300, xp: 4 },
+  honey: { b: 'candleshop', in: { honeycomb: 1 }, t: 240, xp: 4 }, candle: { b: 'candleshop', in: { honeycomb: 2 }, t: 420, xp: 6 }, sausage: { b: 'smokehouse', in: { bacon: 2, onion: 1 }, t: 600, xp: 8 }, honeycake: { b: 'bakery', in: { wheat: 2, honey: 1, egg: 2 }, t: 720, xp: 10, lv: 22 },
+  bouquet: { b: 'florist', in: { strawberry: 2, cotton: 1 }, t: 420, xp: 6 }, wreath: { b: 'florist', in: { blueberry: 2, cotton: 2 }, t: 600, xp: 9, lv: 25 }, vase: { b: 'pottery', in: { clay: 3 }, t: 420, xp: 6 }, plate: { b: 'pottery', in: { clay: 3, blueberry: 1 }, t: 600, xp: 8, lv: 25 },
+  teddy: { b: 'toyshop', in: { wool: 2, fabric: 1 }, t: 720, xp: 10 }, toytrain: { b: 'toyshop', in: { ironbar: 1, fabric: 1, apple: 1 }, t: 840, xp: 11, lv: 26 }, pigplush: { b: 'toyshop', in: { wool: 1, fabric: 1, strawberry: 2 }, t: 780, xp: 10 },
+  perfume: { b: 'perfumery', in: { bouquet: 1, sugar: 2 }, t: 900, xp: 12 }, soap: { b: 'perfumery', in: { honeycomb: 1, bouquet: 1 }, t: 720, xp: 10 },
   ironbar: { b: 'forge', in: { ironore: 3 }, t: 420, xp: 6 }, goldbar: { b: 'forge', in: { goldore: 3 }, t: 600, xp: 9 }, pickaxe: { b: 'forge', in: { ironbar: 1, wheat: 2 }, t: 300, xp: 4 }, dynamite: { b: 'forge', in: { ironbar: 1, sugarcane: 2 }, t: 360, xp: 5 },
 };
 // 건물: 종류 · 크기(칸) · 값 · 필요 레벨 · 필요 인구 · 주는 인구 / 인구 상한
@@ -60,6 +69,16 @@ export const BUILDS = {
   pizzeria: { n: '피자 가게', k: 'factory', sz: 2, cost: 2600, lv: 16, pop: 200, slots: 2 },
   forge: { n: '대장간', k: 'factory', sz: 2, cost: 2000, lv: 12, pop: 110, slots: 2 },
   juicebar: { n: '주스 가게', k: 'factory', sz: 2, cost: 3200, lv: 22, pop: 260, slots: 2 },
+  pigpen: { n: '돼지 우리', k: 'animal', sz: 2, cost: 2400, lv: 18, pop: 240, animal: '돼지' },
+  beehive: { n: '벌통', k: 'animal', sz: 2, cost: 1600, lv: 17, pop: 200, animal: '벌' },
+  candleshop: { n: '꿀·초 가게', k: 'factory', sz: 2, cost: 2000, lv: 17, pop: 210, slots: 2 },
+  smokehouse: { n: '소시지 가게', k: 'factory', sz: 2, cost: 3000, lv: 19, pop: 260, slots: 2 },
+  florist: { n: '꽃집', k: 'factory', sz: 2, cost: 2800, lv: 20, pop: 270, slots: 2 },
+  pottery: { n: '도자기 공방', k: 'factory', sz: 2, cost: 2600, lv: 21, pop: 280, slots: 2 },
+  toyshop: { n: '장난감 가게', k: 'factory', sz: 2, cost: 3600, lv: 23, pop: 320, slots: 2 },
+  perfumery: { n: '향수 공방', k: 'factory', sz: 2, cost: 4200, lv: 24, pop: 360, slots: 2 },
+  harbor: { n: '항구', k: 'harbor', sz: 2, cost: 2500, lv: 16, pop: 180 },
+  festival: { n: '축제 무대', k: 'event', sz: 2, cost: 300, lv: 4 },
   mine: { n: '뒷산 광산', k: 'mine', sz: 2, cost: 1000, lv: 12, pop: 100 },
   wedding: { n: '결혼식장', k: 'wedding', sz: 2, cost: 3000, lv: 15, pop: 150 },
   cottage: { n: '오두막', k: 'house', sz: 2, cost: 40, lv: 1, give: 10 },
@@ -70,6 +89,8 @@ export const BUILDS = {
   townhall: { n: '마을 회관', k: 'public', sz: 2, cost: 800, lv: 10, cap: 140 },
   school: { n: '마을 학교', k: 'public', sz: 2, cost: 1600, lv: 15, cap: 220 },
   park: { n: '꽃 공원', k: 'public', sz: 2, cost: 2800, lv: 20, cap: 320 },
+  lighthouse: { n: '등대', k: 'public', sz: 2, cost: 5000, lv: 26, cap: 450 },
+  trophyhall: { n: '명예의 전당', k: 'public', sz: 2, cost: 9000, lv: 30, cap: 650 },
   // 장식: 1칸 · 개수 제한 없음 · 매력 점수(주민 행복 → 주문 코인 보너스)
   path: { n: '돌길', k: 'deco', sz: 1, cost: 2, lv: 2, joy: 0, img: 'path' }, flowerbed: { n: '튤립 화단', k: 'deco', sz: 1, cost: 20, lv: 3, joy: 2 }, bench: { n: '벤치', k: 'deco', sz: 1, cost: 30, lv: 4, joy: 2 },
   lamp: { n: '가로등', k: 'deco', sz: 1, cost: 40, lv: 5, joy: 2 }, oak: { n: '참나무', k: 'deco', sz: 1, cost: 25, lv: 3, joy: 2 }, fountain: { n: '분수', k: 'deco', sz: 1, cost: 300, lv: 9, joy: 8 },
@@ -78,8 +99,8 @@ export const BUILDS = {
 };
 export const BASE_CAP = 20;
 // 레벨: 필요 경험치 · 레벨업 보상
-export const XP_NEED = lv => Math.round(12 + lv * lv * 6);
-export const MAX_LV = 30;
+export const XP_NEED = lv => Math.round(10 + lv * lv * 3.4);   // 봇(하루 3번 10분): 레벨 10 약 1주 · 20 약 3주 · 30 약 7주
+export const MAX_LV = 40;
 export const LV_REWARD = lv => ({ coins: 20 + lv * 10, gems: lv % 2 ? 2 : 4, tools: lv >= 3 ? 1 : 0 });
 // 헛간 · 땅
 export const BARN = { base: 60, step: 25, toolCost: lv => 2 + lv };
@@ -126,7 +147,14 @@ export const SUITORS = {
 };
 export const HEARTS = 5, HEART_PTS = 100;
 // 광산: 6×8 바위 · 곡괭이 1 = 1칸 · 다이너마이트 = 3×3
-export const MINE = { cols: 6, rows: 8, rocks: [['rock', 0.55], ['rock_iron', 0.22], ['rock_gold', 0.1], ['rock_gem', 0.05], ['chest', 0.03], ['dirt', 0.05]] };
+export const MINE = { cols: 6, rows: 8, rocks: [['rock', 0.45], ['rock_iron', 0.22], ['rock_gold', 0.1], ['rock_gem', 0.05], ['chest', 0.03], ['dirt', 0.15]] };
 // 미니게임 (원작: 한스의 댐 수리 · 샘의 참새 쫓기 · 이안의 불량배 쫓기)
 export const MINIS = { dam: { n: '댐 수리', who: 'hans', d: '물이 새는 곳을 빨리 눌러 막아요!' }, sparrow: { n: '참새 쫓기', who: 'sam', d: '밭에 내려앉는 참새를 눌러 쫓아요!' }, bully: { n: '불량배 쫓기', who: 'ian', d: '숨어 있다 튀어나오는 불량배를 잡아요!' } };
 export const RENT = { goal: w => 150 + w * 80, reward: { gems: 8, tools: 2 } };   // 이달(게임 속 한 주)의 월세 목표
+
+// 항구 무역: 물건을 실어 보내면 배가 먼 섬에서 진귀한 물건을 싣고 돌아옴
+export const VOYAGES = [
+  { n: '야자수 섬', t: 1200, lv: 16, need: 3, loot: ['pineapple', 'coconut'] },
+  { n: '향신료 제도', t: 2400, lv: 20, need: 4, loot: ['spice', 'coffee', 'cocoa'] },
+  { n: '비단 왕국', t: 3600, lv: 24, need: 5, loot: ['silk', 'pearl', 'map'] },
+];

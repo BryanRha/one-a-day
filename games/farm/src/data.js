@@ -141,6 +141,9 @@ export const ITEMS = {
   glass: { n: '유리', v: 12, bm: 1 },
   slab: { n: '석판', v: 12, bm: 1 },
 };
+// v0.7: 새 동물 3종 · 연구소
+Object.assign(ITEMS, { goatmilk: { n: '염소젖', v: 18 }, feather: { n: '오리 깃털', v: 22 }, alpacawool: { n: '알파카 털', v: 34 }, goatfeed: { n: '염소 사료', v: 8 }, duckfeed: { n: '오리 모이', v: 9 }, alpacafeed: { n: '알파카 사료', v: 12 },
+  goatcheese: { n: '염소 치즈', v: 60 }, pillow: { n: '깃털 베개', v: 150 }, alpacascarf: { n: '알파카 목도리', v: 120 }, flask: { n: '연구 시약', v: 40 }, gear: { n: '톱니바퀴', v: 60 }, blueprint: { n: '설계도', v: 50 } });
 export const MATS = { barn: ['hammer', 'nails', 'paint'], land: ['saw', 'planks', 'rope'] };
 export const ALL_MATS = [...MATS.barn, ...MATS.land];
 const each = (ks, n) => Object.fromEntries(ks.map(k => [k, n]));
@@ -283,6 +286,10 @@ export const RECIPES = {
   flowerpot: { b: 'onggiworks', in: { clay: 2, sunflower: 1 }, t: 1100, xp: 18 },
   rooftile: { b: 'onggiworks', in: { clay: 6 }, t: 1600, xp: 27 },
   celadon: { b: 'onggiworks', in: { clay: 4, goldbar: 1 }, t: 2400, xp: 40 },
+  goatfeed: { b: 'feedmill', in: { corn: 2, carrot: 1 }, t: 150, xp: 2, lv: 24 }, duckfeed: { b: 'feedmill', in: { wheat: 2, rice: 1 }, t: 150, xp: 2, lv: 34 }, alpacafeed: { b: 'feedmill', in: { wheat: 2, carrot: 1, soybean: 1 }, t: 180, xp: 3, lv: 44 },
+  goatmilk: { b: 'goatpen', in: { goatfeed: 1 }, t: 420, xp: 4 }, feather: { b: 'duckpond', in: { duckfeed: 1 }, t: 480, xp: 5 }, alpacawool: { b: 'alpacapen', in: { alpacafeed: 1 }, t: 600, xp: 6 },
+  goatcheese: { b: 'dairy', in: { goatmilk: 2 }, t: 600, xp: 10, lv: 24 }, pillow: { b: 'craftshop', in: { feather: 3, fabric: 1 }, t: 1200, xp: 20 }, alpacascarf: { b: 'textile', in: { alpacawool: 2 }, t: 900, xp: 15, lv: 44 },
+  flask: { b: 'lab', in: { sugar: 2, blueberry: 1 }, t: 600, xp: 8 }, gear: { b: 'lab', in: { ironbar: 1, wheat: 2 }, t: 720, xp: 10 }, blueprint: { b: 'lab', in: { cotton: 2, honey: 1 }, t: 840, xp: 11 },
   ironbar: { b: 'forge', in: { ironore: 3 }, t: 420, xp: 6 }, goldbar: { b: 'forge', in: { goldore: 3 }, t: 600, xp: 9 }, pickaxe: { b: 'forge', in: { ironbar: 1, wheat: 2 }, t: 300, xp: 4 }, dynamite: { b: 'forge', in: { ironbar: 1, sugarcane: 2 }, t: 360, xp: 5 },
 };
 // 건물: 종류 · 크기(칸) · 값 · 필요 레벨 · 필요 인구 · 주는 인구 / 인구 상한
@@ -435,6 +442,8 @@ export const BUILDS = {
   telescope: { n: '천체 망원경', k: 'deco', sz: 1, cost: 11560, lv: 76, joy: 61 },
   beegarden: { n: '꿀벌 정원', k: 'deco', sz: 1, cost: 12200, lv: 78, joy: 63 },
   cabbagethrone: { n: '배추왕 옥좌', k: 'deco', sz: 1, cost: 12870, lv: 80, joy: 64 },
+  goatpen: { n: '염소 우리', k: 'animal', sz: 2, cost: 3600, lv: 24, pop: 340, animal: '염소' }, duckpond: { n: '오리 연못', k: 'animal', sz: 2, cost: 9000, lv: 34, pop: 640, animal: '오리' }, alpacapen: { n: '알파카 목장', k: 'animal', sz: 2, cost: 16000, lv: 44, pop: 950, animal: '알파카' },
+  lab: { n: '연구소', k: 'factory', sz: 2, cost: 5000, lv: 20, pop: 260, slots: 2, lab: 1 },
 };
 export const BASE_CAP = 20;
 // 레벨: 필요 경험치 · 레벨업 보상
@@ -554,3 +563,18 @@ export const RELICS = [
   { n: '옛 농부의 도구', s: ['art_sickle', 'art_lantern', 'art_clog', 'marketbasket'], r: { gems: 30, tools: 10 } },
 ];
 export const RELIC_N = { art_crown: '황금 왕관', art_seal: '옥새', art_coin: '옛 금화', art_scepter: '왕의 홀', art_conch: '분홍 소라', art_compass: '옛 나침반', art_bell: '배의 종', art_comb: '인어의 빗', art_ammonite: '암모나이트', art_tooth: '공룡 이빨', art_amber: '호박 화석', art_leaf: '나뭇잎 화석', art_sickle: '옛 낫', art_lantern: '옛 등잔', art_clog: '나막신', marketbasket: '옛 장바구니' };
+
+// ── 연구소 (타운십의 연구 · 영구 강화): 단계마다 코인 + 연구 재료 + 시간
+export const RESEARCH = [
+  { k: 'crop', n: '작물 비료', d: l => `작물 자라는 시간 -${l * 5}%`, ic: 'wheat' },
+  { k: 'anim', n: '동물 사료 개량', d: l => `동물 생산 시간 -${l * 5}%`, ic: 'milk' },
+  { k: 'fac', n: '공장 기계 개선', d: l => `공장 생산 시간 -${l * 4}%`, ic: 'gear' },
+  { k: 'harvest', n: '풍년의 비결', d: l => `수확 때 1개 더 나올 확률 ${l * 5}%`, ic: 'sickle' },
+  { k: 'order', n: '주문 협상술', d: l => `주문 코인 +${l * 4}%`, ic: 'coin' },
+  { k: 'train', n: '기차 화물칸 확장', d: l => `기차 보상 +${l * 10}%`, ic: 'loco' },
+  { k: 'barn', n: '헛간 정리술', d: l => `헛간 +${l * 20}칸`, ic: 'barn' },
+  { k: 'zoo', n: '동물원 홍보', d: l => `동물원 손님 코인 +${l * 10}%`, ic: 'coin' },
+];
+export const RES_MAX = 5;
+export const resCost = l => ({ coins: Math.round(3000 * l * l), items: { flask: l * 2, gear: l, blueprint: l } });   // l = 다음 단계(1~5)
+export const resTime = l => l * 1800;   // 초

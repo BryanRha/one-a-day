@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.42.1';
-import { T, C } from '../ui.js?v=0.42.1';
-import { audio } from '../audio.js?v=0.42.1';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.42.1';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.42.1';
+import { W, H } from '../config.js?v=0.43.0';
+import { T, C } from '../ui.js?v=0.43.0';
+import { audio } from '../audio.js?v=0.43.0';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.43.0';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.43.0';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -17,7 +17,7 @@ export class TownScene extends Phaser.Scene {
   create() {
     this.d = load(); this.mode = null; this.sel = null; this.dead = false; this.events.once('shutdown', () => { this.dead = true; });
     this.add.rectangle(WORLD_W / 2, WORLD_H / 2, WORLD_W * 3, WORLD_H * 3, 0x7CC26A);
-    this.ground = this.add.container(0, 0); this.layer = this.add.container(0, 0); this.walkers = [];   // 주민은 건물과 같은 층(layer)에서 앞뒤로 가려짐 · 건물을 다시 그려도 살아 있음
+    this.ground = this.add.container(0, 0); this.layer = this.add.container(0, 0); this.fx = null; this.walkers = [];   // 주민은 건물과 같은 층(layer)에서 앞뒤로 가려짐 · 건물을 다시 그려도 살아 있음
     this.drawGround(); this.drawObjs(); this.drawStation();
     const cam = this.cameras.main; cam.setBounds(0, 0, WORLD_W, WORLD_H); cam.setZoom(1.05); const [cx, cy] = iso(MAP / 2, MAP / 2); cam.centerOn(cx, cy);
     this.input.addPointer(1);
@@ -25,7 +25,7 @@ export class TownScene extends Phaser.Scene {
     this.input.on('wheel', (p, o, dx, dy) => this.zoom(cam.zoom * (dy > 0 ? 0.9 : 1.1)));
     this.time.addEvent({ delay: 1000, loop: true, callback: () => this.tick() });
     this.scene.launch('Hud'); this.hud = this.scene.get('Hud'); window.__town = this;
-    this.time.addEvent({ delay: 1800, loop: true, callback: () => this.walk() }); this.time.delayedCall(300, () => { this.walk(); this.walk(); });
+    this.fx = this.add.container(0, 0); this.time.addEvent({ delay: 1800, loop: true, callback: () => this.walk() }); this.time.addEvent({ delay: 700, loop: true, callback: () => this.puffs() }); this.time.delayedCall(300, () => { this.walk(); this.walk(); });
     // 밤낮: 실제 시각에 따라 마을 색 (저녁 노을 · 밤 푸른빛)
     this.sky = this.add.rectangle(W / 2, H / 2, W * 4, H * 4, 0x000000, 0).setScrollFactor(0).setDepth(900); const tint = () => { const h = new Date().getHours() + new Date().getMinutes() / 60; let c = 0x000000, a = 0; if (h >= 17 && h < 19.5) { c = 0xFF8A3C; a = 0.12 * (h - 17) / 2.5; } else if (h >= 19.5 || h < 5) { c = 0x1A2A6C; a = 0.28; } else if (h < 7) { c = 0xFFB070; a = 0.12 * (7 - h) / 2; } this.sky.setFillStyle(c, a); }; tint(); this.time.addEvent({ delay: 60000, loop: true, callback: tint });
     audio.music('bgm_farm');
@@ -84,6 +84,9 @@ export class TownScene extends Phaser.Scene {
       const st = Math.floor(time / 180 + c.ph) % 2; sp.setTexture(`w${c.v}_${c.face[0]}${st + 1}`).setFlipX(c.face[1]); sp.scaleY = sp.scaleX; sp.y = -Math.abs(Math.sin((time / 180 + c.ph) * Math.PI)) * 5; c.sh.scaleX = 1 - Math.abs(sp.y) / 40; }
     this.layer.sort('dk');
   }
+  // 일하는 공장 굴뚝 연기
+  puffs() { if (this.dead || !this.spr) return; for (const o of this.d.objs) { const c = this.spr[o.id]; if (!c || !c.busy || !c.im || Math.random() < 0.45) continue; const B = BUILDS[o.b], [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), top = y - c.im.displayHeight * 0.78;
+      const pf = this.add.circle(x - 30 + Math.random() * 40, top, 14 + Math.random() * 8, 0xFFFFFF, 0.75); this.fx.add(pf); this.tweens.add({ targets: pf, y: top - 90, x: pf.x + 20 + Math.random() * 30, scale: 2.2, alpha: 0, duration: 1800, ease: 'Sine.easeOut', onComplete: () => pf.destroy() }); } }
   zoom(z) { this.cameras.main.setZoom(Phaser.Math.Clamp(z, 0.5, 1.6)); }
   // ── 땅: 열린 구역은 풀 · 닫힌 구역은 숲
   drawGround() {
@@ -115,7 +118,8 @@ export class TownScene extends Phaser.Scene {
       const busy = B.k === 'factory' && o.q && o.q.length || B.k === 'animal' && o.s && o.s.some(Boolean);
       const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), top = y - im.displayHeight * 0.62;
       if (ready) { const bb = this.add.container(x, top - 30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillCircle(0, 0, 46).lineStyle(5, 0x5AAE3C, 1).strokeCircle(0, 0, 46).fillTriangle(-14, 38, 14, 38, 0, 62); const pi = this.add.image(0, 0, ready); pi.setScale(66 / Math.max(pi.width, pi.height)); bb.add([g, pi]); c.add(bb); this.tweens.add({ targets: bb, y: top - 44, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
-      else if (busy) { const z = T(this, x, top - 10, B.k === 'animal' ? '💤' : '⚙️', 40, '#FFFFFF', { w: 900 }); c.add(z); this.tweens.add({ targets: z, angle: B.k === 'animal' ? 0 : 360, alpha: B.k === 'animal' ? 0.5 : 1, duration: B.k === 'animal' ? 900 : 3000, yoyo: B.k === 'animal', repeat: -1 }); } }
+      if (busy && B.k === 'factory') { const sy = im.scaleY; this.tweens.add({ targets: im, scaleY: sy * 1.025, scaleX: im.scaleX * 0.99, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); c.busy = true; }   // 일하는 공장은 살짝 들썩임
+      if (ready) {} else if (busy) { const z = T(this, x, top - 10, B.k === 'animal' ? '💤' : '⚙️', 40, '#FFFFFF', { w: 900 }); c.add(z); this.tweens.add({ targets: z, angle: B.k === 'animal' ? 0 : 360, alpha: B.k === 'animal' ? 0.5 : 1, duration: B.k === 'animal' ? 900 : 3000, yoyo: B.k === 'animal', repeat: -1 }); } }
     if (this.sel && this.sel.id === o.id && this.mode !== 'move') { const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), g = this.add.graphics(); this.diamond(g, o.x, o.y, B.sz, 0xFFE27A, 0.35); c.addAt(g, 0); }
     c.dk = o.b === 'path' || o.b === 'road' ? -1 : o.x + o.y + B.sz; this.layer.add(c); return c;
   }

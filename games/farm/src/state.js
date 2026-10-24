@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS } from './data.js?v=0.42.1';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.42.1';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.43.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.43.0';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -31,7 +31,7 @@ export function save() { try { localStorage.setItem(KEY, JSON.stringify(load()))
 export function reset() { d = fresh(); save(); }
 
 // ── 헛간
-export const barnCap = () => BARN.base + load().barnLv * BARN.step;
+export const barnCap = () => BARN.base + load().barnLv * BARN.step + 20 * rl('barn');
 export const barnUsed = () => Object.entries(load().items).reduce((s, [k, n]) => s + n, 0);
 export const has = (k, n = 1) => (load().items[k] || 0) >= n;
 export function add(k, n) { const it = load().items; it[k] = Math.max(0, (it[k] || 0) + n); if (!it[k]) delete it[k]; }
@@ -76,14 +76,14 @@ export function freeRect(x, y, sz, ignore) { for (let i = 0; i < sz; i++) for (l
 
 // ── 밭
 export const cropReady = o => o.crop && now() >= o.at;
-export const cropTime = k => CROPS[k].t * (load().spouse === 'sam' ? 0.9 : 1);
+export const cropTime = k => CROPS[k].t * (load().spouse === 'sam' ? 0.9 : 1) * (1 - 0.05 * rl('crop'));
 // ── 공장 줄: 차례로 · 끝난 것은 done 에 (헛간에 넣을 때까지 대기)
 export function tickFactory(o) { o.q = o.q || []; o.done = o.done || []; let ch = false; while (o.q.length && o.q[0].end <= now()) { o.done.push(o.q.shift().it); ch = true; } return ch; }
-export function queueJob(o, it) { const R = RECIPES[it], B = BUILDS[o.b]; tickFactory(o); if (o.q.length + o.done.length >= (B.slots + (o.extra || 0))) return '줄이 꽉 찼어요'; if (!take(R.in)) return '재료가 모자라요'; const last = o.q.length ? o.q[o.q.length - 1].end : now(); o.q.push({ it, end: Math.max(last, now()) + R.t * 1000 * FUP.k(o.up || 0) }); return null; }
+export function queueJob(o, it) { const R = RECIPES[it], B = BUILDS[o.b]; tickFactory(o); if (o.q.length + o.done.length >= (B.slots + (o.extra || 0))) return '줄이 꽉 찼어요'; if (!take(R.in)) return '재료가 모자라요'; const last = o.q.length ? o.q[o.q.length - 1].end : now(); o.q.push({ it, end: Math.max(last, now()) + R.t * 1000 * FUP.k(o.up || 0) * (1 - 0.04 * rl('fac')) }); return null; }
 // ── 동물 우리: 3칸 동시
 export function tickAnimal(o) { o.s = o.s || [0, 0, 0]; o.ready = o.ready || 0; let ch = false; o.s.forEach((e, i) => { if (e && e <= now()) { o.s[i] = 0; o.ready++; ch = true; } }); return ch; }
 export const productOf = b => Object.keys(RECIPES).find(k => RECIPES[k].b === b);
-export function feedAll(o) { tickAnimal(o); const it = productOf(o.b), R = RECIPES[it]; let n = 0; o.s.forEach((e, i) => { if (!e && o.ready + o.s.filter(Boolean).length < 3 && take(R.in)) { o.s[i] = now() + R.t * 1000; n++; } }); return n; }
+export function feedAll(o) { tickAnimal(o); const it = productOf(o.b), R = RECIPES[it]; let n = 0; o.s.forEach((e, i) => { if (!e && o.ready + o.s.filter(Boolean).length < 3 && take(R.in)) { o.s[i] = now() + R.t * 1000 * (1 - 0.05 * rl('anim')); n++; } }); return n; }
 
 // ── 주문 게시판 (타운십의 헬리콥터 주문): 6장 · 완료 후 60초 뒤 새 주문
 const unlockedGoods = () => { const s = load(), out = Object.keys(CROPS).filter(k => CROPS[k].lv <= s.lv); for (const [k, R] of Object.entries(RECIPES)) if (countOf(R.b) && (R.lv || 1) <= s.lv) out.push(k); return out; };
@@ -100,12 +100,12 @@ export function fillOrders() {
   // 브룩의 정기 손님 날 (매달 7·14·21·28일)
   const dd = new Date().getDate(); if ([7, 14, 21, 28].includes(dd) && s.brook !== dayNo()) { s.brook = dayNo(); s.orders[0] = makeOrder(true); }
 }
-export function doOrder(i) { const s = load(), o = s.orders[i]; if (!o || o.at > now() || !take(o.items)) return null; const bonus = Math.round(o.coins * (joyBonus() + (s.spouse === 'ian' ? 0.1 : 0))); s.coins += o.coins + bonus; o.bonusC = bonus; giveMats(o.tools); if (o.bm) giveBm(o.bm); s.stats.orders++; progress('order', 1); const ups = gainXp(o.xp); s.orders[i] = { ...makeOrder(false), at: now() + 60000 }; return { o, ups }; }
+export function doOrder(i) { const s = load(), o = s.orders[i]; if (!o || o.at > now() || !take(o.items)) return null; const bonus = Math.round(o.coins * (joyBonus() + (s.spouse === 'ian' ? 0.1 : 0) + 0.04 * rl('order'))); s.coins += o.coins + bonus; o.bonusC = bonus; giveMats(o.tools); if (o.bm) giveBm(o.bm); s.stats.orders++; progress('order', 1); const ups = gainXp(o.xp); s.orders[i] = { ...makeOrder(false), at: now() + 60000 }; return { o, ups }; }
 export function dropOrder(i) { const s = load(); s.orders[i] = { ...makeOrder(false), at: now() + 30000 }; }
 
 // ── 기차: 3칸 · 다 채우면 떠났다가 3분 뒤 새 주문으로 돌아옴
 // 기차 여러 대 (레벨 2 · 12 · 22): trainN(i) · 예전 train() 은 첫 기차
-function newTrain() { const s = load(), g = unlockedGoods(); return { away: false, cars: [0, 1, 2].map(k => { const it = g[Math.floor(Math.random() * g.length)], n = ITEMS[it].v <= 3 ? 3 + Math.floor(Math.random() * 3) : ITEMS[it].v <= 12 ? 2 + Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 2); return { it, n, done: false, r: k === 2 ? { tools: 1 + Math.floor(s.lv / 6) } : { coins: Math.round(ITEMS[it].v * n * 1.6 + 8), xp: 2 + Math.round(ITEMS[it].v * n / 6) } }; }) }; }
+function newTrain() { const s = load(), g = unlockedGoods(); return { away: false, cars: [0, 1, 2].map(k => { const it = g[Math.floor(Math.random() * g.length)], n = ITEMS[it].v <= 3 ? 3 + Math.floor(Math.random() * 3) : ITEMS[it].v <= 12 ? 2 + Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 2); return { it, n, done: false, r: k === 2 ? { tools: 1 + Math.floor(s.lv / 6) } : { coins: Math.round((ITEMS[it].v * n * 1.6 + 8) * (1 + 0.1 * rl('train'))), xp: Math.round((2 + Math.round(ITEMS[it].v * n / 6)) * (1 + 0.1 * rl('train'))) } }; }) }; }
 export function trainN(ti) { const s = load(); if (s.lv < TRAINS[ti]) return null; if (!s.trains) s.trains = [s.train || null, null, null]; let t = s.trains[ti]; if (!t || (t.away && t.back <= now())) t = s.trains[ti] = newTrain(); return t; }
 export const train = () => trainN(0);
 export const trainCount = () => TRAINS.filter(l => load().lv >= l).length;
@@ -160,7 +160,7 @@ export function plane() { const s = load(); if (!countOf('airport')) return null
 export const PLANE_BONUS = { gems: 6, tools: 3 };
 export function loadCrate(i) { const p = plane(); if (!p || p.away) return null; const c = p.crates[i]; if (c.done || !take({ [c.it]: c.n })) return null; c.done = true; let ups = give(c.r), all = false; if (p.crates.every(x => x.done)) { all = true; p.away = true; p.back = now() + 3600000; ups = ups.concat(give(PLANE_BONUS)); giveBm(3); progress('plane', 1); } return { r: c.r, ups, all }; }
 // ── 동물원: 동물 우리마다 방문객 코인이 쌓임
-export function zooCoins(o) { if (!countOf('zoogate')) return 0; o.at = o.at || now(); const h = Math.min(ZOO_CAP_H, (now() - o.at) / 36e5); return Math.floor(h * BUILDS[o.b].rate); }
+export function zooCoins(o) { if (!countOf('zoogate')) return 0; o.at = o.at || now(); const h = Math.min(ZOO_CAP_H, (now() - o.at) / 36e5); return Math.floor(h * BUILDS[o.b].rate * (1 + 0.1 * rl('zoo'))); }
 export function zooCollect(o) { const c = zooCoins(o); if (c < 1) return 0; load().coins += c; o.at = now(); gainXp(Math.ceil(c / 40)); return c; }
 // ── 섬 원정: 섬마다 테마 · 가운데 2×2 보스 보물 (정해진 도구로 hp 번 두드림)
 export const isleTheme = n => ISLE.themes[n % ISLE.themes.length];
@@ -192,3 +192,12 @@ export function marketBuy(i) { const s = load(), c = market().st[i]; if (!c || !
 export const speedCost = sec => Math.max(1, Math.ceil(sec / 300));
 export function speedField(o) { const s = load(); if (!o.crop || cropReady(o)) return null; const c = speedCost((o.at - now()) / 1000); if (s.gems < c) return '보석이 모자라요'; s.gems -= c; o.at = now(); return null; }
 export function speedFactory(o) { const s = load(); tickFactory(o); if (!o.q.length) return null; const j = o.q[0], c = speedCost((j.end - now()) / 1000); if (s.gems < c) return '보석이 모자라요'; s.gems -= c; const cut = j.end - now(); for (const x of o.q) x.end -= cut; tickFactory(o); return null; }
+
+// ── 연구소: 한 번에 하나 · 단계마다 코인 + 시약·톱니바퀴·설계도 + 시간
+export const lab = () => { const s = load(); if (!s.lab) s.lab = { lv: {}, cur: null }; const L = s.lab; if (L.cur && L.cur.end <= now()) { L.lv[L.cur.k] = (L.lv[L.cur.k] || 0) + 1; L.done = L.cur.k; L.cur = null; } return L; };
+export function rl(k) { const s = load(); return s.lab ? s.lab.lv[k] || 0 : 0; }
+export function labStart(k) { const L = lab(), s = load(), lv = (L.lv[k] || 0) + 1; if (L.cur) return '이미 연구 중이에요'; if (lv > RES_MAX) return '최고 단계예요'; if (!countOf('lab')) return '연구소를 지어야 해요'; const c = resCost(lv); if (s.coins < c.coins) return '코인이 모자라요'; if (!hasAll(c.items)) return '연구 재료가 모자라요 · 연구소에서 만들어요';
+  s.coins -= c.coins; take(c.items); L.cur = { k, end: now() + resTime(lv) * 1000 }; return null; }
+export function labSpeed() { const L = lab(), s = load(); if (!L.cur) return null; const c = speedCost((L.cur.end - now()) / 1000); if (s.gems < c) return '보석이 모자라요'; s.gems -= c; L.cur.end = now(); lab(); return null; }
+// 수확 덤 (풍년의 비결)
+export const bonusCrop = () => Math.random() < 0.05 * rl('harvest');

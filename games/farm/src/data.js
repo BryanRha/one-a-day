@@ -18,6 +18,11 @@ export const ITEMS = {
   bouquet: { n: '꽃다발', v: 40 }, wreath: { n: '꽃 화관', v: 66 }, clay: { n: '점토', v: 8 }, vase: { n: '꽃병', v: 36 }, plate: { n: '도자기 접시', v: 56 },
   teddy: { n: '곰 인형', v: 70 }, toytrain: { n: '장난감 기차', v: 84 }, pigplush: { n: '돼지 인형', v: 76 }, perfume: { n: '향수', v: 96 }, soap: { n: '꽃비누', v: 64 },
   pineapple: { n: '파인애플', v: 40, rare: 1 }, coconut: { n: '코코넛', v: 40, rare: 1 }, coffee: { n: '커피콩', v: 55, rare: 1 }, cocoa: { n: '카카오', v: 55, rare: 1 }, silk: { n: '비단', v: 70, rare: 1 }, spice: { n: '향신료', v: 70, rare: 1 }, pearl: { n: '진주', v: 120, rare: 1 }, map: { n: '보물 지도', v: 10, rare: 1 },
+  latte: { n: '라테', v: 90 }, cappuccino: { n: '카푸치노', v: 120 }, chocobar: { n: '초콜릿', v: 100 }, truffle: { n: '트러플 초콜릿', v: 150 }, necklace: { n: '진주 목걸이', v: 260 }, ring: { n: '금반지', v: 210 },
+  scarf: { n: '비단 스카프', v: 110 }, gown: { n: '비단 드레스', v: 190 }, curry: { n: '카레', v: 110 }, gingerbread: { n: '생강 쿠키', v: 120 }, burger: { n: '햄버거', v: 120 }, hotdog: { n: '핫도그', v: 90 },
+  weddingcake: { n: '웨딩 케이크', v: 220 }, cupcake: { n: '컵케이크', v: 60 }, pinesmoothie: { n: '파인애플 스무디', v: 70 }, coconutdrink: { n: '코코넛 음료', v: 66 }, blusmoothie: { n: '블루베리 스무디', v: 70 },
+  noodles: { n: '국수', v: 70 }, dumplings: { n: '만두', v: 90 }, pickles: { n: '피클', v: 50 }, kimchi: { n: '김치', v: 70 }, cider: { n: '사과 사이다', v: 70 }, ham: { n: '꿀 햄', v: 110 }, tart: { n: '과일 타르트', v: 100 },
+  axe: { n: '도끼', v: 12 }, shovel: { n: '삽', v: 12 },
   ironore: { n: '철광석', v: 15 }, goldore: { n: '금광석', v: 35 }, ironbar: { n: '철 막대', v: 40 }, goldbar: { n: '금 막대', v: 90 }, pickaxe: { n: '곡괭이', v: 10 }, dynamite: { n: '다이너마이트', v: 25 },
 };
 // 씨앗 값 (타운십처럼 심을 때 코인을 냄 · 밀은 무료) — 가진 작물이 없어도 언제든 심을 수 있음
@@ -48,6 +53,18 @@ export const RECIPES = {
   bouquet: { b: 'florist', in: { strawberry: 2, cotton: 1 }, t: 420, xp: 6 }, wreath: { b: 'florist', in: { blueberry: 2, cotton: 2 }, t: 600, xp: 9, lv: 25 }, vase: { b: 'pottery', in: { clay: 3 }, t: 420, xp: 6 }, plate: { b: 'pottery', in: { clay: 3, blueberry: 1 }, t: 600, xp: 8, lv: 25 },
   teddy: { b: 'toyshop', in: { wool: 2, fabric: 1 }, t: 720, xp: 10 }, toytrain: { b: 'toyshop', in: { ironbar: 1, fabric: 1, apple: 1 }, t: 840, xp: 11, lv: 26 }, pigplush: { b: 'toyshop', in: { wool: 1, fabric: 1, strawberry: 2 }, t: 780, xp: 10 },
   perfume: { b: 'perfumery', in: { bouquet: 1, sugar: 2 }, t: 900, xp: 12 }, soap: { b: 'perfumery', in: { honeycomb: 1, bouquet: 1 }, t: 720, xp: 10 },
+  latte: { b: 'coffeehouse', in: { coffee: 1, milk: 1 }, t: 600, xp: 10 }, cappuccino: { b: 'coffeehouse', in: { coffee: 1, milk: 2, sugar: 1 }, t: 840, xp: 13 },
+  chocobar: { b: 'chocolatier', in: { cocoa: 1, sugar: 1, milk: 1 }, t: 720, xp: 11 }, truffle: { b: 'chocolatier', in: { cocoa: 2, butter: 1, sugar: 1 }, t: 1080, xp: 16 },
+  necklace: { b: 'jeweler', in: { pearl: 1, goldbar: 1 }, t: 1500, xp: 24 }, ring: { b: 'jeweler', in: { goldbar: 2 }, t: 1200, xp: 20 },
+  scarf: { b: 'silkmill', in: { silk: 1 }, t: 720, xp: 11 }, gown: { b: 'silkmill', in: { silk: 2, fabric: 1 }, t: 1200, xp: 18 },
+  curry: { b: 'spicekitchen', in: { spice: 1, potato: 2, carrot: 1 }, t: 780, xp: 12 }, gingerbread: { b: 'spicekitchen', in: { spice: 1, wheat: 2, honey: 1 }, t: 840, xp: 13 },
+  burger: { b: 'diner', in: { bread: 1, bacon: 1, tomato: 1 }, t: 720, xp: 12 }, hotdog: { b: 'diner', in: { sausage: 1, bread: 1 }, t: 540, xp: 9 },
+  weddingcake: { b: 'cakeshop', in: { creamcake: 1, strawberry: 3, egg: 2 }, t: 1500, xp: 22 }, cupcake: { b: 'cakeshop', in: { wheat: 1, sugar: 1, egg: 1, strawberry: 1 }, t: 480, xp: 8 },
+  pinesmoothie: { b: 'smoothiebar', in: { pineapple: 1, milk: 1 }, t: 480, xp: 8 }, coconutdrink: { b: 'smoothiebar', in: { coconut: 1, sugar: 1 }, t: 480, xp: 8 }, blusmoothie: { b: 'smoothiebar', in: { blueberry: 2, milk: 1 }, t: 540, xp: 9 },
+  noodles: { b: 'noodlehouse', in: { wheat: 3, egg: 1, onion: 1 }, t: 600, xp: 10 }, dumplings: { b: 'noodlehouse', in: { wheat: 2, cabbage: 1, bacon: 1 }, t: 720, xp: 12 },
+  pickles: { b: 'pickleshop', in: { onion: 2, sugar: 1 }, t: 480, xp: 8 }, kimchi: { b: 'pickleshop', in: { cabbage: 3, onion: 1 }, t: 600, xp: 10 },
+  cider: { b: 'juicebar', in: { apple: 3, sugar: 1 }, t: 600, xp: 10 }, ham: { b: 'smokehouse', in: { bacon: 2, honey: 1 }, t: 900, xp: 14 }, tart: { b: 'bakery', in: { wheat: 2, strawberry: 1, blueberry: 1, apple: 1 }, t: 840, xp: 13, lv: 26 },
+  axe: { b: 'forge', in: { ironbar: 1, sugarcane: 1 }, t: 300, xp: 4 }, shovel: { b: 'forge', in: { ironbar: 1, corn: 2 }, t: 300, xp: 4 },
   ironbar: { b: 'forge', in: { ironore: 3 }, t: 420, xp: 6 }, goldbar: { b: 'forge', in: { goldore: 3 }, t: 600, xp: 9 }, pickaxe: { b: 'forge', in: { ironbar: 1, wheat: 2 }, t: 300, xp: 4 }, dynamite: { b: 'forge', in: { ironbar: 1, sugarcane: 2 }, t: 360, xp: 5 },
 };
 // 건물: 종류 · 크기(칸) · 값 · 필요 레벨 · 필요 인구 · 주는 인구 / 인구 상한
@@ -77,6 +94,22 @@ export const BUILDS = {
   pottery: { n: '도자기 공방', k: 'factory', sz: 2, cost: 2600, lv: 21, pop: 280, slots: 2 },
   toyshop: { n: '장난감 가게', k: 'factory', sz: 2, cost: 3600, lv: 23, pop: 320, slots: 2 },
   perfumery: { n: '향수 공방', k: 'factory', sz: 2, cost: 4200, lv: 24, pop: 360, slots: 2 },
+  coffeehouse: { n: '카페', k: 'factory', sz: 2, cost: 4800, lv: 25, pop: 400, slots: 2 },
+  chocolatier: { n: '초콜릿 공방', k: 'factory', sz: 2, cost: 5200, lv: 26, pop: 420, slots: 2 },
+  smoothiebar: { n: '스무디 가게', k: 'factory', sz: 2, cost: 4000, lv: 22, pop: 330, slots: 2 },
+  pickleshop: { n: '김치·피클 가게', k: 'factory', sz: 2, cost: 3400, lv: 20, pop: 300, slots: 2 },
+  noodlehouse: { n: '국숫집', k: 'factory', sz: 2, cost: 4400, lv: 23, pop: 370, slots: 2 },
+  diner: { n: '버거 가게', k: 'factory', sz: 2, cost: 5600, lv: 27, pop: 450, slots: 2 },
+  spicekitchen: { n: '향신료 부엌', k: 'factory', sz: 2, cost: 6000, lv: 28, pop: 480, slots: 2 },
+  cakeshop: { n: '케이크 가게', k: 'factory', sz: 2, cost: 6800, lv: 30, pop: 520, slots: 2 },
+  silkmill: { n: '비단 공방', k: 'factory', sz: 2, cost: 7600, lv: 32, pop: 560, slots: 2 },
+  jeweler: { n: '보석 가게', k: 'factory', sz: 2, cost: 9000, lv: 35, pop: 620, slots: 2 },
+  airport: { n: '공항', k: 'airport', sz: 2, cost: 3000, lv: 14, pop: 140 },
+  zoogate: { n: '동물원 입구', k: 'zoo', sz: 2, cost: 4000, lv: 18, pop: 220 },
+  panda: { n: '판다 우리', k: 'exhibit', sz: 2, cost: 2500, lv: 18, rate: 40 },
+  giraffe: { n: '기린 우리', k: 'exhibit', sz: 2, cost: 4000, lv: 21, rate: 60 },
+  penguin: { n: '펭귄 수영장', k: 'exhibit', sz: 2, cost: 6000, lv: 25, rate: 85 },
+  elephant: { n: '코끼리 우리', k: 'exhibit', sz: 2, cost: 9000, lv: 30, rate: 120 },
   harbor: { n: '항구', k: 'harbor', sz: 2, cost: 2500, lv: 16, pop: 180 },
   festival: { n: '축제 무대', k: 'event', sz: 2, cost: 300, lv: 4 },
   mine: { n: '뒷산 광산', k: 'mine', sz: 2, cost: 1000, lv: 12, pop: 100 },
@@ -95,12 +128,22 @@ export const BUILDS = {
   path: { n: '돌길', k: 'deco', sz: 1, cost: 2, lv: 2, joy: 0, img: 'path' }, flowerbed: { n: '튤립 화단', k: 'deco', sz: 1, cost: 20, lv: 3, joy: 2 }, bench: { n: '벤치', k: 'deco', sz: 1, cost: 30, lv: 4, joy: 2 },
   lamp: { n: '가로등', k: 'deco', sz: 1, cost: 40, lv: 5, joy: 2 }, oak: { n: '참나무', k: 'deco', sz: 1, cost: 25, lv: 3, joy: 2 }, fountain: { n: '분수', k: 'deco', sz: 1, cost: 300, lv: 9, joy: 8 },
   scarecrow: { n: '허수아비', k: 'deco', sz: 1, cost: 35, lv: 4, joy: 3 }, haybale: { n: '건초 더미', k: 'deco', sz: 1, cost: 20, lv: 2, joy: 1 }, fence: { n: '울타리', k: 'deco', sz: 1, cost: 8, lv: 2, joy: 1 },
+  hedge: { n: '산울타리', k: 'deco', sz: 1, cost: 15, lv: 6, joy: 1 }, rosearch: { n: '장미 아치', k: 'deco', sz: 1, cost: 220, lv: 11, joy: 6 }, pond: { n: '오리 연못', k: 'deco', sz: 1, cost: 350, lv: 14, joy: 8 },
+  cherry: { n: '벚나무', k: 'deco', sz: 1, cost: 160, lv: 13, joy: 5 }, bonfire: { n: '모닥불', k: 'deco', sz: 1, cost: 120, lv: 16, joy: 4 }, bunny: { n: '토끼 동상', k: 'deco', sz: 1, cost: 600, lv: 20, joy: 12 },
   kingstatue: { n: '배추왕 동상', k: 'deco', sz: 1, cost: 800, lv: 12, joy: 15 }, gazebo: { n: '정자', k: 'deco', sz: 1, cost: 500, lv: 10, joy: 10 }, windmill: { n: '풍차', k: 'deco', sz: 1, cost: 400, lv: 8, joy: 8 },
 };
 export const BASE_CAP = 20;
 // 레벨: 필요 경험치 · 레벨업 보상
 export const XP_NEED = lv => Math.round(10 + lv * lv * 3.4);   // 봇(하루 3번 10분): 레벨 10 약 1주 · 20 약 3주 · 30 약 7주
-export const MAX_LV = 40;
+export const MAX_LV = 50;
+// 공장 업그레이드: 단계마다 만드는 시간 -15% (최대 3단계)
+export const FUP = { max: 3, cost: (b, lv) => ({ coins: Math.round(BUILDS[b].cost * 0.6 * (lv + 1)), tools: 3 + lv * 3 }), k: lv => 1 - 0.15 * lv };
+// 기차: 레벨 2 · 12 · 22 에 하나씩
+export const TRAINS = [2, 12, 22];
+// 동물원: 동물 우리마다 시간당 방문객 코인 (최대 8시간 쌓임) · 입구가 있어야 손님이 옴
+export const ZOO_CAP_H = 8;
+// 섬 원정: 6×8 칸 · 덤불/덩굴/그루터기=도끼 · 모래/보물=삽 · 바위=곡괭이
+export const ISLE = { cols: 6, rows: 8, tiles: [['bush', 'axe', 0.28], ['vines', 'axe', 0.14], ['stump', 'axe', 0.12], ['sand', 'shovel', 0.26], ['boulder', 'pickaxe', 0.14], ['treasure', 'shovel', 0.06]], names: ['야자 섬', '폭포 섬', '화산 섬', '산호 섬', '달빛 섬'] };
 export const LV_REWARD = lv => ({ coins: 20 + lv * 10, gems: lv % 2 ? 2 : 4, tools: lv >= 3 ? 1 : 0 });
 // 헛간 · 땅
 export const BARN = { base: 60, step: 25, toolCost: lv => 2 + lv };
@@ -138,6 +181,13 @@ export const QUESTS = [
   { id: 'q22', n: '하트 5개 모으기', goal: { hearts: 5 }, reward: { gems: 20, xp: 50 }, talk: [L('라벤더 공주', 'princess', '이상하게 그 사람 생각만 하면 가슴이 두근거려…')] },
   { id: 'q23', n: '결혼식장 짓기', goal: { build: 'wedding' }, reward: { coins: 300, xp: 60 }, talk: [L('브룩', 'brook', '어머머, 공주님 얼굴이 빨개! 결혼식장부터 지어야겠네~')] },
   { id: 'q24', n: '결혼하기', goal: { married: 1 }, reward: { gems: 50, xp: 100 }, talk: [L('배추왕', 'king', '내 딸이 고른 사람이라면 믿는다. 행복하거라, 라벤더.')] },
+  // ── 3장 「바다 건너 왕국으로」
+  { id: 'q25', n: '공항 짓기', goal: { build: 'airport' }, reward: { coins: 400, xp: 60 }, talk: [L('배추왕', 'king', '라벤더야, 이웃 왕국들이 네 농장 물건을 원한단다. 하늘길을 열어 보거라.')] },
+  { id: 'q26', n: '비행기 화물 채우기', goal: { plane: 1 }, reward: { gems: 15, xp: 60 }, talk: [L('이안', 'ian', '비행기 화물칸을 모두 채우면 이웃 왕국이 큰 선물을 보내 줍니다.')] },
+  { id: 'q27', n: '항구 짓기', goal: { build: 'harbor' }, reward: { coins: 400, xp: 60 }, talk: [L('브룩', 'brook', '바다 건너 섬엔 보물이 잔뜩이래요~ 항구부터 지어요!')] },
+  { id: 'q28', n: '섬 원정 10칸 열기', goal: { isle: 10 }, reward: { gems: 20, xp: 80 }, talk: [L('샘', 'sam', '도끼랑 삽만 있으면 정글도 문제없어요! 대장간에서 만들어 가요!')] },
+  { id: 'q29', n: '동물원 열기', goal: { build: 'zoogate' }, reward: { coins: 600, xp: 90 }, talk: [L('한스', 'hans', '섬에서 데려온 동물들을 위해 동물원을 지어 볼까요? 손님들이 몰려올 거예요.')] },
+  { id: 'q30', n: '판다 데려오기', goal: { build: 'panda' }, reward: { gems: 30, xp: 100 }, talk: [L('라벤더 공주', 'princess', '판다다! 마을 아이들이 정말 좋아하겠어!'), L('배추왕', 'king', '네가 일군 농장이 이제 왕국의 자랑이구나.')] },
 ];
 // 결혼 (원작 더팜3: 호감도 미션 → 결혼) — 선물(제품)로 호감도, 하트 5개면 프러포즈 → 결혼식장에서 결혼
 export const SUITORS = {

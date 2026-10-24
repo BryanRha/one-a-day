@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.39.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.39.0';
-import { audio } from '../audio.js?v=0.39.0';
-import { goPrev } from '../nav.js?v=0.39.0';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS } from '../data.js?v=0.39.0';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.39.0';
+import { W, H } from '../config.js?v=0.40.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.40.0';
+import { audio } from '../audio.js?v=0.40.0';
+import { goPrev } from '../nav.js?v=0.40.0';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS } from '../data.js?v=0.40.0';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.40.0';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }
@@ -92,7 +92,7 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.39.0';
+import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.40.0';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
@@ -131,5 +131,26 @@ export class EventsScene extends Phaser.Scene {
     PASS_TIERS.forEach((need, i) => { const y = y0 + 150 + i * 122, ok = ps.pts >= need, got = ps.got.includes(i); const g = this.add.graphics(); g.fillStyle(ok ? 0xE8507A : 0xD8CCC0, 1).fillCircle(W / 2 + 0, y, 34); T(this, W / 2, y, `${need}`, 20, '#FFFFFF', { w: 900 });
       this.card(280, y, 400, 104, ok && !got, got); T(this, 280, y, got ? '받음 ✓' : rewardText(PASS_FREE[i]), 24, got ? C.green : C.ink, { w: 900 }); this.add.zone(280, y, 400, 104).setInteractive().on('pointerup', () => { const u = passClaim(i); if (!u) return toast(this, got ? '이미 받았어요' : `패스 점수 ${need}에 받아요`); this.done(u); });
       const g2 = this.add.graphics(); g2.fillStyle(0xF6E6EE, 1).fillRoundedRect(600, y - 52, 400, 104, 24); T(this, 800, y, rewardText(PASS_PREM[i]), 24, '#C9A2B8', { w: 900 }); }); }
+  onBack() { return goPrev(this); }
+}
+
+// ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
+import { isle, isleHit, isleTool } from '../state.js?v=0.40.0';
+import { ISLE } from '../data.js?v=0.40.0';
+export class IslandScene extends Phaser.Scene {
+  constructor() { super('Island'); }
+  create() {
+    const bg = this.add.image(W / 2, H / 2, 'island_bg'); bg.setScale(Math.max(W / bg.width, H / bg.height)); top(this, '섬 원정');
+    const m = isle(), cs = 150, x0 = (W - cs * ISLE.cols) / 2, y0 = Math.max(320, (H - cs * ISLE.rows) / 2 - 40);
+    T(this, W / 2, 190, `${ISLE.names[m.n % ISLE.names.length]} · 남은 칸 ${m.cells.filter(Boolean).length} · 다 열면 💎25 🔨5 🪙500`, 26, '#FFFFFF', { w: 900 }).setStroke('#1E4A6A', 7);
+    m.cells.forEach((t, i) => { if (!t) return; const x = x0 + (i % ISLE.cols) * cs + cs / 2, y = y0 + Math.floor(i / ISLE.cols) * cs + cs / 2, im = icon(this, x, y, t, cs - 4); im.setInteractive({ useHandCursor: true }).on('pointerup', () => this.hit(i, im)); const tl = icon(this, x + 46, y + 46, isleTool(t), 40); tl.setAlpha(0.85); im.tl = tl; });
+    const d = load(), by = Math.min(H - 110, y0 + ISLE.rows * cs + 80); this.toolT = T(this, W / 2, by, '', 32, '#FFFFFF', { w: 900 }).setStroke('#1E4A6A', 8); this.lab();
+    T(this, W / 2, by + 56, '도끼 · 삽 · 곡괭이는 대장간에서 만들어요', 22, '#FFFFFF', { w: 900 }).setStroke('#1E4A6A', 6); window.__isle = this;
+  }
+  lab() { const d = load(); this.toolT.setText(`🪓 도끼 ${d.items.axe || 0}   ⛏ 곡괭이 ${d.items.pickaxe || 0}   🪣 삽 ${d.items.shovel || 0}`); }
+  hit(i, im) { const r = isleHit(i); if (!r) return; if (r.need) return toast(this, `${ITEMS[r.need].n}이(가) 필요해요 · 대장간에서 만들어요`, H / 2);
+    save(); audio.play('sfx_drop', { volume: 0.8 }); audio.buzz(12); im.tl.destroy(); this.tweens.add({ targets: im, scale: 0, angle: 30, duration: 250, onComplete: () => im.destroy() });
+    if (r.r) { const t = T(this, im.x, im.y, rewardText(r.r), 28, '#FFE27A', { w: 900 }).setStroke('#3E2A14', 6); this.tweens.add({ targets: t, y: t.y - 80, alpha: 0, duration: 1300, delay: 200, onComplete: () => t.destroy() }); audio.play('sfx_coin', { volume: 0.6 }); }
+    this.lab(); if (r.done) { audio.play('sfx_levelup', { volume: 0.8 }); toast(this, '섬을 모두 탐험했어요! 다음 섬으로 ⛵', H / 2); this.time.delayedCall(1200, () => this.scene.restart()); } }
   onBack() { return goPrev(this); }
 }

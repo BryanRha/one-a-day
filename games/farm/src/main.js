@@ -1,11 +1,11 @@
-import { W, BASE_H, setH } from './config.js?v=0.39.0';
-import { audio } from './audio.js?v=0.39.0';
-import { BootScene } from './scenes/Boot.js?v=0.39.0';
-import { TownScene } from './scenes/Town.js?v=0.39.0';
-import { HudScene } from './scenes/Hud.js?v=0.39.0';
-import { MineScene, MiniScene, PeopleScene, EventsScene } from './scenes/Extra.js?v=0.39.0';
-import { installBack } from './oad.js?v=0.39.0';
-import { installNav } from './nav.js?v=0.39.0';
+import { W, BASE_H, setH } from './config.js?v=0.40.0';
+import { audio } from './audio.js?v=0.40.0';
+import { BootScene } from './scenes/Boot.js?v=0.40.0';
+import { TownScene } from './scenes/Town.js?v=0.40.0';
+import { HudScene } from './scenes/Hud.js?v=0.40.0';
+import { MineScene, MiniScene, PeopleScene, EventsScene, IslandScene } from './scenes/Extra.js?v=0.40.0';
+import { installBack } from './oad.js?v=0.40.0';
+import { installNav } from './nav.js?v=0.40.0';
 
 async function start() {
   installNav();
@@ -14,7 +14,7 @@ async function start() {
     type: Phaser.AUTO, parent: 'game', width: W, height: BASE_H, backgroundColor: '#7CC26A',
     scale: { mode: innerHeight / innerWidth > BASE_H / W ? Phaser.Scale.EXPAND : Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     render: { antialias: true, powerPreference: 'high-performance' }, input: { activePointers: 3 }, fps: { target: 60 },
-    scene: [BootScene, TownScene, HudScene, MineScene, MiniScene, PeopleScene, EventsScene],
+    scene: [BootScene, TownScene, HudScene, MineScene, MiniScene, PeopleScene, EventsScene, IslandScene],
   });
   const step = game.step; let errN = 0;
   game.step = function (t, d) { try { step.call(this, t, d); } catch (err) { if (errN++ < 5) console.warn('프레임 오류', String(err && err.stack || err).slice(0, 400)); } };

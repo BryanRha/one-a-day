@@ -1,8 +1,8 @@
 // 로딩: 건물 · 물건 · 땅 · 인물 · 소리
-import { W, H, TITLE } from '../config.js?v=0.39.0';
-import { SFX, BGM, audio } from '../audio.js?v=0.39.0';
-import { makeTextures } from '../ui.js?v=0.39.0';
-import { ITEMS, BUILDS, CROPS } from '../data.js?v=0.39.0';
+import { W, H, TITLE } from '../config.js?v=0.40.0';
+import { SFX, BGM, audio } from '../audio.js?v=0.40.0';
+import { makeTextures } from '../ui.js?v=0.40.0';
+import { ITEMS, BUILDS, CROPS } from '../data.js?v=0.40.0';
 
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -13,10 +13,11 @@ export class BootScene extends Phaser.Scene {
     this.add.text(W / 2, H / 2 - 20, TITLE, { fontFamily: 'Pretendard', fontStyle: '900', fontSize: '140px', color: '#FFFFFF', stroke: '#3E2A14', strokeThickness: 18 }).setOrigin(0.5);
     this.load.on('progress', v => { bar.width = 480 * v; });
     for (const [k, B] of Object.entries(BUILDS)) if (k !== 'field') this.load.image(k, `assets/${B.k === 'deco' ? 'd' : 'b'}/${k}.webp`);
-    for (const k of ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'sparrow', 'bully', 'leak', 'plank', 'heart', 'gift', 'rock', 'rock_iron', 'rock_gold', 'rock_gem', 'dirt', 'chest']) this.load.image(k, `assets/s/${k}.webp`);
+    for (const k of ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'sparrow', 'bully', 'leak', 'plank', 'heart', 'gift', 'rock', 'rock_iron', 'rock_gold', 'rock_gem', 'dirt', 'chest', 'bush', 'sand', 'stump', 'boulder', 'vines', 'treasure']) this.load.image(k, `assets/s/${k}.webp`);
+    this.load.image('island_bg', 'assets/bg/island.webp');
     this.load.image('mine_bg', 'assets/bg/mine.webp');
     this.load.image('barn', 'assets/b/barn.webp'); this.load.image('mine_b', 'assets/b/mine.webp'); this.load.image('orderboard', 'assets/b/orderboard.webp');
-    for (const k of [...Object.keys(ITEMS), 'coin', 'gem', 'xp', 'pop', 'tools', 'seedbag', 'sickle', 'ticket', 'trophy', 'cardpack', 'calendar', 'passmedal', 'firework']) this.load.image(k, `assets/i/${k}.webp`);
+    for (const k of [...Object.keys(ITEMS), 'coin', 'gem', 'xp', 'pop', 'tools', 'seedbag', 'sickle', 'ticket', 'trophy', 'cardpack', 'calendar', 'passmedal', 'firework', 'compass', 'upstar', 'plane', 'crate']) this.load.image(k, `assets/i/${k}.webp`);
     for (const k of Object.keys(CROPS)) this.load.image(`ripe_${k}`, `assets/t/ripe_${k}.webp`);
     for (const k of ['grass', 'soil', 'sprouts', 'forest', 'loco', 'wagon', 'station', 'dog', 'digspot']) this.load.image(k, `assets/t/${k}.webp`);
     for (const k of ['princess', 'princess_shock', 'hans', 'sam', 'ian', 'pachulo', 'brook', 'king']) this.load.image(k, `assets/c/${k}.webp`);

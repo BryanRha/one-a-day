@@ -3,32 +3,32 @@
 //  · 행운의 룰렛: 5단계 이상 합치기 · 레벨업마다 룰렛 토큰 → 8칸 룰렛 (확률 공개)
 //  · 공방 보물 찾기: 주문 3번마다 삽 1개 → 5×5 흙을 파서 열쇠 조각 3개 찾기 → 보물 · 다음 판
 //  · 듀오 뷰티 배틀(2대2): 나+AI 짝꿍 대 AI 두 명, 24시간 동안 주문 점수 합
-import { load, save } from './save.js?v=0.35.1';
-import { CHAINS } from './data.js?v=0.35.1';
+import { load, save } from './save.js?v=0.35.2';
 
 const DAY = 864e5, dayNo = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 6e4) / DAY), weekNo = () => Math.floor((dayNo() + 3) / 7);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
-// ── 빙고
-export const BINGO = { line: [{ gems: 5 }, { coins: 40 }, { energy: 20 }, { pack: 'basic' }], full: { pack: 'diamond', gems: 50 } };
+// ── 빙고 (숫자 1~25 · 공을 뽑으면 그 숫자 칸에 도장 · 가로 5 · 세로 5 · 대각선 2 줄마다 정해진 보상)
+const LINES = (() => { const L = []; for (let i = 0; i < 5; i++) L.push([0, 1, 2, 3, 4].map(k => i * 5 + k)); for (let i = 0; i < 5; i++) L.push([0, 1, 2, 3, 4].map(k => k * 5 + i)); L.push([0, 6, 12, 18, 24]); L.push([4, 8, 12, 16, 20]); return L; })();
+// 줄 보상: 가로 1~5 · 세로 1~5 · 대각선 ↘ · ↙
+export const LINE_R = [{ gems: 5 }, { coins: 40 }, { energy: 20 }, { pack: 'basic' }, { gems: 8 }, { energy: 15 }, { coins: 50 }, { gems: 5 }, { items: ['scissors'] }, { pack: 'basic' }, { pack: 'gold' }, { items: ['ribbon'] }];
+export const BINGO = { full: { pack: 'diamond', gems: 50 } };
 export function bingo() {
   const d = load();
-  if (!d.bingo || d.bingo.week !== weekNo()) {
-    const keys = Object.keys(CHAINS).slice(0, 4), cells = [];
-    for (let i = 0; i < 25; i++) cells.push(`${pick(keys)}${1 + Math.floor(Math.random() * 6)}`);
-    d.bingo = { week: weekNo(), cells, marked: [12], lines: [], full: false, balls: d.bingo ? d.bingo.balls : 1 }; save();
+  if (!d.bingo || d.bingo.week !== weekNo() || typeof d.bingo.cells[0] !== 'number') {
+    const nums = [...Array(25)].map((_, i) => i + 1).sort(() => Math.random() - 0.5);
+    d.bingo = { week: weekNo(), cells: nums, marked: [12], lines: [], full: false, balls: d.bingo ? d.bingo.balls : 1 }; save();
   }
   return d.bingo;
 }
-const LINES = (() => { const L = []; for (let i = 0; i < 5; i++) { L.push([0, 1, 2, 3, 4].map(k => i * 5 + k)); L.push([0, 1, 2, 3, 4].map(k => k * 5 + i)); } L.push([0, 6, 12, 18, 24]); L.push([4, 8, 12, 16, 20]); return L; })();
 export const bingoLines = () => LINES;
-// 공 하나 쓰기 → { cell, newLines:[], full, rewards:[] }
+// 공 하나 쓰기 → { cell, num, newLines:[], full, rewards:[] }
 export function bingoDraw() {
   const b = bingo(); if (!b.balls) return null; const free = [...Array(25).keys()].filter(i => !b.marked.includes(i)); if (!free.length) return null;
   b.balls--; const cell = pick(free); b.marked.push(cell); const rewards = [], newLines = [];
-  LINES.forEach((L, i) => { if (!b.lines.includes(i) && L.every(c => b.marked.includes(c))) { b.lines.push(i); newLines.push(i); rewards.push(BINGO.line[(b.lines.length - 1) % BINGO.line.length]); } });
+  LINES.forEach((L, i) => { if (!b.lines.includes(i) && L.every(c => b.marked.includes(c))) { b.lines.push(i); newLines.push(i); rewards.push(LINE_R[i]); } });
   let full = false; if (!b.full && b.marked.length === 25) { b.full = true; full = true; rewards.push(BINGO.full); }
-  save(); return { cell, newLines, full, rewards };
+  save(); return { cell, num: b.cells[cell], newLines, full, rewards };
 }
 export function bingoAdd(n = 1) { const b = bingo(); b.balls += n; save(); }
 

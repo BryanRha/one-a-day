@@ -1,17 +1,19 @@
 // 로비 장면: 밤의 야영지 · 모닥불 · 주인공이 서 있고 카메라가 천천히 돎 (화면마다 카메라 위치가 바뀜)
 import * as THREE from 'three';
-import { E } from './engine.js?v=0.56.0';
-import { load } from './assets.js?v=0.56.0';
-import { place, loadProp } from './props.js?v=0.56.0';
-import { Actor } from './actor.js?v=0.56.0';
-import { FX, initFX, clearFX, updateFX } from './fx.js?v=0.56.0';
-import { skyTex, discMask } from './fxtex.js?v=0.56.0';
+import { E } from './engine.js?v=0.56.1';
+import { load } from './assets.js?v=0.56.1';
+import { place, loadProp } from './props.js?v=0.56.1';
+import { Actor } from './actor.js?v=0.56.1';
+import { FX, initFX, clearFX, updateFX } from './fx.js?v=0.56.1';
+import { skyTex, discMask } from './fxtex.js?v=0.56.1';
+import { RIM } from './assets.js?v=0.56.1';
+import { setVignette } from './engine.js?v=0.56.1';
 
 export const L = { on: false, hero: null, t: 0, view: 'home', fire: new THREE.Vector3(-170, 40, -60) };
 const VIEWS = { home: { r: 820, h: 330, look: [20, 130, -40], sway: 0.22, a0: 0.12 }, hero: { r: 600, h: 230, look: [100, 40, 40], sway: 0.05, a0: 0.18 }, title: { r: 1050, h: 430, look: [-20, 160, -80], sway: 0.18, a0: -0.05 } };
 export async function buildLobby() {
   await load('warrior');
-  const sc = E.scene; sc.clear(); initFX(sc); clearFX();
+  const sc = E.scene; sc.clear(); initFX(sc); clearFX(); RIM.col.value.set(0x9ab0e8); RIM.k.value = 0.16; setVignette(0.5);
   sc.background = skyTex('#0a0c16', '#2a2030'); sc.fog = new THREE.Fog(0x1e1a26, 1400, 3800);
   const tl = new THREE.TextureLoader(), gt = tl.load('assets/env/L13_d.jpg'); gt.colorSpace = THREE.SRGBColorSpace; gt.wrapS = gt.wrapT = THREE.RepeatWrapping; gt.repeat.set(9, 9);
   const g = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshLambertMaterial({ map: gt })); g.rotation.x = -Math.PI / 2; sc.add(g);
@@ -21,7 +23,8 @@ export async function buildLobby() {
     ['fence', -760, -120, { h: 300, ry: 1.4 }], ['fence', 760, -200, { h: 300, ry: -1.4 }], ['rock1', -700, 120, { s: 0.8 }], ['root1', 820, -380, { s: 0.6 }], ['stump5', -820, -900, { s: 0.9 }], ['tree_bb1', 300, -1500, { s: 0.6 }], ['tree_bb3', -900, -1400, { s: 0.6, ry: 0.4 }],
     ['tree_big2', 1300, -700, { s: 0.6 }], ['tree_big1', -1300, -200, { s: 0.5 }], ['bush3', -420, -300, { s: 1 }], ['grass1', 420, 160, { s: 0.5 }], ['grass4', -380, 260, { s: 0.5 }], ['pot', -330, -200, { s: 1 }]];
   await Promise.all([...new Set(P.map(p => p[0]))].map(loadProp)); for (const [id, x, z, o] of P) await place(sc, id, x, z, o);
-  sc.add(new THREE.HemisphereLight(0x9ab0e0, 0x3a2418, 1.7)); const moon = new THREE.DirectionalLight(0xb8ccff, 1.9); moon.position.set(600, 900, 300); sc.add(moon);
+  sc.add(new THREE.HemisphereLight(0x9ab0e0, 0x3a2418, 1.7)); const moon = new THREE.DirectionalLight(0xb8ccff, 1.9); moon.position.set(600, 900, 300); moon.castShadow = true; Object.assign(moon.shadow.camera, { left: -800, right: 800, top: 800, bottom: -800, near: 100, far: 3000 }); moon.shadow.mapSize.set(1024, 1024); moon.shadow.bias = -0.0008; sc.add(moon);
+  g.receiveShadow = true; disc.receiveShadow = true;
   L.fireL = new THREE.PointLight(0xff8a3a, 9, 1500, 1.4); L.fireL.position.set(L.fire.x, 140, L.fire.z); sc.add(L.fireL);
   L.hero = new Actor('warrior', { shadow: 95 }); L.hero.pos.set(100, 0, 40); L.hero.face(0.25, true); L.hero.play('idle', { loop: true }); sc.add(L.hero.root);
   L.cam = { a: VIEWS.home.a0, p: new THREE.Vector3(), l: new THREE.Vector3(40, 120, 0) }; L.on = true; L.t = 0;

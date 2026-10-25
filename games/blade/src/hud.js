@@ -1,14 +1,14 @@
 // 전투 화면 정보 (DOM): 체력·분노 · 스테이지/웨이브 · 보스 체력 · 콤보 · 데미지 숫자 · 조이스틱 · 공격/스킬/회피 버튼 · 알림 글자
-import { IN, joystick, holdButton } from './input.js?v=0.56.0';
-import { SKILLS, SKILL_SLOTS } from './data.js?v=0.56.0';
-import { toScreen } from './engine.js?v=0.56.0';
-import { icons } from './icons.js?v=0.56.0';
+import { IN, joystick, holdButton } from './input.js?v=0.56.1';
+import { SKILLS, SKILL_SLOTS } from './data.js?v=0.56.1';
+import { toScreen } from './engine.js?v=0.56.1';
+import { icons } from './icons.js?v=0.56.1';
 
 const $ = (s, r = document) => r.querySelector(s);
 export const H = { el: null, nums: [], numI: 0 };
 const fmt = n => Math.round(n).toLocaleString('en-US');
 export function buildHud(o) {
-  const el = $('#hud'); el.innerHTML = `<div class="h-vig"></div>
+  const el = $('#hud'); el.innerHTML = `
   <div class="h-top"><div class="h-face" style="background-image:url(${icons.face || ''})"></div><div class="h-bars"><div class="h-lv"><b id="hLv">Lv.1</b> <span id="hName">카일</span><span class="h-cp" id="hCp"></span></div>
     <div class="bar hp"><i id="hHpL"></i><i id="hHp"></i><span id="hHpT"></span></div><div class="bar rage"><i id="hRage"></i></div></div>
     <div class="h-tr"><button class="h-btn" id="hPause">${PAUSE}</button><button class="h-auto" id="hAuto">AUTO</button></div></div>

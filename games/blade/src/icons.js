@@ -1,8 +1,8 @@
 // 아이콘을 실제 3D 모델로 찍음: 얼굴 · 공격/스킬 자세 · 장비 부위 (시작할 때 한 번)
 import * as THREE from 'three';
-import { load } from './assets.js?v=0.56.0';
-import { Actor } from './actor.js?v=0.56.0';
-import { SLOTS } from './data.js?v=0.56.0';
+import { load } from './assets.js?v=0.56.1';
+import { Actor } from './actor.js?v=0.56.1';
+import { SLOTS } from './data.js?v=0.56.1';
 
 export const icons = {};
 const SHOTS = { atk: ['a1', 0.4, '#5a3a14', 0.55], quake: ['s2', 1.92, '#5a2410', 0.3], whirl: ['s5', 1.15, '#14324a', 0.9], rush: ['s3', 0.85, '#3a1a4a', 0.2], guard: ['s4', 1.25, '#173a2a', 0.6], ult: ['s1', 2.72, '#6a1408', 0.4] };

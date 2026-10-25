@@ -1,5 +1,5 @@
 // 코디 합성 규칙 (화면 · 미리보기 공용): 한 벌 그림 + 머리 장식 · 가방 · 손 소품을 머리/손 위치에 맞춰 얹음
-import { ANCHORS } from './anchors.js?v=0.56.0';
+import { ANCHORS } from './anchors.js?v=0.56.1';
 // 소품 종류별 놓는 자리 (머리 폭 hw 기준 크기) — 반환: 그림 픽셀 좌표 { x, y, w, ox, oy, rot }
 export function placeAcc(oid, kind, iw, ih) {
   const a = ANCHORS[oid];

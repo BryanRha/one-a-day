@@ -1,7 +1,7 @@
 // 움직이는 인물(주인공 · 몬스터) 공통: 모델 · 애니메이션 구간 재생 · 방향 · 맞을 때 번쩍 · 그림자 · 무기 끝 위치
 import * as THREE from 'three';
-import { spawn } from './assets.js?v=0.56.0';
-import { shadowTex } from './fxtex.js?v=0.56.0';
+import { spawn } from './assets.js?v=0.56.1';
+import { shadowTex } from './fxtex.js?v=0.56.1';
 
 const _q = new THREE.Quaternion(), _v = new THREE.Vector3();
 let shadowGeo = null, shadowMat = null;
@@ -11,7 +11,7 @@ export class Actor {
     this.root = new THREE.Group(); this.root.add(this.model); this.scale = o.scale || 1; this.model.scale.setScalar(this.scale);
     this.mixer = new THREE.AnimationMixer(this.model); this.act = null; this.seg = null; this.ang = 0; this.angT = 0; this.turn = o.turn ?? 14;
     this.pos = this.root.position; this.vel = new THREE.Vector3(); this.flashT = 0; this.flashCol = new THREE.Color(1, 1, 1); this.alpha = 1;
-    shadowGeo ||= new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2); shadowMat ||= new THREE.MeshBasicMaterial({ map: shadowTex(), transparent: true, depthWrite: false });
+    shadowGeo ||= new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2); shadowMat ||= new THREE.MeshBasicMaterial({ map: shadowTex(), transparent: true, depthWrite: false, opacity: 0.6 });
     this.shadow = new THREE.Mesh(shadowGeo, shadowMat); this.shadow.renderOrder = 2; const r = (o.shadow ?? 120) * this.scale; this.shadow.scale.set(r * 2, 1, r * 2); this.shadow.position.y = 2;
     this.root.add(this.shadow);
     this.mats.forEach(m => { m.emissive = new THREE.Color(0); });

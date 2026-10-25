@@ -1,7 +1,7 @@
 // 효과: 입자(한 번에 그리는 사각형 묶음) · 무기 궤적 · 충격파 고리 · 바닥 경고 · 번쩍이는 빛
 import * as THREE from 'three';
-import { E } from './engine.js?v=0.56.0';
-import { glowTex, sparkTex, ringTex, smokeTex, slashTex, decalTex } from './fxtex.js?v=0.56.0';
+import { E } from './engine.js?v=0.56.1';
+import { glowTex, sparkTex, ringTex, smokeTex, slashTex, decalTex } from './fxtex.js?v=0.56.1';
 
 const VS = `attribute vec3 iOff; attribute vec2 iScale; attribute float iRot; attribute vec4 iCol; varying vec2 vUv; varying vec4 vCol;
 void main(){ vUv = uv; vCol = iCol; vec4 mv = modelViewMatrix * vec4(iOff, 1.0); float c = cos(iRot), s = sin(iRot); vec2 p = position.xy * iScale; mv.xy += vec2(c * p.x - s * p.y, s * p.x + c * p.y); gl_Position = projectionMatrix * mv; }`;
@@ -78,8 +78,8 @@ export function updateFX(dt) {
 // 터짐: 맞은 자리 불꽃 + 섬광
 export function burst(p, o = {}) {
   const col = o.col ?? 0xffc46a, n = o.n ?? 10, sp = o.speed ?? 900;
-  FX.glow.add({ x: p.x, y: p.y, z: p.z, life: 0.16, size: (o.size ?? 150) * 1.4, size1: (o.size ?? 150) * 2.2, col: o.core ?? 0xfff2d0, a: 1 });
-  FX.glow.add({ x: p.x, y: p.y, z: p.z, life: 0.3, size: (o.size ?? 150), size1: (o.size ?? 150) * 1.6, col, a: 0.8 });
+  FX.glow.add({ x: p.x, y: p.y, z: p.z, life: 0.14, size: (o.size ?? 150) * 1.1, size1: (o.size ?? 150) * 1.7, col: o.core ?? 0xfff2d0, a: 0.75 });
+  FX.glow.add({ x: p.x, y: p.y, z: p.z, life: 0.26, size: (o.size ?? 150) * 0.85, size1: (o.size ?? 150) * 1.4, col, a: 0.6 });
   for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, e = (Math.random() - 0.3) * 1.4, v = sp * (0.4 + Math.random() * 0.8);
     FX.spark.add({ x: p.x, y: p.y, z: p.z, vx: Math.cos(a) * v, vy: Math.sin(e) * v * 0.8 + 200, vz: Math.sin(a) * v, life: 0.22 + Math.random() * 0.25, size: 26 + Math.random() * 22, size1: 6, col, grav: 1800, drag: 3, stretch: 0.012 }); }
 }

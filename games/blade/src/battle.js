@@ -1,16 +1,19 @@
 // 전투: 주인공(조작·자동) · 몬스터 AI · 타격 판정 · 웨이브 · 보스 · 보상 줍기 · 카메라
 import * as THREE from 'three';
-import { E, shake, hitstop, slowmo } from './engine.js?v=0.56.0';
-import { load } from './assets.js?v=0.56.0';
-import { loadProp } from './props.js?v=0.56.0';
-import { Actor } from './actor.js?v=0.56.0';
-import { FX, initFX, clearFX, updateFX, burst, slashMark, dust, ring, flashLight, decal, Trail } from './fx.js?v=0.56.0';
-import { buildWorld, ambient, HALF } from './world.js?v=0.56.0';
-import { COMBO, SKILLS, SKILL_SLOTS, EVADE, MOBS, stageScale } from './data.js?v=0.56.0';
-import { IN, keyAxis, resetInput } from './input.js?v=0.56.0';
-import { buildHud, hideHud, hudPlayer, hudInfo, hudBoss, hudCombo, hudMsg, hudGo, hudAuto, dmgNum, updateNums } from './hud.js?v=0.56.0';
-import { sfx, music } from './audio.js?v=0.56.0';
+import { E, shake, hitstop, slowmo, pulse, setVignette } from './engine.js?v=0.56.1';
+import { RIM } from './assets.js?v=0.56.1';
+import { load } from './assets.js?v=0.56.1';
+import { loadProp } from './props.js?v=0.56.1';
+import { Actor } from './actor.js?v=0.56.1';
+import { FX, initFX, clearFX, updateFX, burst, slashMark, dust, ring, flashLight, decal, Trail } from './fx.js?v=0.56.1';
+import { buildWorld, ambient, HALF } from './world.js?v=0.56.1';
+import { COMBO, SKILLS, SKILL_SLOTS, EVADE, MOBS, stageScale } from './data.js?v=0.56.1';
+import { IN, keyAxis, resetInput } from './input.js?v=0.56.1';
+import { buildHud, hideHud, hudPlayer, hudInfo, hudBoss, hudCombo, hudMsg, hudGo, hudAuto, dmgNum, updateNums } from './hud.js?v=0.56.1';
+import { sfx, music } from './audio.js?v=0.56.1';
 
+/* 달리기: 발 속도(317/초) × 재생 1.5배 = 이동 480 → 발이 미끄러지지 않음 */
+const RUN = 480, RUN_ANIM = RUN / 317;
 const V3 = THREE.Vector3, PR = 60, rnd = (a, b) => a + Math.random() * (b - a);
 const angTo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
 const angDiff = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
@@ -43,7 +46,7 @@ class Player {
     if (B.auto) { const am = this.autoPlay(dt, md); if (!md && am) md = am; }
     // 상태별
     if (this.st === 'idle' || this.st === 'run') {
-      if (md) { const sp = 560; this.pos.x += md[0] * sp * dt; this.pos.z += md[1] * sp * dt; this.a.face(Math.atan2(md[0], md[1])); if (this.st !== 'run') { this.st = 'run'; this.a.play('run', { loop: true, fade: 0.12 }); } }
+      if (md) { const k = Math.min(1, Math.hypot(md[0], md[1]) * 1.15), sp = RUN * k; this.pos.x += md[0] / Math.max(1e-3, Math.hypot(md[0], md[1])) * sp * dt; this.pos.z += md[1] / Math.max(1e-3, Math.hypot(md[0], md[1])) * sp * dt; this.a.face(Math.atan2(md[0], md[1])); if (this.st !== 'run') { this.st = 'run'; this.a.play('run', { loop: true, fade: 0.12, speed: RUN_ANIM }); } this.a.setSpeed(RUN_ANIM * Math.max(0.55, k)); }
       else if (this.st !== 'idle') { this.st = 'idle'; this.a.play('idle', { loop: true, fade: 0.2 }); }
       if (this.comboT <= 0) this.combo = 0;
     } else if (this.st === 'atk' && this.lunge) { const l = this.lunge; const k = Math.min(1, dt / l.t); this.pos.x += l.dx * k; this.pos.z += l.dz * k; l.t -= dt; l.dx -= l.dx * k; l.dz -= l.dz * k; if (l.t <= 0) this.lunge = null; }
@@ -118,7 +121,7 @@ class Player {
     if (this.rage >= 100 && (d < 300)) { this.skill('ult'); return; }
     const near = B.enemies.filter(e => e.alive && e.pos.distanceTo(this.pos) < 520).length;
     if (d < 360 && (near >= 2 || tg.def.boss || tg.def.elite)) for (const k of SKILL_SLOTS) if ((this.cd[k] || 0) <= 0 && Math.random() < 0.08) { if (this.skill(k)) return; }
-    if (d > 230 && this.st !== 'atk') { const a = angTo(this.pos, tg.pos); this.pos.x += Math.sin(a) * 560 * dt; this.pos.z += Math.cos(a) * 560 * dt; this.a.face(a); if (this.st !== 'run') { this.st = 'run'; this.a.play('run', { loop: true, fade: 0.12 }); } }
+    if (d > 230 && this.st !== 'atk') { const a = angTo(this.pos, tg.pos); this.pos.x += Math.sin(a) * RUN * dt; this.pos.z += Math.cos(a) * RUN * dt; this.a.face(a); if (this.st !== 'run') { this.st = 'run'; this.a.play('run', { loop: true, fade: 0.12, speed: RUN_ANIM }); } }
     else this.attack();
   }
 }
@@ -149,8 +152,8 @@ class Enemy {
         const pick = this.pickAttack(d); const tok = this.boss || B.attackers() < 2 + (B.auto ? 0 : 0);
         if (pick && this.atkCd <= 0 && tok) this.startAttack(pick);
         else if (d > (pick ? pick.r * 0.75 : 240) || !tok) { const want = tok ? 1 : (d > 420 ? 1 : 0); const sp = def.speed * (this.enraged ? 1.25 : 1);
-          if (want) { this.pos.x += Math.sin(a) * sp * dt; this.pos.z += Math.cos(a) * sp * dt; if (this.st !== 'chase') { this.st = 'chase'; this.a.play(def.move, { loop: true, fade: 0.2 }); } }
-          else { const s = a + Math.PI / 2 * this.strafe; this.pos.x += Math.sin(s) * sp * 0.35 * dt; this.pos.z += Math.cos(s) * sp * 0.35 * dt; if (this.st !== 'chase') { this.st = 'chase'; this.a.play(def.move, { loop: true, fade: 0.2, speed: 0.7 }); } } }
+          if (want) { this.pos.x += Math.sin(a) * sp * dt; this.pos.z += Math.cos(a) * sp * dt; const as = def.foot ? Math.max(0.5, Math.min(1.8, sp / (def.foot * this.sc))) : 1; if (this.st !== 'chase') { this.st = 'chase'; this.a.play(def.move, { loop: true, fade: 0.2, speed: as }); } else this.a.setSpeed(as); }
+          else { const s = a + Math.PI / 2 * this.strafe; this.pos.x += Math.sin(s) * sp * 0.35 * dt; this.pos.z += Math.cos(s) * sp * 0.35 * dt; if (this.st !== 'chase') { this.st = 'chase'; this.a.play(def.move, { loop: true, fade: 0.2 }); } if (def.foot) this.a.setSpeed(Math.max(0.4, sp * 0.35 / (def.foot * this.sc))); } }
         else if (this.st !== 'idle') { this.st = 'idle'; this.a.play(def.idle, { loop: true, fade: 0.2 }); } }
     } else if (this.st === 'atk' && this.atkDef.move) { const a = angTo(this.pos, P.pos); this.a.face(a); this.pos.x += Math.sin(a) * this.atkDef.move * dt; this.pos.z += Math.cos(a) * this.atkDef.move * dt; }
     else if (this.st === 'atk' && this.tele && this.tele.u < 0.6) this.a.face(angTo(this.pos, P.pos));
@@ -167,7 +170,7 @@ class Enemy {
   }
   doHit(x, last) {
     const P = this.B.player; if (this.tele) { this.tele.d.g.position.copy(this.pos); this.tele.d.g.rotation.y = this.a.ang; }
-    if (x.fx === 'nova') { ring(this.pos, { col: 0xff7040, r1: x.r * 1.1, life: 0.4 }); dust(this.pos, { n: 14, size: 140, speed: 500 }); shake(12, 0.3); }
+    if (x.fx === 'nova') { ring(this.pos, { col: 0xff7040, r1: x.r * 1.1, life: 0.4 }); dust(this.pos, { n: 14, size: 140, speed: 500 }); shake(12, 0.3); pulse(0.45); }
     else if (x.fx === 'quake') { ring(this.pos, { col: 0xffa060, r1: x.r, life: 0.35 }); dust(this.pos, { n: 8, size: 120, speed: 400 }); shake(10, 0.25); }
     if (P.st !== 'dead' && inHit(this.pos, this.a.ang, P.pos, PR, x)) P.hurt(this.atk * x.m, this.pos, x);
     sfx(this.boss ? 'heavy' : 'eswing', { vol: 0.35 });
@@ -203,7 +206,7 @@ export class Battle {
     const S = this.stage, ids = new Set(['warrior']); S.waves.flat().forEach(([id]) => ids.add(id)); let n = 0; const all = [...ids];
     await Promise.all([...all.map(id => load(id).then(() => progress && progress(++n / (all.length + 2)))), loadProp('coin')]);
     this.world = await buildWorld(S); progress && progress(1);
-    const sc = E.scene; sc.clear(); this.scene = sc; sc.add(this.world.group); sc.fog = this.world.fog; sc.background = this.world.sky; initFX(sc); clearFX();
+    const sc = E.scene; sc.clear(); this.scene = sc; RIM.col.value.set(this.world.th.rim || 0x9ac0ff); RIM.k.value = 0.28; setVignette(0.45); sc.add(this.world.group); sc.fog = this.world.fog; sc.background = this.world.sky; initFX(sc); clearFX();
     this.player = new Player(this, this.ps); sc.add(this.player.a.root); this.player.pos.set(0, 0, 200);
     this.zMax = 600; this.zMin = this.world.areaZ(0) - 650; this.wave = -1; this.waveClear = true; this.nextZ = this.world.areaZ(0) + 650; this.bossArena = false;
     this.cam = { p: new V3(0, 1300, 1300), l: new V3() }; this.camPunch = 0; this.updateCam(1);
@@ -236,7 +239,7 @@ export class Battle {
     const P = this.player, src = P.pos, ang = P.a.ang; let n = 0, heavy = false; const isSkill = kind !== 'atk';
     if (h.fx === 'quake') { const d = 120; for (let i = 0; i < 6; i++) { const p = new V3(src.x + Math.sin(ang) * d * i, 0, src.z + Math.cos(ang) * d * i); setTimeout(() => { dust(p, { n: 4, size: 130, speed: 300 }); FX.glow.add({ x: p.x, y: 30, z: p.z, life: 0.35, size: 220, size1: 60, col: 0xff8a3a, a: 0.9 }); }, i * 30); }
       ring(new V3(src.x + Math.sin(ang) * 200, 0, src.z + Math.cos(ang) * 200), { col: 0xffa050, r1: 360, life: 0.4 }); shake(18, 0.35); flashLight(src, 0xff8030, 8); sfx('quake', { vol: 0.8 }); }
-    if (h.fx === 'nova') { ring(src, { col: 0xff6020, r1: 900, life: 0.55 }); ring(src, { col: 0xffd080, r1: 600, life: 0.35 }); dust(src, { n: 22, size: 160, speed: 700 }); shake(26, 0.6); flashLight(src, 0xff5010, 14); sfx('quake', { vol: 1 }); slowmo(0.25, 0.5); }
+    if (h.fx === 'nova') { ring(src, { col: 0xff6020, r1: 900, life: 0.55 }); ring(src, { col: 0xffd080, r1: 600, life: 0.35 }); dust(src, { n: 22, size: 160, speed: 700 }); shake(26, 0.6); flashLight(src, 0xff5010, 14); sfx('quake', { vol: 1 }); slowmo(0.25, 0.5); pulse(0.85); }
     for (const e of this.enemies) {
       if (!e.alive || e.st === 'appear') continue; const er = e.def.r * e.sc; if (!inHit(src, ang, e.pos, er, h)) continue;
       const crit = Math.random() < P.crit; let d = P.atk * h.m * lvm * rnd(0.92, 1.08) * (crit ? P.cdmg : 1); if (e.st === 'stun') d *= 1.5; d = Math.round(d);
@@ -246,9 +249,9 @@ export class Battle {
       dmgNum(hp, d, crit ? 'crit' : isSkill ? 'skill' : ''); if (h.heavy || crit) heavy = true;
     }
     if (n) { this.combo += n; this.comboT = 2.2; this.stats.maxCombo = Math.max(this.stats.maxCombo, this.combo); hudCombo(this.combo); P.rage = Math.min(100, P.rage + n * (isSkill ? 1.2 : 2.5));
-      hitstop(h.heavy ? 0.1 : heavy ? 0.06 : 0.035); shake(h.heavy ? 14 : heavy ? 7 : 4, h.heavy ? 0.28 : 0.12); sfx(h.heavy ? 'heavy' : 'hit', { vol: h.heavy ? 0.8 : 0.55, rate: rnd(0.9, 1.1) }); }
+      hitstop(h.heavy ? 0.1 : heavy ? 0.06 : 0.035); if (h.heavy) pulse(0.38); else if (heavy) pulse(0.15); shake(h.heavy ? 14 : heavy ? 7 : 4, h.heavy ? 0.28 : 0.12); sfx(h.heavy ? 'heavy' : 'hit', { vol: h.heavy ? 0.8 : 0.55, rate: rnd(0.9, 1.1) }); }
   }
-  perfect() { this.perfectT = 1.2; this.stats.perfect++; slowmo(0.25, 0.9); hudMsg('<b>완벽한 회피!</b>', 'blue', 1000); this.player.rage = Math.min(100, this.player.rage + 15); sfx('perfect', { vol: 0.7 }); ring(this.player.pos, { col: 0x8ad0ff, r1: 380, life: 0.5 }); }
+  perfect() { pulse(0.7); this.perfectT = 1.2; this.stats.perfect++; slowmo(0.25, 0.9); hudMsg('<b>완벽한 회피!</b>', 'blue', 1000); this.player.rage = Math.min(100, this.player.rage + 15); sfx('perfect', { vol: 0.7 }); ring(this.player.pos, { col: 0x8ad0ff, r1: 380, life: 0.5 }); }
   onKill(e) {
     this.stats.kills++; const m = stageScale(this.stage.lv); const g = Math.round(e.def.gold * (0.8 + Math.random() * 0.4) * Math.sqrt(m)); this.dropCoins(e.pos, g, e.boss ? 24 : e.elite ? 8 : 3);
     sfx(e.boss ? 'bossdie' : 'die', { vol: 0.6 }); if (e.boss) { slowmo(0.2, 2.2); shake(22, 1); flashLight(e.pos, 0xffd080, 14); hudMsg('<b>격파!</b>', 'gold big', 1800); hudBoss(null); }
@@ -294,7 +297,7 @@ export class Battle {
     // 콤보 · 화면
     if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) { this.combo = 0; hudCombo(0); } }
     if (this.perfectT) this.perfectT = Math.max(0, this.perfectT - raw);
-    this.updateCam(Math.min(1, raw * 6)); ambient(this.world, P.pos, dt); updateFX(dt); updateNums(raw);
+    this.updateCam(Math.min(1, raw * 6)); { const sn = this.world.sun; sn.target.position.set(P.pos.x, 0, P.pos.z - 200); sn.position.set(P.pos.x - 700, 1500, P.pos.z + 400); } ambient(this.world, P.pos, dt); updateFX(dt); updateNums(raw);
     hudPlayer(P); if (this.boss) hudBoss(this.boss.alive ? this.boss : null);
     const W = this.stage.waves.length, wv = Math.max(0, this.wave) + 1, tl = Math.max(0, this.t); hudInfo(this.stage.name, this.boss ? 'BOSS' : `웨이브 ${wv} / ${W}`, `${Math.floor(tl / 60)}:${String(Math.floor(tl % 60)).padStart(2, '0')}`, this.ps.lv, this.ps.cp);
     if (this.waveClear && !this.ended) hudGo(this.wave >= 0 && P.pos.z > this.nextZ - 400);

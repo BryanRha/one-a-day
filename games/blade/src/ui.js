@@ -1,14 +1,14 @@
 // 화면: 타이틀 · 로비 · 모험(스테이지) · 영웅(장비) · 스킬 · 상점 · 무한의 탑 · 황금 동굴 · 미션 · 출석 · 설정 · 결과 · 일시정지 · 부활
-import { E } from './engine.js?v=0.56.0';
-import { icons } from './icons.js?v=0.56.0';
-import { buildLobby, leaveLobby, setView, heroPose, L } from './lobby.js?v=0.56.0';
-import { Battle } from './battle.js?v=0.56.0';
-import { sfx, music, setAudio } from './audio.js?v=0.56.0';
-import { STAGES, CHAPTERS, SKILLS, SKILL_SLOTS, SLOTS, RARITY, STAT_NAME, STAMINA, MAX_ENH, MAX_SKILL, enhCost, enhRate, skillCost, expNeed, towerFloor, DAILY, dailyStage, MOBS, HERO } from './data.js?v=0.56.0';
+import { E, setQuality } from './engine.js?v=0.56.1';
+import { icons } from './icons.js?v=0.56.1';
+import { buildLobby, leaveLobby, setView, heroPose, L } from './lobby.js?v=0.56.1';
+import { Battle } from './battle.js?v=0.56.1';
+import { sfx, music, setAudio } from './audio.js?v=0.56.1';
+import { STAGES, CHAPTERS, SKILLS, SKILL_SLOTS, SLOTS, RARITY, STAT_NAME, STAMINA, MAX_ENH, MAX_SKILL, enhCost, enhRate, skillCost, expNeed, towerFloor, DAILY, dailyStage, MOBS, HERO } from './data.js?v=0.56.1';
 import { G, loadSave, save, tick, staminaNext, useStamina, heroStats, power, itemStat, itemName, itemScore, rollItem, addItem, equip, sell, salvage, enhance, skillUp, stageOpen, totalStars, addExp,
-  MISSIONS, mission, missionReady, claimMission, ATTEND, attendReady, claimAttend, resetSave } from './state.js?v=0.56.0';
-import { STORY } from './story.js?v=0.56.0';
-import { inOAD, exitToOAD, pushBack, installBack } from './oad.js?v=0.56.0';
+  MISSIONS, mission, missionReady, claimMission, ATTEND, attendReady, claimAttend, resetSave } from './state.js?v=0.56.1';
+import { STORY } from './story.js?v=0.56.1';
+import { inOAD, exitToOAD, pushBack, installBack } from './oad.js?v=0.56.1';
 
 const ui = document.getElementById('ui'), md = document.getElementById('modal'), bootEl = document.getElementById('boot'), bar = document.getElementById('bootbar');
 const fmt = n => Math.round(n).toLocaleString('en-US'), K = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'K' : fmt(n);
@@ -50,7 +50,7 @@ function title() {
   ui.innerHTML = `<div class="title"><div class="t-logo"><b>ASH BLADE</b><span>애쉬 블레이드</span><em>잿빛 숲의 검</em></div><div class="t-tap">화면을 눌러 시작</div><div class="t-ver">v${VERSION}</div></div>`;
   ui.querySelector('.title').onclick = () => { sfx('tap'); if (!G.seen.prologue) story('prologue', () => { G.seen.prologue = 1; save(); go(STAGES[0]); }); else home(); };
 }
-export const VERSION = '0.1.0';
+export const VERSION = '0.2.0';
 // ── 공통 위쪽 띠 (재화)
 function top(back) {
   const st = staminaNext();
@@ -256,9 +256,11 @@ function attendModal() {
 }
 function settings() {
   modal(`<div class="dlg"><b class="dt">설정</b><div class="tg"><button data-k="sfx" class="${G.set.sfx ? 'on' : ''}">효과음</button><button data-k="bgm" class="${G.set.bgm ? 'on' : ''}">배경음</button></div>
+    <div class="set-i"><span>그래픽</span><small>낮음: 빛 번짐·실시간 그림자를 꺼서 폰이 덜 뜨거워져요. 느린 폰은 처음에 자동으로 낮춰요.</small></div><div class="tg gfx"><button data-q="1" class="${E.quality ? 'on' : ''}">높음</button><button data-q="0" class="${E.quality ? '' : 'on'}">낮음</button></div>
     <div class="set-i"><span>조작</span><small>왼쪽 아래 끌기: 이동 · 공격 버튼 누르고 있기: 연타 · 키보드: WASD 이동, J 공격, K 회피, U·I·O·L 스킬, 스페이스 분노</small></div>
     <div class="btns col"><button class="btn" id="stReset">처음부터 다시 하기</button><button class="btn" data-act="close">닫기</button></div><div class="ver">애쉬 블레이드 v${VERSION} · 3D 그림 AIIA</div></div>`);
   bind(md); md.querySelectorAll('.tg button').forEach(t => t.onclick = () => { G.set[t.dataset.k] = !G.set[t.dataset.k]; setAudio(G.set); save(); t.classList.toggle('on'); });
+  md.querySelectorAll('.gfx button').forEach(b => b.onclick = () => { setQuality(+b.dataset.q, true); md.querySelectorAll('.gfx button').forEach(x => x.classList.toggle('on', x === b)); });
   document.getElementById('stReset').onclick = () => confirmBox('모든 진행 상황이 지워져요. 정말 처음부터 할까요?', () => { resetSave(); location.reload(); });
 }
 // ── 이야기 (로비 장면 위 대사)

@@ -1,7 +1,7 @@
 // 업적 (오래 하는 목표 · 단계마다 보석 · 칭호)
-import { load, save } from './save.js?v=0.53.2';
-import { ALL_CARDS } from './album.js?v=0.53.2';
-import { CHAPTERS } from './data.js?v=0.53.2';
+import { load, save } from './save.js?v=0.54.0';
+import { ALL_CARDS } from './album.js?v=0.54.0';
+import { CHAPTERS } from './data.js?v=0.54.0';
 
 const cards = d => d.album ? ALL_CARDS.filter(c => (d.album.have[c.key] || 0) > 0).length : 0;
 const topItems = d => Object.keys(d.seen || {}).filter(k => /10$/.test(k)).length;

@@ -66,6 +66,12 @@ export const GAMES = {
     desc: '배추왕국의 라벤더 공주가 시골 농장을 맡았다! 밭에 작물을 심어 거두고, 젖소·닭을 키우고, 빵집·낙농 공방에서 물건을 만들어 마을 사람들의 주문과 왕국 기차에 실어 보내요. 집을 지어 주민을 늘리고 숲을 정리해 땅을 넓히는 농장 마을 만들기. 피처폰 명작 「더팜」 시리즈가 새로 돌아왔어요.',
     path: 'games/farm/', logo: true, cover: 'covers/farm.png', icon: 'covers/farm_icon.png', time: '10~15분',
   },
+  idle: {
+    title: '여명기사단 키우기', en: 'Knights of Dawn: Idle', genre: '방치형 RPG', color: '#2A3A8A',
+    tagline: '해가 사라진 대륙에 새벽을 되찾는 기사단',
+    desc: '황혼의 왕이 해를 삼킨 지 백 년. 다시 켜진 첫 등불 아래 영웅 47명을 모아 10명의 기사단을 꾸리면, 자리를 비워도 알아서 싸우고 보상을 모아 둬요. 장비 상자를 열어 더 강한 장비를 찾고, 지역마다 봉인을 지키는 여덟 사도를 쓰러뜨려 여명석을 밝혀요. 쓰러뜨린 사도는 본래 모습으로 돌아와 동료가 돼요. 던전 · 결투장 · 토벌 의뢰 · 펫까지.',
+    path: 'games/idle/', logo: true, cover: 'covers/idle.png', icon: 'covers/idle_icon.png', time: '2~5분',
+  },
 
   tour: {
     title: 'K-다이스 투어', en: 'K-Dice Tour', genre: '보드게임', color: '#2E5FB8',
@@ -75,5 +81,5 @@ export const GAMES = {
   },
 };
 // 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'farm'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'farm', 'idle'];
 // K-다이스 투어(tour)는 2026-10-24 사용자 요청으로 목록에서 내림 — 대전 네트워크(서버)가 붙으면 다시 올림 (CATALOG 항목·소스는 남겨 둠)

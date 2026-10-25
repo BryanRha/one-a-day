@@ -1,15 +1,15 @@
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.45.3';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.45.3';
-import { audio } from '../audio.js?v=0.45.3';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.45.3';
-import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.45.3';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.45.3';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.45.3';
-import { taskCheck, coopBadge } from '../coop.js?v=0.45.3';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.45.3';
-import { FUP, TRAINS } from '../data.js?v=0.45.3';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.45.3';
+import { W, H } from '../config.js?v=0.45.4';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.45.4';
+import { audio } from '../audio.js?v=0.45.4';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.45.4';
+import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.45.4';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.45.4';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.45.4';
+import { taskCheck, coopBadge } from '../coop.js?v=0.45.4';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.45.4';
+import { FUP, TRAINS } from '../data.js?v=0.45.4';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.45.4';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -24,7 +24,7 @@ export class HudScene extends Phaser.Scene {
     this.xpBar = this.add.graphics();
     const pill = (x, k) => { icon(this, x, 74, k, 50); return T(this, x + 34, 74, '', 30, '#FFFFFF', { ox: 0, w: 900 }); };
     this.coinT = pill(310, 'coin'); this.gemT = pill(510, 'gem'); this.toolT = pill(680, 'tools'); this.popT = pill(850, 'pop');
-    this.zone(0, 0, W, 140); this.zone(640, 20, 180, 110, () => this.matsPanel()); this.zone(830, 20, 220, 110, () => { const pn = popNow(), pc = popCap(); toast(this, pn > pc ? `주민 ${pn}명 · 상한 ${pc}명 — 상한을 넘은 주민은 일하지 못해요 · 공공건물(우물·성당 등)로 상한을 늘려요` : `주민 ${pn}명 · 상한 ${pc}명 · 집은 주민을, 공공건물은 상한을 늘려요`, H / 2); });
+    this.zone(0, 0, W, 140); this.zone(640, 20, 180, 110, () => this.matsPanel()); this.zone(830, 20, 220, 110, () => { const pn = popNow(), pc = popCap(); toast(this, `주민 ${pn}명 · 상한 ${pc}명 · 집은 주민을 늘리고, 공공건물은 상한(더 지을 수 있는 집)을 늘려요`, H / 2); });
     // 오른쪽 버튼 · 아래 막대
     this.sideBtns = [['quest', '📜', '퀘스트', () => this.questPanel()], ['orders', 'orderboard', '주문', () => this.ordersPanel()], ['train', 'loco', '기차', () => this.trainPanel()], ['rent', 'pachulo', '월세', () => this.rentPanel()], ['people', 'heart', '사람들', () => this.go('People')], ['mini', 'sparrow', '놀이', () => this.miniPanel()], ['events', 'ticket', '이벤트', () => this.go('Events')], ['coop', 'trophy', '협동', () => this.go('Coop')]].map(([id, ic, n, fn], k) => this.side(W - 80, 230 + k * 160, ic, n, fn));
     const by = H - 120, bg = this.add.graphics(); bg.fillStyle(0x3E2A14, 0.88).fillRoundedRect(16, by - 76, W - 32, 160, 40); this.zone(0, by - 80, W, 200);
@@ -42,7 +42,7 @@ export class HudScene extends Phaser.Scene {
   bottom(x, y, ic, n, fn) { const c = this.add.container(x, y); c.add(ic.length <= 2 ? T(this, 0, -18, ic, 56, '#000', { w: 900 }) : icon(this, 0, -18, ic, 90)); c.add(T(this, 0, 46, n, 24, '#FFFFFF', { w: 900 }));
     c.setSize(220, 150).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (this.town.mode) return; audio.play('sfx_tap', { volume: 0.6 }); fn(); }); return c; }
   refresh() {
-    const d = this.d; this.lvT.setText(String(d.lv)); this.coinT.setText(String(d.coins)); this.gemT.setText(String(d.gems)); this.toolT.setText(String(matCount())); { const pn = popNow(), pc = popCap(); this.popT.setText(`${pn}/${pc}`).setColor(pn > pc ? '#FF8A7A' : '#FFFFFF'); }
+    const d = this.d; this.lvT.setText(String(d.lv)); this.coinT.setText(String(d.coins)); this.gemT.setText(String(d.gems)); this.toolT.setText(String(matCount())); { const pn = popNow(), pc = popCap(); this.popT.setText(`${pn}/${pc}`).setColor(pn >= pc ? '#FFD27A' : '#FFFFFF'); }
     this.xpBar.clear().fillStyle(0x1E1206, 1).fillRoundedRect(130, 100, 150, 16, 8).fillStyle(0x6FD0FF, 1).fillRoundedRect(130, 100, Math.max(16, 150 * d.xp / XP_NEED(d.lv)), 16, 8);
     { const L = lab(); if (L.done) { const R0 = RESEARCH.find(x => x.k === L.done); L.done = null; save(); audio.play('sfx_levelup', { volume: 0.7 }); toast(this, `🔬 연구 완료! ${R0.n} ${rl(R0.k)}단계 · ${R0.d(rl(R0.k))}`, H / 2); } }
     { const tc = taskCheck(); if (tc) { save(); if (tc.ok) { audio.play('sfx_levelup', { volume: 0.7 }); toast(this, `⛵ 레가타 과제 완료! ⭐${tc.t.pts}점`, H / 2); } else toast(this, '레가타 과제 시간이 지났어요', H / 2); } }

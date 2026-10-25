@@ -1,5 +1,5 @@
 // 화면: 가로 1080 고정, 세로는 기기 비율대로
-export const VERSION = '0.9.3';
+export const VERSION = '0.9.4';
 export const TITLE = '더팜';
 export const TITLE_EN = 'THE FARM';
 export const W = 1080;

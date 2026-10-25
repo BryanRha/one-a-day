@@ -1,14 +1,14 @@
 // 서재 (Choices 식): 작품 표지 · 화 목록(진행·잠금) · 곧 공개 모드(냥카페 · 오늘의 코디) · 코인
-import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.45.6';
-import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.45.6';
-import { audio } from '../audio.js?v=0.45.6';
-import { load } from '../save.js?v=0.45.6';
-import { SERIES, EPISODES, SEASONS, seasonOf, epNo } from '../episodes.js?v=0.45.6';
-import { loadEp } from './Boot.js?v=0.45.6';
-import { medal, TIERS } from '../replay.js?v=0.45.6';
-import { cafeData } from '../cafe/state.js?v=0.45.6';
-import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.45.6';
-import { buildLook } from '../coord/look.js?v=0.45.6';
+import { W, H, TITLE, TITLE_EN, VERSION } from '../config.js?v=0.45.7';
+import { T, C, btn, iconBtn, panel, popup, toast } from '../ui.js?v=0.45.7';
+import { audio } from '../audio.js?v=0.45.7';
+import { load } from '../save.js?v=0.45.7';
+import { SERIES, EPISODES, SEASONS, seasonOf, epNo } from '../episodes.js?v=0.45.7';
+import { loadEp } from './Boot.js?v=0.45.7';
+import { medal, TIERS } from '../replay.js?v=0.45.7';
+import { cafeData } from '../cafe/state.js?v=0.45.7';
+import { coordData, todayTheme, doneToday } from '../coord/state.js?v=0.45.7';
+import { buildLook } from '../coord/look.js?v=0.45.7';
 
 export class LibraryScene extends Phaser.Scene {
   constructor() { super('Library'); }

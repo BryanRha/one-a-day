@@ -1,16 +1,16 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.52.2';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.52.2';
-import { audio } from '../audio.js?v=0.52.2';
-import { load, save } from '../save.js?v=0.52.2';
-import { goPrev } from '../nav.js?v=0.52.2';
-import { hud } from '../hud.js?v=0.52.2';
-import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.52.2';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.52.2';
-import { adsOpen, rewardAd } from '../store.js?v=0.52.2';
-import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.52.2';
-import { raceAdd, ladderAdd, vipAdd, VIP, theme } from '../events.js?v=0.52.2';
-import { bingoAdd, digAddOrder, digAdd, spinAdd, duoAdd } from '../minigames.js?v=0.52.2';
+import { W, H } from '../config.js?v=0.52.3';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.52.3';
+import { audio } from '../audio.js?v=0.52.3';
+import { load, save } from '../save.js?v=0.52.3';
+import { goPrev } from '../nav.js?v=0.52.3';
+import { hud } from '../hud.js?v=0.52.3';
+import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.52.3';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.52.3';
+import { adsOpen, rewardAd } from '../store.js?v=0.52.3';
+import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.52.3';
+import { raceAdd, ladderAdd, vipAdd, VIP, theme } from '../events.js?v=0.52.3';
+import { bingoAdd, digAddOrder, digAdd, spinAdd, duoAdd } from '../minigames.js?v=0.52.3';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);

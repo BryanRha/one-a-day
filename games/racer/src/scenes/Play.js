@@ -1,17 +1,17 @@
 // 레이스 화면: core/race.js 시뮬레이션을 고정 간격으로 돌리고 상태·사건을 그림·소리로 옮긴다.
-import { W, H } from '../config.js?v=0.52.2';
-import { Race, LANES, CARS, FEVER_FULL, FEVER_TIME, CHANT, DODGE, laneX, ROAD_X, LANE_W } from '../core/race.js?v=0.52.2';
+import { W, H } from '../config.js?v=0.52.3';
+import { Race, LANES, CARS, FEVER_FULL, FEVER_TIME, CHANT, DODGE, laneX, ROAD_X, LANE_W } from '../core/race.js?v=0.52.3';
 // 스·트·레·스·차·차·차 — 한 글자씩 도레미파솔라도로 올라가며 커짐
 const CHANT_VO = ['vo_seu', 'vo_teu', 'vo_re', 'vo_seu', 'vo_cha', 'vo_cha', 'vo_cha'];
 const CHANT_ST = [0, 2, 4, 5, 7, 9, 12];
 const CHANT_COL = ['#FF6B6B', '#FF9F43', '#FFD23F', '#6EE7A8', '#4DC3FF', '#7A8BFF', '#FF6FB5'];
-import { decide, blockedSide } from '../core/ai.js?v=0.52.2';
-import { txt, fmt, fit, iconButton, button, popup } from '../ui.js?v=0.52.2';
-import { audio } from '../audio.js?v=0.52.2';
-import { load, save } from '../save.js?v=0.52.2';
-import { carStats, CAR_INFO } from '../meta.js?v=0.52.2';
-import { ZONES } from './Boot.js?v=0.52.2';
-import { inOAD, exitToOAD } from '../oad.js?v=0.52.2';
+import { decide, blockedSide } from '../core/ai.js?v=0.52.3';
+import { txt, fmt, fit, iconButton, button, popup } from '../ui.js?v=0.52.3';
+import { audio } from '../audio.js?v=0.52.3';
+import { load, save } from '../save.js?v=0.52.3';
+import { carStats, CAR_INFO } from '../meta.js?v=0.52.3';
+import { ZONES } from './Boot.js?v=0.52.3';
+import { inOAD, exitToOAD } from '../oad.js?v=0.52.3';
 
 const DT = 1 / 60;
 // 차종 → 그림 (승용차·경차는 색 여러 가지)

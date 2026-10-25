@@ -1,22 +1,22 @@
-import { iso } from './Town.js?v=0.52.2';
+import { iso } from './Town.js?v=0.52.3';
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.52.2';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.52.2';
-import { audio } from '../audio.js?v=0.52.2';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.52.2';
-import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.52.2';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.52.2';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.52.2';
-import { taskCheck, coopBadge } from '../coop.js?v=0.52.2';
-import { spOpen, SP } from '../sparrow.js?v=0.52.2';
-import { wtOpen } from '../water.js?v=0.52.2';
-import { ptOpen } from '../patrol.js?v=0.52.2';
-import { pushBack } from '../oad.js?v=0.52.2';
-import { miniDone } from '../state.js?v=0.52.2';
-import { HEARTS, HEART_PTS } from '../data.js?v=0.52.2';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.52.2';
-import { FUP, TRAINS } from '../data.js?v=0.52.2';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.52.2';
+import { W, H } from '../config.js?v=0.52.3';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.52.3';
+import { audio } from '../audio.js?v=0.52.3';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.52.3';
+import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.52.3';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.52.3';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.52.3';
+import { taskCheck, coopBadge } from '../coop.js?v=0.52.3';
+import { spOpen, SP } from '../sparrow.js?v=0.52.3';
+import { wtOpen } from '../water.js?v=0.52.3';
+import { ptOpen } from '../patrol.js?v=0.52.3';
+import { pushBack } from '../oad.js?v=0.52.3';
+import { miniDone } from '../state.js?v=0.52.3';
+import { HEARTS, HEART_PTS } from '../data.js?v=0.52.3';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.52.3';
+import { FUP, TRAINS } from '../data.js?v=0.52.3';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.52.3';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -42,7 +42,8 @@ export class HudScene extends Phaser.Scene {
     this.qBanner = this.add.container(W / 2, 200); this.zone(W / 2 - 300, 160, 600, 80, () => this.questPanel());
     this.placeBar = null; this.refresh(); window.__hud = this;
     this.time.delayedCall(700, () => this.storyCheck());
-    { const l = login(); if (this.d.quest >= 3 && !l.got && l.shown !== l.last) { l.shown = l.last; save(); this.time.delayedCall(1400, () => this.go('Events', { tab: 'login' })); } }   // 하루 첫 방문에만 출석 화면
+    if (window.__placeNext) { const k = window.__placeNext; window.__placeNext = null; this.time.delayedCall(500, () => { if (!canBuild(k)) { this.startBuild(k); toast(this, `${BUILDS[k].n}을(를) 놓을 자리를 골라요`, H * 0.3); } }); }   /* 이벤트에서 받은 한정 장식 바로 놓기 */
+    { const l = login(); if (!window.__placeNext && this.d.quest >= 3 && !l.got && l.shown !== l.last) { l.shown = l.last; save(); this.time.delayedCall(1400, () => this.go('Events', { tab: 'login' })); } }   // 하루 첫 방문에만 출석 화면
   }
   zone(x, y, w, h, fn) { this.zones.push({ x, y, w, h }); if (fn) this.add.zone(x + w / 2, y + h / 2, w, h).setInteractive().on('pointerup', fn); }
   blocking(p) { if (this.spUi) return true; if (this.children.list.some(o => o.depth >= 1000)) return true; return this.zones.some(z => p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h); }
@@ -159,12 +160,12 @@ export class HudScene extends Phaser.Scene {
   // ── 건설
   buildPanel(tab = 'make', page = 0) {
     const TABS = [['make', '생산'], ['town', '마을'], ['deco', '장식']], kinds = { make: ['field', 'factory', 'animal', 'mine', 'harbor', 'airport'], town: ['house', 'public', 'museum', 'market', 'wedding', 'event', 'zoo', 'exhibit'], deco: ['deco'] };
-    const all = Object.entries(BUILDS).filter(([k, B]) => kinds[tab].includes(B.k)).sort((a, b) => a[1].lv - b[1].lv), per = 12, pages = Math.ceil(all.length / per), list = all.slice(page * per, page * per + per);
+    const owned = k => ((this.d.lim || {})[k] || 0) > 0, all = Object.entries(BUILDS).filter(([k, B]) => kinds[tab].includes(B.k) && (!B.lim || owned(k))).sort((a, b) => (owned(b[0]) ? 1 : 0) - (owned(a[0]) ? 1 : 0) || a[1].lv - b[1].lv), per = 12, pages = Math.ceil(all.length / per), list = all.slice(page * per, page * per + per);
     const p = popup(this, 1020, 1640, { full: '건설' }), top = -760; p.content.add(T(this, 0, top + 30, '건설', 46, C.ink, { w: 900 }));
     TABS.forEach(([t, n], k) => p.content.add(btn(this, (k - 1) * 300, top + 110, 270, 80, n, () => { if (t !== tab) { p.close(); this.buildPanel(t, 0); } }, { size: 28, style: t === tab ? 'gold' : 'cream' })));
     if (tab === 'deco') p.content.add(T(this, 0, top + 170, `매력 ${joy()} · 주문 코인 +${Math.round(joyBonus() * 100)}%`, 24, '#E8507A', { w: 900 }));
     list.forEach(([k, B], i) => { const x = -340 + (i % 3) * 340, y = top + 330 + Math.floor(i / 3) * 290, why = canBuild(k), cc = this.add.container(x, y), g = this.add.graphics(); g.fillStyle(why ? 0xEEE6DC : 0xFFFBF2, 1).fillRoundedRect(-155, -130, 310, 260, 26).lineStyle(3, why ? 0xD8C8B8 : 0x5AAE3C, 1).strokeRoundedRect(-155, -130, 310, 260, 26);
-      cc.add([g, icon(this, 0, -46, k === 'field' ? 'soil' : k === 'mine' ? 'mine_b' : k, 150), T(this, 0, 52, B.n, 24, C.ink, { w: 900 }), T(this, 0, 86, why || `🪙${costOf(k)}${B.give ? ` · 주민 +${B.give}` : B.cap ? ` · 상한 +${B.cap}` : B.joy ? ` · 매력 +${B.joy}` : ''}${siteNeed(k) ? ' · 🧱자재' : ''}`, 18, why ? C.red : C.brown, { w: 800, wrap: 290 }), ...(B.pop && (!why || why.startsWith('코인')) ? [T(this, 0, 112, `👥 인구 ${B.pop}명 필요 ✓`, 16, C.green, { w: 800 })] : [])]); if (why) cc.list[1].setAlpha(0.5);
+      cc.add([g, icon(this, 0, -46, k === 'field' ? 'soil' : k === 'mine' ? 'mine_b' : k, 150), T(this, 0, 52, B.n, 24, C.ink, { w: 900 }), T(this, 0, 86, why || (B.lim ? `🎁 계절 한정 · ${this.d.lim[k]}개 보관 중 · 무료` : '') || `🪙${costOf(k)}${B.give ? ` · 주민 +${B.give}` : B.cap ? ` · 상한 +${B.cap}` : B.joy ? ` · 매력 +${B.joy}` : ''}${siteNeed(k) ? ' · 🧱자재' : ''}`, 18, why ? C.red : C.brown, { w: 800, wrap: 290 }), ...(B.pop && (!why || why.startsWith('코인')) ? [T(this, 0, 112, `👥 인구 ${B.pop}명 필요 ✓`, 16, C.green, { w: 800 })] : [])]); if (why) cc.list[1].setAlpha(0.5);
       cc.setSize(310, 260).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (why) return toast(this, why); p.close(); this.startBuild(k); }); p.content.add(cc); });
     if (pages > 1) { p.content.add(btn(this, -200, 720, 200, 80, '◀', () => { if (page > 0) { p.close(); this.buildPanel(tab, page - 1); } }, { size: 30, style: 'cream' })); p.content.add(T(this, 0, 720, `${page + 1} / ${pages}`, 28, C.ink, { w: 900 })); p.content.add(btn(this, 200, 720, 200, 80, '▶', () => { if (page < pages - 1) { p.close(); this.buildPanel(tab, page + 1); } }, { size: 30, style: 'cream' })); }
   }

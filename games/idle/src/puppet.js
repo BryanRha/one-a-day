@@ -14,7 +14,7 @@ export class Puppet {
   get height() { return this.H * this.k; }
   act(kind) { if (this.dead) return; this.act0 = kind; this.at = 0; }
   hurt() { if (this.dead) return; this.hitT = 0.28; this.tint(0xFF7A7A); }
-  flash() { this.flashT = 0.07; this.rope.tintFill = true; this.rope.setColors(0xFFFFFF); }
+  flash() { this.flashT = 0.07; this.rope.tintFill = false; this.rope.setColors(0xFFF0C8); }
   tint(c) { this.rope.tintFill = false; this.rope.setColors(c); this.tintT = 0.12; }
   die() { this.dead = 0.001; }
   revive() { this.dead = 0; this.rope.setAlpha(1); }

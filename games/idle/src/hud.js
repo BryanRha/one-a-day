@@ -1,9 +1,9 @@
 // 위 막대(전투력 · 골드 · 보석 · 열쇠)와 아래 메뉴 — Hud 장면(항상 맨 위)에서 그림
-import { W, H } from './config.js?v=0.54.1';
-import { T, R, C, TS } from './ui.js?v=0.54.1';
-import { load } from './save.js?v=0.54.1';
-import { fmt, teamPower, stageName } from './state.js?v=0.54.1';
-import { audio } from './audio.js?v=0.54.1';
+import { W, H } from './config.js?v=0.55.0';
+import { T, R, C, TS } from './ui.js?v=0.55.0';
+import { load } from './save.js?v=0.55.0';
+import { fmt, teamPower, stageName } from './state.js?v=0.55.0';
+import { audio } from './audio.js?v=0.55.0';
 
 export const TOP = 150, NAV_H = 176;
 export function topBar(sc) {

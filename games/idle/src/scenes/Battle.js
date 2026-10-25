@@ -1,16 +1,17 @@
 // 전투(메인): 기사단 10명이 지역을 행군하며 자동 사냥 → 보스 게이지 → 보스(20번째는 사도)
 //   아래: 영웅 줄(체력 · 스킬) · 퀘스트 · 장비 상자. 다른 메뉴는 이 장면 위에 덮어 열리고 전투는 계속 돈다.
-import { W, H } from '../config.js?v=0.54.1';
-import { T, R, C, TS, btn, sheet, rbox, chips, toast } from '../ui.js?v=0.54.1';
-import { audio } from '../audio.js?v=0.54.1';
-import { load, save } from '../save.js?v=0.54.1';
-import { HEROES, ROLES, REGIONS, MOBS, STORY_JOIN, GRADES, SKILL_KIND } from '../data.js?v=0.54.1';
-import { heroStats, mobHp, mobAtk, bossHp, bossAtk, goldPerMob, GAUGE_PER_MOB, BOSS_TIME, stageName, regionOf, stageNo, isHeraldStage, bgOf, openChest, equip, sell, better, itemPower, itemIcon, itemName, itemDesc, sellValue, quest, questAdd, questClaim, offlineReward, addHero, fmt, teamPower, goldMul } from '../state.js?v=0.54.1';
-import { TOP, NAV_H } from '../hud.js?v=0.54.1';
-import { loadRegion, SKILL_ICON } from './Boot.js?v=0.54.1';
-import { EQ_GRADES, SLOTS, CHEST_UP } from '../data.js?v=0.54.1';
-import { CUTS, heraldCut } from '../story.js?v=0.54.1';
-import { Puppet } from '../puppet.js?v=0.54.1';
+import { W, H } from '../config.js?v=0.55.0';
+import { T, R, C, TS, btn, sheet, rbox, chips, toast } from '../ui.js?v=0.55.0';
+import { audio } from '../audio.js?v=0.55.0';
+import { load, save } from '../save.js?v=0.55.0';
+import { HEROES, ROLES, REGIONS, MOBS, STORY_JOIN, GRADES, SKILL_KIND } from '../data.js?v=0.55.0';
+import { heroStats, mobHp, mobAtk, bossHp, bossAtk, goldPerMob, GAUGE_PER_MOB, BOSS_TIME, stageName, regionOf, stageNo, isHeraldStage, bgOf, openChest, equip, sell, better, itemPower, itemIcon, itemName, itemDesc, sellValue, quest, questAdd, questClaim, offlineReward, addHero, fmt, teamPower, goldMul } from '../state.js?v=0.55.0';
+import { TOP, NAV_H } from '../hud.js?v=0.55.0';
+import { loadRegion, SKILL_ICON } from './Boot.js?v=0.55.0';
+import { EQ_GRADES, SLOTS, CHEST_UP } from '../data.js?v=0.55.0';
+import { CUTS, heraldCut } from '../story.js?v=0.55.0';
+import { Puppet } from '../puppet.js?v=0.55.0';
+import { Skin, hasRig } from '../skin.js?v=0.55.0';
 
 const FIELD_TOP = TOP;
 export class BattleScene extends Phaser.Scene {
@@ -43,9 +44,12 @@ export class BattleScene extends Phaser.Scene {
     if (!d.cuts.prologue) this.time.delayedCall(200, () => this.playCut(CUTS.prologue, 'prologue'));
     const gap = (Date.now() - (d.idleAt || d.seen || Date.now())) / 1000; if (gap > 600 && d.cuts.prologue) this.time.delayedCall(500, () => this.offline(gap));
   }
+  // 몸: 뼈대가 있으면 Spine 식 메시(Skin), 없으면 척추 휘기(Puppet)
+  body(id, h, face, c, x, y) { if (hasRig(id)) { const sk = new Skin(this, id, h, { face }).setPos(x, y).setDepth(10 + y / 2000); return sk; } const p = new Puppet(this, `hero_${id}`, h, { face }); c.add(p.rope); return p; }
+  killC(m) { m.c.destroy(); if (m.im.mesh) m.im.destroy(); }
   // ── 컷씬: 전투를 멈추고 위에 띄움 → 끝나면 이어서
   playCut(cut, key, done) { this.paused = true; this.scene.launch('Cutscene', { cut, done: () => { if (key) { this.d.cuts[key] = 1; save(); } this.paused = false; audio.music(this.boss ? 'bgm_boss' : 'bgm_field'); done && done(); } }); }
-  update(time, delta) { const dt = Math.min(0.05, delta / 1000); for (const u of this.units) u.im.update(dt); for (const m of this.mobs) m.im.update(dt); if (this.boss) this.boss.im.update(dt); if (this.petP) this.petP.update(dt); }
+  update(time, delta) { const dt = Math.min(0.05, delta / 1000); for (const u of this.units) { if (u.im.mesh) u.im.setPos(u.c.x, u.c.y); u.im.update(dt); } for (const m of [...this.mobs, ...(this.boss ? [this.boss] : [])]) { if (m.im.mesh && m.c.scene) m.im.setPos(m.c.x, m.c.y); m.im.update(dt); } if (this.petP) { if (this.petP.mesh && this.petSp) this.petP.setPos(this.petSp.x, this.petSp.y); this.petP.update(dt); } }
   // ── 배경
   makeBg() { this.bgC.removeAll(true); const key = `bg_${bgOf(this.d.stage)}`; if (!this.textures.exists(key)) return;
     const src = this.textures.get(key).getSourceImage(), k = this.fieldH / src.height; this.bgW = src.width * k;
@@ -60,24 +64,23 @@ export class BattleScene extends Phaser.Scene {
     this.night.setAlpha(d.freed.includes(r) ? 0 : 1);
     this.clearField(); this.placeTeam(); this.drawGauge();
   }
-  clearField() { this.mobs.forEach(m => m.c.destroy()); this.mobs = []; if (this.boss) { this.boss.c.destroy(); this.boss = null; } this.bossBar.setVisible(false); this.timerT.setVisible(false); this.fighting = false; }
+  clearField() { this.mobs.forEach(m => this.killC(m)); this.mobs = []; if (this.boss) { this.killC(this.boss); this.boss = null; } this.bossBar.setVisible(false); this.timerT.setVisible(false); this.fighting = false; }
   // ── 팀 배치: 앞줄(탱커 · 근딜) / 뒷줄(원딜 · 마법 · 힐러 · 버퍼), 줄당 5명
   placeTeam() {
-    this.units.forEach(u => u.c.destroy()); this.units = [];
+    this.units.forEach(u => { u.c.destroy(); if (u.im.mesh) u.im.destroy(); }); this.units = [];
     const team = this.d.team.filter(id => this.d.heroes[id]).slice(0, 10), front = [], back = [];
     team.forEach(id => (ROLES[HEROES[id].role].row === 0 ? front : back).push(id));
     while (front.length > 5) back.push(front.pop()); while (back.length > 5) front.push(back.pop());
     const put = (list, row) => list.forEach((id, i) => {
       const x = (row === 0 ? 740 : 660) - i * 124, y = this.ground - (row === 0 ? 0 : this.fieldH * 0.2) + (i % 2) * 26, st = heroStats(id), hh = this.fieldH * 0.27;
-      const c = this.add.container(x, y), sh = this.add.ellipse(0, 0, 96, 22, 0x000000, 0.45), im = new Puppet(this, `hero_${id}`, row === 0 ? hh : hh * 0.86, { face: 1 });
-      c.add([sh, im.rope]); c.setDepth(10 + y / 100); this.layer.add(c);
+      const c = this.add.container(x, y), sh = this.add.ellipse(0, 0, 96, 22, 0x000000, 0.45), sz = row === 0 ? hh : hh * 0.86; c.add(sh); const im = this.body(id, sz, 1, c, x, y); c.setDepth(10 + y / 100); this.layer.add(c);
       const u = { id, c, im, x, y, hp: st.hp, max: st.hp, st, cd: Math.random() * st.rate, skill: 6 + Math.random() * 5, skillMax: 9 + (HEROES[id].g >= 3 ? 1 : 2) + Math.random() * 3, dead: false, shield: 0, buff: 0, taunt: 0 };
       this.units.push(u);
     });
     put(front, 0); put(back, 1);
     // 데리고 다니는 펫: 기사단 맨 뒤에서 따라다님
     const pet = this.d.pet && (this.d.pets || {})[this.d.pet] ? this.d.pet : null; this.petSp?.destroy(); this.petSp = null;
-    if (pet) { const y = this.ground - this.fieldH * 0.06, c = this.add.container(70, y), im = new Puppet(this, `hero_${pet}`, this.fieldH * 0.13, { sway: 1.6 }); c.add([this.add.ellipse(0, 0, 70, 16, 0x000000, 0.4), im.rope]); c.setDepth(10 + y / 100); this.layer.add(c); this.petSp = c; this.petP = im; this.tweens.add({ targets: im.rope, y: -18, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
+    if (pet) { const y = this.ground - this.fieldH * 0.06, c = this.add.container(70, y), sh = this.add.ellipse(0, 0, 70, 16, 0x000000, 0.4); c.add(sh); c.setDepth(10 + y / 100); this.layer.add(c); this.petP?.mesh && this.petP.destroy(); const im = this.body(pet, this.fieldH * 0.13, 1, c, 70, y); this.petSp = c; this.petP = im; if (!im.mesh) this.tweens.add({ targets: im.rope, y: -18, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
     this.layer.sort('depth'); this.drawParty();
   }
   // ── 웨이브: 적 3~5마리가 오른쪽에서 걸어 들어옴
@@ -86,8 +89,8 @@ export class BattleScene extends Phaser.Scene {
     for (let i = 0; i < n; i++) { const id = r.mobs[Math.floor(Math.random() * r.mobs.length)]; this.spawnMob(id, W + 120 + i * 120, this.ground - (i % 3) * this.fieldH * 0.1 + Math.random() * 10, mobHp(s), mobAtk(s), (MOBS[id] || { s: 1 }).s * this.fieldH * 0.23); }
   }
   spawnMob(id, x, y, hp, atk, h, boss) {
-    const c = this.add.container(x, y), sh = this.add.ellipse(0, 0, h * 0.5, 22, 0x000000, 0.45), im = new Puppet(this, `hero_${id}`, h, { face: -1, sway: 0.7 });
-    const bar = this.add.graphics(); c.add([sh, im.rope, bar]); im.walking = true; c.setDepth(10 + y / 100); this.layer.add(c); this.layer.sort('depth');
+    const c = this.add.container(x, y), sh = this.add.ellipse(0, 0, h * 0.5, 22, 0x000000, 0.45); c.add(sh); const im = this.body(id, h, -1, c, x, y);
+    const bar = this.add.graphics().setDepth(30); if (im.mesh) { bar.setPosition(x, y); this.barL = this.barL || []; } c.add(bar); im.walking = true; c.setDepth(10 + y / 100); this.layer.add(c); this.layer.sort('depth');
     const fx = Math.max(...this.units.map(u => u.x), 300), m = { id, c, im, bar, x, y, hp, max: hp, atk, h, cd: 1 + Math.random(), boss: !!boss, stopX: Math.min(W - 60, fx + (boss ? 200 : 130 + this.mobs.length * 50 + Math.random() * 30)) };
     if (!boss) this.mobs.push(m); this.drawBar(m); return m;
   }
@@ -138,7 +141,7 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.add({ targets: t, y: y - 70, alpha: 0, duration: 700, ease: 'Cubic.easeOut', onComplete: () => t.destroy() }); }
   kill(m) {
     const d = this.d; audio.play('sfx_die', { volume: 0.25, gap: 80 });
-    m.im.die(); this.tweens.add({ targets: m.c, alpha: 0, x: m.x + 50, duration: 420, delay: 120, onComplete: () => m.c.destroy() });
+    m.im.die(); this.tweens.add({ targets: m.c, alpha: 0, x: m.x + 50, duration: 420, delay: 120, onComplete: () => this.killC(m) });
     if (m.boss) return this.bossWin();
     this.mobs = this.mobs.filter(x => x !== m); d.stats.kills++; questAdd('kill', 1);
     const g = Math.round(goldPerMob(d.stage) * goldMul()); d.gold += g; this.coin(m.x, m.y - m.h * 0.5, g);
@@ -189,7 +192,7 @@ export class BattleScene extends Phaser.Scene {
   callBoss() {
     const d = this.d; if (this.boss) return; if (d.gauge < 100) return toast(this, '몬스터를 더 물리쳐 보스 게이지를 채워요', FIELD_TOP + 300);
     const s0 = d.stage, rr = regionOf(s0); if (isHeraldStage(s0) && !d.cuts[`h${rr}`] && !this.introing) { this.introing = true; return this.playCut(heraldCut(rr, 'intro'), `h${rr}`, () => { this.introing = false; this.callBoss(); }); }
-    this.mobs.forEach(m => m.c.destroy()); this.mobs = []; const s = d.stage, herald = isHeraldStage(s), r = REGIONS[regionOf(s)];
+    this.mobs.forEach(m => this.killC(m)); this.mobs = []; const s = d.stage, herald = isHeraldStage(s), r = REGIONS[regionOf(s)];
     const id = herald ? r.herald : r.mobs[0]; audio.play('sfx_boss', { volume: 0.6 }); audio.music('bgm_boss'); this.cameras.main.shake(300, 0.006);
     this.boss = this.spawnMob(id, W + 200, this.ground + 10, bossHp(s), bossAtk(s), this.fieldH * (herald ? 0.5 : 0.4), true); this.boss.c.setDepth(18);
     this.bossT = BOSS_TIME; this.timerT.setVisible(true); this.drawBossBar(); this.bossBar.setVisible(true); this.drawGauge();
@@ -209,8 +212,8 @@ export class BattleScene extends Phaser.Scene {
     const show = () => this.result(true, rw, herald && first ? REGIONS[r].herald : join);
     if (herald && first) this.time.delayedCall(600, () => this.playCut(heraldCut(r, 'free'), `f${r}`, () => { this.night.setAlpha(0); show(); })); else this.time.delayedCall(700, show);
   }
-  bossFail() { const b = this.boss; if (b) b.c.destroy(); this.boss = null; this.bossBar.setVisible(false); this.timerT.setVisible(false); this.d.gauge = 60; save(); this.drawGauge(); audio.play('sfx_lose', { volume: 0.5 }); audio.music('bgm_field'); this.d.autoBoss = false; this.drawAuto(); this.result(false); }
-  retreat() { if (this.boss) return this.bossFail(); this.mobs.forEach(m => m.c.destroy()); this.mobs = []; this.d.gauge = Math.max(0, this.d.gauge - 30); this.drawGauge(); this.units.forEach(u => this.revive(u)); this.units.forEach(u => { u.hp = u.max; }); toast(this, '기사단이 물러났어요 · 영웅을 키워 다시 도전해요', FIELD_TOP + 300); }
+  bossFail() { const b = this.boss; if (b) this.killC(b); this.boss = null; this.bossBar.setVisible(false); this.timerT.setVisible(false); this.d.gauge = 60; save(); this.drawGauge(); audio.play('sfx_lose', { volume: 0.5 }); audio.music('bgm_field'); this.d.autoBoss = false; this.drawAuto(); this.result(false); }
+  retreat() { if (this.boss) return this.bossFail(); this.mobs.forEach(m => this.killC(m)); this.mobs = []; this.d.gauge = Math.max(0, this.d.gauge - 30); this.drawGauge(); this.units.forEach(u => this.revive(u)); this.units.forEach(u => { u.hp = u.max; }); toast(this, '기사단이 물러났어요 · 영웅을 키워 다시 도전해요', FIELD_TOP + 300); }
   // 결과 창: 승리(보상 · 합류 영웅) / 실패(무엇을 올리면 되는지)
   result(win, rw, joined) {
     this.paused = true; const p = sheet(this, { size: 'M', title: win ? '보스 처치!' : '아쉽게 실패', closable: true, onClose: () => { this.paused = false; this.afterResult(win); } });

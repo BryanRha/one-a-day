@@ -1,14 +1,14 @@
-import { W, BASE_H, setH } from './config.js?v=0.54.1';
-import { audio } from './audio.js?v=0.54.1';
-import { BootScene } from './scenes/Boot.js?v=0.54.1';
-import { BattleScene } from './scenes/Battle.js?v=0.54.1';
-import { HeroesScene } from './scenes/Heroes.js?v=0.54.1';
-import { GearScene } from './scenes/Gear.js?v=0.54.1';
-import { SummonScene } from './scenes/Summon.js?v=0.54.1';
-import { DungeonScene } from './scenes/Dungeon.js?v=0.54.1';
-import { HudScene } from './scenes/Hud.js?v=0.54.1';
-import { CutsceneScene } from './scenes/Cutscene.js?v=0.54.1';
-import { installBack } from './oad.js?v=0.54.1';
+import { W, BASE_H, setH } from './config.js?v=0.55.0';
+import { audio } from './audio.js?v=0.55.0';
+import { BootScene } from './scenes/Boot.js?v=0.55.0';
+import { BattleScene } from './scenes/Battle.js?v=0.55.0';
+import { HeroesScene } from './scenes/Heroes.js?v=0.55.0';
+import { GearScene } from './scenes/Gear.js?v=0.55.0';
+import { SummonScene } from './scenes/Summon.js?v=0.55.0';
+import { DungeonScene } from './scenes/Dungeon.js?v=0.55.0';
+import { HudScene } from './scenes/Hud.js?v=0.55.0';
+import { CutsceneScene } from './scenes/Cutscene.js?v=0.55.0';
+import { installBack } from './oad.js?v=0.55.0';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* */ }

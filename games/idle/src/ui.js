@@ -1,8 +1,8 @@
 // 여명기사단 UI: 남색 밤하늘 패널 · 금빛 새벽 테두리 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.54.1';
-import { audio } from './audio.js?v=0.54.1';
-import { pushBack } from './oad.js?v=0.54.1';
-import { load as loadSave, save as saveSave } from './save.js?v=0.54.1';
+import { W, H } from './config.js?v=0.55.0';
+import { audio } from './audio.js?v=0.55.0';
+import { pushBack } from './oad.js?v=0.55.0';
+import { load as loadSave, save as saveSave } from './save.js?v=0.55.0';
 
 export const C = { ink: '#F5F0E6', text: '#FFFFFF', dim: '#9AA6CC', sub: '#7F8BB5', gold: '#F2C46B', gold2: '#C98A2E', moon: '#CFE0FF', red: '#FF6B6B', green: '#6BE39B', blue: '#7FA8FF', navy: '#121933', brown: '#E8D7B0', rose: '#FF8AA8' };
 export const FONT = 'Pretendard, sans-serif';

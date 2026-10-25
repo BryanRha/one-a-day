@@ -1,13 +1,13 @@
 // 영웅 소환: 등불의 빛을 보고 영웅이 찾아온다 (확률 공개 · 80회째 레전드 확정 · 소환 레벨)
-import { W, H } from '../config.js?v=0.54.1';
-import { T, R, C, TS, btn, sheet, rbox, toast } from '../ui.js?v=0.54.1';
-import { audio } from '../audio.js?v=0.54.1';
-import { load } from '../save.js?v=0.54.1';
-import { HEROES, GRADES, SUMMON } from '../data.js?v=0.54.1';
-import { summon, fmt } from '../state.js?v=0.54.1';
-import { panelBg } from './Hud.js?v=0.54.1';
-import { livePuppet } from '../puppet.js?v=0.54.1';
-import { TOP, NAV_H } from '../hud.js?v=0.54.1';
+import { W, H } from '../config.js?v=0.55.0';
+import { T, R, C, TS, btn, sheet, rbox, toast } from '../ui.js?v=0.55.0';
+import { audio } from '../audio.js?v=0.55.0';
+import { load } from '../save.js?v=0.55.0';
+import { HEROES, GRADES, SUMMON } from '../data.js?v=0.55.0';
+import { summon, fmt } from '../state.js?v=0.55.0';
+import { panelBg } from './Hud.js?v=0.55.0';
+import { livePuppet } from '../puppet.js?v=0.55.0';
+import { TOP, NAV_H } from '../hud.js?v=0.55.0';
 
 export class SummonScene extends Phaser.Scene {
   constructor() { super('Summon'); }

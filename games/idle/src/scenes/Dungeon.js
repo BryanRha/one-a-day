@@ -1,14 +1,14 @@
 // 모험: 던전 5종 · 결투장(10대10) · 토벌 의뢰 — 위 탭으로 바꿈
-import { W, H } from '../config.js?v=0.54.1';
-import { T, R, C, TS, btn, sheet, rbox, chips, toast } from '../ui.js?v=0.54.1';
-import { audio } from '../audio.js?v=0.54.1';
-import { load, save } from '../save.js?v=0.54.1';
-import { HEROES, GRADES } from '../data.js?v=0.54.1';
-import { fmt, teamPower, stageName } from '../state.js?v=0.54.1';
-import { DUNGEONS, DG_TRIES, DG_TIME, dgLevel, dgHp, dgLeft, dgFight, dgSweep, teamDps, REWARD_N, daily, arenaFoes, arenaFight, arenaTier, QUESTS, disp, dispStart, dispClaim } from '../content.js?v=0.54.1';
-import { panelBg } from './Hud.js?v=0.54.1';
-import { TOP, NAV_H } from '../hud.js?v=0.54.1';
-import { loadRegion } from './Boot.js?v=0.54.1';
+import { W, H } from '../config.js?v=0.55.0';
+import { T, R, C, TS, btn, sheet, rbox, chips, toast } from '../ui.js?v=0.55.0';
+import { audio } from '../audio.js?v=0.55.0';
+import { load, save } from '../save.js?v=0.55.0';
+import { HEROES, GRADES } from '../data.js?v=0.55.0';
+import { fmt, teamPower, stageName } from '../state.js?v=0.55.0';
+import { DUNGEONS, DG_TRIES, DG_TIME, dgLevel, dgHp, dgLeft, dgFight, dgSweep, teamDps, REWARD_N, daily, arenaFoes, arenaFight, arenaTier, QUESTS, disp, dispStart, dispClaim } from '../content.js?v=0.55.0';
+import { panelBg } from './Hud.js?v=0.55.0';
+import { TOP, NAV_H } from '../hud.js?v=0.55.0';
+import { loadRegion } from './Boot.js?v=0.55.0';
 
 export { DUNGEONS };
 const TABS = [['dg', '던전'], ['arena', '결투장'], ['disp', '토벌 의뢰']];

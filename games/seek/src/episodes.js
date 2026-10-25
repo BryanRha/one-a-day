@@ -1,6 +1,6 @@
 // 「그 남자의 비밀」 시즌 1 — 화마다: 이야기 → 숨은 물건 맵 → 증거 대조 → 웹툰 결말
-import { MORE } from './episodes_s1.js?v=0.45.7';
-import { S2 } from './episodes_s2.js?v=0.45.7';
+import { MORE } from './episodes_s1.js?v=0.46.0';
+import { S2 } from './episodes_s2.js?v=0.46.0';
 export const SERIES = { title: "그 남자의 비밀", en: "HIS SECRET", season: 1, total: 10 };
 export const EPISODES = [
  {

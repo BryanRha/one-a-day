@@ -1,15 +1,15 @@
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.45.7';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.45.7';
-import { audio } from '../audio.js?v=0.45.7';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.45.7';
-import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.45.7';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.45.7';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.45.7';
-import { taskCheck, coopBadge } from '../coop.js?v=0.45.7';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.45.7';
-import { FUP, TRAINS } from '../data.js?v=0.45.7';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.45.7';
+import { W, H } from '../config.js?v=0.46.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.46.0';
+import { audio } from '../audio.js?v=0.46.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.46.0';
+import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.46.0';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.46.0';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.46.0';
+import { taskCheck, coopBadge } from '../coop.js?v=0.46.0';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.46.0';
+import { FUP, TRAINS } from '../data.js?v=0.46.0';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.46.0';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -52,7 +52,7 @@ export class HudScene extends Phaser.Scene {
     badge(this.sideBtns[0], q && questDone() ? '!' : 0); badge(this.sideBtns[1], d.orders.filter(o => o.at <= Date.now() && Object.entries(o.items).every(([k, n]) => has(k, n))).length);
     badge(this.sideBtns[2], [0, 1, 2].reduce((n, i) => { const tt = trainN(i); return n + (tt && !tt.away ? tt.cars.filter(c => !c.done && has(c.it, c.n)).length : 0); }, 0)); badge(this.sideBtns[3], !r.paid && d.coins >= r.goal ? '!' : 0);
     this.sideBtns[2].setAlpha(t ? 1 : 0.45);
-    { const rs = raceState(), a = album(); badge(this.sideBtns[7], coopBadge()); badge(this.sideBtns[6], evBadge()); badge(this.sideBtns[5], d.lv >= 3 && miniLeft() > 0 ? miniLeft() : 0); }
+    { const rs = raceState(), a = album(); badge(this.sideBtns[7], coopBadge()); badge(this.sideBtns[6], evBadge()); badge(this.sideBtns[5], 0); }
     this.qBanner.removeAll(true); if (q) { const g = this.add.graphics(), done = questDone(); g.fillStyle(done ? 0x5AAE3C : 0xFFF6E0, 0.96).fillRoundedRect(-300, -36, 600, 72, 36).lineStyle(4, 0x8A5A2B, 1).strokeRoundedRect(-300, -36, 600, 72, 36); this.qBanner.add([g, T(this, 0, 0, `📜 ${q.n}  ${done ? '완료! 눌러서 받기' : questProg()}`, 26, done ? '#FFFFFF' : '#3E2A14', { w: 900 })]); }
   }
   fly(from, key, label) { const to = key === 'coin' ? [345, 74] : key === 'xp' ? [80, 74] : key === 'gem' ? [545, 74] : key === 'tools' ? [715, 74] : [300, H - 120];
@@ -158,10 +158,15 @@ export class HudScene extends Phaser.Scene {
     if (pages > 1) { p.content.add(btn(this, -200, 720, 200, 80, '◀', () => { if (page > 0) { p.close(); this.buildPanel(tab, page - 1); } }, { size: 30, style: 'cream' })); p.content.add(T(this, 0, 720, `${page + 1} / ${pages}`, 28, C.ink, { w: 900 })); p.content.add(btn(this, 200, 720, 200, 80, '▶', () => { if (page < pages - 1) { p.close(); this.buildPanel(tab, page + 1); } }, { size: 30, style: 'cream' })); }
   }
   go(key, data) { this.scene.stop(); this.town.scene.start(key, data); }
-  miniPanel() { const p = popup(this, 900, 900); p.content.add(T(this, 0, -370, '마을 놀이', 44, C.ink, { w: 900 })); p.content.add(T(this, 0, -310, `오늘 ${miniLeft()}번 남음 · 30초 동안 많이 누를수록 보상이 커요`, 24, C.dim, { w: 900 }));
-    Object.entries(MINIS).forEach(([k, M], i) => { const y = -170 + i * 200, g = this.add.graphics(); g.fillStyle(0xFFF6E0, 1).fillRoundedRect(-400, y - 85, 800, 170, 30); p.content.add(g); const f = this.add.image(-320, y, M.who); f.setScale(150 / f.height); p.content.add(f);
-      p.content.add(T(this, -220, y - 30, `${M.n} · ${CHARS[M.who]}`, 32, C.ink, { ox: 0, w: 900 })); p.content.add(T(this, -220, y + 22, M.d, 20, C.dim, { ox: 0, w: 800, wrap: 400, align: 'left' }));
-      p.content.add(btn(this, 300, y, 160, 90, '하기', () => { if (miniLeft() <= 0) return toast(this, '오늘은 다 했어요'); p.close(); this.go('Mini', { k }); }, { size: 28, style: 'gold' })); });
+  // 마을 놀이: 샘의 밭 퍼즐(3매치) · 한스의 공방(머지) · 이안의 마을 순찰(숨은그림찾기)
+  miniPanel() { const p = popup(this, 900, 960); p.content.add(T(this, 0, -400, '마을 놀이', 44, C.ink, { w: 900 })); p.content.add(T(this, 0, -344, '놀이에서 모은 코인은 마을 코인과 같아요 · 처음 깨면 건축 재료도 받아요', 22, C.dim, { w: 900 }));
+    let pz = 1; try { pz = (JSON.parse(localStorage.getItem('thefarm_puzzle_v1') || '{}').unlocked) || 1; } catch { /* */ }
+    const GAMES = [{ n: '샘의 밭 퍼즐', who: 'sam', d: `같은 작물 3개를 맞춰요 · 지금 레벨 ${pz}`, go: () => { save(); location.href = 'puzzle/index.html'; } },
+      { n: '한스의 공방', who: 'hans', d: '공구와 재료를 합쳐 더 좋은 물건을 만들어요', soon: true }, { n: '이안의 마을 순찰', who: 'ian', d: '마을 그림 속에 숨은 불량배와 물건을 찾아요', soon: true }];
+    GAMES.forEach((G, i) => { const y = -190 + i * 230, g = this.add.graphics(); g.fillStyle(G.soon ? 0xF1EBE2 : 0xFFF6E0, 1).fillRoundedRect(-410, y - 100, 820, 200, 30).lineStyle(3, G.soon ? 0xDDD3C6 : 0xE8C27A, 1).strokeRoundedRect(-410, y - 100, 820, 200, 30); p.content.add(g);
+      const f = this.add.image(-320, y, G.who); f.setScale(180 / f.height); { const mk = this.make.graphics({ add: false }); mk.fillStyle(0xffffff).fillRoundedRect(W / 2 - 406, H / 2 + y - 96, 812, 192, 28); f.setMask(mk.createGeometryMask()); } if (G.soon) f.setAlpha(0.55); p.content.add(f);
+      p.content.add(T(this, -200, y - 34, G.n, 34, G.soon ? C.dim : C.ink, { ox: 0, w: 900 })); p.content.add(T(this, -200, y + 20, G.d, 21, C.dim, { ox: 0, w: 800, wrap: 380, align: 'left' }));
+      if (G.soon) p.content.add(T(this, 300, y, '곧 열려요', 26, C.dim, { w: 900 })); else p.content.add(btn(this, 300, y, 180, 96, '하기', () => { p.close(); G.go(); }, { size: 30, style: 'green' })); });
   }
   startBuild(k) { this.town.startPlace(k, null); this.placeUi(k); }
   startMove(o) { this.town.startPlace(o.b, o); this.placeUi(o.b, o); }

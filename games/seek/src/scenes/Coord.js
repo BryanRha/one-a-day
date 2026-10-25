@@ -1,13 +1,13 @@
 // 오늘의 코디: 매일 이야기 속 상황 하나(Covet · Dress to Impress) → 옷장(한 벌 + 머리 · 가방 · 손 소품, 추천 3벌) → 인생샷 → 하나 · 지아 · 어머니 심사
-import { W, H } from '../config.js?v=0.45.7';
-import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.45.7';
-import { audio } from '../audio.js?v=0.45.7';
-import { goPrev } from '../nav.js?v=0.45.7';
-import { save } from '../save.js?v=0.45.7';
-import { OUTFITS, ACCS, THEMES, SLOT_NAMES } from '../coord/data.js?v=0.45.7';
-import { coordData, item, owned, lockText, buy, todayTheme, doneToday, judge, recommend } from '../coord/state.js?v=0.45.7';
-import { buildLook } from '../coord/look.js?v=0.45.7';
-import { today } from '../cafe/state.js?v=0.45.7';
+import { W, H } from '../config.js?v=0.46.0';
+import { T, C, btn, iconBtn, popup, toast } from '../ui.js?v=0.46.0';
+import { audio } from '../audio.js?v=0.46.0';
+import { goPrev } from '../nav.js?v=0.46.0';
+import { save } from '../save.js?v=0.46.0';
+import { OUTFITS, ACCS, THEMES, SLOT_NAMES } from '../coord/data.js?v=0.46.0';
+import { coordData, item, owned, lockText, buy, todayTheme, doneToday, judge, recommend } from '../coord/state.js?v=0.46.0';
+import { buildLook } from '../coord/look.js?v=0.46.0';
+import { today } from '../cafe/state.js?v=0.46.0';
 
 const SHEET = 620, PER = 10;
 export class CoordScene extends Phaser.Scene {

@@ -1,13 +1,13 @@
 // 전투 화면: 판 5×3 + 둘레 길. 소환(탭) · 합성(끌어 놓기) · 판 안 강화. 로직은 core/sim.js
-import { W, H } from '../config.js?v=0.45.7';
-import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.45.7';
-import { DESC } from './Deck.js?v=0.45.7';
-import { act } from '../core/ai.js?v=0.45.7';
-import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.45.7';
-import { audio } from '../audio.js?v=0.45.7';
-import { load, save } from '../save.js?v=0.45.7';
-import * as M from '../meta.js?v=0.45.7';
-import { inOAD, exitToOAD } from '../oad.js?v=0.45.7';
+import { W, H } from '../config.js?v=0.46.0';
+import { Sim, RUNES, COLS, ROWS, SLOTS, MAX_PIPS, BOSSES, RARITY, RARITY_NAME, RARITY_COLOR, synergiesOf } from '../core/sim.js?v=0.46.0';
+import { DESC } from './Deck.js?v=0.46.0';
+import { act } from '../core/ai.js?v=0.46.0';
+import { T, C, fmt, btn, iconBtn, popup, toast } from '../pui.js?v=0.46.0';
+import { audio } from '../audio.js?v=0.46.0';
+import { load, save } from '../save.js?v=0.46.0';
+import * as M from '../meta.js?v=0.46.0';
+import { inOAD, exitToOAD } from '../oad.js?v=0.46.0';
 
 // 판 크기: 양옆 길 위 몬스터(보스 포함)가 화면 밖으로 잘리지 않게 여백 확보
 const CS = 188, GAP = 14, BW = COLS * CS + (COLS - 1) * GAP, BH = ROWS * CS + (ROWS - 1) * GAP;
@@ -632,7 +632,7 @@ export class PlayScene extends Phaser.Scene {
     c.add(T(this, 0, 214, '화면을 누르면 시작', 26, C.gold, { w: 800 }));
     this.paused = true;
     const z = this.add.zone(W / 2, H / 2, W, H).setInteractive().setDepth(96);
-    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.45.7').then(m => m.save()); });
+    z.once('pointerup', () => { c.destroy(); z.destroy(); this.paused = false; const d = load(); d.tips.dice = 1; import('../save.js?v=0.46.0').then(m => m.save()); });
   }
 
   gameOver() {

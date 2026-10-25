@@ -1,5 +1,5 @@
 // 효과음 · 배경음 (ElevenLabs 로 만든 K뷰티 레시피 전용 소리, tools/gen_audio.sh)
-import { load, save } from './save.js?v=0.45.7';
+import { load, save } from './save.js?v=0.46.0';
 export const SFX = ['sfx_click',
   'sfx_gen', 'sfx_merge', 'sfx_merge_big', 'sfx_order', 'sfx_coin', 'sfx_levelup', 'sfx_box', 'sfx_bubble', 'sfx_repair', 'sfx_pick', 'sfx_drop', 'sfx_error', 'sfx_tap', 'sfx_blip'];
 export const BGM = ['bgm_shop', 'bgm_board', 'bgm_story', 'bgm_garden', 'bgm_workshop', 'bgm_flagship', 'bgm_jeju', 'bgm_paris'];

@@ -1,6 +1,6 @@
 // 이벤트 묶음 (타운십 · K뷰티 레시피 틀): 7일 출석 · 주간 축제(티켓 사다리) · 이웃 농장 레이스(AI) · 스티커 앨범 · 시즌 패스 · 항구 무역
-import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.45.7';
-import { VOYAGES } from './data.js?v=0.45.7';
+import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.46.0';
+import { VOYAGES } from './data.js?v=0.46.0';
 
 const now = () => Date.now();
 function ev() { const d = load(); if (!d.ev) d.ev = {}; return d.ev; }

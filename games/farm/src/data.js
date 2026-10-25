@@ -497,13 +497,22 @@ export const BUILDS = {
   crystalfountain: { n: '수정 분수', k: 'deco', sz: 1, cost: 12380, lv: 71, joy: 54 },
   royalbanner: { n: '왕국 깃발', k: 'deco', sz: 1, cost: 13060, lv: 73, joy: 55 },
   balloonmodel: { n: '열기구 모형', k: 'deco', sz: 1, cost: 13750, lv: 75, joy: 57 },
+  // ── v0.17: 동물원 8종
+  koala: { n: '코알라 숲', k: 'exhibit', sz: 2, cost: 30000, lv: 55, rate: 380 },
+  flamingo: { n: '플라밍고 연못', k: 'exhibit', sz: 2, cost: 34000, lv: 58, rate: 420 },
+  redpanda: { n: '레서판다 대나무숲', k: 'exhibit', sz: 2, cost: 38000, lv: 61, rate: 460 },
+  peacock: { n: '공작 정원', k: 'exhibit', sz: 2, cost: 42000, lv: 64, rate: 500 },
+  polarbear: { n: '북극곰 얼음굴', k: 'exhibit', sz: 2, cost: 47000, lv: 67, rate: 550 },
+  sealion: { n: '물개 수영장', k: 'exhibit', sz: 2, cost: 52000, lv: 70, rate: 600 },
+  hippo: { n: '하마 진흙탕', k: 'exhibit', sz: 2, cost: 58000, lv: 74, rate: 660 },
+  tiger: { n: '호랑이 바위', k: 'exhibit', sz: 2, cost: 65000, lv: 78, rate: 730 },
 };
 export const BASE_CAP = 20;
 // 레벨: 필요 경험치 · 레벨업 보상
-export const XP_NEED = lv => Math.round(10 + lv * lv * 3.4);   // 봇(하루 3번 10분): 레벨 10 약 1주 · 20 약 3주 · 30 약 7주
+export const XP_NEED = lv => Math.round((10 + lv * lv * 3.4) * (lv > 45 ? 1 + (lv - 45) * 0.07 : 1));   // 레벨 45부터 점점 더 많이 (최고 레벨까지 약 1년)
 export const MAX_LV = 80;
 // 공장 업그레이드: 단계마다 만드는 시간 -15% (최대 3단계)
-export const FUP = { max: 3, cost: (b, lv) => ({ coins: Math.round(BUILDS[b].cost * 0.6 * (lv + 1)), mats: each(MATS.barn, 1 + lv) }), k: lv => 1 - 0.15 * lv };
+export const FUP = { max: 5, cost: (b, lv) => ({ coins: Math.round(BUILDS[b].cost * 0.6 * (lv + 1) * (lv + 1)), mats: each(MATS.barn, 1 + lv) }), k: lv => 1 - 0.12 * lv };   // 5단계 · 단계마다 -12% · 값은 단계의 제곱으로 (후반 코인 쓸 곳)
 // 기차: 레벨 2 · 12 · 22 에 하나씩
 export const TRAINS = [2, 12, 22];
 // 동물원: 동물 우리마다 시간당 방문객 코인 (최대 8시간 쌓임) · 입구가 있어야 손님이 옴

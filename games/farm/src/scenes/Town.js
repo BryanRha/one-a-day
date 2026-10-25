@@ -1,11 +1,11 @@
-import { BASE } from '../base.js?v=0.52.4';
+import { BASE } from '../base.js?v=0.53.0';
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.52.4';
-import { T, C } from '../ui.js?v=0.52.4';
-import { audio } from '../audio.js?v=0.52.4';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.52.4';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, trainN, trainCount, zooCoins, pop } from '../state.js?v=0.52.4';
-import { TRAINS } from '../data.js?v=0.52.4';
+import { W, H } from '../config.js?v=0.53.0';
+import { T, C } from '../ui.js?v=0.53.0';
+import { audio } from '../audio.js?v=0.53.0';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.53.0';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, trainN, trainCount, zooCoins, pop } from '../state.js?v=0.53.0';
+import { TRAINS } from '../data.js?v=0.53.0';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -91,7 +91,7 @@ export class TownScene extends Phaser.Scene {
     this.layer.sort('dk');
   }
   // 건물 위 진행 막대: 공장은 첫 작업, 동물은 가장 먼저 끝나는 칸
-  prog(pb) { const o = pb.o, B = BUILDS[o.b], now = Date.now(); let end = 0, tot = 1; if (B.k === 'factory' && o.q && o.q[0]) { end = o.q[0].end; tot = RECIPES[o.q[0].it].t * 1000 * (1 - 0.15 * (o.up || 0)); } else if (B.k === 'animal' && o.s) { const e = o.s.filter(Boolean).sort((a, b) => a - b)[0]; if (e) { end = e; tot = RECIPES[productOf(o.b)].t * 1000; } }
+  prog(pb) { const o = pb.o, B = BUILDS[o.b], now = Date.now(); let end = 0, tot = 1; if (B.k === 'factory' && o.q && o.q[0]) { end = o.q[0].end; tot = RECIPES[o.q[0].it].t * 1000 * (1 - 0.12 * (o.up || 0)); } else if (B.k === 'animal' && o.s) { const e = o.s.filter(Boolean).sort((a, b) => a - b)[0]; if (e) { end = e; tot = RECIPES[productOf(o.b)].t * 1000; } }
     const left = Math.max(0, end - now), k = Math.max(0, Math.min(1, 1 - left / tot)), w = 120; pb.g.clear(); if (!end) { pb.t.setText(''); return; } pb.g.fillStyle(0x3E2A14, 0.85).fillRoundedRect(pb.x - w / 2 - 4, pb.y - 11, w + 8, 22, 11).fillStyle(0x8BE36A, 1).fillRoundedRect(pb.x - w / 2, pb.y - 7, Math.max(10, w * k), 14, 7);
     const sec = Math.ceil(left / 1000); pb.t.setText(sec >= 3600 ? `${Math.floor(sec / 3600)}시간 ${Math.floor(sec % 3600 / 60)}분` : sec >= 60 ? `${Math.floor(sec / 60)}분 ${sec % 60}초` : `${sec}초`); }
   bars() { if (!this.spr) return; for (const id in this.spr) { const c = this.spr[id]; if (c && c.pb && c.pb.g.active) this.prog(c.pb); } for (const o of this.d.objs) { if (o.b !== 'field' || !o.crop) continue; const c = this.spr[o.id]; if (!c || !c.bar || !c.bar.active) continue; const [x, y] = iso(o.x + 0.5, o.y + 0.5), t = Math.max(0, (o.at - Date.now()) / 1000), k = Math.min(1, Math.max(0, 1 - t / CROPS[o.crop].t));

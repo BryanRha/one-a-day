@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.52.4';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.52.4';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.53.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.53.0';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -92,7 +92,11 @@ export function feedOne(o, i) { tickAnimal(o); const it = productOf(o.b), R = RE
 export function feedAll(o) { tickAnimal(o); const it = productOf(o.b), R = RECIPES[it]; let n = 0; o.s.forEach((e, i) => { if (!e && o.ready + o.s.filter(Boolean).length < 3 && take(R.in)) { o.s[i] = now() + R.t * 1000 * (1 - 0.05 * rl('anim')); n++; } }); return n; }
 
 // ── 주문 게시판 (타운십의 헬리콥터 주문): 6장 · 완료 후 60초 뒤 새 주문
-const unlockedGoods = () => { const s = load(), out = Object.keys(CROPS).filter(k => CROPS[k].lv <= (s.lv || 1)); if (!out.includes('wheat')) out.push('wheat'); for (const [k, R] of Object.entries(RECIPES)) if (countOf(R.b) && (R.lv || 1) <= s.lv) out.push(k); return out; };
+// 광산에서 캐야 하는 것(광석·점토)이나 도구가 들어가는 물건은 주문·기차·비행기에 내지 않음 (계획해서 만들 수 없음)
+const MINE_IN = new Set(['ironore', 'goldore', 'clay']), TOOLS = new Set(['pickaxe', 'dynamite', 'axe', 'shovel']), mineMemo = {};
+const needsMine = it => { if (it in mineMemo) return mineMemo[it]; mineMemo[it] = false; const R = RECIPES[it]; const v = MINE_IN.has(it) || TOOLS.has(it) || !!ITEMS[it].rare || !!(R && Object.keys(R.in).some(needsMine));   /* 희귀 재료(항구·섬)도 */ return (mineMemo[it] = v); };
+const unlockedGoods = () => (unlockedAll()).filter(k => !needsMine(k) && !ITEMS[k].rare && !ITEMS[k].mat && !ITEMS[k].bm && !BUILDS[(RECIPES[k] || {}).b || 'field']?.lab);
+const unlockedAll = () => { const s = load(), out = Object.keys(CROPS).filter(k => CROPS[k].lv <= (s.lv || 1)); if (!out.includes('wheat')) out.push('wheat'); for (const [k, R] of Object.entries(RECIPES)) if (countOf(R.b) && (R.lv || 1) <= s.lv) out.push(k); return out; };
 function makeOrder(brook) {
   const s = load(), g = unlockedGoods(), kinds = 1 + Math.floor(Math.random() * Math.min(3, 1 + s.lv / 4)), items = {};
   for (let k = 0; k < kinds; k++) { const it = g[Math.floor(Math.random() * g.length)]; const cheap = ITEMS[it].v <= 3; items[it] = (items[it] || 0) + (cheap ? 2 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 2)); }
@@ -115,7 +119,11 @@ function newTrain() { const s = load(), g = unlockedGoods(); return { away: fals
 export function trainN(ti) { const s = load(); if (s.lv < TRAINS[ti]) return null; if (!s.trains) s.trains = [s.train || null, null, null]; let t = s.trains[ti]; if (!t || (t.away && t.back <= now())) t = s.trains[ti] = newTrain(); return t; }
 export const train = () => trainN(0);
 export const trainCount = () => TRAINS.filter(l => load().lv >= l).length;
-export function loadCar(k, ti = 0) { const t = trainN(ti); if (!t || t.away) return null; const c = t.cars[k]; if (c.done || !take({ [c.it]: c.n })) return null; c.done = true; const ups = give(c.r); c.bm = giveBm(1); if (t.cars.every(x => x.done)) { t.away = true; t.back = now() + 120000 * (ti + 1); load().stats.trains++; progress('train', 1); } return { r: c.r, ups, left: t.away }; }
+// 모자란 만큼 보석으로 채워 싣기 (모자란 물건 1개 = 💎 값/15, 최소 1)
+export const carGem = (k, ti = 0) => { const t = trainN(ti), c = t && t.cars[k]; if (!c) return 0; const lack = Math.max(0, c.n - (load().items[c.it] || 0)); return lack ? Math.max(1, Math.ceil(lack * ITEMS[c.it].v / 15)) : 0; };
+export function loadCar(k, ti = 0, gems = false) { const t = trainN(ti); if (!t || t.away) return null; const c = t.cars[k]; if (c.done) return null;
+  if (gems) { const g = carGem(k, ti), s0 = load(); if (s0.gems < g) return null; s0.gems -= g; add(c.it, Math.max(0, c.n - (s0.items[c.it] || 0))); }
+  if (!take({ [c.it]: c.n })) return null; c.done = true; const ups = give(c.r); c.bm = giveBm(1); if (t.cars.every(x => x.done)) { t.away = true; t.back = now() + 120000 * (ti + 1); load().stats.trains++; progress('train', 1); } return { r: c.r, ups, left: t.away }; }
 
 // ── 퀘스트 (이야기 1장)
 export const quest = () => QUESTS[load().quest] || null;

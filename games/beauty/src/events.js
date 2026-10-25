@@ -2,8 +2,8 @@
 //  · 뷰티 박람회 레이스: 5명 중 먼저 목표 점수 (상대는 AI — 나중에 서버를 붙이면 rivals 만 바꾸면 됨)
 //  · 벚꽃 축제 꾸미기 사다리: 주문으로 꽃잎 모으기 → 10단계 보상 · 축제 장식
 //  · VIP 손님: 이틀마다 VIP 주문 5개 → 큰 보상
-import { load, save } from './save.js?v=0.47.2';
-import { CUSTOMERS } from './data.js?v=0.47.2';
+import { load, save } from './save.js?v=0.47.3';
+import { CUSTOMERS } from './data.js?v=0.47.3';
 
 const DAY = 864e5, dayNo = (t = Date.now()) => Math.floor((t - new Date().getTimezoneOffset() * 6e4) / DAY);
 

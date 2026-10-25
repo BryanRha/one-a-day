@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.47.2';
-import { T, C } from '../ui.js?v=0.47.2';
-import { audio } from '../audio.js?v=0.47.2';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.47.2';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.47.2';
+import { W, H } from '../config.js?v=0.47.3';
+import { T, C } from '../ui.js?v=0.47.3';
+import { audio } from '../audio.js?v=0.47.3';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.47.3';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.47.3';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -69,7 +69,8 @@ export class TownScene extends Phaser.Scene {
   emote(c) { const e = ['💬', '❤️', '🎵', '😊', '☕', '🌼', '👋'][Math.floor(Math.random() * 7)], b = this.add.container(0, -c.sp.displayHeight - 16), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 0.95).fillRoundedRect(-30, -28, 60, 52, 20).fillTriangle(-8, 22, 8, 22, 0, 34); b.add([g, T(this, 0, -2, e, 30, '#000', { w: 900 })]); b.setScale(0); c.add(b);
     this.tweens.add({ targets: b, scale: 1, duration: 220, ease: 'Back.easeOut' }); this.tweens.add({ targets: b, alpha: 0, delay: 1500, duration: 300, onComplete: () => b.destroy() }); }
   update(time, dt) {
-    if (this.dead) return; dt = Math.min(dt, 80); this.driveTick(time, dt); if (!this.walkers.length) { if (this.cars && this.cars.length) this.layer.sort('dk'); return; } const T1 = 720;   // 한 칸 걷는 시간(ms)
+    if (this.dead) return; dt = Math.min(dt, 80);
+    if (this.mode && this.dragAt && this.ghost) { const { x, y } = this.dragAt, e = 150, sp = 0.9 * dt / this.cameras.main.zoom, cam = this.cameras.main; let vx = 0, vy = 0; if (x < e) vx = -1; else if (x > W - e) vx = 1; if (y < 260) vy = -1; else if (y > H - 470) vy = 1; if (vx || vy) { cam.setScroll(cam.scrollX + vx * sp, cam.scrollY + vy * sp); this.ghostTo(x, y); } } this.driveTick(time, dt); if (!this.walkers.length) { if (this.cars && this.cars.length) this.layer.sort('dk'); return; } const T1 = 720;   // 한 칸 걷는 시간(ms)
     for (const c of this.walkers) { if (!c.active || c.leaving) continue; const sp = c.sp;
       if (c.wait > 0) { c.wait -= dt; sp.y = 0; sp.setTexture(`w${c.v}_${c.face[0]}1`).setFlipX(c.face[1]); sp.scaleY = sp.scaleX * (1 + Math.sin(time / 380 + c.ph) * 0.012);
         if (c.wait <= 0) this.plan(c); continue; }
@@ -120,6 +121,7 @@ export class TownScene extends Phaser.Scene {
       if (o.crop) { const im = this.add.image(0, 0, ripe ? `crop_${o.crop}` : 'crop_sprouts'), [bx, by] = iso(o.x + 1, o.y + 1); im.setOrigin(0.5, 1).setScale(TW * (ripe ? 0.94 : 0.8) / im.width).setPosition(bx, by - TH * (ripe ? 0.04 : 0.1)); c.add(im); c.im = im; }
       if (o.crop && !ripe) { const [x, y] = iso(o.x + 0.5, o.y + 0.5), t = Math.max(0, (o.at - Date.now()) / 1000), k = 1 - t / CROPS[o.crop].t, g = this.add.graphics(); g.fillStyle(0x000000, 0.4).fillRoundedRect(x - 40, y - 20, 80, 14, 7).fillStyle(0x8BE36A, 1).fillRoundedRect(x - 40, y - 20, Math.max(8, 80 * k), 14, 7); c.add(g); c.bar = g; } }
     else if (o.b === 'road') this.drawRoad(c, o);
+    else if (o.b === 'fence' || o.b === 'hedge') this.drawFence(c, o);
     else if (o.site) { const im = this.add.image(0, 0, 'site'); place(im, o.x, o.y, B.sz, 0.08); im.setFlipX(!!o.flip); c.add(im); c.im = im; const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), bb = this.add.container(x, y - im.displayHeight * 0.62 - 30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillCircle(0, 0, 46).lineStyle(5, 0xE89A2E, 1).strokeCircle(0, 0, 46).fillTriangle(-14, 38, 14, 38, 0, 62); const pi = this.add.image(0, 0, 'brick'); pi.setScale(60 / Math.max(pi.width, pi.height)); bb.add([g, pi]); c.add(bb); this.tweens.add({ targets: bb, y: bb.y - 14, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
     else { const im = this.add.image(0, 0, o.b === 'mine' ? 'mine_b' : o.b); place(im, o.x, o.y, B.sz, 0.08); im.setFlipX(!!o.flip); c.add(im); c.im = im;
       // 다 된 물건 말풍선
@@ -144,6 +146,18 @@ export class TownScene extends Phaser.Scene {
     for (let k = 1; k < 5; k++) { const q = k / 5, a = lerp(T1, L1, q), c = lerp(R1, B1, q); g.lineStyle(6, 0x5F3820, 0.85).lineBetween(a.x, a.y, c.x, c.y); g.lineStyle(2, 0x9C6842, 0.7).lineBetween(a.x, a.y - 4, c.x, c.y - 4); }
     g.lineStyle(3, 0xA87650, 0.8).strokePoints([T1, R1, B1, L1], true);
     g.dk = -0.5; this.layer.add(g); }
+  // 울타리 · 산울타리: 땅 위에 평평하게 서서 이웃한 같은 울타리와 이어짐 (칸마다 받침이 생기지 않게 직접 그림)
+  drawFence(c, o) { const same = (a, b) => { const q = objAt(a, b); return q && q.b === o.b; }, ctr = iso(o.x + 0.5, o.y + 0.5), g = this.add.graphics(), hedge = o.b === 'hedge';
+    const segs = []; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (same(o.x + dx, o.y + dy)) { const e = iso(o.x + 0.5 + dx * 0.5, o.y + 0.5 + dy * 0.5); segs.push(e); }
+    if (!segs.length) { segs.push(iso(o.x + 0.95, o.y + 0.5), iso(o.x + 0.05, o.y + 0.5)); }
+    const H0 = hedge ? 46 : 52;
+    for (const [ex, ey] of segs) { const [x0, y0] = ctr, len = Math.hypot(ex - x0, ey - y0), n = Math.max(2, Math.round(len / 15));
+      g.lineStyle(10, 0x2A3A10, 0.18).lineBetween(x0, y0 + 4, ex, ey + 4);   // 땅 그림자
+      if (hedge) { for (let k = 0; k <= n; k++) { const t = k / n, x = x0 + (ex - x0) * t, y = y0 + (ey - y0) * t; g.fillStyle(0x3F7A2A, 1).fillCircle(x, y - 22, 20).fillStyle(0x5E9E3A, 1).fillCircle(x - 4, y - 28, 15).fillStyle(0x86C04E, 1).fillCircle(x - 7, y - 33, 7); } continue; }
+      for (const h of [20, 40]) { g.lineStyle(7, 0xB9B2A6, 1).lineBetween(x0, y0 - h + 2, ex, ey - h + 2); g.lineStyle(5, 0xFFFFFF, 1).lineBetween(x0, y0 - h, ex, ey - h); }
+      for (let k = 0; k <= n; k++) { const t = k / n, x = x0 + (ex - x0) * t, y = y0 + (ey - y0) * t; g.fillStyle(0xB9B2A6, 1).fillRect(x - 5, y - H0, 10, H0).fillStyle(0xFFFFFF, 1).fillRect(x - 4, y - H0, 7, H0 - 2).fillTriangle(x - 5, y - H0, x + 5, y - H0, x, y - H0 - 9); } }
+    if (!hedge) g.fillStyle(0xE8E2D6, 1).fillRect(ctr[0] - 7, ctr[1] - H0 - 6, 14, H0 + 6).fillStyle(0xFFFFFF, 1).fillCircle(ctr[0], ctr[1] - H0 - 8, 8);   // 가운데 기둥
+    c.add(g); }
   // 도로: 이웃 도로와 이어지게 직접 그림 (끊긴 쪽에만 연석 · 곧은 길엔 가운데 점선)
   drawRoad(c, o) { const x = o.x, y = o.y, isR = (a, b) => { const q = objAt(a, b); return q && q.b === 'road'; }, nx = [isR(x - 1, y), isR(x + 1, y)], ny = [isR(x, y - 1), isR(x, y + 1)];
     const P = (a, b) => { const [px, py] = iso(a, b); return { x: px, y: py }; }, T0 = P(x, y), R0 = P(x + 1, y), B0 = P(x + 1, y + 1), L0 = P(x, y + 1), g = this.add.graphics(), th = 10;
@@ -164,6 +178,7 @@ export class TownScene extends Phaser.Scene {
   }
   // ── 입력: 끌면 화면 이동 · 두 손가락 확대 · 짧게 누르면 선택
   down(p) { if (this.hud && this.hud.blocking(p)) { this.press = null; return; } this.press = { x: p.x, y: p.y, sx: this.cameras.main.scrollX, sy: this.cameras.main.scrollY, moved: false, t: Date.now() }; this.pinch = null;
+    if (this.mode && this.ghost) { const w = this.cameras.main.getWorldPoint(p.x, p.y), [gx, gy] = grid(w.x, w.y), g = this.ghost, m = 1; this.press.onGhost = gx >= g.gx - m && gx < g.gx + g.sz + m && gy >= g.gy - m && gy < g.gy + g.sz + m; }
     if (this.plantK) { const f = this.fieldAt(p); if (f && !f.crop) { this.press.plant = true; this.hud.plantOne(f, this.plantK); } }
     // 꾹 누르기 (0.5초) → 옮기기 · 돌리기 (타운십처럼 · 창에는 옮기기 버튼을 두지 않음)
     if (!this.mode && !this.press.plant) { const pr = this.press, w = this.cameras.main.getWorldPoint(p.x, p.y), hit = this.hitAt(w.x, w.y);
@@ -175,10 +190,12 @@ export class TownScene extends Phaser.Scene {
     if (a.isDown && b.isDown) { const dd = Math.hypot(a.x - b.x, a.y - b.y); if (!this.pinch) this.pinch = { d: dd, z: this.cameras.main.zoom }; else this.zoom(this.pinch.z * dd / this.pinch.d); if (this.press) this.press.moved = true; return; }
     const pr = this.press; if (!pr || !p.isDown) return; if (pr.plant && this.plantK) { const f = this.fieldAt(p); if (f && !f.crop) this.hud.plantOne(f, this.plantK); pr.moved = true; return; }   // 심기 모드: 문지르면 지나간 빈 밭마다 심음
     const dx = p.x - pr.x, dy = p.y - pr.y; if (Math.hypot(dx, dy) > 14) { pr.moved = true; if (pr.ring && pr.ring.active && !pr.long) pr.ring.destroy(); } if (!pr.moved) return;
-    if (this.mode) { const w = this.cameras.main.getWorldPoint(p.x, p.y), [gx, gy] = grid(w.x, w.y); this.moveGhost(gx - Math.floor(this.ghost.sz / 2), gy - Math.floor(this.ghost.sz / 2)); return; }
+    if (this.mode && (pr.onGhost || pr.long)) { this.dragAt = { x: p.x, y: p.y }; this.ghostTo(p.x, p.y); return; }   // 건물을 잡고 끌기 (가장자리에 닿으면 지도가 따라 움직임 · update)
+    this.dragAt = null;
     const z = this.cameras.main.zoom; this.cameras.main.setScroll(pr.sx - dx / z, pr.sy - dy / z);
   }
-  up(p) { const pr = this.press; this.press = null; this.dragGhost = false; if (pr && pr.ring && pr.ring.active) { this.tweens.killTweensOf(pr.ring); pr.ring.destroy(); } if (!pr || pr.moved || pr.plant || pr.long) return; const w = this.cameras.main.getWorldPoint(p.x, p.y); this.tap(w.x, w.y); }
+  ghostTo(sx, sy) { const w = this.cameras.main.getWorldPoint(sx, sy), [gx, gy] = grid(w.x, w.y + TH * 0.3); this.moveGhost(gx - Math.floor(this.ghost.sz / 2), gy - Math.floor(this.ghost.sz / 2)); }
+  up(p) { this.dragAt = null; const pr = this.press; this.press = null; this.dragGhost = false; if (pr && pr.ring && pr.ring.active) { this.tweens.killTweensOf(pr.ring); pr.ring.destroy(); } if (!pr || pr.moved || pr.plant || pr.long) return; const w = this.cameras.main.getWorldPoint(p.x, p.y); this.tap(w.x, w.y); }
   // 누른 자리의 물건 (건물 지붕이 뒤 칸을 덮으므로 앞쪽 2칸 건물을 먼저)
   hitAt(wx, wy) { const [gx, gy] = grid(wx, wy); let hit = null; for (let k = 2; k >= 1 && !hit; k--) { const o = objAt(gx + k, gy + k); if (o && o.b !== 'field') hit = o; } return hit || objAt(gx, gy); }
   tap(wx, wy) {

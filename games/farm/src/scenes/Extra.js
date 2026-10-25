@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.44.4';
-import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.44.4';
-import { audio } from '../audio.js?v=0.44.4';
-import { goPrev } from '../nav.js?v=0.44.4';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.44.4';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.44.4';
+import { W, H } from '../config.js?v=0.45.0';
+import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.45.0';
+import { audio } from '../audio.js?v=0.45.0';
+import { goPrev } from '../nav.js?v=0.45.0';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.45.0';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.45.0';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }
@@ -73,7 +73,7 @@ export class PeopleScene extends Phaser.Scene {
       icon(this, W / 2, 470, 'heart', 120); T(this, W / 2, 940, `${S.n}와(과) 결혼했어요`, 48, '#E8507A', { w: 900 }); T(this, W / 2, 1010, `부부 효과: ${S.perk}`, 30, C.brown, { w: 900 }); T(this, W / 2, 1100, `"${S.line[0]}"`, 28, C.dim, { w: 800, wrap: 860 }); return; }
     T(this, W / 2, 180, '좋아하는 제품을 선물하면 하트가 빨리 차요 · 하트 5개면 프러포즈!', 24, C.dim, { w: 900 });
     Object.entries(SUITORS).forEach(([k, S], i) => { const y = 440 + i * 470, g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(40, y - 200, W - 80, 420, 36).lineStyle(4, 0xE8A0B4, 1).strokeRoundedRect(40, y - 200, W - 80, 420, 36);
-      const f = this.add.image(190, y + 10, k); f.setScale(360 / f.height); T(this, 360, y - 150, `${S.n} · ${S.job}`, 40, C.ink, { ox: 0, w: 900 });
+      const f = this.add.image(190, y + 20, k); f.setScale(380 / f.height); { const mk = this.make.graphics({ add: false }); mk.fillStyle(0xffffff).fillRoundedRect(44, y - 196, W - 88, 412, 32); f.setMask(mk.createGeometryMask()); }   // 카드 밖으로 나가지 않게 T(this, 360, y - 150, `${S.n} · ${S.job}`, 40, C.ink, { ox: 0, w: 900 });
       const hv = d.love[k] / HEART_PTS; for (let h = 0; h < HEARTS; h++) { const hi = icon(this, 380 + h * 70, y - 80, 'heart', 56); if (h + 1 > hv) { hi.setTintFill(0xD8CCCC).setAlpha(0.55); if (hv > h) { const part = icon(this, 380 + h * 70, y - 80, 'heart', 56); part.setCrop(0, 0, part.width * (hv - h), part.height); } } }
       T(this, 360, y - 20, '좋아하는 것', 22, C.dim, { ox: 0, w: 800 }); S.likes.forEach((it, j) => { icon(this, 400 + j * 100, y + 40, it, 76); T(this, 400 + j * 100, y + 92, `${d.items[it] || 0}`, 20, has(it) ? C.green : C.dim, { w: 900 }); });
       T(this, 360, y + 140, `결혼 효과: ${S.perk}`, 22, C.brown, { ox: 0, w: 800 });
@@ -93,7 +93,7 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.44.4';
+import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.45.0';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
@@ -136,8 +136,8 @@ export class EventsScene extends Phaser.Scene {
 }
 
 // ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
-import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.44.4';
-import { ISLE } from '../data.js?v=0.44.4';
+import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.45.0';
+import { ISLE } from '../data.js?v=0.45.0';
 export class IslandScene extends Phaser.Scene {
   constructor() { super('Island'); }
   create() {
@@ -169,7 +169,7 @@ export class IslandScene extends Phaser.Scene {
 }
 
 // ── 협동조합: 레가타(주간 팀 경주) · 도움 요청
-import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.44.4';
+import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.45.0';
 const fmtH = ms => { const m = Math.floor(ms / 6e4); return m >= 1440 ? `${Math.floor(m / 1440)}일 ${Math.floor(m % 1440 / 60)}시간` : m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
 export class CoopScene extends Phaser.Scene {
   constructor() { super('Coop'); }
@@ -211,7 +211,7 @@ export class CoopScene extends Phaser.Scene {
   help() {
     const c = coop(); T(this, W / 2, 300, '조합 팀원들이 물건을 부탁해요 · 매일 새로 와요', 28, C.ink, { w: 900 });
     c.reqs.forEach((q, i) => { const y = 520 + i * 360, m = c.mates[q.who], g = this.add.graphics(), hv = load().items[q.it] || 0; g.fillStyle(q.done ? 0xE3F5DA : 0xFFFFFF, 1).fillRoundedRect(60, y - 150, W - 120, 300, 28).lineStyle(2, 0xD0DDE6, 1).strokeRoundedRect(60, y - 150, W - 120, 300, 28);
-      const av = this.add.image(170, y + 40, `w${m.v}_f1`); av.setScale(240 / av.height); T(this, 170, y - 120, m.n, 22, C.brown, { w: 900 });
+      const av = this.add.image(170, y + 40, `w${m.v}_f1`); av.setScale(200 / av.height); T(this, 170, y - 120, m.n, 22, C.brown, { w: 900 });
       T(this, 300, y - 80, `"${ITEMS[q.it].n} ${q.n}개만 보내 줄래요?"`, 28, C.ink, { ox: 0, w: 900 }); icon(this, 360, y + 30, q.it, 110); T(this, 430, y + 30, `${hv}/${q.n}`, 30, hv >= q.n ? C.green : C.red, { ox: 0, w: 900 });
       T(this, 300, y + 110, `보내면 🪙${Math.round(ITEMS[q.it].v * q.n * 1.8 + 20)} · 조합 점수 ⭐8`, 22, C.dim, { ox: 0, w: 800 });
       if (q.done) T(this, W - 190, y + 30, '보냄 ✓', 30, C.green, { w: 900 });

@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.44.4';
-import { T, C } from '../ui.js?v=0.44.4';
-import { audio } from '../audio.js?v=0.44.4';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.44.4';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.44.4';
+import { W, H } from '../config.js?v=0.45.0';
+import { T, C } from '../ui.js?v=0.45.0';
+import { audio } from '../audio.js?v=0.45.0';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.45.0';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.45.0';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -125,13 +125,16 @@ export class TownScene extends Phaser.Scene {
     c.dk = o.b === 'path' || o.b === 'road' ? -1 : o.x + o.y + B.sz; this.layer.add(c); return c;
   }
   // 밭 바닥: 이웃 밭과 이어진 평평한 흙 (고랑 줄무늬 · 바깥쪽에만 얇은 두께)
-  drawSoil(o) { const x = o.x, y = o.y, isF = (a, b) => { const q = objAt(a, b); return q && q.b === 'field'; }, P = (a, b) => { const [px, py] = iso(a, b); return { x: px, y: py }; };
-    const T0 = P(x, y), R0 = P(x + 1, y), B0 = P(x + 1, y + 1), L0 = P(x, y + 1), g = this.add.graphics(), th = 9, lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-    if (!isF(x, y + 1)) g.fillStyle(0x4E2E18, 1).fillPoints([L0, B0, { x: B0.x, y: B0.y + th }, { x: L0.x, y: L0.y + th }], true);
-    if (!isF(x + 1, y)) g.fillStyle(0x3F2412, 1).fillPoints([B0, R0, { x: R0.x, y: R0.y + th }, { x: B0.x, y: B0.y + th }], true);
-    g.fillStyle(0x7B4B2A, 1).fillPoints([T0, R0, B0, L0], true);
-    for (let k = 1; k < 5; k++) { const t = k / 5, a = lerp(T0, L0, t), b = lerp(R0, B0, t); g.lineStyle(7, 0x5F3820, 0.9).lineBetween(a.x, a.y, b.x, b.y); g.lineStyle(3, 0x9A6640, 0.7).lineBetween(a.x, a.y - 5, b.x, b.y - 5); }
-    const edge = (a, b) => g.lineStyle(4, 0x5A3A1E, 0.9).lineBetween(a.x, a.y, b.x, b.y); if (!isF(x, y - 1)) edge(T0, R0); if (!isF(x + 1, y)) edge(R0, B0); if (!isF(x, y + 1)) edge(B0, L0); if (!isF(x - 1, y)) edge(L0, T0);
+  // 밭: 땅 높이에 평평하게 · 칸마다 살짝 도드라진 네모 밭 (이웃 밭과는 흙 골로 나뉨)
+  drawSoil(o) { const x = o.x, y = o.y, P = (a, b) => { const [px, py] = iso(a, b); return { x: px, y: py }; }, g = this.add.graphics(), e = 0.07, th = 6;
+    const T0 = P(x, y), R0 = P(x + 1, y), B0 = P(x + 1, y + 1), L0 = P(x, y + 1);
+    g.fillStyle(0x6A4022, 0.55).fillPoints([T0, R0, B0, L0], true);   // 골 (칸 사이 흙길)
+    const t = P(x + e, y + e), r = P(x + 1 - e, y + e), b = P(x + 1 - e, y + 1 - e), l = P(x + e, y + 1 - e), up = v => ({ x: v.x, y: v.y - th });
+    g.fillStyle(0x4E2E18, 1).fillPoints([l, b, up(b), up(l)], true).fillStyle(0x3F2412, 1).fillPoints([b, r, up(r), up(b)], true);   // 도드라진 옆면
+    const T1 = up(t), R1 = up(r), B1 = up(b), L1 = up(l), lerp = (a, c, k) => ({ x: a.x + (c.x - a.x) * k, y: a.y + (c.y - a.y) * k });
+    g.fillStyle(0x7E4D2B, 1).fillPoints([T1, R1, B1, L1], true);
+    for (let k = 1; k < 5; k++) { const q = k / 5, a = lerp(T1, L1, q), c = lerp(R1, B1, q); g.lineStyle(6, 0x5F3820, 0.85).lineBetween(a.x, a.y, c.x, c.y); g.lineStyle(2, 0x9C6842, 0.7).lineBetween(a.x, a.y - 4, c.x, c.y - 4); }
+    g.lineStyle(3, 0xA87650, 0.8).strokePoints([T1, R1, B1, L1], true);
     g.dk = -0.5; this.layer.add(g); }
   // 도로: 이웃 도로와 이어지게 직접 그림 (끊긴 쪽에만 연석 · 곧은 길엔 가운데 점선)
   drawRoad(c, o) { const x = o.x, y = o.y, isR = (a, b) => { const q = objAt(a, b); return q && q.b === 'road'; }, nx = [isR(x - 1, y), isR(x + 1, y)], ny = [isR(x, y - 1), isR(x, y + 1)];
@@ -153,17 +156,23 @@ export class TownScene extends Phaser.Scene {
   }
   // ── 입력: 끌면 화면 이동 · 두 손가락 확대 · 짧게 누르면 선택
   down(p) { if (this.hud && this.hud.blocking(p)) { this.press = null; return; } this.press = { x: p.x, y: p.y, sx: this.cameras.main.scrollX, sy: this.cameras.main.scrollY, moved: false, t: Date.now() }; this.pinch = null;
-    if (this.plantK) { const f = this.fieldAt(p); if (f && !f.crop) { this.press.plant = true; this.hud.plantOne(f, this.plantK); } } }
+    if (this.plantK) { const f = this.fieldAt(p); if (f && !f.crop) { this.press.plant = true; this.hud.plantOne(f, this.plantK); } }
+    // 꾹 누르기 (0.5초) → 옮기기 · 돌리기 (타운십처럼 · 창에는 옮기기 버튼을 두지 않음)
+    if (!this.mode && !this.press.plant) { const pr = this.press, w = this.cameras.main.getWorldPoint(p.x, p.y), hit = this.hitAt(w.x, w.y);
+      if (hit) { this.lpT?.remove(); const ring = this.add.circle(w.x, w.y, 10, 0xFFFFFF, 0.5).setStrokeStyle(6, 0xFFE27A).setDepth(950); this.tweens.add({ targets: ring, radius: 60, duration: 500 }); pr.ring = ring;
+        this.lpT = this.time.delayedCall(520, () => { ring.destroy(); if (this.press !== pr || pr.moved || this.mode) return; pr.long = true; audio.play('sfx_tap', { volume: 0.7 }); navigator.vibrate?.(25); this.select(null); this.hud.startMove(hit); }); } } }
   fieldAt(p) { const w = this.cameras.main.getWorldPoint(p.x, p.y), [gx, gy] = grid(w.x, w.y), o = objAt(gx, gy); return o && o.b === 'field' ? o : null; }
   move(p) {
     const a = this.input.pointer1, b = this.input.pointer2;
     if (a.isDown && b.isDown) { const dd = Math.hypot(a.x - b.x, a.y - b.y); if (!this.pinch) this.pinch = { d: dd, z: this.cameras.main.zoom }; else this.zoom(this.pinch.z * dd / this.pinch.d); if (this.press) this.press.moved = true; return; }
     const pr = this.press; if (!pr || !p.isDown) return; if (pr.plant && this.plantK) { const f = this.fieldAt(p); if (f && !f.crop) this.hud.plantOne(f, this.plantK); pr.moved = true; return; }   // 심기 모드: 문지르면 지나간 빈 밭마다 심음
-    const dx = p.x - pr.x, dy = p.y - pr.y; if (Math.hypot(dx, dy) > 14) pr.moved = true; if (!pr.moved) return;
+    const dx = p.x - pr.x, dy = p.y - pr.y; if (Math.hypot(dx, dy) > 14) { pr.moved = true; if (pr.ring && pr.ring.active && !pr.long) pr.ring.destroy(); } if (!pr.moved) return;
     if (this.mode) { const w = this.cameras.main.getWorldPoint(p.x, p.y), [gx, gy] = grid(w.x, w.y); this.moveGhost(gx - Math.floor(this.ghost.sz / 2), gy - Math.floor(this.ghost.sz / 2)); return; }
     const z = this.cameras.main.zoom; this.cameras.main.setScroll(pr.sx - dx / z, pr.sy - dy / z);
   }
-  up(p) { const pr = this.press; this.press = null; this.dragGhost = false; if (!pr || pr.moved || pr.plant) return; const w = this.cameras.main.getWorldPoint(p.x, p.y); this.tap(w.x, w.y); }
+  up(p) { const pr = this.press; this.press = null; this.dragGhost = false; if (pr && pr.ring && pr.ring.active) pr.ring.destroy(); if (!pr || pr.moved || pr.plant || pr.long) return; const w = this.cameras.main.getWorldPoint(p.x, p.y); this.tap(w.x, w.y); }
+  // 누른 자리의 물건 (건물 지붕이 뒤 칸을 덮으므로 앞쪽 2칸 건물을 먼저)
+  hitAt(wx, wy) { const [gx, gy] = grid(wx, wy); let hit = null; for (let k = 2; k >= 1 && !hit; k--) { const o = objAt(gx + k, gy + k); if (o && o.b !== 'field') hit = o; } return hit || objAt(gx, gy); }
   tap(wx, wy) {
     if (this.mode) { const [gx, gy] = grid(wx, wy); this.moveGhost(gx - Math.floor(this.ghost.sz / 2), gy - Math.floor(this.ghost.sz / 2)); return; }
     if (this.plantK) { const [gx, gy] = grid(wx, wy), f0 = objAt(gx, gy), f = f0 && f0.b === 'field' ? f0 : null; if (f && !f.crop) return this.hud.plantOne(f, this.plantK); this.hud.endPlant(); }

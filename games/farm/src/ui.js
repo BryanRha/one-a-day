@@ -1,13 +1,17 @@
 // K뷰티 레시피 UI: 크림 패널 · 장미색 버튼 · 금빛 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.44.4';
-import { audio } from './audio.js?v=0.44.4';
-import { pushBack } from './oad.js?v=0.44.4';
-import { load as loadSave, save as saveSave } from './save.js?v=0.44.4';
+import { W, H } from './config.js?v=0.45.0';
+import { audio } from './audio.js?v=0.45.0';
+import { pushBack } from './oad.js?v=0.45.0';
+import { load as loadSave, save as saveSave } from './save.js?v=0.45.0';
 
 export const C = { ink: '#4A2C2A', text: '#FFFFFF', cream: '#FFF4EC', paper: '#FFFBF6', brown: '#8A5A44', sub: '#C99A86', dim: '#A08878', gold: '#E8A93A', rose: '#E86A8E', plum: '#5A3A34', red: '#D9573B', green: '#5FA65A', blue: '#4E86C6', mint: '#7CC6A8' };
 export const FONT = 'Pretendard, sans-serif';
 
+// 글자 속 재화 기호는 기본 화면과 같은 그림 아이콘으로 (🪙 코인 · 💎 보석 · ⭐ 경험치 · 🧰 재료 · 🧱 자재)
+export const CUR = { '🪙': 'coin', '💎': 'gem', '⭐': 'xp', '🧰': 'tools', '🔨': 'tools', '🧱': 'brick' };
+const CUR_RE = /(🪙|💎|⭐|🧰|🔨|🧱)/u;
 export function T(sc, x, y, s, size = 40, color = C.text, o = {}) {
+  if (typeof s === 'string' && CUR_RE.test(s) && sc.textures.exists('coin')) return richT(sc, x, y, s, size, color, o);
   const t = sc.add.text(x, y, s, { fontFamily: FONT, fontStyle: String(o.w || 800), fontSize: `${size}px`, color, align: o.align || 'center', wordWrap: o.wrap ? { width: o.wrap, useAdvancedWrap: true } : undefined, lineSpacing: o.lh ?? 8, resolution: 2 }).setOrigin(o.ox ?? 0.5, o.oy ?? 0.5);
   if (o.ls) t.setLetterSpacing(o.ls);
   if (o.shadow) t.setShadow(0, 3, 'rgba(0,0,0,0.45)', 8, false, true);
@@ -80,6 +84,10 @@ export function popup(sc, w, h, o = {}) {
   sc.events.once('shutdown', () => unback());   // 화면이 바뀌면 뒤로가기 목록에서도 빠짐 (남아 있으면 다음 뒤로가기가 먹힘)
   if (o.closable !== false && o.dimClose !== false) dim.on('pointerup', p => { if (Math.hypot(p.upX - p.downX, p.upY - p.downY) < 24) close(); });   // 끌다가 뗀 건 닫지 않음
   const unback = pushBack(() => { if (root.closing || !root.scene) return false; if (o.onBack) { o.onBack(); return true; } if (o.closable === false) return true; close(); return true; });
+  // 재화를 쓰는 창: 왼쪽 위에 가진 재화 (o.wallet = () => '💎 12  🪙 300')
+  if (o.wallet) { const wt = T(sc, 0, 0, o.wallet(), 28, '#3E2A14', { ox: 1, w: 900 }), ww = (wt.width || 160) + 40, wx = w / 2 - 20, wy = -h / 2 - 42, wg = sc.add.graphics(); wg.fillStyle(0xFFF1C9, 1).fillRoundedRect(wx - ww, wy - 28, ww, 56, 28).lineStyle(3, 0xE8C27A, 1).strokeRoundedRect(wx - ww, wy - 28, ww, 56, 28); wt.setPosition(wx - 20, wy); box.add([wg, wt]); }   // 창 위쪽 바깥 오른쪽 · 제목과 겹치지 않게
+  // 모든 창 공통: 오른쪽 위 ✕ 닫기
+  if (o.closable !== false && !o.noX) { const x = btn(sc, w / 2 - 58, -h / 2 + 58, 84, 84, '✕', () => close(), { size: 34, style: 'cream' }); box.add(x); }
   const kill = () => { if (root.closing) return; root.closing = true; unback(); root.destroy(); };   // 곧바로 없앰 (다시 그리기용)
   return { root, box, content, close, kill };
 }
@@ -105,3 +113,22 @@ export function firstTip(sc, key, title, lines, img) {
 
 // 빨간 점 (버튼 오른쪽 위에 · 살짝 콩콩)
 export function redDot(sc, x, y, r = 16) { const d = sc.add.circle(x, y, r, 0xE8352E).setStrokeStyle(4, 0xFFFFFF); sc.tweens.add({ targets: d, scale: 1.18, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); return d; }
+
+// 아이콘이 섞인 글자 (T 와 같은 쓰임새: setText · setStroke · setColor · setOrigin · text)
+function richT(sc, x, y, str, size, color, o) {
+  const c = sc.add.container(x, y), st = { str, color, stroke: null, ox: o.ox ?? 0.5, oy: o.oy ?? 0.5, shadow: o.shadow };
+  const mk = s => { const t = sc.add.text(0, 0, s, { fontFamily: FONT, fontStyle: String(o.w || 800), fontSize: `${size}px`, color: st.color, resolution: 2 }).setOrigin(0, 0.5); if (st.stroke) t.setStroke(st.stroke[0], st.stroke[1]); if (st.shadow) t.setShadow(0, 3, 'rgba(0,0,0,0.45)', 8, false, true); return t; };
+  const build = () => { c.removeAll(true); const lh = size * 1.25 + (o.lh ?? 8), isz = size * 1.12, lines = [[]], width = o.wrap || 1e9; let lw = 0;
+    const put = (obj, w) => { if (lw + w > width && lines[lines.length - 1].length) { lines.push([]); lw = 0; } lines[lines.length - 1].push([obj, w]); lw += w; };
+    for (const ln of String(st.str).split('\n')) { if (lines[lines.length - 1].length) { lines.push([]); lw = 0; }
+      for (const part of ln.split(CUR_RE)) { if (!part) continue; if (CUR[part]) { const im = sc.add.image(0, 0, CUR[part]); im.setScale(isz / Math.max(im.width, im.height)); put(im, isz + 2); continue; }
+        const words = o.wrap ? part.split(/(\s+)/) : [part]; for (const wd of words) { if (!wd) continue; const t = mk(wd); put(t, t.width); } } }
+    const ws = lines.map(l => l.reduce((a, [, w]) => a + w, 0)), W = Math.max(1, ...ws), Ht = lines.length * lh;
+    lines.forEach((l, i) => { const al = o.align || 'center', off = al === 'left' ? 0 : al === 'right' ? W - ws[i] : (W - ws[i]) / 2; let xx = off - W * st.ox; const yy = i * lh + lh / 2 - Ht * st.oy;
+      for (const [obj, w] of l) { obj.setPosition(obj.type === 'Image' ? xx + w / 2 : xx, yy); c.add(obj); xx += w; } });
+    c.width = W; c.height = Ht; };
+  build();
+  c.setText = v => { st.str = v; build(); return c; }; c.setStroke = (col, w) => { st.stroke = [col, w]; build(); return c; }; c.setColor = col => { st.color = col; build(); return c; };
+  c.setOrigin = (ox, oy = ox) => { st.ox = ox; st.oy = oy; build(); return c; }; c.setShadow = () => { st.shadow = true; build(); return c; }; c.setLetterSpacing = () => c;
+  Object.defineProperty(c, 'text', { get: () => st.str }); return c;
+}

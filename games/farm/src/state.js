@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.44.4';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.44.4';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.45.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.45.0';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -23,6 +23,8 @@ export function load() {
   for (const k of Object.keys(f)) if (d[k] === undefined) d[k] = f[k];
   // v0.6: 지도 20×20(구역 4×4) → 30×30(6×6) · 예전 마을을 가운데로 한 구역씩 옮김
   if (oldMap) { d.map6 = true; d.zones = d.zones.map(z => (Math.floor(z / 4) + 1) * 6 + z % 4 + 1); for (const o of d.objs) { o.x += 5; o.y += 5; } if (d.dig && d.dig.spot) d.dig.spot = null; }
+  // v0.9: 공사 중이던 집은 바로 완성 (집은 공사장이 필요 없게 바뀜)
+  for (const o of d.objs) if (o.site && BUILDS[o.b] && BUILDS[o.b].k === 'house') o.site = null;
   // v0.5: 공구(하나로 묶인 재화) → 건축 재료 6종으로 나눠 줌
   if (d.tools > 0) { const n = d.tools; d.tools = 0; giveMats(n); }
   return d;
@@ -62,7 +64,7 @@ export const popNow = () => load().objs.reduce((s, o) => s + (o.site ? 0 : BUILD
 export const popCap = () => BASE_CAP + load().objs.reduce((s, o) => s + (o.site ? 0 : BUILDS[o.b].cap || 0), 0);
 export const pop = () => Math.min(popNow(), popCap());
 export const countOf = b => load().objs.filter(o => o.b === b && !o.site).length;   // 공사 중인 건물은 빼고
-export function canBuild(b) { const B = BUILDS[b], s = load(); if (s.lv < B.lv) return `레벨 ${B.lv}에 열려요`; if (B.k === 'deco') return s.coins < costOf(b) ? `코인 ${costOf(b)} 필요` : null; if (B.pop && pop() < B.pop) return `인구 ${B.pop}명이 필요해요`; if (B.k === 'field' && countOf('field') >= B.max(s.lv)) return `밭은 레벨 ${s.lv}에서 ${B.max(s.lv)}칸까지`; if (B.k !== 'field' && B.k !== 'house' && B.k !== 'public' && B.k !== 'deco' && load().objs.some(o => o.b === b)) return '이미 있어요'; if (s.coins < costOf(b)) return `코인 ${costOf(b)} 필요`; return null; }
+export function canBuild(b) { const B = BUILDS[b], s = load(); if (s.lv < B.lv) return `레벨 ${B.lv}에 열려요`; if (B.k === 'deco') return s.coins < costOf(b) ? `코인 ${costOf(b)} 필요` : null; if (B.pop && pop() < B.pop) return popNow() > popCap() ? `인구 ${B.pop}명 필요 · 인구 상한(${popCap()})에 막혔어요 · 공공건물을 지어요` : `인구 ${B.pop}명 필요 (지금 ${pop()}명) · 집을 더 지어요`; if (B.k === 'field' && countOf('field') >= B.max(s.lv)) return `밭은 레벨 ${s.lv}에서 ${B.max(s.lv)}칸까지`; if (B.k !== 'field' && B.k !== 'house' && B.k !== 'public' && B.k !== 'deco' && load().objs.some(o => o.b === b)) return '이미 있어요'; if (s.coins < costOf(b)) return `코인 ${costOf(b)} 필요`; return null; }
 // 한스와 결혼하면 건설비 10% 할인
 export const costOf = b => Math.round(BUILDS[b].cost * (load().spouse === 'hans' ? 0.9 : 1));
 

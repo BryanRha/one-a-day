@@ -552,9 +552,9 @@ export const VOYAGES = [
   { n: '비단 왕국', t: 3600, lv: 24, need: 5, loot: ['silk', 'pearl', 'map'] },
 ];
 
-// ── 공사장 (타운십): 레벨 5 이상의 집·공공건물은 벽돌·유리·석판을 채워야 완성 · 자재는 기차·비행기·섬·주문에서
+// ── 공사장 (타운십): 레벨 5 이상의 공공건물은 벽돌·유리·석판을 채워야 완성 · 자재는 기차·비행기·섬·주문에서
 export const BMATS = ['brick', 'glass', 'slab'];
-export const siteNeed = b => { const B = BUILDS[b]; if (!['house', 'public'].includes(B.k) || B.lv < 5) return null; const n = 1 + Math.floor(B.lv / 12); return Object.fromEntries(BMATS.map(k => [k, n])); };
+export const siteNeed = b => { const B = BUILDS[b]; /* 타운십처럼 공사장은 공공건물만 · 집은 코인으로 바로 */ if (B.k !== 'public' || B.lv < 5) return null; const n = 1 + Math.floor(B.lv / 12); return Object.fromEntries(BMATS.map(k => [k, n])); };
 // ── 박물관: 광산·섬에서 유물 → 세트 4개 × 4점
 export const RELICS = [
   { n: '배추왕국 왕실 보물', s: ['art_crown', 'art_seal', 'art_coin', 'art_scepter'], r: { gems: 20, coins: 2000 } },

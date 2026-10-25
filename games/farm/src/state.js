@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.44.2';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.44.2';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.44.3';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.44.3';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -83,6 +83,8 @@ export function queueJob(o, it) { const R = RECIPES[it], B = BUILDS[o.b]; tickFa
 // ── 동물 우리: 3칸 동시
 export function tickAnimal(o) { o.s = o.s || [0, 0, 0]; o.ready = o.ready || 0; let ch = false; o.s.forEach((e, i) => { if (e && e <= now()) { o.s[i] = 0; o.ready++; ch = true; } }); return ch; }
 export const productOf = b => Object.keys(RECIPES).find(k => RECIPES[k].b === b);
+// 한 마리씩 먹이 주기 (타운십처럼)
+export function feedOne(o, i) { tickAnimal(o); const it = productOf(o.b), R = RECIPES[it]; if (o.s[i]) return '아직 먹는 중이에요'; if (o.ready + o.s.filter(Boolean).length >= 3) return '다 된 것부터 거둬요'; if (!take(R.in)) return `${iga(ITEMS[Object.keys(R.in)[0]].n)} 없어요 · 사료 공장에서 만들어요`; o.s[i] = now() + R.t * 1000 * (1 - 0.05 * rl('anim')); return null; }
 export function feedAll(o) { tickAnimal(o); const it = productOf(o.b), R = RECIPES[it]; let n = 0; o.s.forEach((e, i) => { if (!e && o.ready + o.s.filter(Boolean).length < 3 && take(R.in)) { o.s[i] = now() + R.t * 1000 * (1 - 0.05 * rl('anim')); n++; } }); return n; }
 
 // ── 주문 게시판 (타운십의 헬리콥터 주문): 6장 · 완료 후 60초 뒤 새 주문
@@ -201,3 +203,6 @@ export function labStart(k) { const L = lab(), s = load(), lv = (L.lv[k] || 0) +
 export function labSpeed() { const L = lab(), s = load(); if (!L.cur) return null; const c = speedCost((L.cur.end - now()) / 1000); if (s.gems < c) return '보석이 모자라요'; s.gems -= c; L.cur.end = now(); lab(); return null; }
 // 수확 덤 (풍년의 비결)
 export const bonusCrop = () => Math.random() < 0.05 * rl('harvest');
+
+// 받침에 맞는 조사 (사료가 · 우유가 · 당근이)
+export const iga = w => { const c = w.charCodeAt(w.length - 1) - 0xAC00; return w + (c >= 0 && c < 11172 && c % 28 ? '이' : '가'); };

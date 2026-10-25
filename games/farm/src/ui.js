@@ -1,8 +1,8 @@
 // K뷰티 레시피 UI: 크림 패널 · 장미색 버튼 · 금빛 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.44.2';
-import { audio } from './audio.js?v=0.44.2';
-import { pushBack } from './oad.js?v=0.44.2';
-import { load as loadSave, save as saveSave } from './save.js?v=0.44.2';
+import { W, H } from './config.js?v=0.44.3';
+import { audio } from './audio.js?v=0.44.3';
+import { pushBack } from './oad.js?v=0.44.3';
+import { load as loadSave, save as saveSave } from './save.js?v=0.44.3';
 
 export const C = { ink: '#4A2C2A', text: '#FFFFFF', cream: '#FFF4EC', paper: '#FFFBF6', brown: '#8A5A44', sub: '#C99A86', dim: '#A08878', gold: '#E8A93A', rose: '#E86A8E', plum: '#5A3A34', red: '#D9573B', green: '#5FA65A', blue: '#4E86C6', mint: '#7CC6A8' };
 export const FONT = 'Pretendard, sans-serif';
@@ -75,12 +75,13 @@ export function popup(sc, w, h, o = {}) {
   const cam = sc.cameras.main, root = sc.add.container(cam.scrollX, cam.scrollY).setDepth(o.depth || 1000), dim = sc.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.6).setInteractive(); root.add(dim);
   const box = sc.add.container(W / 2, o.y || H / 2); root.add(box); box.add(panel(sc, 0, 0, w, h, { tone: o.tone }));
   const content = sc.add.container(0, 0); box.add(content);
-  box.setScale(0.9).setAlpha(0); sc.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Back.easeOut' });
+  if (!(o.instant || sc._instant)) { box.setScale(0.9).setAlpha(0); sc.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Back.easeOut' }); }   // 내용만 바꿔 다시 열 때는 애니메이션 없이 (깜빡임 방지)
   const close = () => { if (root.closing) return; root.closing = true; unback(); sc.tweens.add({ targets: root, alpha: 0, duration: 140, onComplete: () => { root.destroy(); o.onClose && o.onClose(); } }); };
   sc.events.once('shutdown', () => unback());   // 화면이 바뀌면 뒤로가기 목록에서도 빠짐 (남아 있으면 다음 뒤로가기가 먹힘)
   if (o.closable !== false && o.dimClose !== false) dim.on('pointerup', p => { if (Math.hypot(p.upX - p.downX, p.upY - p.downY) < 24) close(); });   // 끌다가 뗀 건 닫지 않음
   const unback = pushBack(() => { if (root.closing || !root.scene) return false; if (o.onBack) { o.onBack(); return true; } if (o.closable === false) return true; close(); return true; });
-  return { root, box, content, close };
+  const kill = () => { if (root.closing) return; root.closing = true; unback(); root.destroy(); };   // 곧바로 없앰 (다시 그리기용)
+  return { root, box, content, close, kill };
 }
 export function toast(sc, msg, y = H * 0.42) {
   y += sc.cameras.main.scrollY; const c = sc.add.container(W / 2, y).setDepth(2000), t = T(sc, 0, 0, msg, 34, C.text, { w: 800 }), bg = sc.add.rectangle(0, 0, t.width + 70, 84, 0x2E1A2A, 0.92).setStrokeStyle(2, 0xFF9DB6, 0.6);

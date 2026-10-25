@@ -1,9 +1,9 @@
 // 로딩: 재료 · 생산기 · 인물 · 매장 · 배경 · 효과음
-import { W, H, TITLE } from '../config.js?v=0.44.2';
-import { SFX, BGM, audio } from '../audio.js?v=0.44.2';
-import { makeTextures } from '../ui.js?v=0.44.2';
-import { CHAINS, MAX_LV, ALL_SPOTS } from '../data.js?v=0.44.2';
-import { ALL_CARDS } from '../album.js?v=0.44.2';
+import { W, H, TITLE } from '../config.js?v=0.44.3';
+import { SFX, BGM, audio } from '../audio.js?v=0.44.3';
+import { makeTextures } from '../ui.js?v=0.44.3';
+import { CHAINS, MAX_LV, ALL_SPOTS } from '../data.js?v=0.44.3';
+import { ALL_CARDS } from '../album.js?v=0.44.3';
 
 const ITEMS = ['gen_dew', 'gen_gift', 'box', 'bubble', 'coin', 'gem', 'energy', 'en1', 'en2', 'en3', 'co1', 'co2', 'co3', 'ge1', 'ge2', 'ge3', 'scissors', 'ribbon', 'hourglass', 'pickbox', 'chest', 'cardpack', 'pack_basic', 'pack_gold', 'pack_diamond', 'joker', 'piggy', 'vault', 'calendar', 'album', 'ev_race', 'ev_ladder', 'ev_vip', 'petal', 'medal1', 'medal2', 'medal3', 'vip_ticket', 'deco_tree', 'deco_booth', 'deco_garland', 'bingo_ball', 'roulette', 'shovel', 'dirt', 'key1', 'key2', 'key3', 'duo', ...['summer', 'autumn', 'winter'].flatMap(t => [`deco_${t}_tree`, `deco_${t}_booth`, `deco_${t}_garland`, `ev_ladder_${t}`, `petal_${t}`])];
 for (const g of Object.keys(CHAINS)) for (let l = 1; l <= 5; l++) ITEMS.push(`gen_${g}${l}`);

@@ -1,5 +1,5 @@
 // 이용 규칙 + 저장. BM 이 정해지면 RULES 값만 바꾸면 되도록 분리해 둠.
-import { LAUNCH, GAMES, ORDER } from './catalog.js?v=0.44.2';
+import { LAUNCH, GAMES, ORDER } from './catalog.js?v=0.44.3';
 
 export const RULES = {
   openAll: true,            // 테스트 기간: 모든 게임 자유 플레이 (BM 확정 후 false 로 바꾸면 하루 한 게임 규칙 적용)

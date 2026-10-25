@@ -1,19 +1,19 @@
-import { iso } from './Town.js?v=0.48.0';
+import { iso } from './Town.js?v=0.48.1';
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.48.0';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.48.0';
-import { audio } from '../audio.js?v=0.48.0';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.48.0';
-import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.48.0';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.48.0';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.48.0';
-import { taskCheck, coopBadge } from '../coop.js?v=0.48.0';
-import { spStart, SP } from '../sparrow.js?v=0.48.0';
-import { miniDone } from '../state.js?v=0.48.0';
-import { HEARTS, HEART_PTS } from '../data.js?v=0.48.0';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.48.0';
-import { FUP, TRAINS } from '../data.js?v=0.48.0';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.48.0';
+import { W, H } from '../config.js?v=0.48.1';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.48.1';
+import { audio } from '../audio.js?v=0.48.1';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.48.1';
+import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.48.1';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.48.1';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.48.1';
+import { taskCheck, coopBadge } from '../coop.js?v=0.48.1';
+import { spStart, SP } from '../sparrow.js?v=0.48.1';
+import { miniDone } from '../state.js?v=0.48.1';
+import { HEARTS, HEART_PTS } from '../data.js?v=0.48.1';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.48.1';
+import { FUP, TRAINS } from '../data.js?v=0.48.1';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.48.1';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -42,7 +42,7 @@ export class HudScene extends Phaser.Scene {
     { const l = login(); if (this.d.quest >= 3 && !l.got && l.shown !== l.last) { l.shown = l.last; save(); this.time.delayedCall(1400, () => this.go('Events', { tab: 'login' })); } }   // 하루 첫 방문에만 출석 화면
   }
   zone(x, y, w, h, fn) { this.zones.push({ x, y, w, h }); if (fn) this.add.zone(x + w / 2, y + h / 2, w, h).setInteractive().on('pointerup', fn); }
-  blocking(p) { if (this.spUi) return p.y < 330 || (p.y > H - 200 && p.x > W - 300); if (this.children.list.some(o => o.depth >= 1000)) return true; return this.zones.some(z => p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h); }
+  blocking(p) { if (this.spUi) return p.y < 250 || p.y > H - 190 || (p.y > H - 460 && p.y < H - 360 && p.x > W - 220); if (this.children.list.some(o => o.depth >= 1000)) return true; return this.zones.some(z => p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h); }
   side(x, y, ic, n, fn) { const c = this.add.container(x, y), g = this.add.graphics(); g.fillStyle(0xFFF6E0, 1).fillCircle(0, 0, 60).lineStyle(5, 0x8A5A2B, 1).strokeCircle(0, 0, 60); c.add(g); c.add(ic.length <= 2 ? T(this, 0, -4, ic, 52, '#000', { w: 900 }) : icon(this, 0, -4, ic, 92));
     const lg = this.add.graphics(); lg.fillStyle(0x8A5A2B, 1).fillRoundedRect(-54, 44, 108, 38, 19); c.add([lg, T(this, 0, 63, n, 22, '#FFFFFF', { w: 900 })]); c.badge = T(this, 44, -46, '', 24, '#FFFFFF', { w: 900 }); c.bg = this.add.circle(44, -46, 20, 0xE8352E).setVisible(false); c.add([c.bg, c.badge]);
     c.setSize(130, 150).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (this.town.mode) return; audio.play('sfx_tap', { volume: 0.6 }); fn(); }); this.zone(x - 65, y - 75, 130, 160); return c; }
@@ -178,12 +178,17 @@ export class HudScene extends Phaser.Scene {
   }
   // ── 샘의 참새 쫓기 화면 (마을 위)
   spBegin() { const e = spStart(this.town); if (e) return toast(this, e, H / 2); audio.play('sfx_tap'); this.spUi = this.add.container(0, 0).setDepth(600); for (const b of [...this.sideBtns]) b.setVisible(false); this.qBanner.setVisible(false); this.spHideBottom(true);
-    const g = this.add.graphics(); g.fillStyle(0x3E2A14, 0.9).fillRoundedRect(W / 2 - 300, 150, 600, 90, 45); this.spUi.add(g); this.spTime = T(this, W / 2 - 150, 195, '', 36, '#FFFFFF', { w: 900 }); this.spScore = T(this, W / 2 + 140, 195, '', 36, '#FFE27A', { w: 900 }); this.spUi.add([this.spTime, this.spScore, icon(this, W / 2 + 40, 195, 'sparrow', 56)]);
-    const sam = this.add.image(120, H - 150, 'sam'); sam.setScale(230 / sam.height); const bg = this.add.graphics(); bg.fillStyle(0xFFFBF2, 0.96).fillRoundedRect(220, H - 270, 560, 100, 30); const tip = T(this, 500, H - 220, '참새를 눌러서 쫓아요!\n여러 마리는 문질러서 한꺼번에!', 24, C.ink, { w: 900 });
-    this.spUi.add([bg, tip, sam]); this.spTip = tip; this.time.delayedCall(4000, () => tip.active && tip.setText('허수아비 근처 밭엔 참새가 못 와요'));
-    this.spUi.add(btn(this, W - 140, H - 120, 200, 90, '그만', () => { this.town.sp.end = 0; }, { size: 28, style: 'cream' })); }
+    // 위: 남은 시간 · 쫓은 참새 (시안처럼 알약 두 개)
+    const pill = (x, w) => { const g = this.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(x - w / 2, 152, w, 84, 42).lineStyle(4, 0xE8C27A, 1).strokeRoundedRect(x - w / 2, 152, w, 84, 42); this.spUi.add(g); };
+    pill(W / 2 - 150, 250); pill(W / 2 + 150, 250); this.spTime = T(this, W / 2 - 130, 194, '', 38, '#FFFFFF', { w: 900 }); this.spScore = T(this, W / 2 + 175, 194, '', 38, '#FFE27A', { w: 900 }); this.spUi.add([this.spTime, this.spScore, T(this, W / 2 - 225, 194, '⏱', 34, '#FFFFFF', { w: 900 }), icon(this, W / 2 + 90, 194, 'sparrow', 62)]);
+    // 아래: 샘 + 말풍선 · 지킨 밭 막대 (나무판)
+    const pb = this.add.graphics(); pb.fillStyle(0x5A3A1E, 0.95).fillRoundedRect(200, H - 170, W - 230, 140, 30).lineStyle(5, 0xC9A27A, 1).strokeRoundedRect(200, H - 170, W - 230, 140, 30); this.spUi.add(pb);
+    this.spUi.add(T(this, 250, H - 140, '지킨 밭', 24, '#FFE27A', { ox: 0, w: 900 })); this.spBar = this.add.graphics(); this.spUi.add(this.spBar);
+    const bg = this.add.graphics(); bg.fillStyle(0xFFFBF2, 0.97).fillRoundedRect(220, H - 330, 600, 120, 34).fillTriangle(250, H - 214, 290, H - 214, 238, H - 186); const tip = T(this, 520, H - 270, '참새를 눌러서 쫓아요!\n여러 마리는 문질러서 한꺼번에!', 26, C.ink, { w: 900 });
+    const sam = this.add.image(110, H - 150, 'sam'); sam.setScale(290 / sam.height); this.spUi.add([bg, tip, sam]); this.time.delayedCall(4500, () => tip.active && tip.setText('허수아비 초록 원 안의 밭은\n참새가 못 와요!'));
+    this.spUi.add(btn(this, W - 120, H - 410, 170, 76, '그만', () => { this.town.sp.end = 0; }, { size: 26, style: 'cream' })); }
   spHideBottom(h) { for (const o of this.children.list) if (o.type === 'Container' && o.y > H - 200 && o !== this.spUi && o.input) o.setVisible(!h); this.barnBar.setVisible(!h); this.barnBarT.setVisible(!h); }
-  spUpdate(s) { if (!this.spTime) return; const left = Math.max(0, Math.ceil((s.end - Date.now()) / 1000)); this.spTime.setText(`⏱ 0:${String(Math.min(SP.secs, left)).padStart(2, '0')}`).setColor(left <= 5 ? '#FF8A7A' : '#FFFFFF'); this.spScore.setText(`${s.chased}`); }
+  spUpdate(s) { if (!this.spTime) return; { const n = s.all.length, w = (W - 330) / n; this.spBar.clear(); s.all.forEach((f, i) => { const lost = s.lost.has(f.id), x = 250 + i * w; this.spBar.fillStyle(lost ? 0xE8634A : 0x7FD35A, 1).fillRoundedRect(x, H - 108, w - 8, 44, 12).lineStyle(3, 0x3E2A14, 0.6).strokeRoundedRect(x, H - 108, w - 8, 44, 12); }); } const left = Math.max(0, Math.ceil((s.end - Date.now()) / 1000)); this.spTime.setText(`⏱ 0:${String(Math.min(SP.secs, left)).padStart(2, '0')}`).setColor(left <= 5 ? '#FF8A7A' : '#FFFFFF'); this.spScore.setText(`${s.chased}`); }
   spResult(r) { this.spUi.destroy(); this.spUi = null; this.spTime = null; for (const b of this.sideBtns) b.setVisible(true); this.qBanner.setVisible(true); this.spHideBottom(false);
     const score = r.chased, { r: rw, ups } = miniDone(Math.min(20, score)), s = this.d; let love = 0; if (!s.spouse) { love = Math.min(40, 6 + score * 2); s.love.sam = Math.min(HEARTS * HEART_PTS, s.love.sam + love); } save(); this.refresh();
     const p = popup(this, 900, 900, { size: 'M' }), star = r.lost === 0 ? 3 : r.lost <= 2 ? 2 : 1; audio.play(star === 3 ? 'sfx_levelup' : 'sfx_coin', { volume: 0.8 });

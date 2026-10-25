@@ -1,16 +1,19 @@
+import { BASE } from '../base.js?v=0.49.2';
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.49.1';
-import { T, C } from '../ui.js?v=0.49.1';
-import { audio } from '../audio.js?v=0.49.1';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.49.1';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.49.1';
+import { W, H } from '../config.js?v=0.49.2';
+import { T, C } from '../ui.js?v=0.49.2';
+import { audio } from '../audio.js?v=0.49.2';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.49.2';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.49.2';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
 export const grid = (x, y) => { const a = (x - OX) / (TW / 2), b = (y - OY) / (TH / 2); return [Math.floor((a + b) / 2), Math.floor((b - a) / 2)]; };
 const WORLD_W = MAP * TW + 1000, WORLD_H = MAP * TH + 620;
 // 땅·건물 그림은 아래 꼭짓점에 맞춤 (그림 밑의 두께만큼 올림)
-function place(img, gx, gy, sz, k = 0.1) { const [x, y] = iso(gx + sz, gy + sz); img.setOrigin(0.5, 1 - k * img.width / img.height); img.setScale(sz * TW * 1.04 / img.width); img.setPosition(x, y); return img; }
+function place(img, gx, gy, sz, k = 0.1) { const m = BASE[img.texture.key.replace(/_b$/, '')];
+  if (m) { const [x, y] = iso(gx + sz, gy + sz); img.setOrigin(m[0], m[1]); img.setScale(sz * TW * 1.0 / (m[2] * img.width)); img.setPosition(x, y); return img; }   // 받침 아래 꼭짓점을 칸의 아래 꼭짓점에 · 받침 너비를 칸 너비에 (평평하게)
+  const [x, y] = iso(gx + sz, gy + sz); img.setOrigin(0.5, 1 - k * img.width / img.height); img.setScale(sz * TW * 1.04 / img.width); img.setPosition(x, y); return img; }
 
 export class TownScene extends Phaser.Scene {
   constructor() { super('Town'); }

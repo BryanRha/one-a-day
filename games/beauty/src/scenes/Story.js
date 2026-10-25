@@ -1,8 +1,8 @@
 // 이야기: 배경 · 인물 상반신 · 이름표 말풍선 · 한 글자씩 · 건너뛰기 (원작처럼 건너뛸 수 있음)
-import { W, H } from '../config.js?v=0.53.1';
-import { T, C, btn } from '../ui.js?v=0.53.1';
-import { audio } from '../audio.js?v=0.53.1';
-import { STORY } from '../data.js?v=0.53.1';
+import { W, H } from '../config.js?v=0.53.2';
+import { T, C, btn } from '../ui.js?v=0.53.2';
+import { audio } from '../audio.js?v=0.53.2';
+import { STORY } from '../data.js?v=0.53.2';
 
 export class StoryScene extends Phaser.Scene {
   constructor() { super('Story'); }
@@ -15,7 +15,7 @@ export class StoryScene extends Phaser.Scene {
     this.tag = this.add.graphics(); this.who = T(this, 100, by, '', 34, '#FFFFFF', { ox: 0, w: 900 });
     this.line = T(this, 90, by + 70, '', 38, C.ink, { ox: 0, oy: 0, w: 700, wrap: W - 180, lh: 16, align: 'left' });
     this.more = T(this, W - 100, by + 335, '▼', 26, C.rose, { w: 900 }); this.tweens.add({ targets: this.more, y: this.more.y + 8, duration: 500, yoyo: true, repeat: -1 });
-    btn(this, W - 130, 80, 200, 80, '건너뛰기', () => this.end(), { style: 'cream', size: 26 });
+    btn(this, W - 130, 80, 200, 80, '건너뛰기', () => this.end(), { style: 'cream', size: 30 });
     this.input.on('pointerup', p => { if (p.y > 150) this.tap(); });
     this.cameras.main.fadeIn(300, 255, 244, 236); window.__story = this; audio.music('bgm_story'); this.next();
   }
@@ -25,7 +25,7 @@ export class StoryScene extends Phaser.Scene {
     if (L.face && this.face.texture.key !== L.face) { this.face.setTexture(L.face).setScale(760 / this.textures.get(L.face).getSourceImage().height).setAlpha(0).setY(H - 420); this.tweens.add({ targets: this.face, alpha: 1, y: H - 440, duration: 260 }); }
     else if (!L.face) this.face.setAlpha(0);
     else if (this.face.alpha < 1) this.tweens.add({ targets: this.face, alpha: 1, duration: 200 });
-    const by = H - 470; this.tag.clear(); if (L.who) this.tag.fillStyle(0xE86A8E, 1).fillRoundedRect(70, by - 36, 60 + L.who.length * 36, 72, 36); this.who.setText(L.who || '').setY(by);
+    const by = H - 470; this.tag.clear(); this.who.setText(L.who || '').setY(by); if (L.who) this.tag.fillStyle(0xE86A8E, 1).fillRoundedRect(70, by - 36, this.who.width + 60, 72, 36);   // 이름 길이에 맞춘 이름표
     this.more.setVisible(false); let n = 0; this.line.setText(''); this.typing?.remove();
     this.typing = this.time.addEvent({ delay: 28, repeat: L.t.length - 1, callback: () => { n++; this.line.setText(L.t.slice(0, n)); if (n % 3 === 1 && L.t[n - 1] !== ' ') audio.play('sfx_blip', { volume: 0.22, rate: L.who === '할머니' ? 0.85 : 1 + (n % 2) * 0.06, gap: 60 }); if (n >= L.t.length) { this.typing = null; this.more.setVisible(true); } } });
   }

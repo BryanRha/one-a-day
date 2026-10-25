@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.45.0';
-import { T, C } from '../ui.js?v=0.45.0';
-import { audio } from '../audio.js?v=0.45.0';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.45.0';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.45.0';
+import { W, H } from '../config.js?v=0.45.1';
+import { T, C } from '../ui.js?v=0.45.1';
+import { audio } from '../audio.js?v=0.45.1';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.45.1';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.45.1';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -84,6 +84,8 @@ export class TownScene extends Phaser.Scene {
       const st = Math.floor(time / 180 + c.ph) % 2; sp.setTexture(`w${c.v}_${c.face[0]}${st + 1}`).setFlipX(c.face[1]); sp.scaleY = sp.scaleX; sp.y = -Math.abs(Math.sin((time / 180 + c.ph) * Math.PI)) * 5; c.sh.scaleX = 1 - Math.abs(sp.y) / 40; }
     this.layer.sort('dk');
   }
+  bars() { if (!this.spr) return; for (const o of this.d.objs) { if (o.b !== 'field' || !o.crop) continue; const c = this.spr[o.id]; if (!c || !c.bar || !c.bar.active) continue; const [x, y] = iso(o.x + 0.5, o.y + 0.5), t = Math.max(0, (o.at - Date.now()) / 1000), k = Math.min(1, Math.max(0, 1 - t / CROPS[o.crop].t));
+    c.bar.clear().fillStyle(0x000000, 0.4).fillRoundedRect(x - 40, y - 20, 80, 14, 7).fillStyle(0x8BE36A, 1).fillRoundedRect(x - 40, y - 20, Math.max(8, 80 * k), 14, 7); } }
   // 일하는 공장 굴뚝 연기
   puffs() { if (this.dead || !this.spr) return; for (const o of this.d.objs) { const c = this.spr[o.id]; if (!c || !c.busy || !c.im || Math.random() < 0.45) continue; const B = BUILDS[o.b], [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), top = y - c.im.displayHeight * 0.78;
       const pf = this.add.circle(x - 30 + Math.random() * 40, top, 14 + Math.random() * 8, 0xFFFFFF, 0.75); this.fx.add(pf); this.tweens.add({ targets: pf, y: top - 90, x: pf.x + 20 + Math.random() * 30, scale: 2.2, alpha: 0, duration: 1800, ease: 'Sine.easeOut', onComplete: () => pf.destroy() }); } }
@@ -99,7 +101,9 @@ export class TownScene extends Phaser.Scene {
   }
   // ── 건물 · 밭
   drawObjs() {
-    this.cars = (this.cars || []).filter(c => c.active); for (const w of [...this.walkers, ...this.cars]) this.layer.remove(w); this.layer.removeAll(true); this.spr = {};
+    this.cars = (this.cars || []).filter(c => c.active); for (const w of [...this.walkers, ...this.cars]) this.layer.remove(w);
+    { const all = []; const walk = o => { all.push(o); if (o.list) o.list.forEach(walk); }; this.layer.list.forEach(walk); this.tweens.killTweensOf(all); }   // 지우는 그림의 반복 애니메이션도 함께 정리 (쌓이면 느려지고 멈춤)
+    this.layer.removeAll(true); this.spr = {};
     const list = [...this.d.objs].sort((a, b) => (a.x + a.y + BUILDS[a.b].sz) - (b.x + b.y + BUILDS[b.b].sz));
     for (const o of list) this.spr[o.id] = this.drawObj(o);
     const sp = digSpot(); if (sp) { const im = this.add.image(0, 0, 'digspot'); place(im, sp[0], sp[1], 1, 0.12); im.setScale(im.scale * 0.85); this.layer.add(im); this.tweens.add({ targets: im, scale: im.scale * 1.12, duration: 600, yoyo: true, repeat: -1 }); this.digIm = im; im.dk = -1; }
@@ -187,9 +191,9 @@ export class TownScene extends Phaser.Scene {
     this.select(hit); this.hud.objTap(hit);
   }
   select(o) { this.sel = o; this.drawObjs(); }
-  tick() { if (this.dead) return; let ch = false; for (const o of this.d.objs) { if (o.b === 'field' && o.crop && !o.ripe && cropReady(o)) { o.ripe = true; ch = true; } if (o.b === 'field' && o.crop && !cropReady(o)) ch = true; if (BUILDS[o.b].k === 'factory' && tickFactory(o)) ch = true; if (BUILDS[o.b].k === 'animal' && tickAnimal(o)) ch = true; }
+  tick() { if (this.dead) return; let ch = false; for (const o of this.d.objs) { if (o.b === 'field' && o.crop && !o.ripe && cropReady(o)) { o.ripe = true; ch = true; }  if (BUILDS[o.b].k === 'factory' && tickFactory(o)) ch = true; if (BUILDS[o.b].k === 'animal' && tickAnimal(o)) ch = true; }
     const t = train(); if (t && t.away !== this.trainAway) { const leaving = t.away && this.trainAway === false && this.trainC; this.trainAway = t.away; if (leaving) { const tc = this.trainC; this.tweens.add({ targets: tc, x: tc.x - 1400, y: tc.y + 700, duration: 2200, ease: 'Cubic.easeIn', onComplete: () => this.drawStation() }); } else this.drawStation(); if (!t.away) audio.play('sfx_whistle', { volume: 0.5 }); }
-    if (ch && !this.mode) this.drawObjs(); save(); this.hud && this.hud.refresh(); }
+    /* 자라는 밭은 막대만 고침 (전체를 다시 그리지 않음 · 휴대폰 멈춤 방지) */ if (ch && !this.mode) this.drawObjs(); else this.bars(); save(); this.hud && this.hud.refresh(); }
   // ── 놓기 · 옮기기
   startPlace(b, moving) {
     this.hud && this.hud.endPlant();

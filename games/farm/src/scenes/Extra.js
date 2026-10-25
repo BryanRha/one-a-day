@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.45.0';
-import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.45.0';
-import { audio } from '../audio.js?v=0.45.0';
-import { goPrev } from '../nav.js?v=0.45.0';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.45.0';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.45.0';
+import { W, H } from '../config.js?v=0.45.1';
+import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.45.1';
+import { audio } from '../audio.js?v=0.45.1';
+import { goPrev } from '../nav.js?v=0.45.1';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.45.1';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.45.1';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }
@@ -93,7 +93,7 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.45.0';
+import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.45.1';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
@@ -136,8 +136,8 @@ export class EventsScene extends Phaser.Scene {
 }
 
 // ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
-import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.45.0';
-import { ISLE } from '../data.js?v=0.45.0';
+import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.45.1';
+import { ISLE } from '../data.js?v=0.45.1';
 export class IslandScene extends Phaser.Scene {
   constructor() { super('Island'); }
   create() {
@@ -169,7 +169,7 @@ export class IslandScene extends Phaser.Scene {
 }
 
 // ── 협동조합: 레가타(주간 팀 경주) · 도움 요청
-import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.45.0';
+import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.45.1';
 const fmtH = ms => { const m = Math.floor(ms / 6e4); return m >= 1440 ? `${Math.floor(m / 1440)}일 ${Math.floor(m % 1440 / 60)}시간` : m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
 export class CoopScene extends Phaser.Scene {
   constructor() { super('Coop'); }

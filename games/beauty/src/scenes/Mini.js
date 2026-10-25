@@ -1,38 +1,22 @@
 // 놀이: 설화 빙고 · 행운 룰렛 · 공방 보물 찾기
 //   화면마다 같은 틀 — 위: 하는 법 + 내 재료(몇 개 · 어디서 얻나) / 가운데: 판(보상이 그림으로 보임) / 아래: 큰 버튼
-import { W, H } from '../config.js?v=0.53.0';
-import { T, C, btn, iconBtn, popup, toast, firstTip } from '../ui.js?v=0.53.0';
-import { audio } from '../audio.js?v=0.53.0';
-import { goPrev } from '../nav.js?v=0.53.0';
-import { hud } from '../hud.js?v=0.53.0';
-import { giveReward } from '../state.js?v=0.53.0';
-import { PACKS } from '../album.js?v=0.53.0';
-import { SPECIAL } from '../data.js?v=0.53.0';
-import { LINE_R, BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.53.0';
+import { W, H } from '../config.js?v=0.53.1';
+import { T, C, TS, btn, iconBtn, sheet, toast, firstTip, rewardIcons, chips } from '../ui.js?v=0.53.1';
+import { audio } from '../audio.js?v=0.53.1';
+import { goPrev } from '../nav.js?v=0.53.1';
+import { hud } from '../hud.js?v=0.53.1';
+import { giveReward } from '../state.js?v=0.53.1';
+import { PACKS } from '../album.js?v=0.53.1';
+import { SPECIAL } from '../data.js?v=0.53.1';
+import { LINE_R, BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.53.1';
 
-// 보상 → 그림 + 짧은 글 목록
-export function rewardIcons(r) {
-  const out = [];
-  if (r.energy) out.push(['energy', `${r.energy}`]); if (r.coins) out.push(['coin', `${r.coins}`]); if (r.gems) out.push(['gem', `${r.gems}`]);
-  if (r.pack) out.push([PACKS[r.pack].img, PACKS[r.pack].n]); if (r.joker) out.push(['joker', '조커']); if (r.gift) out.push(['gen_gift', '선물']);
-  const cnt = {}; for (const k of r.items || []) cnt[k] = (cnt[k] || 0) + 1;
-  for (const [k, n] of Object.entries(cnt)) out.push([k, (SPECIAL[k] ? SPECIAL[k].n.replace('화장품 ', '') : k) + (n > 1 ? ` ×${n}` : '')]);
-  return out;
-}
-// 보상 칩: 그림을 가로로 · 아래 글
-function chip(sc, x, y, r, o = {}) {
-  const c = sc.add.container(x, y), ic = rewardIcons(r), s = o.size || 60, gap = s + 14, w0 = ic.length * gap;
-  if (o.bg !== false) { const g = sc.add.graphics(); g.fillStyle(o.done ? 0xE9F5EC : 0xFFFFFF, 1).fillRoundedRect(-w0 / 2 - 12, -s / 2 - 12, w0 + 24, s + 52, 18).lineStyle(3, o.done ? 0x7CC6A8 : 0xF1D2C8, 1).strokeRoundedRect(-w0 / 2 - 12, -s / 2 - 12, w0 + 24, s + 52, 18); c.add(g); }
-  ic.forEach(([img, t], i) => { const x2 = -w0 / 2 + gap / 2 + i * gap, im = sc.add.image(x2, 0, img); im.setScale(s / Math.max(im.width, im.height)); if (o.done) im.setAlpha(0.45); c.add(im); c.add(T(sc, x2, s / 2 + 18, t, o.font || 18, o.done ? C.dim : C.brown, { w: 900 })); });
-  if (o.done) c.add(T(sc, w0 / 2 + 2, -s / 2 + 2, '✓', 30, C.green, { w: 900 }));
-  return c;
-}
+const chip = (sc, x, y, r, o = {}) => chips(sc, x, y, r, o);
 // 받은 보상 창 (그림으로 크게)
 function gain(sc, list, title, done) {
   audio.play(list.length > 1 || title.includes('!') ? 'sfx_levelup' : 'sfx_order', { volume: 0.7 }); audio.duck(2000);
-  const p = popup(sc, 900, 420 + list.length * 170, { closable: false }); p.content.add(T(sc, 0, -(110 + list.length * 85), title, 44, C.rose, { w: 900 }));
-  list.forEach((r, i) => p.content.add(chip(sc, 0, -(list.length * 85) + 40 + i * 170, r, { size: 96, font: 24 })));
-  p.content.add(btn(sc, 0, 120 + list.length * 85, 360, 100, '받기', () => { list.forEach(r => giveReward(r)); sc.hud.update(); p.close(); done && done(); }, { size: 34 }));
+  const p = sheet(sc, { size: 'M', title, closable: false });
+  list.forEach((r, i) => p.content.add(chip(sc, 0, i * 190, r, { size: 96, font: 28, gap: 170 })));
+  p.foot([{ t: '받기', fn: () => { list.forEach(r => giveReward(r)); sc.hud.update(); p.close(); done && done(); } }]);
 }
 
 const TABS = [['bingo', '설화 빙고', 'bingo_ball'], ['wheel', '행운 룰렛', 'roulette'], ['dig', '보물 찾기', 'shovel']];
@@ -45,7 +29,7 @@ export class MiniScene extends Phaser.Scene {
     const have = { bingo: bingo().balls, wheel: spin().tokens, dig: dig().shovels };
     TABS.forEach(([k, n, ic], i) => { const x = 190 + i * 350, on = k === this.tab, g = this.add.graphics(); g.fillStyle(on ? 0xE86A8E : 0xFFFFFF, 1).fillRoundedRect(x - 160, 160, 320, 96, 48).lineStyle(3, 0xF1C6CF, 1).strokeRoundedRect(x - 160, 160, 320, 96, 48);
       const im = this.add.image(x - 105, 208, ic); im.setScale(60 / im.height); T(this, x + 25, 208, n, 28, on ? '#FFFFFF' : C.ink, { w: 900 });
-      if (have[k] > 0) { this.add.circle(x + 140, 172, 22, 0xD9573B).setStrokeStyle(3, 0xFFFFFF); T(this, x + 140, 171, `${have[k]}`, 20, '#FFFFFF', { w: 900 }); }
+      if (have[k] > 0) { this.add.circle(x + 140, 172, 22, 0xD9573B).setStrokeStyle(3, 0xFFFFFF); T(this, x + 140, 171, `${have[k]}`, 24, '#FFFFFF', { w: 900 }); }
       this.add.zone(x, 208, 320, 96).setInteractive({ useHandCursor: true }).on('pointerup', () => { if (!this.busy && k !== this.tab) { audio.play('sfx_tap', { volume: 0.6 }); this.scene.restart({ tab: k }); } }); });
     this[this.tab]();
     this.cameras.main.fadeIn(200, 255, 244, 236); window.__mini = this;
@@ -57,10 +41,10 @@ export class MiniScene extends Phaser.Scene {
   // 위 안내 카드: 하는 법 두 줄 + 내 재료
   header(img, title, how, res, n, where) {
     const y = 290, g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(30, y, W - 60, 230, 30).lineStyle(3, 0xF1D2C8, 1).strokeRoundedRect(30, y, W - 60, 230, 30);
-    T(this, 70, y + 48, title, 36, C.ink, { ox: 0, w: 900 }); how.forEach((h, i) => T(this, 70, y + 105 + i * 44, `· ${h}`, 24, C.brown, { ox: 0, w: 800 }));
+    T(this, 70, y + 48, title, TS.h2, C.ink, { ox: 0, w: 900 }); how.forEach((h, i) => { const t = T(this, 70, y + 108 + i * 48, `· ${h}`, TS.min + 2, C.brown, { ox: 0, w: 800 }); if (t.width > 640) t.setScale(640 / t.width); });
     g.fillStyle(0xFFF1F5, 1).fillRoundedRect(W - 330, y + 22, 270, 186, 26);
     const im = this.add.image(W - 255, y + 95, img); im.setScale(90 / im.height); T(this, W - 190, y + 95, `× ${n}`, 46, n ? C.rose : C.dim, { ox: 0, w: 900 });
-    T(this, W - 195, y + 160, `${res} · ${where}`, 18, C.dim, { w: 800, wrap: 250 });
+    T(this, W - 195, y + 162, `${res} · ${where}`, TS.min, C.dim, { w: 800, wrap: 256 });
   }
   // ── 빙고
   bingo() {
@@ -70,15 +54,15 @@ export class MiniScene extends Phaser.Scene {
     this.cellAt = i => [x0 + (i % 5) * cs + cs / 2, gy + Math.floor(i / 5) * cs + cs / 2];
     this.stamps = [];
     b.cells.forEach((num, i) => { const [x, y] = this.cellAt(i), on = b.marked.includes(i); g.fillStyle(on ? 0xFFE3EC : (Math.floor(i / 5) + i) % 2 ? 0xFFF8F2 : 0xFFF1E6, 1).fillRoundedRect(x - cs / 2 + 5, y - cs / 2 + 5, cs - 10, cs - 10, 20);
-      if (i === 12) { const im = this.add.image(x, y, 'camellia3'); im.setScale(90 / im.height); T(this, x, y + 46, 'FREE', 18, C.rose, { w: 900 }); }
+      if (i === 12) { const im = this.add.image(x, y, 'camellia3'); im.setScale(90 / im.height); T(this, x, y + 50, 'FREE', TS.min, C.rose, { w: 900 }); }
       else T(this, x, y, `${num}`, 48, on ? '#E8B4C4' : C.ink, { w: 900 });
       const st = this.add.container(x, y).setVisible(on && i !== 12), sb = this.add.image(0, 0, 'bingo_ball'); sb.setScale(96 / sb.height); st.add([sb, T(this, 0, 2, `${num}`, 30, '#FFFFFF', { w: 900, shadow: true })]); this.stamps[i] = st; });
     b.lines.forEach(li => this.lineFx(L[li]));
     // 줄 보상: 가로(오른쪽) · 세로(아래) · 대각선(오른쪽 위 ↙ · 오른쪽 아래 ↘)
     const rx = x0 + cs * 5 + 95, by = gy + cs * 5 + 78, cz = 54;
-    for (let i = 0; i < 5; i++) { chip(this, rx, gy + i * cs + cs / 2 - 14, LINE_R[i], { size: cz, done: b.lines.includes(i), font: 17 }); chip(this, x0 + i * cs + cs / 2, by, LINE_R[5 + i], { size: cz, done: b.lines.includes(5 + i), font: 17 }); }
-    chip(this, rx, by, LINE_R[10], { size: cz, done: b.lines.includes(10), font: 17 }); T(this, rx - 62, by - 56, '↘', 30, C.rose, { w: 900 });
-    chip(this, rx, gy - 66, LINE_R[11], { size: cz, done: b.lines.includes(11), font: 17 }); T(this, rx - 62, gy - 118, '↙', 30, C.rose, { w: 900 });
+    for (let i = 0; i < 5; i++) { chip(this, rx, gy + i * cs + cs / 2 - 14, LINE_R[i], { size: cz, done: b.lines.includes(i), font: 24 }); chip(this, x0 + i * cs + cs / 2, by, LINE_R[5 + i], { size: cz, done: b.lines.includes(5 + i), font: 24 }); }
+    chip(this, rx, by, LINE_R[10], { size: cz, done: b.lines.includes(10), font: 24 }); T(this, rx - 62, by - 56, '↘', 30, C.rose, { w: 900 });
+    chip(this, rx, gy - 66, LINE_R[11], { size: cz, done: b.lines.includes(11), font: 24 }); T(this, rx - 62, gy - 118, '↙', 30, C.rose, { w: 900 });
     // 다 채우면
     const fy = by + 160 + spare * 0.2, fg = this.add.graphics(); fg.fillStyle(b.full ? 0xE9F5EC : 0xFFF1D6, 1).fillRoundedRect(40, fy - 70, W - 80, 140, 28);
     T(this, 80, fy, b.full ? '25칸 모두 채움 ✓' : `25칸 모두 채우면 (${b.marked.length}/25)`, 28, C.ink, { ox: 0, w: 900 }); chip(this, W - 260, fy - 14, BINGO.full, { size: 64, bg: false, done: b.full });
@@ -112,8 +96,8 @@ export class MiniScene extends Phaser.Scene {
     this.wheelC = wheel;
     // 확률표 (2줄 × 4)
     const ty = cy + R + 70 + spare * 0.15; WHEEL.forEach((w, i) => { const x = 60 + (i % 2) * 490, y = ty + Math.floor(i / 2) * 86, gg = this.add.graphics(); gg.fillStyle(w.c, 0.55).fillRoundedRect(x, y, 470, 74, 20);
-      rewardIcons(w.r).forEach(([img, t], k) => { const im = this.add.image(x + 44 + k * 120, y + 37, img); im.setScale(52 / Math.max(im.width, im.height)); T(this, x + 76 + k * 120, y + 37, t, 20, C.ink, { ox: 0, w: 900 }); });
-      T(this, x + 450, y + 37, `${Math.round(w.w / tot * 100)}%`, 24, w.jackpot ? C.rose : C.brown, { ox: 1, w: 900 }); });
+      rewardIcons(w.r).forEach(([img, t], k) => { const im = this.add.image(x + 44 + k * 120, y + 37, img); im.setScale(52 / Math.max(im.width, im.height)); T(this, x + 76 + k * 120, y + 37, t, TS.min, C.ink, { ox: 0, w: 900 }); });
+      T(this, x + 450, y + 37, `${Math.round(w.w / tot * 100)}%`, TS.cap, w.jackpot ? C.rose : C.brown, { ox: 1, w: 900 }); });
     btn(this, W / 2, Math.min(H - 110, ty + 4 * 86 + 100 + spare * 0.2), 600, 130, s.tokens ? `돌리기 (남은 토큰 ${s.tokens})` : '토큰이 없어요 · 5단계를 만들어요', () => this.roll(), { size: 34, style: s.tokens ? 'rose' : 'cream' });
   }
   roll() {
@@ -130,16 +114,16 @@ export class MiniScene extends Phaser.Scene {
     // 보물 상자 + 열쇠 칸
     const ty = 560, tg = this.add.graphics(); tg.fillStyle(0xFFF1D6, 1).fillRoundedRect(30, ty, W - 60, 190, 30).lineStyle(4, 0xF0B65A, 1).strokeRoundedRect(30, ty, W - 60, 190, 30);
     const ch = this.add.image(120, ty + 95, 'chest'); ch.setScale(130 / ch.height); if (!b.done) this.tweens.add({ targets: ch, angle: { from: -3, to: 3 }, duration: 800, yoyo: true, repeat: -1 });
-    T(this, 210, ty + 42, '보물 상자 안에', 24, C.brown, { ox: 0, w: 900 }); chip(this, 400, ty + 110, DIG.treasure, { size: 56, bg: false, font: 16 });
+    T(this, 210, ty + 42, '보물 상자 안에', TS.min + 2, C.brown, { ox: 0, w: 900 }); chip(this, 440, ty + 106, DIG.treasure, { size: 52, bg: false, font: 24, gap: 150 });
     this.keySlots = [0, 1, 2].map(k => { const x = 720 + k * 115, sg = this.add.graphics(); sg.fillStyle(0xFFFFFF, 1).fillRoundedRect(x - 50, ty + 45, 100, 100, 20).lineStyle(3, 0xF0B65A, 1).strokeRoundedRect(x - 50, ty + 45, 100, 100, 20);
       const im = this.add.image(x, ty + 95, `key${k + 1}`); im.setScale(80 / im.width); if (k >= b.keys) im.setTintFill(0xE3D3CC).setAlpha(0.7); return { x, y: ty + 95 }; });
-    T(this, 835, ty + 28, `열쇠 ${b.keys}/3`, 22, C.rose, { w: 900 });
-    T(this, W / 2, ty + 230, `흙 아래: 열쇠 조각 3 · 작은 선물 8 · 빈칸 14  ·  남은 흙 ${left}칸 (선물 ${smallLeft} 남음)`, 21, C.dim, { w: 800 });
+    T(this, 835, ty + 24, `열쇠 ${b.keys}/3`, TS.min, C.rose, { w: 900 });
+    T(this, W / 2, ty + 230, `남은 흙 ${left}칸 · 열쇠 조각 3 · 선물 ${smallLeft}개 남음`, TS.min + 2, C.dim, { w: 800 });
     // 마당
     const gy = ty + 290 + spare * 0.2, g = this.add.graphics(); g.fillStyle(0x8BC07A, 1).fillRoundedRect(x0 - 16, gy - 16, cs * 5 + 32, cs * 5 + 32, 30);
     this.digCell = i => [x0 + (i % 5) * cs + cs / 2, gy + Math.floor(i / 5) * cs + cs / 2];
     b.cells.forEach((c, i) => { const [x, y] = this.digCell(i), open = b.open.includes(i);
-      if (open) { g.fillStyle(0xE8D2B8, 1).fillRoundedRect(x - cs / 2 + 6, y - cs / 2 + 6, cs - 12, cs - 12, 20); if (c) { const img = c.key || rewardIcons(c.r)[0][0], im = this.add.image(x, y - 8, img); im.setScale((cs - 60) / Math.max(im.width, im.height)); if (!c.key) T(this, x, y + 46, rewardIcons(c.r)[0][1], 18, C.brown, { w: 900 }); } else T(this, x, y, '·', 40, '#C9B49C', { w: 900 }); }
+      if (open) { g.fillStyle(0xE8D2B8, 1).fillRoundedRect(x - cs / 2 + 6, y - cs / 2 + 6, cs - 12, cs - 12, 20); if (c) { const img = c.key || rewardIcons(c.r)[0][0], im = this.add.image(x, y - 8, img); im.setScale((cs - 60) / Math.max(im.width, im.height)); if (!c.key) T(this, x, y + 48, rewardIcons(c.r)[0][1], TS.min, C.brown, { w: 900 }); } else T(this, x, y, '·', 40, '#C9B49C', { w: 900 }); }
       else { const im = this.add.image(x, y + 6, 'dirt'); im.setScale((cs - 14) / im.width); this.add.zone(x, y, cs, cs).setInteractive({ useHandCursor: true }).on('pointerup', () => this.dig1(i, im)); } });
     const by = Math.min(H - 110, gy + cs * 5 + 110 + spare * 0.2);
     if (b.done) btn(this, W / 2, by, 600, 130, '다음 마당으로', () => { digNext(); this.scene.restart({ tab: 'dig' }); }, { size: 34 });

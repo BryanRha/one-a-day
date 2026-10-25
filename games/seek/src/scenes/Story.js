@@ -1,11 +1,11 @@
 // 이야기 (Choices 식): 배경 · 인물 상반신(표정) · 이름표 말풍선 · 한 글자씩 · 선택지 → 다음 단계(hunt/evidence/toon)
-import { W, H } from '../config.js?v=0.45.5';
-import { T, C, btn, iconBtn } from '../ui.js?v=0.45.5';
-import { audio } from '../audio.js?v=0.45.5';
-import { goPrev } from '../nav.js?v=0.45.5';
-import { load, save } from '../save.js?v=0.45.5';
-import { EPISODES, epNo, hero } from '../episodes.js?v=0.45.5';
-import { advance } from '../replay.js?v=0.45.5';
+import { W, H } from '../config.js?v=0.45.6';
+import { T, C, btn, iconBtn } from '../ui.js?v=0.45.6';
+import { audio } from '../audio.js?v=0.45.6';
+import { goPrev } from '../nav.js?v=0.45.6';
+import { load, save } from '../save.js?v=0.45.6';
+import { EPISODES, epNo, hero } from '../episodes.js?v=0.45.6';
+import { advance } from '../replay.js?v=0.45.6';
 
 export class StoryScene extends Phaser.Scene {
   constructor() { super('Story'); }

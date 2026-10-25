@@ -1,8 +1,8 @@
 // K뷰티 레시피 UI: 크림 패널 · 장미색 버튼 · 금빛 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.46.0';
-import { audio } from './audio.js?v=0.46.0';
-import { pushBack } from './oad.js?v=0.46.0';
-import { load as loadSave, save as saveSave } from './save.js?v=0.46.0';
+import { W, H } from './config.js?v=0.47.0';
+import { audio } from './audio.js?v=0.47.0';
+import { pushBack } from './oad.js?v=0.47.0';
+import { load as loadSave, save as saveSave } from './save.js?v=0.47.0';
 
 export const C = { ink: '#4A2C2A', text: '#FFFFFF', cream: '#FFF4EC', paper: '#FFFBF6', brown: '#8A5A44', sub: '#C99A86', dim: '#A08878', gold: '#E8A93A', rose: '#E86A8E', plum: '#5A3A34', red: '#D9573B', green: '#5FA65A', blue: '#4E86C6', mint: '#7CC6A8' };
 export const FONT = 'Pretendard, sans-serif';
@@ -35,7 +35,7 @@ export function panel(sc, x, y, w, h, o = {}) {
 // 버튼
 const STY = { rose: ['#FF9DB6', '#E8628A', '#9A2E52', '#FFFFFF'], gold: ['#FFD98A', '#F0A84A', '#A8641A', '#4A2808'], brown: ['#8A5A78', '#5E3456', '#2E1A2A', '#FFF2F6'], cream: ['#FFFFFF', '#F6DDE6', '#C99AAE', '#5A2E44'], green: ['#9CD382', '#5E9E48', '#2E5E22', '#FFFFFF'] };
 export function btn(sc, x, y, w, h, label, onClick, o = {}) {
-  const s = STY[o.style || 'rose'], key = `bt_${w}_${h}_${o.style || 'rose'}`;
+  const s = STY[o.style || 'green'], key = `bt_${w}_${h}_${o.style || 'green'}`;   // 기본은 초록(행동) · 분홍(rose)은 보석 쓰기
   tex(sc, key, w + 30, h + 34, g => {
     g.translate(15, 12); g.shadowColor = 'rgba(30,15,5,0.4)'; g.shadowBlur = 14; g.shadowOffsetY = 8;
     rr(g, 0, 6, w, h - 6, h / 2); g.fillStyle = s[2]; g.fill(); g.shadowColor = 'transparent';
@@ -73,23 +73,60 @@ export function stars(sc, x, y, n, size = 44, gap = 52) {
   for (let i = 0; i < 3; i++) c.add(T(sc, (i - 1) * gap, 0, '★', size, i < n ? C.gold : 'rgba(140,120,100,0.45)', { w: 900 }));
   return c;
 }
-// 팝업 (뒤로가기로 닫힘)
+// ── 창 규칙 (더팜 UI/UX 통일)
+//  · 작은 창: 건물 하나 · 행동 하나 → 너비 980 고정, 높이 S/M/L 세 가지, 오른쪽 위 ✕ · 바깥 누르기 · 폰 뒤로가기
+//  · 전체 화면(o.full = 제목): 목록을 둘러보는 메뉴 → 위 재화 막대 아래에 제목 막대(◀ 뒤로) + 위아래로 밀어 보기
+//  · 마을(Hud) 위에서는 위 재화 막대(140px)를 가리지 않음 → 숫자가 항상 보임
+//  · 내용이 창보다 길면 손가락으로 밀어 봄 (밀다가 뗀 건 누른 걸로 치지 않음)
+export const TOPBAR = 140, POP_W = 980, POP_H = { S: 640, M: 980 };
+const popL = () => Math.min(1560, H - TOPBAR - 220);
+let gx = false;
+function guardTaps() { if (gx) return; gx = true;   // 밀어 보는 중이거나 보이는 칸 밖의 버튼은 눌리지 않게
+  const emit = Phaser.GameObjects.GameObject.prototype.emit;
+  Phaser.GameObjects.GameObject.prototype.emit = function (ev, ...a) {
+    if (ev === 'pointerup' || ev === 'pointerdown') { const sc = this.scene; if (sc && sc._scrolled && ev === 'pointerup') return false;
+      if (sc && sc._clips && sc._clips.length) { const pt = a[0]; for (const cl of sc._clips) { if (!cl.content.active) continue; let o = this.parentContainer; while (o && o !== cl.content) o = o.parentContainer; if (o === cl.content && pt && (pt.y < cl.y0 || pt.y > cl.y1)) return false; } } }
+    return emit.call(this, ev, ...a); }; }
+function scroller(sc, content, y0, y1, extra) {   // extra = 보이는 칸보다 긴 길이
+  guardTaps(); const base = content.y, mk = sc.make.graphics({ add: false }); mk.fillStyle(0xffffff).fillRect(0, y0, W, y1 - y0); content.setMask(mk.createGeometryMask());
+  const clip = { content, y0, y1 }; (sc._clips = sc._clips || []).push(clip); let st = null;
+  const bar = sc.add.graphics(); const drawBar = () => { bar.clear(); if (extra <= 0) return; const vh = y1 - y0, k = (base - content.y) / extra, bh = Math.max(60, vh * vh / (vh + extra)); bar.fillStyle(0x8A5A2B, 0.45).fillRoundedRect(W - 22, y0 + 8 + (vh - 16 - bh) * k, 10, bh, 5); };
+  const down = p => { sc._scrolled = false; if (p.y >= y0 && p.y <= y1 && content.active) st = { y: p.y, c: content.y }; };
+  const move = p => { if (!st || !p.isDown) return; const dy = p.y - st.y; if (Math.abs(dy) > 14) sc._scrolled = true; if (sc._scrolled) { content.y = Phaser.Math.Clamp(st.c + dy, base - extra, base); drawBar(); } };
+  const up = () => { st = null; sc.time.delayedCall(0, () => { sc._scrolled = false; }); };
+  const wheel = (p, o, dx, dy) => { if (p.y >= y0 && p.y <= y1 && content.active) { content.y = Phaser.Math.Clamp(content.y - dy, base - extra, base); drawBar(); } };
+  sc.input.on('pointerdown', down); sc.input.on('pointermove', move); sc.input.on('pointerup', up); sc.input.on('wheel', wheel); drawBar();
+  const off = () => { sc.input.off('pointerdown', down); sc.input.off('pointermove', move); sc.input.off('pointerup', up); sc.input.off('wheel', wheel); sc._clips = (sc._clips || []).filter(x => x !== clip); };
+  return { bar, off, scrollTo: y => { content.y = Phaser.Math.Clamp(base - y, base - extra, base); drawBar(); } }; }
+// 창 (뒤로가기로 닫힘) — w·h 는 내용을 그린 크기 (창 크기는 규칙대로 맞춰짐)
 export function popup(sc, w, h, o = {}) {
-  // 카메라가 스크롤된 화면(서재)에서도 보이는 자리에 뜨도록 카메라 위치에 맞춤
-  const cam = sc.cameras.main, root = sc.add.container(cam.scrollX, cam.scrollY).setDepth(o.depth || 1000), dim = sc.add.rectangle(W / 2, H / 2, W, H, 0x1A0814, 0.6).setInteractive(); root.add(dim);
-  const box = sc.add.container(W / 2, o.y || H / 2); root.add(box); box.add(panel(sc, 0, 0, w, h, { tone: o.tone }));
-  const content = sc.add.container(0, 0); box.add(content);
-  if (!(o.instant || sc._instant)) { box.setScale(0.9).setAlpha(0); sc.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Back.easeOut' }); }   // 내용만 바꿔 다시 열 때는 애니메이션 없이 (깜빡임 방지)
-  const close = () => { if (root.closing) return; root.closing = true; unback(); sc.tweens.add({ targets: root, alpha: 0, duration: 140, onComplete: () => { root.destroy(); o.onClose && o.onClose(); } }); };
-  sc.events.once('shutdown', () => unback());   // 화면이 바뀌면 뒤로가기 목록에서도 빠짐 (남아 있으면 다음 뒤로가기가 먹힘)
-  if (o.closable !== false && o.dimClose !== false) dim.on('pointerup', p => { if (Math.hypot(p.upX - p.downX, p.upY - p.downY) < 24) close(); });   // 끌다가 뗀 건 닫지 않음
+  const cam = sc.cameras.main, onTown = sc.scene.key === 'Hud' || sc._framed, top = onTown ? TOPBAR : 0, root = sc.add.container(cam.scrollX, cam.scrollY).setDepth(o.depth || 1000);
+  const dim = sc.add.rectangle(W / 2, top + (H - top) / 2, W, H - top, 0x1A0814, o.full ? 0 : 0.6).setInteractive(); root.add(dim);
+  let box, content, sc2, viewY0, viewY1;
+  if (o.full) {   // 전체 화면
+    const bg = sc.add.rectangle(W / 2, top + (H - top) / 2, W, H - top, 0xFFF3E0); root.add(bg);
+    const hd = sc.add.graphics(); hd.fillStyle(0x5A3A1E, 1).fillRect(0, top, W, 112).fillStyle(0x8A5A2B, 1).fillRect(0, top + 104, W, 8); root.add(hd);
+    root.add(T(sc, W / 2, top + 54, o.full, 40, '#FFFFFF', { w: 900 }));
+    viewY0 = top + 112; viewY1 = H; box = sc.add.container(W / 2, viewY0 + h / 2 + 10); root.add(box); content = sc.add.container(0, 0); box.add(content);
+    const extra = Math.max(0, h + 40 - (viewY1 - viewY0)); if (extra) sc2 = scroller(sc, box, viewY0, viewY1, extra), root.add(sc2.bar);
+    const addT = content.add.bind(content); let skipped = false; content.add = ch => { if (!skipped && ch && ch.type === 'Text' && ch.text === o.full) { skipped = true; ch.destroy(); return content; } if (!skipped && Array.isArray(ch)) {} return addT(ch); };   // 내용 안의 같은 제목은 위 막대와 겹치니 뺌
+  } else {
+    const ph = o.size ? (o.size === 'L' ? popL() : POP_H[o.size]) : h <= 700 ? POP_H.S : h <= 1060 ? POP_H.M : popL(), pw = POP_W, cy = o.y || top + (H - top) / 2;
+    box = sc.add.container(W / 2, cy); root.add(box); box.add(panel(sc, 0, 0, pw, ph, { tone: o.tone }));
+    content = sc.add.container(0, 0); box.add(content);
+    if (h > ph) { content.y = (h - ph) / 2 + 10; viewY0 = cy - ph / 2 + 12; viewY1 = cy + ph / 2 - 12; sc2 = scroller(sc, content, viewY0, viewY1, h - ph + 20); box.add(sc2.bar); sc2.bar.setPosition(-W / 2, -cy); }
+    if (!(o.instant || sc._instant)) { box.setScale(0.9).setAlpha(0); sc.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 200, ease: 'Back.easeOut' }); }   // 내용만 바꿔 다시 열 때는 애니메이션 없이 (깜빡임 방지)
+    w = pw; h = ph;
+  }
+  const done = () => { sc2 && sc2.off(); };
+  const close = () => { if (root.closing) return; root.closing = true; unback(); done(); sc.tweens.add({ targets: root, alpha: 0, duration: 140, onComplete: () => { root.destroy(); o.onClose && o.onClose(); } }); };
+  sc.events.once('shutdown', () => { unback(); done(); });   // 화면이 바뀌면 뒤로가기 목록에서도 빠짐 (남아 있으면 다음 뒤로가기가 먹힘)
+  if (!o.full && o.closable !== false && o.dimClose !== false) dim.on('pointerup', p => { if (Math.hypot(p.upX - p.downX, p.upY - p.downY) < 24) close(); });   // 끌다가 뗀 건 닫지 않음
   const unback = pushBack(() => { if (root.closing || !root.scene) return false; if (o.onBack) { o.onBack(); return true; } if (o.closable === false) return true; close(); return true; });
-  // 재화를 쓰는 창: 왼쪽 위에 가진 재화 (o.wallet = () => '💎 12  🪙 300')
-  if (o.wallet) { const wt = T(sc, 0, 0, o.wallet(), 28, '#3E2A14', { ox: 1, w: 900 }), ww = (wt.width || 160) + 40, wx = w / 2 - 20, wy = -h / 2 - 42, wg = sc.add.graphics(); wg.fillStyle(0xFFF1C9, 1).fillRoundedRect(wx - ww, wy - 28, ww, 56, 28).lineStyle(3, 0xE8C27A, 1).strokeRoundedRect(wx - ww, wy - 28, ww, 56, 28); wt.setPosition(wx - 20, wy); box.add([wg, wt]); }   // 창 위쪽 바깥 오른쪽 · 제목과 겹치지 않게
-  // 모든 창 공통: 오른쪽 위 ✕ 닫기
-  if (o.closable !== false && !o.noX) { const x = btn(sc, w / 2 - 58, -h / 2 + 58, 84, 84, '✕', () => close(), { size: 34, style: 'cream' }); box.add(x); }
-  const kill = () => { if (root.closing) return; root.closing = true; unback(); root.destroy(); };   // 곧바로 없앰 (다시 그리기용)
-  return { root, box, content, close, kill };
+  if (o.full) root.add(btn(sc, 100, top + 54, 150, 76, '◀', () => close(), { size: 34, style: 'cream' }));   // 전체 화면: 왼쪽 위 뒤로
+  else if (o.closable !== false && !o.noX) { const x = btn(sc, w / 2 - 58, -h / 2 + 58, 84, 84, '✕', () => close(), { size: 34, style: 'cream' }); box.add(x); }   // 작은 창: 오른쪽 위 ✕
+  const kill = () => { if (root.closing) return; root.closing = true; unback(); done(); root.destroy(); };   // 곧바로 없앰 (다시 그리기용)
+  return { root, box, content, close, kill, scroll: sc2 };
 }
 export function toast(sc, msg, y = H * 0.42) {
   y += sc.cameras.main.scrollY; const c = sc.add.container(W / 2, y).setDepth(2000), t = T(sc, 0, 0, msg, 34, C.text, { w: 800 }), bg = sc.add.rectangle(0, 0, t.width + 70, 84, 0x2E1A2A, 0.92).setStrokeStyle(2, 0xFF9DB6, 0.6);

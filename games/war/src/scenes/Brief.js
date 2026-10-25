@@ -1,16 +1,16 @@
 // 작전 준비: 세로로 넘기는 작전 카드 목록 (다음 작전은 펼쳐서 · 잠긴 작전은 어둡게) → [출격] → 아래에서 올라오는 출격 준비(지휘관·난이도)
-import { W, H } from '../config.js?v=0.46.0';
-import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.46.0';
-import { audio } from '../audio.js?v=0.46.0';
-import { load, save } from '../save.js?v=0.46.0';
-import { pushBack } from '../oad.js?v=0.46.0';
-import * as M from '../meta.js?v=0.46.0';
-import { COS, WEATHER } from '../core/data.js?v=0.46.0';
-import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.46.0';
-import { STORY } from '../story.js?v=0.46.0';
-import { rankOn } from '../rank.js?v=0.46.0';
-import { rankPopup } from '../rankui.js?v=0.46.0';
-import { Sim } from '../core/sim.js?v=0.46.0';
+import { W, H } from '../config.js?v=0.47.0';
+import { T, C, panel, btn, iconBtn, toast } from '../pui.js?v=0.47.0';
+import { audio } from '../audio.js?v=0.47.0';
+import { load, save } from '../save.js?v=0.47.0';
+import { pushBack } from '../oad.js?v=0.47.0';
+import * as M from '../meta.js?v=0.47.0';
+import { COS, WEATHER } from '../core/data.js?v=0.47.0';
+import { MAPS, WAR, campaignMap } from '../core/maps.js?v=0.47.0';
+import { STORY } from '../story.js?v=0.47.0';
+import { rankOn } from '../rank.js?v=0.47.0';
+import { rankPopup } from '../rankui.js?v=0.47.0';
+import { Sim } from '../core/sim.js?v=0.47.0';
 
 const LV = { easy: '쉬움', normal: '보통', hard: '어려움' };
 const TCOL = { pipe: 0x8A8F96, seam: 0xC8A040, silo: 0x5A5048, silo_e: 0x6A6A5A, plain: 0x8DB05A, farm: 0x9BB45A, wheat: 0xD8B85A, forest: 0x3E7A34, mountain: 0x9A8C78, road: 0xC8A878, bridge: 0xB0A090, river: 0x4A9AD8, beach: 0xE8D8A0, sea: 0x2A6AB0, reef: 0x3A7A90, trench: 0x8A7A50 };

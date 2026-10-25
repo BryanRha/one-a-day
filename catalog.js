@@ -66,6 +66,12 @@ export const GAMES = {
     desc: '배추왕국의 라벤더 공주가 시골 농장을 맡았다! 밭에 작물을 심어 거두고, 젖소·닭을 키우고, 빵집·낙농 공방에서 물건을 만들어 마을 사람들의 주문과 왕국 기차에 실어 보내요. 집을 지어 주민을 늘리고 숲을 정리해 땅을 넓히는 농장 마을 만들기. 피처폰 명작 「더팜」 시리즈가 새로 돌아왔어요.',
     path: 'games/farm/', logo: true, cover: 'covers/farm.png', icon: 'covers/farm_icon.png', time: '10~15분',
   },
+  blade: {
+    title: '애쉬 블레이드', en: 'Ash Blade', genre: '3D 액션 RPG', color: '#B0702A',
+    tagline: '잿빛 숲을 대검 하나로 베어 가르는 3D 액션',
+    desc: '재의 저주가 내려앉은 숲, 용병 카일이 대검을 든다. 공격 버튼을 누르고 있으면 이어지는 4연타, 대지 가르기·회오리 베기 같은 스킬, 공격 직전에 피하는 완벽한 회피와 분노 해방까지. 몰려오는 코볼트를 쓸어 버리고 거대한 보스를 쓰러뜨려 장비를 강화해요. 1장 10스테이지 · 무한의 탑 · 황금 동굴 · 자동 전투.',
+    path: 'games/blade/', logo: true, cover: 'covers/blade.png', icon: 'covers/blade_icon.png', time: '5~10분',
+  },
   idle: {
     title: '여명기사단 키우기', en: 'Knights of Dawn: Idle', genre: '방치형 RPG', color: '#2A3A8A',
     tagline: '해가 사라진 대륙에 새벽을 되찾는 기사단',
@@ -81,6 +87,6 @@ export const GAMES = {
   },
 };
 // 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'farm'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'farm', 'blade'];
 // 여명기사단 키우기(idle)는 2026-10-25 사용자 요청으로 목록에서 내림 — 보류 중 (CATALOG 항목·소스·idle/PROJECT_STATUS.md 남겨 둠)
 // K-다이스 투어(tour)는 2026-10-24 사용자 요청으로 목록에서 내림 — 대전 네트워크(서버)가 붙으면 다시 올림 (CATALOG 항목·소스는 남겨 둠)

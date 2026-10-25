@@ -1,6 +1,6 @@
 // 이벤트 묶음 (타운십 · K뷰티 레시피 틀): 7일 출석 · 주간 축제(티켓 사다리) · 이웃 농장 레이스(AI) · 스티커 앨범 · 시즌 패스 · 항구 무역
-import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.44.3';
-import { VOYAGES } from './data.js?v=0.44.3';
+import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.44.4';
+import { VOYAGES } from './data.js?v=0.44.4';
 
 const now = () => Date.now();
 function ev() { const d = load(); if (!d.ev) d.ev = {}; return d.ev; }
@@ -64,3 +64,10 @@ export function voyage() { const e = ev(); return e.voyage || null; }
 export function voyageNeed(i) { const v = VOYAGES[i], d = load(), pool = Object.keys(d.items).filter(k => d.items[k] >= 2 && !['pickaxe', 'dynamite', 'map'].includes(k)); return v; }
 export function voyageSend(i, cargo) { const e = ev(), v = VOYAGES[i]; if (e.voyage || load().lv < v.lv) return false; if (!take(cargo)) return false; e.voyage = { i, back: now() + v.t * 1000 }; return true; }
 export function voyageBack() { const e = ev(), v = e.voyage; if (!v || v.back > now()) return null; const V = VOYAGES[v.i], items = {}; for (let k = 0; k < 3 + v.i; k++) { const it = V.loot[Math.floor(Math.random() * V.loot.length)]; items[it] = (items[it] || 0) + 1; } e.voyage = null; give({ items }); return items; }
+
+// ── 빨간 점: 탭마다 지금 받을 것 · 새로 할 것이 있는지
+export function evDots() { const e = ev(), l = login(), f = fest(), a = album(), ps = pass(), rs = raceState();
+  const canJoin = !(e.race && !e.race.claimed && now() < e.race.end) && e.raceDay !== dayNo();
+  return { login: !l.got, fest: FEST_TIERS.some((t, i) => f.pts >= t && !f.got.includes(i)), race: canJoin || !!(rs && rs.ended && !rs.claimed),
+    album: a.packs > 0 || STICKERS.some((S, i) => !a.done.includes(i) && S.s.every(k => a.have[k])) || (!a.all && a.done.length >= STICKERS.length), pass: PASS_TIERS.some((t, i) => ps.pts >= t && !ps.got.includes(i)) }; }
+export const evBadge = () => Object.values(evDots()).filter(Boolean).length;

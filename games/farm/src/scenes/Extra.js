@@ -1,10 +1,10 @@
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.44.3';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.44.3';
-import { audio } from '../audio.js?v=0.44.3';
-import { goPrev } from '../nav.js?v=0.44.3';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.44.3';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.44.3';
+import { W, H } from '../config.js?v=0.44.4';
+import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.44.4';
+import { audio } from '../audio.js?v=0.44.4';
+import { goPrev } from '../nav.js?v=0.44.4';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.44.4';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.44.4';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 function top(sc, title) { const g = sc.add.graphics(); g.fillStyle(0x3E2A14, 0.92).fillRoundedRect(16, 18, W - 32, 112, 30); T(sc, W / 2, 74, title, 40, '#FFFFFF', { w: 900 }); btn(sc, 110, 74, 160, 80, '◀ 마을', () => goPrev(sc), { size: 26, style: 'cream' }); }
@@ -93,14 +93,14 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.44.3';
+import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.44.4';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
   create(data) {
     this.tab = (data && data.tab) || 'login'; this.add.rectangle(W / 2, H / 2, W, H, 0xFFF3E0); top(this, '이벤트'); this.y0 = 300;
     const TABS = [['login', '출석'], ['fest', '축제'], ['race', '레이스'], ['album', '스티커'], ['pass', '패스']];
-    TABS.forEach(([k, n], i) => btn(this, 112 + i * 214, 190, 200, 84, n, () => { if (k !== this.tab) this.scene.restart({ tab: k }); }, { size: 28, style: k === this.tab ? 'gold' : 'cream' }));
+    const dots = evDots(); TABS.forEach(([k, n], i) => { btn(this, 112 + i * 214, 190, 200, 84, n, () => { if (k !== this.tab) this.scene.restart({ tab: k }); }, { size: 28, style: k === this.tab ? 'gold' : 'cream' }); if (dots[k]) redDot(this, 112 + i * 214 + 88, 156).setDepth(5); });
     this[this.tab](); window.__events = this;
   }
   done(ups, msg) { save(); audio.play('sfx_levelup', { volume: 0.7 }); if (msg) toast(this, msg, H / 2); this.time.delayedCall(700, () => this.scene.restart({ tab: this.tab })); }
@@ -136,8 +136,8 @@ export class EventsScene extends Phaser.Scene {
 }
 
 // ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
-import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.44.3';
-import { ISLE } from '../data.js?v=0.44.3';
+import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.44.4';
+import { ISLE } from '../data.js?v=0.44.4';
 export class IslandScene extends Phaser.Scene {
   constructor() { super('Island'); }
   create() {
@@ -169,13 +169,13 @@ export class IslandScene extends Phaser.Scene {
 }
 
 // ── 협동조합: 레가타(주간 팀 경주) · 도움 요청
-import { coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.44.3';
+import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.44.4';
 const fmtH = ms => { const m = Math.floor(ms / 6e4); return m >= 1440 ? `${Math.floor(m / 1440)}일 ${Math.floor(m % 1440 / 60)}시간` : m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
 export class CoopScene extends Phaser.Scene {
   constructor() { super('Coop'); }
   create(data) {
     this.tab = (data && data.tab) || 'race'; this.add.rectangle(W / 2, H / 2, W, H, 0xE6F2FA); top(this, '협동조합'); window.__coop = this;
-    [['race', '⛵ 레가타'], ['help', '🤝 도움 요청']].forEach(([k, n], i) => btn(this, W / 2 - 220 + i * 440, 190, 400, 84, n, () => { if (k !== this.tab) this.scene.restart({ tab: k }); }, { size: 28, style: k === this.tab ? 'gold' : 'cream' }));
+    const cd = coopDots(); [['race', '⛵ 레가타'], ['help', '🤝 도움 요청']].forEach(([k, n], i) => { btn(this, W / 2 - 220 + i * 440, 190, 400, 84, n, () => { if (k !== this.tab) this.scene.restart({ tab: k }); }, { size: 28, style: k === this.tab ? 'gold' : 'cream' }); if (cd[k]) redDot(this, W / 2 - 220 + i * 440 + 186, 156).setDepth(5); });
     if (load().lv < COOP_LV) { T(this, W / 2, H / 2, `레벨 ${COOP_LV}부터 협동조합에 들어갈 수 있어요`, 34, C.ink, { w: 900 }); return; }
     this[this.tab]();
     const pv = load().coopPrev; if (pv) this.time.delayedCall(300, () => { const p = popup(this, 820, 620); p.content.add(T(this, 0, -230, '지난주 레가타 결과', 40, C.ink, { w: 900 })); p.content.add(T(this, 0, -130, `${pv.rank}위 · 내 점수 ${pv.pts}`, 46, pv.rank <= 3 ? '#E8A33A' : C.brown, { w: 900 })); p.content.add(icon(this, 0, 0, 'trophy', 150)); p.content.add(T(this, 0, 110, rewardText(RANK_R[pv.rank - 1]), 30, C.brown, { w: 900 }));

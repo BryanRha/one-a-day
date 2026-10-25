@@ -1,6 +1,6 @@
 // 협동조합 (타운십의 협동조합 · 레가타를 AI 팀원/AI 팀으로): 주간 팀 경주 과제 · 개인 보상 단계 · 팀원 도움 요청
-import { load, give, has, take, dayNo, weekNo, countOf } from './state.js?v=0.44.3';
-import { ITEMS, CROPS, RECIPES, BUILDS } from './data.js?v=0.44.3';
+import { load, give, has, take, dayNo, weekNo, countOf } from './state.js?v=0.44.4';
+import { ITEMS, CROPS, RECIPES, BUILDS } from './data.js?v=0.44.4';
 
 const now = () => Date.now();
 export const COOP_LV = 10, TASKS_DAY = 5, COOP_TIERS = [80, 200, 400, 700, 1100];
@@ -45,3 +45,4 @@ export function prevClaim() { const s = load(), p = s.coopPrev; if (!p) return n
 export function helpSend(i) { const c = coop(), q = c.reqs[i]; if (!q || q.done) return null; if (!has(q.it, q.n)) return '물건이 모자라요'; take({ [q.it]: q.n }); q.done = true; c.myPts += 8; const r = { coins: Math.round(ITEMS[q.it].v * q.n * 1.8 + 20), xp: 3 + Math.round(ITEMS[q.it].v * q.n / 8) }; give(r); return { r }; }
 export const coopBadge = () => { const s = load(); if (s.lv < COOP_LV) return 0; const c = coop(); return (s.coopPrev ? 1 : 0) + c.reqs.filter(q => !q.done && has(q.it, q.n)).length + COOP_TIERS.filter((t, i) => c.myPts >= t && !c.got.includes(i)).length + (!c.cur && c.dn < TASKS_DAY ? 1 : 0); };
 export { MATES };
+export function coopDots() { const s = load(); if (s.lv < COOP_LV) return { race: false, help: false }; const c = coop(); return { race: !!s.coopPrev || COOP_TIERS.some((t, i) => c.myPts >= t && !c.got.includes(i)) || (!c.cur && c.dn < TASKS_DAY), help: c.reqs.some(q => !q.done && has(q.it, q.n)) }; }

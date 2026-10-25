@@ -1,8 +1,8 @@
 // K뷰티 레시피 UI: 크림 패널 · 장미색 버튼 · 금빛 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.44.3';
-import { audio } from './audio.js?v=0.44.3';
-import { pushBack } from './oad.js?v=0.44.3';
-import { load as loadSave, save as saveSave } from './save.js?v=0.44.3';
+import { W, H } from './config.js?v=0.44.4';
+import { audio } from './audio.js?v=0.44.4';
+import { pushBack } from './oad.js?v=0.44.4';
+import { load as loadSave, save as saveSave } from './save.js?v=0.44.4';
 
 export const C = { ink: '#4A2C2A', text: '#FFFFFF', cream: '#FFF4EC', paper: '#FFFBF6', brown: '#8A5A44', sub: '#C99A86', dim: '#A08878', gold: '#E8A93A', rose: '#E86A8E', plum: '#5A3A34', red: '#D9573B', green: '#5FA65A', blue: '#4E86C6', mint: '#7CC6A8' };
 export const FONT = 'Pretendard, sans-serif';
@@ -102,3 +102,6 @@ export function firstTip(sc, key, title, lines, img) {
   lines.forEach((l, i) => p.content.add(T(sc, 0, (img ? 0 : -160) + i * 62, l, 28, C.ink, { w: 800, wrap: 780 })));
   p.content.add(btn(sc, 0, 300 + lines.length * 8, 360, 100, '알겠어요', () => p.close(), { size: 32 })); return true;
 }
+
+// 빨간 점 (버튼 오른쪽 위에 · 살짝 콩콩)
+export function redDot(sc, x, y, r = 16) { const d = sc.add.circle(x, y, r, 0xE8352E).setStrokeStyle(4, 0xFFFFFF); sc.tweens.add({ targets: d, scale: 1.18, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); return d; }

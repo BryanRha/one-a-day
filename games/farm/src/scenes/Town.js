@@ -1,11 +1,11 @@
-import { BASE } from '../base.js?v=0.52.0';
+import { BASE } from '../base.js?v=0.52.1';
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.52.0';
-import { T, C } from '../ui.js?v=0.52.0';
-import { audio } from '../audio.js?v=0.52.0';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.52.0';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, trainN, trainCount, zooCoins, pop } from '../state.js?v=0.52.0';
-import { TRAINS } from '../data.js?v=0.52.0';
+import { W, H } from '../config.js?v=0.52.1';
+import { T, C } from '../ui.js?v=0.52.1';
+import { audio } from '../audio.js?v=0.52.1';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.52.1';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, trainN, trainCount, zooCoins, pop } from '../state.js?v=0.52.1';
+import { TRAINS } from '../data.js?v=0.52.1';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -103,8 +103,17 @@ export class TownScene extends Phaser.Scene {
   // ── 땅: 열린 구역은 풀 · 닫힌 구역은 숲
   drawGround() {
     this.ground.removeAll(true);
-    for (let s = 0; s < MAP * 2 - 1; s++) for (let gx = 0; gx < MAP; gx++) { const gy = s - gx; if (gy < 0 || gy >= MAP) continue;
-      const im = this.add.image(0, 0, open(gx, gy) ? 'grass' : 'forest'); place(im, gx, gy, 1, open(gx, gy) ? 0.1 : 0.12); this.ground.add(im); }
+    // 열린 땅: 평평한 잔디 (칸마다 두께 없이 · 아주 옅은 바둑무늬 + 풀포기 · 꽃) — 칸이 쌓여 보이지 않게
+    const g = this.add.graphics(), P = (a, b) => { const [x, y] = iso(a, b); return { x, y }; }, h = (x, y) => ((x * 73856093) ^ (y * 19349663)) >>> 0;
+    for (let gy = 0; gy < MAP; gy++) for (let gx = 0; gx < MAP; gx++) { if (!open(gx, gy)) continue; g.fillStyle((gx + gy) % 2 ? 0x86C94A : 0x8CCE50, 1).fillPoints([P(gx, gy), P(gx + 1, gy), P(gx + 1, gy + 1), P(gx, gy + 1)], true); }
+    for (let gy = 0; gy < MAP; gy++) for (let gx = 0; gx < MAP; gx++) { if (!open(gx, gy)) continue; const r = h(gx, gy);
+      for (let k = 0; k < 3; k++) { const q = P(gx + ((r >> (k * 4)) % 9 + 1) / 10, gy + ((r >> (k * 4 + 2)) % 9 + 1) / 10); g.lineStyle(3, 0x5E9E34, 0.75); g.lineBetween(q.x, q.y, q.x - 4, q.y - 9); g.lineBetween(q.x, q.y, q.x + 1, q.y - 11); g.lineBetween(q.x, q.y, q.x + 5, q.y - 8); }
+      if (r % 7 === 0) { const q = P(gx + 0.5, gy + 0.5); g.fillStyle([0xFFFFFF, 0xFFE27A, 0xFFB6CB][r % 3], 1).fillCircle(q.x, q.y - 2, 4); }
+      if (r % 11 === 0) { const q = P(gx + 0.3, gy + 0.6); g.fillStyle(0xC9C2B0, 1).fillEllipse(q.x, q.y, 12, 7); } }
+    this.ground.add(g);
+    // 닫힌 땅(숲)은 그대로 나무 그림 (숲은 원래 빽빽하게 겹쳐 보이는 게 자연스러움)
+    for (let s = 0; s < MAP * 2 - 1; s++) for (let gx = 0; gx < MAP; gx++) { const gy = s - gx; if (gy < 0 || gy >= MAP || open(gx, gy)) continue;
+      const im = this.add.image(0, 0, 'forest'); place(im, gx, gy, 1, 0.12); this.ground.add(im); }
     // 닫힌 구역 위 '넓히기' 팻말 (이웃한 구역만)
     const n = MAP / ZONE; for (let z = 0; z < n * n; z++) { if (this.d.zones.includes(z)) continue; const zx = z % n, zy = Math.floor(z / n); if (!this.d.zones.some(o => Math.abs(o % n - zx) + Math.abs(Math.floor(o / n) - zy) === 1)) continue;
       const [x, y] = iso(zx * ZONE + ZONE / 2, zy * ZONE + ZONE / 2), g = this.add.graphics(); g.fillStyle(0x3E2A14, 0.85).fillRoundedRect(x - 70, y - 64, 140, 56, 28); this.ground.add(g); this.ground.add(T(this, x, y - 36, '🔨 넓히기', 26, '#FFFFFF', { w: 900 })); }
@@ -190,7 +199,7 @@ export class TownScene extends Phaser.Scene {
   // ── 기차역 · 선로 · 기차 (선로는 지도 오른쪽 가장자리를 따라 쭉 · 기관차와 화물칸은 이어 붙음)
   trackPt(gy, ti = 0) { return iso(MAP + 1.05 + ti * 2.1, gy); }   // 기차 1·2·3번 선로는 나란히
   drawStation() {
-    this.stationG?.destroy(); const c = this.stationG = this.add.container(0, 0).setDepth(1), [sx, sy] = iso(MAP + 1.05 + TRAINS.length * 2.1 + 0.4, MAP / 2 - 3.6), nT = trainCount(); this.trainCs = [];
+    this.stationG?.destroy(); const c = this.stationG = this.add.container(0, 0).setDepth(1), nT = trainCount(), [sx, sy] = iso(MAP + 1.05 + Math.max(1, nT) * 2.1 + 0.5, MAP / 2 + 4.2); this.trainCs = [];   /* 역은 열린 선로 바로 바깥 · 1번 기관차 옆 */
     // 선로: 침목 + 레일 두 줄
     for (let ti = 0; ti < Math.max(1, nT); ti++) { const tr = this.add.graphics(), a = this.trackPt(-3, ti), b = this.trackPt(MAP + 5, ti), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
     for (let d = 0; d < L; d += 34) { const x = a[0] + ux * d, y = a[1] + uy * d; tr.lineStyle(14, 0x6B4423, 1).lineBetween(x - nx * 34, y - ny * 34 * 0.6 - 8, x + nx * 34, y + ny * 34 * 0.6 + 8); }

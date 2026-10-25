@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.45.4';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.45.4';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.45.5';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.45.5';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -25,6 +25,8 @@ export function load() {
   if (oldMap) { d.map6 = true; d.zones = d.zones.map(z => (Math.floor(z / 4) + 1) * 6 + z % 4 + 1); for (const o of d.objs) { o.x += 5; o.y += 5; } if (d.dig && d.dig.spot) d.dig.spot = null; }
   // v0.9: 공사 중이던 집은 바로 완성 (집은 공사장이 필요 없게 바뀜)
   for (const o of d.objs) if (o.site && BUILDS[o.b] && BUILDS[o.b].k === 'house') o.site = null;
+  // v0.9.5: 예전 규칙에서 상한보다 많이 지은 집 → 상한을 지금 주민 수까지 올려 줌 (60/20 같은 표시가 안 나오게)
+  if (!d.capFix) { d.capFix = true; const pn = d.objs.reduce((a, o) => a + (BUILDS[o.b] && !o.site ? BUILDS[o.b].give || 0 : 0), 0), pc = BASE_CAP + d.objs.reduce((a, o) => a + (BUILDS[o.b] && !o.site ? BUILDS[o.b].cap || 0 : 0), 0); if (pn > pc) d.capBonus = pn - pc; }
   // v0.5: 공구(하나로 묶인 재화) → 건축 재료 6종으로 나눠 줌
   if (d.tools > 0) { const n = d.tools; d.tools = 0; giveMats(n); }
   return d;
@@ -61,7 +63,7 @@ export function matDrop(fields) { let out = null; for (let k = 0; k < fields; k+
 
 // ── 인구
 export const popNow = () => load().objs.reduce((s, o) => s + (o.site ? 0 : BUILDS[o.b].give || 0), 0);
-export const popCap = () => BASE_CAP + load().objs.reduce((s, o) => s + (o.site ? 0 : BUILDS[o.b].cap || 0), 0);
+export const popCap = () => BASE_CAP + (load().capBonus || 0) + load().objs.reduce((s, o) => s + (o.site ? 0 : BUILDS[o.b].cap || 0), 0);
 export const pop = () => popNow();   // 타운십처럼: 상한은 '집을 더 짓는 것'만 막고, 이미 사는 주민은 모두 인구로 셈
 export const countOf = b => load().objs.filter(o => o.b === b && !o.site).length;   // 공사 중인 건물은 빼고
 export function canBuild(b) { const B = BUILDS[b], s = load(); if (s.lv < B.lv) return `레벨 ${B.lv}에 열려요`; if (B.k === 'deco') return s.coins < costOf(b) ? `코인 ${costOf(b)} 필요` : null; if (B.pop && pop() < B.pop) return `인구 ${B.pop}명 필요 (지금 ${pop()}명) · 집을 더 지어요`; if (B.k === 'house' && popNow() + B.give > popCap()) return `인구 상한 ${popCap()}명 · 우물·성당 같은 공공건물로 상한을 늘려요`; if (B.k === 'field' && countOf('field') >= B.max(s.lv)) return `밭은 레벨 ${s.lv}에서 ${B.max(s.lv)}칸까지`; if (B.k !== 'field' && B.k !== 'house' && B.k !== 'public' && B.k !== 'deco' && load().objs.some(o => o.b === b)) return '이미 있어요'; if (s.coins < costOf(b)) return `코인 ${costOf(b)} 필요`; return null; }

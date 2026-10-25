@@ -1,44 +1,54 @@
-// 샘의 참새 쫓기 — 마을 화면 위에서 바로 하는 놀이 (장면 전환 없음)
-//  · 30초 동안 내 밭에 참새가 내려앉음 · 눌러서 쫓거나 문질러서 한꺼번에 쫓음
-//  · 참새가 3.5초 동안 쪼면 그 밭은 망침 · 허수아비(장식) 2칸 안의 밭엔 오지 않음
-//  · 끝나면 지킨 밭은 다음 수확 때 1개 더 (f.bonus)
-import { BUILDS } from './data.js?v=0.48.1';
-import { iso, TW, TH } from './scenes/Town.js?v=0.48.1';
-import { audio } from './audio.js?v=0.48.1';
+// 샘의 참새 쫓기 — 시안 그대로: 마을 풍경 한가운데 잘 익은 밭 3×4칸 · 참새 떼 · 샘 · '보호된 밭' 나무판
+//  마을 화면(Hud) 위에 바로 띄움 (장면 전환 · 로딩 없음)
+//  · 30초 · 참새를 눌러서, 여러 마리는 문질러서 쫓음 · 3.5초 동안 쪼면 그 밭은 망침
+//  · 허수아비 초록 원 안의 밭엔 참새가 못 옴 · 지킨 밭만큼 밀·옥수수를 거둠
+import { W, H } from './config.js?v=0.48.2';
+import { T, C, btn } from './ui.js?v=0.48.2';
+import { audio } from './audio.js?v=0.48.2';
 
 export const SP = { secs: 30, peck: 3500, maxBirds: 9 };
-export function spStart(t) {
-  const d = t.d, crows = d.objs.filter(o => o.b === 'scarecrow'), allF = d.objs.filter(o => o.b === 'field'); if (!allF.length) return '밭이 있어야 해요';
-  // 붙어 있는 밭 묶음 중 가장 큰 것 (최대 12칸) → 그 묶음을 화면 가득 크게
-  const seen = new Set(), groups = []; for (const f of allF) { if (seen.has(f.id)) continue; const g = [], q = [f]; seen.add(f.id); while (q.length) { const a = q.pop(); g.push(a); for (const b of allF) if (!seen.has(b.id) && Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1) { seen.add(b.id); q.push(b); } } groups.push(g); }
-  groups.sort((a, b) => b.length - a.length); const fields = groups[0].slice(0, 12);
-  const safe = f => crows.some(c => Math.max(Math.abs(c.x - f.x), Math.abs(c.y - f.y)) <= 2);
-  const targets = fields.filter(f => !safe(f));
-  // 밭이 다 보이게 카메라 맞춤
-  const pts = fields.map(f => iso(f.x + 0.5, f.y + 0.5)), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), cam = t.cameras.main;
-  const w = Math.max(...xs) - Math.min(...xs) + TW * 2, h = Math.max(...ys) - Math.min(...ys) + TH * 4; t.spPrev = { z: cam.zoom, x: cam.midPoint.x, y: cam.midPoint.y };
-  const z = Phaser.Math.Clamp(Math.min(1000 / w, (t.scale.height - 760) / h), 1.05, 1.8); cam.zoomTo(z, 400); cam.pan((Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...ys) + Math.min(...ys)) / 2 + 40, 400, 'Sine.easeInOut');
-  t.select(null); t.sp = { end: Date.now() + SP.secs * 1000 + 600, birds: [], next: Date.now() + 900, chased: 0, lost: new Set(), hit: new Set(), targets, safe: fields.filter(safe), all: fields };
-  for (const c of crows) { if (!fields.some(f => Math.max(Math.abs(c.x - f.x), Math.abs(c.y - f.y)) <= 2)) continue; const [x, y] = iso(c.x + 0.5, c.y + 0.5), g = t.add.ellipse(x, y, TW * 5, TH * 5, 0x8BE36A, 0.16).setStrokeStyle(6, 0x8BE36A, 0.75); g.dk = -0.4; t.layer.add(g); t.tweens.add({ targets: g, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 }); (t.sp.rings = t.sp.rings || []).push(g); }
-  t.sp.trail = t.add.graphics(); t.sp.trail.dk = 999999; t.layer.add(t.sp.trail); t.sp.pts = [];
-  return null; }
-function spawn(t) { const s = t.sp, free = s.targets.filter(f => !s.lost.has(f.id) && !s.birds.some(b => b.f === f && b.state !== 'flee')); if (!free.length) return;
-  const f = free[Math.floor(Math.random() * free.length)], [x, y] = iso(f.x + 0.5, f.y + 0.5), from = [x + (Math.random() < 0.5 ? -1 : 1) * 700, y - 700];
-  const im = t.add.image(from[0], from[1], 'sparrow').setDisplaySize(100, 87).setFlipX(from[0] > x); im.dk = 99999; t.layer.add(im);
-  const b = { im, f, state: 'fly', x, y: y - 6 }; s.birds.push(b); s.hit.add(f.id);
-  t.tweens.add({ targets: im, x, y: b.y, duration: 850, ease: 'Sine.easeOut', onComplete: () => { if (b.state !== 'fly') return; b.state = 'peck'; b.t = Date.now() + SP.peck; b.bob = t.tweens.add({ targets: im, angle: { from: -8, to: 14 }, duration: 180, yoyo: true, repeat: -1 }); audio.play('sfx_tap', { volume: 0.25 }); } });
-  b.flap = t.tweens.add({ targets: im, scaleY: im.scaleY * 0.8, duration: 110, yoyo: true, repeat: 7 }); }
-function flee(t, b, by) { if (b.state === 'flee') return; const was = b.state; b.state = 'flee'; b.bob && b.bob.stop(); b.flap && b.flap.stop(); if (by) { t.sp.chased++; audio.play('sfx_bubble', { volume: 0.5 }); audio.buzz(8);
-    const puff = t.add.circle(b.im.x, b.im.y, 20, 0xFFFFFF, 0.8); puff.dk = 99999; t.layer.add(puff); t.tweens.add({ targets: puff, scale: 3, alpha: 0, duration: 300, onComplete: () => puff.destroy() }); }
-  const dir = Math.random() < 0.5 ? -1 : 1; b.im.setFlipX(dir < 0); t.tweens.add({ targets: b.im, x: b.im.x + dir * 800, y: b.im.y - 900, angle: dir * 20, duration: 700, ease: 'Sine.easeIn', onComplete: () => b.im.destroy() }); }
-// 누르기 · 문지르기: 손가락 근처의 참새를 쫓음
-export function spPoint(t, sx, sy) { const w0 = t.cameras.main.getWorldPoint(sx, sy); t.sp.pts.push({ x: w0.x, y: w0.y, at: Date.now() }); const w = w0, r = 70 / t.cameras.main.zoom + 30; let n = 0; for (const b of t.sp.birds) if (b.state !== 'flee' && Math.hypot(b.im.x - w.x, b.im.y - 20 - w.y) < r) { flee(t, b, true); n++; } return n; }
-export function spTick(t) { const s = t.sp, now = Date.now();
-  if (now >= s.next && now < s.end - 1200 && s.birds.filter(b => b.state !== 'flee').length < SP.maxBirds) { spawn(t); const k = 1 - (s.end - now) / (SP.secs * 1000); s.next = now + 950 - k * 550; if (k > 0.5 && Math.random() < 0.35) spawn(t); }
-  for (const b of s.birds) if (b.state === 'peck' && now >= b.t) { s.lost.add(b.f.id); flee(t, b, false); const [x, y] = iso(b.f.x + 0.5, b.f.y + 0.5), m = t.add.text(x, y - 40, '😢', { fontSize: '44px' }).setOrigin(0.5); m.dk = 99999; t.layer.add(m); t.tweens.add({ targets: m, y: y - 110, alpha: 0, duration: 900, onComplete: () => m.destroy() }); }
-  s.birds = s.birds.filter(b => b.im.active); t.layer.sort('dk');
-  s.pts = s.pts.filter(p => now - p.at < 260); const tr = s.trail; tr.clear(); for (let i = 1; i < s.pts.length; i++) { const a = s.pts[i - 1], b = s.pts[i], k = 1 - (now - b.at) / 260; tr.lineStyle(26 * k + 4, 0xFFFFFF, 0.55 * k).lineBetween(a.x, a.y, b.x, b.y); }
-  return now >= s.end ? 'done' : null; }
-export function spFinish(t) { const s = t.sp; for (const b of s.birds) flee(t, b, false); for (const g of s.rings || []) g.destroy(); s.trail.destroy();
-  const kept = s.all.filter(f => !s.lost.has(f.id)); for (const f of kept) if (s.hit.has(f.id) || s.safe.includes(f)) f.bonus = 1;
-  const res = { chased: s.chased, lost: s.lost.size, kept: kept.length, total: s.all.length }; t.sp = null; const pv = t.spPrev; if (pv) { t.cameras.main.zoomTo(pv.z, 400); t.cameras.main.pan(pv.x, pv.y, 400); } t.drawObjs(); return res; }
+// 배경 그림(1024×1536) 속 밭 13칸의 가운데 (w: 밀 · c: 옥수수)
+const PLOTS = [[230, 461, 'w'], [474, 365, 'c'], [653, 454, 'w'], [410, 589, 'w'], [192, 691, 'c'], [755, 627, 'c'], [550, 755, 'c'], [294, 858, 'w'], [819, 819, 'w'], [602, 973, 'w'], [397, 1062, 'c'], [614, 1165, 'c'], [883, 998, 'c']];
+const CROW = 7;   // 허수아비가 선 밭
+export function spOpen(sc, onEnd) {
+  const root = sc.add.container(0, 0).setDepth(1500), k = Math.min(Math.max(W / 1024, (H - 120) / 1536), 1.38), map = (x, y) => [W / 2 + (x - 537) * k, y * k];   // 밭 묶음 가운데(537)를 화면 가운데로
+  root.add(sc.add.rectangle(W / 2, H / 2, W, H, 0x76B843));
+  const bg = sc.add.image(W / 2 - (537 - 512) * k, 0, 'sparrow_bg').setOrigin(0.5, 0); bg.setScale(k); root.add(bg);
+  const blocker = sc.add.zone(W / 2, H / 2, W, H).setInteractive(); root.add(blocker);
+  const [cx0, cy0] = map(PLOTS[CROW][0], PLOTS[CROW][1]);
+  const tiles = PLOTS.map(([x, y, w], i) => { const [sx, sy] = map(x, y); return { x: sx, y: sy, w, r: w === 'w' ? 0 : 2, id: i, safe: Math.hypot(sx - cx0, (sy - cy0) * 1.6) < 300 * k, lost: false, hit: false, mark: null }; });
+  // 허수아비 + 초록 보호 원 (시안처럼)
+  const ring = sc.add.ellipse(cx0, cy0 + 20 * k, 330 * k, 175 * k, 0x9BF06A, 0.2).setStrokeStyle(8, 0xB6FF7A, 0.95); root.add(ring); sc.tweens.add({ targets: ring, alpha: 0.55, duration: 700, yoyo: true, repeat: -1 });
+  const scare = sc.add.image(cx0, cy0 + 30 * k, 'scarecrow').setOrigin(0.5, 0.92); scare.setScale(210 * k / scare.height); root.add(scare); sc.tweens.add({ targets: scare, angle: { from: -3, to: 3 }, duration: 900, yoyo: true, repeat: -1 });
+  const birdsL = sc.add.container(0, 0); root.add(birdsL); const trail = sc.add.graphics(); root.add(trail);
+  // 위: 시간 · 쫓은 수 알약
+  const pill = (x, w, k) => { const g = sc.add.graphics(); g.fillStyle(0x4A2E14, 0.94).fillRoundedRect(x - w / 2, 40, w, 108, 54).lineStyle(6, 0xE8C27A, 1).strokeRoundedRect(x - w / 2, 40, w, 108, 54); root.add(g); const ic = k === 'clock' ? T(sc, x - w / 2 + 52, 92, '⏱', 52, '#FFE27A', { w: 900 }) : sc.add.image(x - w / 2 + 52, 92, k); if (ic.setScale && k !== 'clock') ic.setScale(64 / Math.max(ic.width, ic.height)); root.add(ic); const t = T(sc, x + 24, 94, '', 50, '#FFFFFF', { w: 900 }); root.add(t); return t; };
+  const tT = pill(W / 2 - 180, 280, 'clock'), sT = pill(W / 2 + 130, 240, 'wheat');
+  root.add(btn(sc, W - 90, 92, 92, 92, '✕', () => { st.end = 0; }, { size: 36, style: 'cream' }));
+  // 아래: 샘 · 말풍선 · 보호된 밭 나무판
+  const pb = sc.add.graphics(); pb.fillStyle(0x6A4626, 0.97).fillRoundedRect(250, H - 196, W - 280, 160, 34).lineStyle(6, 0xC9A27A, 1).strokeRoundedRect(250, H - 196, W - 280, 160, 34); root.add(pb);
+  root.add(T(sc, 300, H - 160, '보호한 밭', 32, '#FFE27A', { ox: 0, w: 900 })); const bar = sc.add.graphics(); root.add(bar);
+  const bdg = sc.add.graphics(); bdg.fillStyle(0xF2B632, 1).fillRoundedRect(W - 160, H - 178, 120, 120, 28).lineStyle(5, 0xFFE27A, 1).strokeRoundedRect(W - 160, H - 178, 120, 120, 28); root.add(bdg); const badge = sc.add.image(W - 100, H - 118, 'scarecrow'); badge.setScale(100 / badge.height); root.add(badge);
+  const bub = sc.add.graphics(); bub.fillStyle(0xFFFBF2, 0.98).fillRoundedRect(270, H - 430, 620, 170, 44).lineStyle(5, 0xE8C27A, 1).strokeRoundedRect(270, H - 430, 620, 170, 44).fillStyle(0xFFFBF2, 0.98).fillTriangle(250, H - 330, 290, H - 370, 290, H - 300); root.add(bub);
+  const tip = T(sc, 580, H - 345, '참새를 눌러서 쫓아요!\n여러 마리는 문질러서 한꺼번에!', 36, C.ink, { w: 900 }); root.add(tip);
+  const sam = sc.add.image(130, H, 'sam').setOrigin(0.5, 1); sam.setScale(520 / sam.height); root.add(sam);
+  sc.time.delayedCall(5000, () => tip.active && tip.setText('허수아비가 지키는 밭은\n안심이에요!'));
+  const st = { end: Date.now() + SP.secs * 1000 + 700, next: Date.now() + 800, birds: [], chased: 0, tiles, pts: [], done: false };
+  const sprouts = []; const draw = () => { const n = tiles.length, w = (W - 490) / n; bar.clear(); tiles.forEach((t, i) => { const x = 300 + i * w; bar.fillStyle(t.lost ? 0x4A2E14 : 0x6CC33A, 1).fillRoundedRect(x, H - 122, w - 6, 56, 10).lineStyle(3, t.lost ? 0x2E1C0C : 0xB6F07A, 0.9).strokeRoundedRect(x, H - 122, w - 6, 56, 10); if (!sprouts[i]) { sprouts[i] = T(sc, x + (w - 6) / 2, H - 94, '🌱', 26, '#000', { w: 900 }); root.add(sprouts[i]); } sprouts[i].setAlpha(t.lost ? 0.15 : 1); }); };
+  const spawn = () => { const free = tiles.filter(t => !t.safe && !t.lost && !st.birds.some(b => b.t === t && b.state !== 'flee')); if (!free.length) return; const t = free[Math.floor(Math.random() * free.length)], fx = t.x + (Math.random() < 0.5 ? -1 : 1) * (500 + Math.random() * 300), fy = t.y - 700;
+    const im = sc.add.image(fx, fy, 'sparrow').setDisplaySize(118 * k, 102 * k).setFlipX(fx > t.x); birdsL.add(im); const b = { im, t, state: 'fly' }; st.birds.push(b); t.hit = true; birdsL.sort('y');
+    b.flap = sc.tweens.add({ targets: im, scaleY: im.scaleY * 0.75, duration: 100, yoyo: true, repeat: 8 });
+    sc.tweens.add({ targets: im, x: t.x + (Math.random() - 0.5) * 110 * k, y: t.y - 20 * k + (Math.random() - 0.5) * 50 * k, duration: 800, ease: 'Sine.easeOut', onComplete: () => { if (b.state !== 'fly') return; b.state = 'peck'; b.at = Date.now() + SP.peck; b.bob = sc.tweens.add({ targets: im, angle: { from: -6, to: 16 }, duration: 170, yoyo: true, repeat: -1 }); } }); };
+  const flee = (b, by) => { if (b.state === 'flee') return; b.state = 'flee'; b.bob && b.bob.stop(); b.flap && b.flap.stop(); if (by) { st.chased++; audio.play('sfx_bubble', { volume: 0.5 }); audio.buzz(8); const puff = sc.add.circle(b.im.x, b.im.y, 26, 0xFFFFFF, 0.85); root.add(puff); sc.tweens.add({ targets: puff, scale: 3, alpha: 0, duration: 320, onComplete: () => puff.destroy() }); }
+    const d = Math.random() < 0.5 ? -1 : 1; b.im.setFlipX(d < 0); sc.tweens.add({ targets: b.im, x: b.im.x + d * 700, y: b.im.y - 900, angle: d * 20, duration: 700, ease: 'Sine.easeIn', onComplete: () => b.im.destroy() }); };
+  const point = (x, y) => { st.pts.push({ x, y, at: Date.now() }); for (const b of st.birds) if (b.state !== 'flee' && Math.hypot(b.im.x - x, b.im.y - y) < 100) flee(b, true); };
+  blocker.on('pointerdown', p => point(p.x, p.y)); blocker.on('pointermove', p => { if (p.isDown) point(p.x, p.y); });
+  const tick = () => { if (st.done) return; const now = Date.now();
+    if (now >= st.next && now < st.end - 1200 && st.birds.filter(b => b.state !== 'flee').length < SP.maxBirds) { spawn(); const k = 1 - (st.end - now) / (SP.secs * 1000); st.next = now + 900 - k * 520; if (k > 0.4 && Math.random() < 0.4) spawn(); }
+    for (const b of st.birds) if (b.state === 'peck' && now >= b.at) { b.t.lost = true; { const m2 = sc.add.ellipse(b.t.x, b.t.y, 220 * k, 110 * k, 0x5A3A1E, 0.55); root.addAt(m2, 3); } flee(b, false); const m = T(sc, b.t.x, b.t.y - 60, '😢', 54, '#000', { w: 900 }); root.add(m); sc.tweens.add({ targets: m, y: m.y - 90, alpha: 0, duration: 900, onComplete: () => m.destroy() }); audio.play('sfx_error', { volume: 0.4 }); }
+    st.birds = st.birds.filter(b => b.im.active);
+    st.pts = st.pts.filter(p => now - p.at < 260); trail.clear(); for (let i = 1; i < st.pts.length; i++) { const a = st.pts[i - 1], c = st.pts[i], k = 1 - (now - c.at) / 260; trail.lineStyle(34 * k + 6, 0xFFFFFF, 0.6 * k).lineBetween(a.x, a.y, c.x, c.y); }
+    const left = Math.max(0, Math.ceil((st.end - now) / 1000)); tT.setText(`0:${String(Math.min(SP.secs, left)).padStart(2, '0')}`).setColor(left <= 5 ? '#FF8A7A' : '#FFFFFF'); sT.setText(`${st.chased}`); draw();
+    if (now >= st.end) { st.done = true; for (const b of st.birds) flee(b, false); const kept = tiles.filter(t => !t.lost); sc.time.delayedCall(500, () => { root.destroy(); onEnd({ chased: st.chased, lost: tiles.length - kept.length, kept: kept.length, total: tiles.length, wheat: kept.filter(t => t.w === 'w').length, corn: kept.filter(t => t.w === 'c').length }); }); } };
+  sc.events.on('update', tick); root.once('destroy', () => sc.events.off('update', tick));
+  draw(); sc.time.delayedCall(250, spawn); sc.time.delayedCall(450, spawn); sc.time.delayedCall(650, spawn); return st; }

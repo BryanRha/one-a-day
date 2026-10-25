@@ -1,11 +1,11 @@
-import { BASE } from '../base.js?v=0.52.1';
+import { BASE } from '../base.js?v=0.52.2';
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.52.1';
-import { T, C } from '../ui.js?v=0.52.1';
-import { audio } from '../audio.js?v=0.52.1';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.52.1';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, trainN, trainCount, zooCoins, pop } from '../state.js?v=0.52.1';
-import { TRAINS } from '../data.js?v=0.52.1';
+import { W, H } from '../config.js?v=0.52.2';
+import { T, C } from '../ui.js?v=0.52.2';
+import { audio } from '../audio.js?v=0.52.2';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.52.2';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, trainN, trainCount, zooCoins, pop } from '../state.js?v=0.52.2';
+import { TRAINS } from '../data.js?v=0.52.2';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -199,7 +199,7 @@ export class TownScene extends Phaser.Scene {
   // ── 기차역 · 선로 · 기차 (선로는 지도 오른쪽 가장자리를 따라 쭉 · 기관차와 화물칸은 이어 붙음)
   trackPt(gy, ti = 0) { return iso(MAP + 1.05 + ti * 2.1, gy); }   // 기차 1·2·3번 선로는 나란히
   drawStation() {
-    this.stationG?.destroy(); const c = this.stationG = this.add.container(0, 0).setDepth(1), nT = trainCount(), [sx, sy] = iso(MAP + 1.05 + Math.max(1, nT) * 2.1 + 0.5, MAP / 2 + 4.2); this.trainCs = [];   /* 역은 열린 선로 바로 바깥 · 1번 기관차 옆 */
+    this.stationG?.destroy(); const c = this.stationG = this.add.container(0, 0).setDepth(1), nT = trainCount(), [sx, sy] = iso(MAP + 1.05 + Math.max(1, nT) * 2.1 + 1.4, MAP / 2 + 6.4); this.trainCs = [];   /* 역은 열린 선로 바로 바깥 · 1번 기관차 옆 */
     // 선로: 침목 + 레일 두 줄
     for (let ti = 0; ti < Math.max(1, nT); ti++) { const tr = this.add.graphics(), a = this.trackPt(-3, ti), b = this.trackPt(MAP + 5, ti), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
     for (let d = 0; d < L; d += 34) { const x = a[0] + ux * d, y = a[1] + uy * d; tr.lineStyle(14, 0x6B4423, 1).lineBetween(x - nx * 34, y - ny * 34 * 0.6 - 8, x + nx * 34, y + ny * 34 * 0.6 + 8); }

@@ -1,7 +1,7 @@
 // 온라인 순위표 (Supabase 무료 프로젝트) — RANK.url · RANK.key 를 넣으면 켜짐, 비어 있으면 화면에 순위 버튼이 나오지 않음
 // 표: scores(board 문자, name 별명, score 높을수록 위, extra 기록) · 공개 읽기·쓰기 (anon 키는 공개용)
 // 판: 'war:w1'…'war:w15' (전쟁실 점수) · 'daily:YYYY-MM-DD' (오늘의 작전: 빠른 날 · 적은 손실)
-import { load, save } from './save.js?v=0.47.3';
+import { load, save } from './save.js?v=0.48.0';
 
 export const RANK = { url: '', key: '' };
 export const rankOn = () => !!(RANK.url && RANK.key);

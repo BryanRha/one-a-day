@@ -1,10 +1,10 @@
 // 결과: 거리·점수(최고 기록) · 주운 재화 · 입양 진행 · 미션 진행 → 다시 날기 / 로비
-import { W, H } from '../config.js?v=0.47.3';
-import { txt, fmt, fit, button, iconButton } from '../ui.js?v=0.47.3';
-import { audio } from '../audio.js?v=0.47.3';
-import { load } from '../save.js?v=0.47.3';
-import { wind } from '../fx.js?v=0.47.3';
-import { applyRun, CAT_INFO, missions, ranking } from '../meta.js?v=0.47.3';
+import { W, H } from '../config.js?v=0.48.0';
+import { txt, fmt, fit, button, iconButton } from '../ui.js?v=0.48.0';
+import { audio } from '../audio.js?v=0.48.0';
+import { load } from '../save.js?v=0.48.0';
+import { wind } from '../fx.js?v=0.48.0';
+import { applyRun, CAT_INFO, missions, ranking } from '../meta.js?v=0.48.0';
 
 export class ResultScene extends Phaser.Scene {
   constructor() { super('Result'); }

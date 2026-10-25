@@ -493,7 +493,7 @@ export const QUESTS = [
   { id: 'q14', n: '레벨 8 달성', goal: { level: 8 }, reward: { coins: 150, xp: 0, gems: 10 }, talk: [L('라벤더 공주', 'princess', '처음 왔을 땐 밀밭뿐이었는데, 이제 진짜 마을이 됐어요!'), L('한스', 'hans', '…공주님 덕분이에요. 다음엔 수확 축제를 열어요.')] },
   // ── 2장 「수확 축제와 세 사람」
   { id: 'q15', n: '장식 5개 놓기', goal: { deco: 5 }, reward: { coins: 120, xp: 25 }, talk: [L('브룩', 'brook', '수확 축제엔 마을이 예뻐야지! 화단이랑 벤치로 꾸며 봐요~ 사람들이 기분 좋으면 돈도 잘 쓴다니까!')] },
-  { id: 'q16', n: '샘의 밭 퍼즐 한 판 깨기', goal: { mini: 1 }, reward: { coins: 100, xp: 20, gems: 5 }, talk: [L('샘', 'sam', '공주님! 놀이 메뉴에 제 밭 퍼즐이 생겼어요! 같은 작물 3개를 맞춰서 밭을 가꿔 봐요!')] },
+  { id: 'q16', n: '샘의 참새 쫓기 한 번', goal: { mini: 1 }, reward: { coins: 100, xp: 20, gems: 5 }, talk: [L('샘', 'sam', '공주님! 참새 떼가 또 밭에 내려앉았어요! 놀이에서 같이 쫓아 줘요!')] },
   { id: 'q17', n: '선물 3번 주기', goal: { gift: 3 }, reward: { coins: 150, xp: 30 }, talk: [L('라벤더 공주', 'princess', '한스, 샘, 이안… 다들 날 많이 도와줬지. 좋아하는 걸 선물해 볼까?')] },
   { id: 'q18', n: '레벨 12 달성', goal: { level: 12 }, reward: { coins: 200, xp: 0, gems: 10 }, talk: [L('파출로', 'pachulo', '흠, 공주님 마을이 커지니 뒷산 광산 얘기를 안 할 수 없군. 철과 금이 묻혀 있다오.')] },
   { id: 'q19', n: '광산 짓기', goal: { build: 'mine' }, reward: { coins: 200, xp: 40, items: { pickaxe: 5 } }, talk: [L('이안', 'ian', '광산은 위험합니다. 곡괭이로 하나씩 깨세요. 대장간에서 곡괭이를 만들 수 있습니다.')] },

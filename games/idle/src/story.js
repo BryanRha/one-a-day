@@ -1,7 +1,7 @@
 // 컷씬 대본 — 장면(shot)마다: 그림 · 카메라(줌/이동) · 등장 인물 · 효과 · 대사
 //   bg: 'cut_xxx'(컷씬 그림) 또는 'bg_xxx'(지역 배경) · cam: [시작 배율, 끝 배율, 시작 y(0~1), 끝 y] · who: 인물 id(원화) · side: 'l'|'r'
 //   fx: 'flash' 번쩍 · 'shake' 흔들림 · 'embers' 불씨 · 'dark' 어둠 · 'dawn' 새벽빛 번짐 · 'red' 붉은 기운
-import { HEROES, REGIONS } from './data.js?v=0.55.1';
+import { HEROES, REGIONS } from './data.js?v=0.55.2';
 
 export const CUTS = {
   prologue: { music: 'bgm_story', shots: [

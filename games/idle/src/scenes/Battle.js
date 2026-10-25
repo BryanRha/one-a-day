@@ -1,17 +1,17 @@
 // 전투(메인): 기사단 10명이 지역을 행군하며 자동 사냥 → 보스 게이지 → 보스(20번째는 사도)
 //   아래: 영웅 줄(체력 · 스킬) · 퀘스트 · 장비 상자. 다른 메뉴는 이 장면 위에 덮어 열리고 전투는 계속 돈다.
-import { W, H } from '../config.js?v=0.55.1';
-import { T, R, C, TS, btn, sheet, rbox, chips, toast } from '../ui.js?v=0.55.1';
-import { audio } from '../audio.js?v=0.55.1';
-import { load, save } from '../save.js?v=0.55.1';
-import { HEROES, ROLES, REGIONS, MOBS, STORY_JOIN, GRADES, SKILL_KIND } from '../data.js?v=0.55.1';
-import { heroStats, mobHp, mobAtk, bossHp, bossAtk, goldPerMob, GAUGE_PER_MOB, BOSS_TIME, stageName, regionOf, stageNo, isHeraldStage, bgOf, openChest, equip, sell, better, itemPower, itemIcon, itemName, itemDesc, sellValue, quest, questAdd, questClaim, offlineReward, addHero, fmt, teamPower, goldMul } from '../state.js?v=0.55.1';
-import { TOP, NAV_H } from '../hud.js?v=0.55.1';
-import { loadRegion, SKILL_ICON } from './Boot.js?v=0.55.1';
-import { EQ_GRADES, SLOTS, CHEST_UP } from '../data.js?v=0.55.1';
-import { CUTS, heraldCut } from '../story.js?v=0.55.1';
-import { Puppet } from '../puppet.js?v=0.55.1';
-import { Skin, hasRig } from '../skin.js?v=0.55.1';
+import { W, H } from '../config.js?v=0.55.2';
+import { T, R, C, TS, btn, sheet, rbox, chips, toast } from '../ui.js?v=0.55.2';
+import { audio } from '../audio.js?v=0.55.2';
+import { load, save } from '../save.js?v=0.55.2';
+import { HEROES, ROLES, REGIONS, MOBS, STORY_JOIN, GRADES, SKILL_KIND } from '../data.js?v=0.55.2';
+import { heroStats, mobHp, mobAtk, bossHp, bossAtk, goldPerMob, GAUGE_PER_MOB, BOSS_TIME, stageName, regionOf, stageNo, isHeraldStage, bgOf, openChest, equip, sell, better, itemPower, itemIcon, itemName, itemDesc, sellValue, quest, questAdd, questClaim, offlineReward, addHero, fmt, teamPower, goldMul } from '../state.js?v=0.55.2';
+import { TOP, NAV_H } from '../hud.js?v=0.55.2';
+import { loadRegion, SKILL_ICON } from './Boot.js?v=0.55.2';
+import { EQ_GRADES, SLOTS, CHEST_UP } from '../data.js?v=0.55.2';
+import { CUTS, heraldCut } from '../story.js?v=0.55.2';
+import { Puppet } from '../puppet.js?v=0.55.2';
+import { Skin, hasRig } from '../skin.js?v=0.55.2';
 
 const FIELD_TOP = TOP;
 export class BattleScene extends Phaser.Scene {

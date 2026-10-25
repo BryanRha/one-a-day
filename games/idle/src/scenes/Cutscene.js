@@ -1,10 +1,10 @@
 // 컷씬: 그림 위로 카메라가 천천히 움직이고(줌 · 이동), 인물이 미끄러져 들어오고, 대사가 한 글자씩
 //   누르면 다음 대사 · 위 '건너뛰기' · 끝나면 done() 호출. 모든 장면 위에 뜸.
-import { W, H } from '../config.js?v=0.55.1';
-import { T, C, btn } from '../ui.js?v=0.55.1';
-import { audio } from '../audio.js?v=0.55.1';
-import { pushBack } from '../oad.js?v=0.55.1';
-import { livePuppet } from '../puppet.js?v=0.55.1';
+import { W, H } from '../config.js?v=0.55.2';
+import { T, C, btn } from '../ui.js?v=0.55.2';
+import { audio } from '../audio.js?v=0.55.2';
+import { pushBack } from '../oad.js?v=0.55.2';
+import { livePuppet } from '../puppet.js?v=0.55.2';
 
 export class CutsceneScene extends Phaser.Scene {
   constructor() { super('Cutscene'); }

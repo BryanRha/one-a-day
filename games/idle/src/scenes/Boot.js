@@ -1,10 +1,11 @@
 // 로딩: 영웅 원화 · 얼굴 · 지금 지역 배경 · 아이콘 · 이펙트 · 소리
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.55.1';
-import { SFX, BGM, audio } from '../audio.js?v=0.55.1';
-import { makeTextures } from '../ui.js?v=0.55.1';
-import { HEROES, SLOTS, REGIONS, PETS } from '../data.js?v=0.55.1';
-import { load } from '../save.js?v=0.55.1';
-import { regionOf } from '../state.js?v=0.55.1';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.55.2';
+import { SFX, BGM, audio } from '../audio.js?v=0.55.2';
+import { makeTextures } from '../ui.js?v=0.55.2';
+import { HEROES, SLOTS, REGIONS, PETS } from '../data.js?v=0.55.2';
+import { load } from '../save.js?v=0.55.2';
+import { regionOf } from '../state.js?v=0.55.2';
+import { PARTS } from '../parts.js?v=0.55.2';
 
 export const SKILL_ICON = { strike: 31, aoe: 25, line: 2, heal: 104, shield: 13, buff: 20, taunt: 103 };
 export const SHOP_ICONS = [3, 4, 5, 6, 7, 16, 29, 30, 31, 38, 39, 40, 41, 114, 139, 278, 378, 379, 380, 381, 383, 384, 389];
@@ -30,6 +31,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('i_gold', 'assets/shop/4.webp'); this.load.image('i_gem', 'assets/shop/5.webp'); this.load.image('i_key', 'assets/shop/3.webp');
     for (const f of ['aaaaa', 'ava_texture_02', 'carson_skill_01', 'deino_at_hit', 'fergus_skill01']) this.load.image(`fx_${f}`, `assets/fx/${f}.webp`);
     for (const k of new Set(REGIONS[regionOf(load().stage)].bg)) this.load.image(`bg_${k}`, `assets/bg/${k}.webp`);
+    for (const [id, P] of Object.entries(PARTS)) for (const n of Object.keys(P.parts)) this.load.image(`part_${id}_${n}`, `assets/parts/${id}_${n}.webp`);
     for (const k of ['cs_sun', 'cs_nox', 'cs_lantern', 'cs_dawn']) this.load.image(`cut_${k}`, `assets/cut/${k}.webp`);
     for (const n of [...SFX, ...BGM]) this.load.audio(n, [`assets/audio/${n}.m4a`]);
     this.load.on('loaderror', () => {});

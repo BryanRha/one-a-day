@@ -1,5 +1,5 @@
 // 효과음 / 배경음 관리. 설정(save.sfx / save.music)을 따른다.
-import { load, save } from './save.js?v=0.55.1';
+import { load, save } from './save.js?v=0.55.2';
 
 export const SFX = [
   'sfx_swap', 'sfx_swap_invalid', 'sfx_select', 'sfx_match_1', 'sfx_match_2', 'sfx_match_3', 'sfx_match_4', 'sfx_match_5',

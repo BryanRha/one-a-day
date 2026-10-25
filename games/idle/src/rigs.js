@@ -17,10 +17,10 @@ const beast = o => ({ kind: 'melee', swing: 0.3, root: [o.x, 0.97], bones: [B('r
   B('armF', 'chest', [o.fx, o.back + 0.05], [o.fx + 0.03, 0.95]), B('armB', 'hip', [o.bx + 0.08, o.back + 0.05], [o.bx + 0.1, 0.95]),
   ...(o.tail ? [B('s0', 'hip', o.tail[0], o.tail[1], { soft: 1.2 })] : []), ...(o.extra || [])] });
 export const RIGS = {
-  cloud: { kind: 'melee', root: [0.66, 0.97], swing: 0.8, bones: [
+  cloud: { kind: 'melee', root: [0.66, 0.97], gunArc: [178, 203, 360], armBSwing: 0.25, bones: [
     B('root', null, [0.66, 0.97], [0.62, 0.62]), B('legF', 'root', [0.57, 0.56], [0.70, 0.93]), B('legB', 'root', [0.66, 0.56], [0.88, 0.60]),
     B('hip', 'root', [0.60, 0.55], [0.58, 0.41]), B('chest', 'hip', [0.58, 0.41], [0.60, 0.29]), B('head', 'chest', [0.60, 0.28], [0.62, 0.08], { r: 1.3 }),
-    B('armF', 'chest', [0.70, 0.30], [0.77, 0.04]), B('armB', 'chest', [0.47, 0.37], [0.60, 0.45]), B('gun', 'chest', [0.32, 0.46], [0.06, 0.80], { r: 0.8 }),
+    B('armF', 'chest', [0.77, 0.28], [0.74, 0.05], { r: 0.4 }), B('armB', 'chest', [0.44, 0.42], [0.60, 0.50], { r: 0.4 }), B('gun', 'armF', [0.71, 0.085], [0.21, 0.75], { r: 0.01 }),
     B('cape1', 'chest', [0.42, 0.34], [0.22, 0.60], { soft: 1.2 }), B('cape2', 'cape1', [0.22, 0.60], [0.10, 0.86], { soft: 1.6 }), B('cape3', 'hip', [0.46, 0.62], [0.45, 0.92], { soft: 1 }) ] },
   ava: { kind: 'ranged', flip: true, root: [0.47, 0.97], bones: [
     B('root', null, [0.47, 0.97], [0.46, 0.62]), B('legF', 'root', [0.40, 0.57], [0.34, 0.95]), B('legB', 'root', [0.53, 0.57], [0.60, 0.95]),

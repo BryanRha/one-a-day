@@ -1,6 +1,6 @@
 // 경제 · 성장 · 전투 수치 (화면과 분리 — 밸런스 봇도 이 파일을 그대로 씀)
-import { load, save } from './save.js?v=0.55.1';
-import { HEROES, GRADES, ROLES, SLOTS, EQ_GRADES, CHEST_ODDS, SUMMON, SUMMONABLE, STAR_NEED, MAX_STAR, LEVEL_CAP, STAGES_PER_REGION, REGIONS, PETS } from './data.js?v=0.55.1';
+import { load, save } from './save.js?v=0.55.2';
+import { HEROES, GRADES, ROLES, SLOTS, EQ_GRADES, CHEST_ODDS, SUMMON, SUMMONABLE, STAR_NEED, MAX_STAR, LEVEL_CAP, STAGES_PER_REGION, REGIONS, PETS } from './data.js?v=0.55.2';
 // 펫 보너스(%)
 export const petLv = id => ((load().pets || {})[id] || 0);
 export const petBonus = (id, lv = petLv(id)) => { const P = PETS.find(p => p.id === id); return P && lv ? P.base * (1 + 0.25 * (lv - 1)) : 0; };

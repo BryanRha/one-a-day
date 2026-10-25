@@ -1,7 +1,7 @@
 // 상대 AI: 다음 행동 하나씩 돌려줌 (화면이 한 동작씩 보여 줄 수 있게)
 // { kind: 'power' } · { kind: 'act', id, to, then: { kind: 'attack'|'capture'|'wait'|'unload', target, at } } · { kind: 'build', x, y, type } · { kind: 'end' }
-import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base, repairsAt } from './data.js?v=0.48.2';
-import { dist } from './sim.js?v=0.48.2';
+import { UNITS, UNIT_ORDER, TERRAIN, COS, FOOT, base, repairsAt } from './data.js?v=0.49.0';
+import { dist } from './sim.js?v=0.49.0';
 
 const LV = { easy: { noise: 0.5, threat: 0.25, focus: 0.6 }, normal: { noise: 0.12, threat: 0.45, focus: 1.1 }, hard: { noise: 0, threat: 0.6, focus: 1.3 } };
 

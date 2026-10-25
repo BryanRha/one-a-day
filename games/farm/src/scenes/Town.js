@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.48.2';
-import { T, C } from '../ui.js?v=0.48.2';
-import { audio } from '../audio.js?v=0.48.2';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.48.2';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.48.2';
+import { W, H } from '../config.js?v=0.49.0';
+import { T, C } from '../ui.js?v=0.49.0';
+import { audio } from '../audio.js?v=0.49.0';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.49.0';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.49.0';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];

@@ -1,14 +1,14 @@
 // 작전 결과: 승패 · 별 · 전과 · 경험치 · 계급 · 새 지휘관
-import { W, H } from '../config.js?v=0.55.2';
-import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.55.2';
-import { audio } from '../audio.js?v=0.55.2';
-import { load } from '../save.js?v=0.55.2';
-import * as M from '../meta.js?v=0.55.2';
-import { COS } from '../core/data.js?v=0.55.2';
-import { MAPS } from '../core/maps.js?v=0.55.2';
-import { insignia } from './Home.js?v=0.55.2';
-import { rankOn } from '../rank.js?v=0.55.2';
-import { rankPopup, postScore } from '../rankui.js?v=0.55.2';
+import { W, H } from '../config.js?v=0.55.3';
+import { T, C, fmt, panel, btn, iconBtn } from '../pui.js?v=0.55.3';
+import { audio } from '../audio.js?v=0.55.3';
+import { load } from '../save.js?v=0.55.3';
+import * as M from '../meta.js?v=0.55.3';
+import { COS } from '../core/data.js?v=0.55.3';
+import { MAPS } from '../core/maps.js?v=0.55.3';
+import { insignia } from './Home.js?v=0.55.3';
+import { rankOn } from '../rank.js?v=0.55.3';
+import { rankPopup, postScore } from '../rankui.js?v=0.55.3';
 
 const PRAISE = ['완벽한 작전!', '훌륭한 지휘였어요!', '전선이 무너졌어요, 대승!', '역시 명지휘관!'];
 export class ResultScene extends Phaser.Scene {

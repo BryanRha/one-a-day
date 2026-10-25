@@ -1,10 +1,10 @@
 // 컬렉션: 블록 스킨(별 조각으로 해금) · 지난 주 그림 갤러리 · 기록
-import { W, H } from '../config.js?v=0.47.1';
-import { T, C, fmt, panel, btn, iconBtn, toast } from '../pui.js?v=0.47.1';
-import { audio } from '../audio.js?v=0.47.1';
-import { load, save } from '../save.js?v=0.47.1';
-import { SKINS } from '../meta.js?v=0.47.1';
-import { makeSkinPreview, makeBlockTextures } from './Boot.js?v=0.47.1';
+import { W, H } from '../config.js?v=0.47.2';
+import { T, C, fmt, panel, btn, iconBtn, toast } from '../pui.js?v=0.47.2';
+import { audio } from '../audio.js?v=0.47.2';
+import { load, save } from '../save.js?v=0.47.2';
+import { SKINS } from '../meta.js?v=0.47.2';
+import { makeSkinPreview, makeBlockTextures } from './Boot.js?v=0.47.2';
 
 export class CollectionScene extends Phaser.Scene {
   constructor() { super('Collection'); }

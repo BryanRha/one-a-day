@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.44.1';
-import { T, C } from '../ui.js?v=0.44.1';
-import { audio } from '../audio.js?v=0.44.1';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.44.1';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.44.1';
+import { W, H } from '../config.js?v=0.44.2';
+import { T, C } from '../ui.js?v=0.44.2';
+import { audio } from '../audio.js?v=0.44.2';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.44.2';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.44.2';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -112,8 +112,8 @@ export class TownScene extends Phaser.Scene {
       if (o.crop) { const im = this.add.image(0, 0, ripe ? `crop_${o.crop}` : 'crop_sprouts'), [bx, by] = iso(o.x + 1, o.y + 1); im.setOrigin(0.5, 1).setScale(TW * (ripe ? 0.94 : 0.8) / im.width).setPosition(bx, by - TH * (ripe ? 0.04 : 0.1)); c.add(im); c.im = im; }
       if (o.crop && !ripe) { const [x, y] = iso(o.x + 0.5, o.y + 0.5), t = Math.max(0, (o.at - Date.now()) / 1000), k = 1 - t / CROPS[o.crop].t, g = this.add.graphics(); g.fillStyle(0x000000, 0.4).fillRoundedRect(x - 40, y - 20, 80, 14, 7).fillStyle(0x8BE36A, 1).fillRoundedRect(x - 40, y - 20, Math.max(8, 80 * k), 14, 7); c.add(g); c.bar = g; } }
     else if (o.b === 'road') this.drawRoad(c, o);
-    else if (o.site) { const im = this.add.image(0, 0, 'site'); place(im, o.x, o.y, B.sz, 0.08); c.add(im); c.im = im; const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), bb = this.add.container(x, y - im.displayHeight * 0.62 - 30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillCircle(0, 0, 46).lineStyle(5, 0xE89A2E, 1).strokeCircle(0, 0, 46).fillTriangle(-14, 38, 14, 38, 0, 62); const pi = this.add.image(0, 0, 'brick'); pi.setScale(60 / Math.max(pi.width, pi.height)); bb.add([g, pi]); c.add(bb); this.tweens.add({ targets: bb, y: bb.y - 14, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
-    else { const im = this.add.image(0, 0, o.b === 'mine' ? 'mine_b' : o.b); place(im, o.x, o.y, B.sz, 0.08); c.add(im); c.im = im;
+    else if (o.site) { const im = this.add.image(0, 0, 'site'); place(im, o.x, o.y, B.sz, 0.08); im.setFlipX(!!o.flip); c.add(im); c.im = im; const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), bb = this.add.container(x, y - im.displayHeight * 0.62 - 30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillCircle(0, 0, 46).lineStyle(5, 0xE89A2E, 1).strokeCircle(0, 0, 46).fillTriangle(-14, 38, 14, 38, 0, 62); const pi = this.add.image(0, 0, 'brick'); pi.setScale(60 / Math.max(pi.width, pi.height)); bb.add([g, pi]); c.add(bb); this.tweens.add({ targets: bb, y: bb.y - 14, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
+    else { const im = this.add.image(0, 0, o.b === 'mine' ? 'mine_b' : o.b); place(im, o.x, o.y, B.sz, 0.08); im.setFlipX(!!o.flip); c.add(im); c.im = im;
       // 다 된 물건 말풍선
       let ready = null; if (B.k === 'factory') { tickFactory(o); if (o.done.length) ready = o.done[0]; } if (B.k === 'animal') { tickAnimal(o); if (o.ready) ready = productOf(o.b); } if (B.k === 'exhibit' && zooCoins(o) >= 20) ready = 'coin';
       const busy = B.k === 'factory' && o.q && o.q.length || B.k === 'animal' && o.s && o.s.some(Boolean);
@@ -185,12 +185,13 @@ export class TownScene extends Phaser.Scene {
   startPlace(b, moving) {
     this.hud && this.hud.endPlant();
     const B = BUILDS[b], cam = this.cameras.main, w = cam.getWorldPoint(W / 2, H / 2), [gx, gy] = grid(w.x, w.y);
-    this.mode = moving ? 'move' : 'place'; this.placing = { b, moving }; this.ghost = this.add.container(0, 0); this.ghost.sz = B.sz; this.ghost.setDepth(5); this.ghost.dk = 999;
+    this.ghostFlip = !!(moving && moving.flip); this.mode = moving ? 'move' : 'place'; this.placing = { b, moving }; this.ghost = this.add.container(0, 0); this.ghost.sz = B.sz; this.ghost.setDepth(5); this.ghost.dk = 999;
     this.ghostIm = this.add.image(0, 0, b === 'field' ? 'soil' : b === 'mine' ? 'mine_b' : b).setAlpha(0.85); this.ghostG = this.add.graphics(); this.ghost.add([this.ghostG, this.ghostIm]);
     this.layer.add(this.ghost); this.moveGhost(moving ? moving.x : gx - 1, moving ? moving.y : gy - 1);
     this.ghostIm.setInteractive({ draggable: false }); this.input.on('gameobjectdown', (p, go) => { if (go === this.ghostIm) this.dragGhost = true; });
   }
-  moveGhost(gx, gy) { const sz = this.ghost.sz; gx = Phaser.Math.Clamp(gx, 0, MAP - sz); gy = Phaser.Math.Clamp(gy, 0, MAP - sz); this.ghost.gx = gx; this.ghost.gy = gy; place(this.ghostIm, gx, gy, sz, 0.08); this.ghostOk = freeRect(gx, gy, sz, this.placing.moving); this.ghostG.clear(); this.diamond(this.ghostG, gx, gy, sz, this.ghostOk ? 0x5AE36A : 0xFF4A4A, 0.4); this.ghostIm.setTint(this.ghostOk ? 0xFFFFFF : 0xFF5A5A).setAlpha(this.ghostOk ? 0.95 : 0.6); this.hud && this.hud.placeOk(this.ghostOk); }
+  moveGhost(gx, gy) { const sz = this.ghost.sz; gx = Phaser.Math.Clamp(gx, 0, MAP - sz); gy = Phaser.Math.Clamp(gy, 0, MAP - sz); this.ghost.gx = gx; this.ghost.gy = gy; place(this.ghostIm, gx, gy, sz, 0.08); this.ghostOk = freeRect(gx, gy, sz, this.placing.moving); this.ghostG.clear(); this.diamond(this.ghostG, gx, gy, sz, this.ghostOk ? 0x5AE36A : 0xFF4A4A, 0.4); this.ghostIm.setFlipX(!!this.ghostFlip).setTint(this.ghostOk ? 0xFFFFFF : 0xFF5A5A).setAlpha(this.ghostOk ? 0.95 : 0.6); this.hud && this.hud.placeOk(this.ghostOk); }
+  flipGhost() { if (!this.ghostIm) return; this.ghostFlip = !this.ghostFlip; this.ghostIm.setFlipX(this.ghostFlip); this.tweens.add({ targets: this.ghostIm, scaleX: { from: this.ghostIm.scaleX * 0.85, to: this.ghostIm.scaleX }, duration: 160, ease: 'Back.easeOut' }); }
   endPlace() { this.ghost?.destroy(); this.ghost = null; this.mode = null; this.placing = null; this.input.off('gameobjectdown'); this.drawObjs(); }
   // 화면 좌표 (말풍선·날아가는 아이콘용)
   screenOf(o) { const B = BUILDS[o.b], [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), cam = this.cameras.main; return [(x - cam.worldView.x) * cam.zoom, (y - cam.worldView.y) * cam.zoom - 40]; }

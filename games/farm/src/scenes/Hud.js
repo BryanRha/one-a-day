@@ -1,15 +1,15 @@
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.44.1';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.44.1';
-import { audio } from '../audio.js?v=0.44.1';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.44.1';
-import { onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.44.1';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.44.1';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.44.1';
-import { taskCheck, coopBadge } from '../coop.js?v=0.44.1';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.44.1';
-import { FUP, TRAINS } from '../data.js?v=0.44.1';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.44.1';
+import { W, H } from '../config.js?v=0.44.2';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.44.2';
+import { audio } from '../audio.js?v=0.44.2';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.44.2';
+import { onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.44.2';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.44.2';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.44.2';
+import { taskCheck, coopBadge } from '../coop.js?v=0.44.2';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.44.2';
+import { FUP, TRAINS } from '../data.js?v=0.44.2';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.44.2';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -159,13 +159,14 @@ export class HudScene extends Phaser.Scene {
     this.placeBar?.destroy(); const c = this.placeBar = this.add.container(W / 2, H - 330).setDepth(500), g = this.add.graphics(); g.fillStyle(0x3E2A14, 0.9).fillRoundedRect(-420, -80, 840, 160, 40); c.add(g);
     c.add(T(this, -380, -40, moving ? '끌어서 옮겨요' : `${BUILDS[k].n} · 끌어서 자리를 골라요`, 26, '#FFFFFF', { ox: 0, w: 900 }));
     this.okB = btn(this, 230, 20, 200, 90, '✓ 확인', () => this.placeOk2(k, moving), { size: 30, style: 'green' }); c.add(this.okB); c.add(btn(this, -200, 20, 200, 90, '✗ 취소', () => { this.town.endPlace(); c.destroy(); this.placeBar = null; }, { size: 28, style: 'cream' }));
+    if (!['field', 'road', 'path'].includes(k)) c.add(btn(this, 15, 20, 180, 90, '↻ 회전', () => { audio.play('sfx_tap', { volume: 0.6 }); this.town.flipGhost(); }, { size: 26, style: 'gold' }));   // 타운십처럼 놓을 때 방향 바꾸기 (쿼터뷰라 좌우 뒤집기)
     this.zones.push(this.pz = { x: W / 2 - 420, y: H - 410, w: 840, h: 160 });
   }
   placeOk(ok) { if (this.okB) this.okB.setAlpha(ok ? 1 : 0.5); }
   placeOk2(k, moving) {
     const t = this.town; if (!t.ghostOk) return toast(this, '여기엔 놓을 수 없어요', H / 2); const gx = t.ghost.gx, gy = t.ghost.gy;
-    if (moving) { moving.x = gx; moving.y = gy; }
-    else { const why = canBuild(k); if (why) return toast(this, why); const B = BUILDS[k]; this.d.coins -= costOf(k); const o = { id: ++this.d.seq, b: k, x: gx, y: gy }; o.site = newSite(k); if (o.site) this.time.delayedCall(300, () => toast(this, '🏗 공사장이 생겼어요 · 눌러서 벽돌·유리·석판을 채우면 완성!', H / 2)); if (B.k === 'factory') { o.q = []; o.done = []; } if (B.k === 'animal') { o.s = [0, 0, 0]; o.ready = 0; } if (k === 'field') o.crop = null; this.d.objs.push(o); progress('build', k); gainXp(B.k === 'field' ? 1 : 5); audio.play('sfx_build', { volume: 0.7 }); }
+    if (moving) { moving.x = gx; moving.y = gy; moving.flip = t.ghostFlip || undefined; }
+    else { const why = canBuild(k); if (why) return toast(this, why); const B = BUILDS[k]; this.d.coins -= costOf(k); const o = { id: ++this.d.seq, b: k, x: gx, y: gy }; if (t.ghostFlip) o.flip = true; o.site = newSite(k); if (o.site) this.time.delayedCall(300, () => toast(this, '🏗 공사장이 생겼어요 · 눌러서 벽돌·유리·석판을 채우면 완성!', H / 2)); if (B.k === 'factory') { o.q = []; o.done = []; } if (B.k === 'animal') { o.s = [0, 0, 0]; o.ready = 0; } if (k === 'field') o.crop = null; this.d.objs.push(o); progress('build', k); gainXp(B.k === 'field' ? 1 : 5); audio.play('sfx_build', { volume: 0.7 }); }
     save(); t.endPlace(); this.placeBar.destroy(); this.placeBar = null; this.zones = this.zones.filter(z => z !== this.pz); this.refresh();
     if (!moving && (k === 'field' || BUILDS[k].k === 'deco') && canBuild(k) === null) this.startBuild(k);   // 밭 · 장식은 이어서 여러 개   // 밭은 이어서 여러 칸
   }

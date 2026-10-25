@@ -1,10 +1,11 @@
-import { BASE } from '../base.js?v=0.51.1';
+import { BASE } from '../base.js?v=0.52.0';
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.51.1';
-import { T, C } from '../ui.js?v=0.51.1';
-import { audio } from '../audio.js?v=0.51.1';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.51.1';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.51.1';
+import { W, H } from '../config.js?v=0.52.0';
+import { T, C } from '../ui.js?v=0.52.0';
+import { audio } from '../audio.js?v=0.52.0';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.52.0';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, trainN, trainCount, zooCoins, pop } from '../state.js?v=0.52.0';
+import { TRAINS } from '../data.js?v=0.52.0';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -134,6 +135,9 @@ export class TownScene extends Phaser.Scene {
       const busy = B.k === 'factory' && o.q && o.q.length || B.k === 'animal' && o.s && o.s.some(Boolean);
       const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), top = y - im.displayHeight * 0.62;
       if (ready) { const bb = this.add.container(x, top - 30), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillCircle(0, 0, 46).lineStyle(5, 0x5AAE3C, 1).strokeCircle(0, 0, 46).fillTriangle(-14, 38, 14, 38, 0, 62); const pi = this.add.image(0, 0, ready); pi.setScale(66 / Math.max(pi.width, pi.height)); bb.add([g, pi]); { const n = B.k === 'factory' ? o.done.length : B.k === 'animal' ? o.ready : 0; if (n > 1) { const bc = this.add.circle(36, -34, 22, 0xE8352E).setStrokeStyle(4, 0xFFFFFF); bb.add([bc, T(this, 36, -35, `${n}`, 26, '#FFFFFF', { w: 900 })]); } } /* 다 된 것이 여러 개면 개수 */ c.add(bb); this.tweens.add({ targets: bb, y: top - 44, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
+      if (busy && B.k === 'factory') { const v = 1 + (o.id % 5), [wx2, wy2] = iso(o.x + B.sz + 0.05, o.y + B.sz * 0.55), wk = this.add.image(wx2, wy2, `w${v}_f1`).setOrigin(0.5, 0.97); wk.setScale(TH * 1.25 / wk.height).setFlipX(true); c.add(wk); let fr = 0;   /* 일하는 사람: 건물 앞에서 몸을 숙였다 폈다 */
+        this.tweens.add({ targets: wk, angle: { from: -4, to: 8 }, scaleY: wk.scaleY * 0.94, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', onRepeat: () => { fr = 1 - fr; wk.setTexture(`w${v}_f${fr + 1}`); } }); }
+      if (busy && B.k === 'animal') { const sy0 = im.scaleY; this.tweens.add({ targets: im, scaleY: sy0 * 1.015, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
       if (busy && B.k === 'factory') { const sy = im.scaleY; this.tweens.add({ targets: im, scaleY: sy * 1.025, scaleX: im.scaleX * 0.99, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); c.busy = true; }   // 일하는 공장은 살짝 들썩임
       if (ready) {} else if (busy) { const pb = this.add.graphics(), pt = T(this, x, top - 34, '', 22, '#FFFFFF', { w: 900 }).setStroke('#3E2A14', 6); c.add([pb, pt]); c.pb = { g: pb, t: pt, x, y: top - 6, o }; this.prog(c.pb); } }   // 만드는 중: 진행 막대 + 남은 시간 (열어 보지 않아도 보임)
     if (this.sel && this.sel.id === o.id && this.mode !== 'move') { const [x, y] = iso(o.x + B.sz / 2, o.y + B.sz / 2), g = this.add.graphics(); this.diamond(g, o.x, o.y, B.sz, 0xFFE27A, 0.35); c.addAt(g, 0); }
@@ -184,24 +188,26 @@ export class TownScene extends Phaser.Scene {
   diamond(g, gx, gy, sz, col, a) { const p = [iso(gx, gy), iso(gx + sz, gy), iso(gx + sz, gy + sz), iso(gx, gy + sz)]; g.fillStyle(col, a).fillPoints(p.map(([x, y]) => ({ x, y })), true).lineStyle(4, col, 1).strokePoints(p.map(([x, y]) => ({ x, y })), true); }
   // ── 기차역: 지도 오른쪽 끝 (항상 있음 · 레벨 2부터 운행)
   // ── 기차역 · 선로 · 기차 (선로는 지도 오른쪽 가장자리를 따라 쭉 · 기관차와 화물칸은 이어 붙음)
-  trackPt(gy) { return iso(MAP + 1.05, gy); }
+  trackPt(gy, ti = 0) { return iso(MAP + 1.05 + ti * 2.1, gy); }   // 기차 1·2·3번 선로는 나란히
   drawStation() {
-    this.stationG?.destroy(); const c = this.stationG = this.add.container(0, 0).setDepth(1), [sx, sy] = iso(MAP + 2.9, MAP / 2 - 1.6);
+    this.stationG?.destroy(); const c = this.stationG = this.add.container(0, 0).setDepth(1), [sx, sy] = iso(MAP + 1.05 + TRAINS.length * 2.1 + 0.4, MAP / 2 - 3.6), nT = trainCount(); this.trainCs = [];
     // 선로: 침목 + 레일 두 줄
-    const tr = this.add.graphics(), a = this.trackPt(-3), b = this.trackPt(MAP + 5), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    for (let ti = 0; ti < Math.max(1, nT); ti++) { const tr = this.add.graphics(), a = this.trackPt(-3, ti), b = this.trackPt(MAP + 5, ti), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
     for (let d = 0; d < L; d += 34) { const x = a[0] + ux * d, y = a[1] + uy * d; tr.lineStyle(14, 0x6B4423, 1).lineBetween(x - nx * 34, y - ny * 34 * 0.6 - 8, x + nx * 34, y + ny * 34 * 0.6 + 8); }
     for (const o of [-20, 20]) { tr.lineStyle(7, 0x5A5F66, 1).lineBetween(a[0] + nx * o, a[1] + ny * o * 0.6, b[0] + nx * o, b[1] + ny * o * 0.6); tr.lineStyle(3, 0xC9CED6, 1).lineBetween(a[0] + nx * o, a[1] + ny * o * 0.6 - 3, b[0] + nx * o, b[1] + ny * o * 0.6 - 3); }
-    c.add(tr); const st = this.add.image(sx, sy, 'station').setOrigin(0.5, 0.86); st.setScale(TW * 2 / st.width); c.add(st);
-    this.trainC = this.add.container(0, 0); c.add(this.trainC); this.stationXY = this.trackPt(MAP / 2 + 1); const t = train();
-    if (t && !t.away && !this.trainAnim) this.buildTrain(t, 0);
+    c.add(tr); }
+    const st = this.add.image(sx, sy, 'station').setOrigin(0.5, 0.86); st.setScale(TW * 2 / st.width); c.add(st);
+    this.stationXY = this.trackPt(MAP / 2 + 1, 0); this.anim = this.anim || [];
+    for (let ti = 0; ti < nT; ti++) { const tc = this.add.container(0, 0); c.add(tc); this.trainCs[ti] = tc; const t = trainN(ti); if (t && !t.away && !this.anim[ti]) this.buildTrain(t, 0, ti); }
+    this.trainC = this.trainCs[0];
   }
   // 기차 그리기: off = 선로를 따라 밀린 칸 수 (들어오고 나갈 때 움직임)
-  buildTrain(t, off) { const tc = this.trainC; tc.removeAll(true); const head = MAP / 2 + 2.3 + off, STEP = 1.32, parts = [], bubbles = [];
-    const put = (key, gy, w) => { const [x, y] = this.trackPt(gy), im = this.add.image(x, y + 8, key).setOrigin(0.5, 0.78);   /* 선로 방향(오른쪽 위 ↔ 왼쪽 아래)으로 놓음 */ im.setScale(TW * w / im.width); return im; };
+  buildTrain(t, off, ti = 0) { const tc = this.trainCs[ti]; if (!tc) return; tc.removeAll(true); const head = MAP / 2 + 2.3 + ti * 4.4 + off, STEP = 1.32, parts = [], bubbles = [];
+    const put = (key, gy, w) => { const [x, y] = this.trackPt(gy, ti), im = this.add.image(x, y + 8, key).setOrigin(0.5, 0.78);   /* 선로 방향(오른쪽 위 ↔ 왼쪽 아래)으로 놓음 */ im.setScale(TW * w / im.width); return im; };
     const loco = put('loco', head, 1.3); parts.push([head, loco]); tc.loco = loco;
-    t.cars.forEach((cr, k) => { const gy = head - STEP * (k + 1), w = put('wagon', gy, 1.12), [x, y] = this.trackPt(gy), g = this.add.container(x, y - 165), d = this.d.items[cr.it] || 0, ok = d >= cr.n;
+    t.cars.forEach((cr, k) => { const gy = head - STEP * (k + 1), w = put('wagon', gy, 1.12), [x, y] = this.trackPt(gy, ti), g = this.add.container(x, y - 165), d = this.d.items[cr.it] || 0, ok = d >= cr.n;
       // 이음새 (앞 칸과 연결)
-      const [px, py] = this.trackPt(gy + STEP * 0.5), cp = this.add.graphics(); cp.fillStyle(0x2E2A26, 1).fillCircle(px, py - 18, 8); parts.push([gy + STEP * 0.5 + 0.01, cp]);
+      const [px, py] = this.trackPt(gy + STEP * 0.5, ti), cp = this.add.graphics(); cp.fillStyle(0x2E2A26, 1).fillCircle(px, py - 18, 8); parts.push([gy + STEP * 0.5 + 0.01, cp]);
       if (cr.done) { for (let i = 0; i < 3; i++) { const ic = this.add.image(x - 34 + i * 34, y - 52 - (i % 2) * 8, cr.it); ic.setScale(54 / Math.max(ic.width, ic.height)); parts.push([gy - 0.01, ic]); } const ck = this.add.circle(0, 0, 30, 0x5AAE3C).setStrokeStyle(5, 0xFFFFFF); g.add([ck, T(this, 0, -2, '✓', 34, '#FFFFFF', { w: 900 })]); }
       else { const bg = this.add.graphics(); bg.fillStyle(0xFFFFFF, 1).fillRoundedRect(-62, -52, 124, 104, 26).lineStyle(5, ok ? 0x5AAE3C : 0xE3D3C2, 1).strokeRoundedRect(-62, -52, 124, 104, 26).fillStyle(0xFFFFFF, 1).fillTriangle(-12, 50, 12, 50, 0, 66); const ic = this.add.image(0, -12, cr.it); ic.setScale(58 / Math.max(ic.width, ic.height));
         g.add([bg, ic, T(this, 0, 32, ok ? `${cr.n}개 ✓` : `${d}/${cr.n}`, 24, ok ? C.green : C.red, { w: 900 })]); if (ok) this.tweens.add({ targets: g, y: g.y - 10, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }); }
@@ -209,17 +215,17 @@ export class TownScene extends Phaser.Scene {
     parts.sort((a, b) => a[0] - b[0]); for (const [, o] of parts) tc.add(o); for (const g of bubbles) tc.add(g);   /* 뒤 칸부터 (앞쪽이 위에) · 말풍선은 맨 위 */
     tc.parts = parts; }
   // 칸 누르기: 그 칸에 바로 싣기 (빈 곳은 기차 창)
-  trainTap(wx, wy) { const t = train(); if (!t || t.away || !this.trainC.parts) return false; let best = null, bd = 1e9; for (const [, o] of this.trainC.parts) if (o.car !== undefined && o.type === 'Image') { const dd = Math.hypot(o.x - wx, o.y - 60 - wy); if (dd < bd) { bd = dd; best = o; } }
-    if (best && bd < 130) { this.hud.loadCarAt(best.car); return true; } return false; }
+  trainTap(wx, wy) { let best = null, bd = 1e9, bt = 0; (this.trainCs || []).forEach((tc, ti) => { const t = trainN(ti); if (!t || t.away || !tc.parts) return; for (const [, o] of tc.parts) if (o.car !== undefined && o.type === 'Image') { const dd = Math.hypot(o.x - wx, o.y - 60 - wy); if (dd < bd) { bd = dd; best = o; bt = ti; } } });
+    if (best && bd < 130) { this.hud.loadCarAt(best.car, bt); return true; } return false; }
   // 출발 컷씬: 화면을 어둡게 · 기차 쪽으로 카메라 · 기적 · 연기 · 선로를 따라 떠남 · 보상 띠
-  departCut(t) { const cam = this.cameras.main, prev = { x: cam.midPoint.x, y: cam.midPoint.y, z: cam.zoom }; this.trainAnim = true; this.buildTrain({ ...t, cars: t.cars.map(c => ({ ...c, done: true })) }, 0);
-    const [hx, hy] = this.trackPt(MAP / 2 + 1); cam.pan(hx, hy - 60, 600, 'Sine.easeInOut'); cam.zoomTo(Math.max(cam.zoom, 1.0), 600); this.hud && this.hud.cutBars(true, '🚂 왕국으로 출발!');
-    this.time.delayedCall(700, () => { audio.play('sfx_whistle', { volume: 0.8 }); let off = 0; const go = this.time.addEvent({ delay: 16, loop: true, callback: () => { off += 0.004 + off * 0.03; this.buildTrain({ ...t, cars: t.cars.map(c => ({ ...c, done: true })) }, off);
-        const lo = this.trainC.loco; if (lo && Math.random() < 0.35) { const pf = this.add.circle(lo.x + 30, lo.y - lo.displayHeight * 0.8, 16, 0xFFFFFF, 0.85).setDepth(2); this.tweens.add({ targets: pf, y: pf.y - 90, x: pf.x + 30, scale: 2.4, alpha: 0, duration: 1100, onComplete: () => pf.destroy() }); }
+  departCut(t, ti = 0) { const cam = this.cameras.main, prev = { x: cam.midPoint.x, y: cam.midPoint.y, z: cam.zoom }; this.anim[ti] = true; this.buildTrain({ ...t, cars: t.cars.map(c => ({ ...c, done: true })) }, 0, ti);
+    const [hx, hy] = this.trackPt(MAP / 2 + 1, ti); cam.pan(hx, hy - 60, 600, 'Sine.easeInOut'); cam.zoomTo(Math.max(cam.zoom, 1.0), 600); this.hud && this.hud.cutBars(true, `🚂 ${ti + 1}번 기차 왕국으로 출발!`);
+    this.time.delayedCall(700, () => { audio.play('sfx_whistle', { volume: 0.8 }); let off = 0; const go = this.time.addEvent({ delay: 16, loop: true, callback: () => { off += 0.004 + off * 0.03; this.buildTrain({ ...t, cars: t.cars.map(c => ({ ...c, done: true })) }, off, ti);
+        const lo = this.trainCs[ti] && this.trainCs[ti].loco; if (lo && Math.random() < 0.35) { const pf = this.add.circle(lo.x + 30, lo.y - lo.displayHeight * 0.8, 16, 0xFFFFFF, 0.85).setDepth(2); this.tweens.add({ targets: pf, y: pf.y - 90, x: pf.x + 30, scale: 2.4, alpha: 0, duration: 1100, onComplete: () => pf.destroy() }); }
         if (lo) cam.centerOn(cam.midPoint.x + (lo.x - cam.midPoint.x) * 0.05, cam.midPoint.y + (lo.y - 60 - cam.midPoint.y) * 0.05);
-        if (off > 14) { go.remove(); this.trainC.removeAll(true); this.trainAnim = false; this.hud && this.hud.cutBars(false); cam.pan(prev.x, prev.y, 700, 'Sine.easeInOut'); cam.zoomTo(prev.z, 700); } } }); }); }
+        if (off > 14) { go.remove(); this.trainCs[ti] && this.trainCs[ti].removeAll(true); this.anim[ti] = false; this.hud && this.hud.cutBars(false); cam.pan(prev.x, prev.y, 700, 'Sine.easeInOut'); cam.zoomTo(prev.z, 700); } } }); }); }
   // 도착: 선로 위쪽에서 미끄러져 들어와 멈춤
-  arriveAnim(t) { this.trainAnim = true; let off = -10; const ev = this.time.addEvent({ delay: 16, loop: true, callback: () => { off += Math.max(0.012, -off * 0.06); if (off >= 0) { off = 0; ev.remove(); this.trainAnim = false; audio.play('sfx_whistle', { volume: 0.5 }); } this.buildTrain(t, off); } }); }
+  arriveAnim(t, ti = 0) { this.anim[ti] = true; let off = -10; const ev = this.time.addEvent({ delay: 16, loop: true, callback: () => { off += Math.max(0.012, -off * 0.06); if (off >= 0) { off = 0; ev.remove(); this.anim[ti] = false; audio.play('sfx_whistle', { volume: 0.5 }); } this.buildTrain(t, off, ti); } }); }
   // ── 입력: 끌면 화면 이동 · 두 손가락 확대 · 짧게 누르면 선택
   down(p) {
     if (this.hud && this.hud.blocking(p)) { this.press = null; return; } this.press = { x: p.x, y: p.y, sx: this.cameras.main.scrollX, sy: this.cameras.main.scrollY, moved: false, t: Date.now() }; this.pinch = null;
@@ -242,7 +248,16 @@ export class TownScene extends Phaser.Scene {
   ghostTo(sx, sy) { const w = this.cameras.main.getWorldPoint(sx, sy), [gx, gy] = grid(w.x, w.y + TH * 0.3); this.moveGhost(gx - Math.floor(this.ghost.sz / 2), gy - Math.floor(this.ghost.sz / 2)); }
   up(p) { this.dragAt = null; const pr = this.press; this.press = null; this.dragGhost = false; if (pr && pr.ring && pr.ring.active) { this.tweens.killTweensOf(pr.ring); pr.ring.destroy(); } if (!pr || pr.moved || pr.plant || pr.long) return; const w = this.cameras.main.getWorldPoint(p.x, p.y); this.tap(w.x, w.y); }
   // 누른 자리의 물건 (건물 지붕이 뒤 칸을 덮으므로 앞쪽 2칸 건물을 먼저)
-  hitAt(wx, wy) { const [gx, gy] = grid(wx, wy); let hit = null; for (let k = 2; k >= 1 && !hit; k--) { const o = objAt(gx + k, gy + k); if (o && o.b !== 'field') hit = o; } return hit || objAt(gx, gy); }
+  // 그림의 실제로 칠해진 곳을 눌렀는지 (투명한 가장자리는 아님)
+  opaque(im, wx, wy) { const pc = im.parentContainer, ox = pc ? pc.x : 0, oy = pc ? pc.y : 0, lx = (wx - ox - im.x) / im.scaleX + im.width * im.originX, ly = (wy - oy - im.y) / im.scaleY + im.height * im.originY; if (lx < 0 || ly < 0 || lx >= im.width || ly >= im.height) return false;
+    const fx = im.flipX ? im.width - 1 - lx : lx, a = this.textures.getPixelAlpha(Math.floor(fx), Math.floor(ly), im.texture.key); return a > 40; }
+  hitAt(wx, wy) { const [gx, gy] = grid(wx, wy), FLAT = ['field', 'path', 'road', 'fence', 'hedge'];
+    // 앞쪽 큰 건물(2칸)의 그림이 뒤 칸을 덮고 있으면 그 건물 (그림 안을 실제로 누른 경우만) · 밭·돌길·도로·울타리 같은 바닥은 절대 앞질러 잡지 않음
+    for (let k = 3; k >= 1; k--) for (const [dx, dy] of [[k, k], [k, k - 1], [k - 1, k]]) { const o = objAt(gx + dx, gy + dy); if (!o || FLAT.includes(o.b) || BUILDS[o.b].sz < 2) continue; const c = this.spr[o.id]; if (c && c.im && this.opaque(c.im, wx, wy)) return o; }
+    const here = objAt(gx, gy); if (here) return here;
+    // 1칸 장식은 그림을 누른 경우 (칸 가운데 74%로 작아져서)
+    for (const [dx, dy] of [[1, 1], [1, 0], [0, 1]]) { const o = objAt(gx + dx, gy + dy); if (!o || FLAT.includes(o.b)) continue; const c = this.spr[o.id]; if (c && c.im && this.opaque(c.im, wx, wy)) return o; }
+    return null; }
   tap(wx, wy) {
     if (this.mode) { const [gx, gy] = grid(wx, wy); this.moveGhost(gx - Math.floor(this.ghost.sz / 2), gy - Math.floor(this.ghost.sz / 2)); return; }
     if (this.plantK) { const [gx, gy] = grid(wx, wy), f0 = objAt(gx, gy), f = f0 && f0.b === 'field' ? f0 : null; if (f && !f.crop) return this.hud.plantOne(f, this.plantK); this.hud.endPlant(); }
@@ -252,14 +267,14 @@ export class TownScene extends Phaser.Scene {
     // 건물은 그림 위쪽을 눌러도 잡히게: 아래에서 위로 몇 칸 훑어봄
     const [gx, gy] = grid(wx, wy), sp = this.d.dig.spot;
     // 앞쪽 건물의 지붕이 뒤 칸을 덮으므로: 앞으로 2칸까지 건물(밭 제외)을 먼저 찾고, 없으면 누른 칸
-    let hit = null; for (let k = 2; k >= 1 && !hit; k--) { const o = objAt(gx + k, gy + k); if (o && o.b !== 'field') hit = o; } if (!hit) hit = objAt(gx, gy);
+    const hit = this.hitAt(wx, wy);
     if (sp && sp[0] === gx && sp[1] === gy) return this.hud.dig();
     if (!hit) { if (!open(gx, gy) && gx >= 0 && gy >= 0 && gx < MAP && gy < MAP) return this.hud.expand(gx, gy); this.select(null); return; }
     this.select(hit); this.hud.objTap(hit);
   }
   select(o) { this.sel = o; this.drawObjs(); }
   tick() { if (this.dead) return; let ch = false; for (const o of this.d.objs) { if (o.b === 'field' && o.crop && !o.ripe && cropReady(o)) { o.ripe = true; ch = true; }  if (BUILDS[o.b].k === 'factory' && tickFactory(o)) ch = true; if (BUILDS[o.b].k === 'animal' && tickAnimal(o)) ch = true; }
-    const t = train(); if (t && t.away !== this.trainAway) { const leaving = t.away && this.trainAway === false, arriving = !t.away && this.trainAway === true; this.trainAway = t.away; if (leaving) this.departCut(t); else if (arriving) { this.drawStation(); this.arriveAnim(t); } else this.drawStation(); }
+    this.tAway = this.tAway || []; if (this.trainCs && this.trainCs.length !== trainCount()) this.drawStation(); for (let ti = 0; ti < trainCount(); ti++) { const t = trainN(ti); if (!t || t.away === this.tAway[ti]) continue; const leaving = t.away && this.tAway[ti] === false, arriving = !t.away && this.tAway[ti] === true; this.tAway[ti] = t.away; if (leaving) this.departCut(t, ti); else if (arriving) { this.drawStation(); this.arriveAnim(t, ti); } else this.drawStation(); }
     /* 자라는 밭은 막대만 고침 (전체를 다시 그리지 않음 · 휴대폰 멈춤 방지) */ if (ch && !this.mode) this.drawObjs(); else this.bars(); save(); this.hud && this.hud.refresh(); }
   // ── 놓기 · 옮기기
   startPlace(b, moving) {

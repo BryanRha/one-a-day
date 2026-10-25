@@ -1,12 +1,12 @@
-import { frame } from '../frame.js?v=0.51.1';
-import { banner, iconTabs, rewards, card, doneStamp, lockIc, progressBar } from '../evui.js?v=0.51.1';
+import { frame } from '../frame.js?v=0.52.0';
+import { banner, iconTabs, rewards, card, doneStamp, lockIc, progressBar } from '../evui.js?v=0.52.0';
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.51.1';
-import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.51.1';
-import { audio } from '../audio.js?v=0.51.1';
-import { goPrev } from '../nav.js?v=0.51.1';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.51.1';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.51.1';
+import { W, H } from '../config.js?v=0.52.0';
+import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.52.0';
+import { audio } from '../audio.js?v=0.52.0';
+import { goPrev } from '../nav.js?v=0.52.0';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N, BUILDS } from '../data.js?v=0.52.0';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.52.0';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 // 모든 전체 화면 공통 틀 (frame.js): 위 재화 막대 + 제목 막대 ◀ · 손가락으로 위아래 밀기
@@ -98,17 +98,24 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.51.1';
+import { season, seasonBuy, evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.52.0';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
   create(data) {
-    this.tab = (data && data.tab) || 'login'; this.add.rectangle(W / 2, H / 2, W, H, 0xFFF3E0); top(this, '이벤트');
-    const TABS = [['login', '출석', 'calendar'], ['fest', '축제', 'ticket'], ['race', '레이스', 'trophy'], ['album', '스티커', 'cardpack'], ['pass', '패스', 'passmedal']];
+    this.tab = (data && data.tab) || 'season'; this.add.rectangle(W / 2, H / 2, W, H, 0xFFF3E0); top(this, '이벤트');
+    const TABS = [['season', '계절', 'gift'], ['login', '출석', 'calendar'], ['fest', '축제', 'ticket'], ['race', '레이스', 'trophy'], ['album', '스티커', 'cardpack'], ['pass', '패스', 'passmedal']];
     iconTabs(this, 230, TABS, this.tab, evDots(), k => this.scene.restart({ tab: k })); this.y0 = 330;
     this[this.tab](); window.__events = this;
   }
   done(ups, msg) { save(); audio.play('sfx_levelup', { volume: 0.7 }); if (msg) toast(this, msg, H / 2); this.time.delayedCall(700, () => this.scene.restart({ tab: this.tab })); }
+  // 계절 한정: 토큰으로 한정 장식 교환 · 계절이 끝나면 다시 오지 않아요
+  season() { const se = season(), left = Math.max(0, se.end - Date.now()), dd = Math.floor(left / 864e5); let y = banner(this, this.y0, 'ev_fest', `${se.S.ic} ${se.S.n}`, '주문 · 기차 · 수확으로 계절 토큰을 모아 한정 장식과 바꿔요', `${dd}일 남음`) + 50;
+    const tg = this.add.graphics(); tg.fillStyle(0x4A2E14, 0.92).fillRoundedRect(W / 2 - 220, y - 40, 440, 80, 40); T(this, W / 2, y, `${se.S.ic} 토큰 ${se.tok}개`, 36, '#FFE27A', { w: 900 }); y += 90;
+    se.S.items.forEach(([k, price], i) => { const yy = y + 90 + i * 210, B = BUILDS[k], ok = se.tok >= price, own = (load().lim || {})[k] || 0; card(this, W / 2, yy, W - 80, 190, ok ? 'ready' : 'lock');
+      const im = this.add.image(170, yy + 10, k); im.setScale(160 / Math.max(im.width, im.height)); const tag = this.add.graphics(); tag.fillStyle(0xE8507A, 1).fillRoundedRect(70, yy - 92, 110, 40, 20); T(this, 125, yy - 72, '한정', 22, '#FFFFFF', { w: 900 });
+      T(this, 290, yy - 40, B.n, 32, C.ink, { ox: 0, w: 900 }); T(this, 290, yy + 4, `매력 +${B.joy}${own ? ` · 보관 ${own}개` : ''}`, 22, C.dim, { ox: 0, w: 800 }); T(this, 290, yy + 50, `${se.S.ic} ${price}`, 30, ok ? C.brown : C.dim, { ox: 0, w: 900 });
+      btn(this, W - 170, yy, 220, 90, own ? '놓으러 가기' : '교환', () => { if (!own) { const e = seasonBuy(k); if (e) return toast(this, e, H / 2); save(); audio.play('sfx_levelup', { volume: 0.7 }); } goPrev(this); this.time.delayedCall(250, () => { const h = this.scene.get('Hud'); h && h.startBuild && h.startBuild(k); }); }, { size: 28, style: own || ok ? 'green' : 'cream' }); }); }
   // 7일 출석: 날마다 선물 상자 카드 · 오늘은 빛남 · 지난 날은 도장 · 7일째는 큰 보물상자
   login() { const l = login(); let y = banner(this, this.y0, 'ev_login', '7일 출석 선물', '매일 들어오면 선물이 점점 커져요', `${l.day}일째`) + 40;
     LOGIN.forEach((r, i) => { const d = i + 1, big = d === 7, x = big ? W / 2 : 200 + (i % 3) * 340, yy = big ? y + 760 : y + 120 + Math.floor(i / 3) * 290, past = d < l.day || d === l.day && l.got, now = d === l.day && !l.got, w = big ? W - 100 : 310, h = big ? 250 : 260;
@@ -153,8 +160,8 @@ export class EventsScene extends Phaser.Scene {
 }
 
 // ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
-import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.51.1';
-import { ISLE } from '../data.js?v=0.51.1';
+import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.52.0';
+import { ISLE } from '../data.js?v=0.52.0';
 export class IslandScene extends Phaser.Scene {
   constructor() { super('Island'); }
   init() { this.noScroll = true; }
@@ -187,7 +194,7 @@ export class IslandScene extends Phaser.Scene {
 }
 
 // ── 협동조합: 레가타(주간 팀 경주) · 도움 요청
-import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.51.1';
+import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.52.0';
 const fmtH = ms => { const m = Math.floor(ms / 6e4); return m >= 1440 ? `${Math.floor(m / 1440)}일 ${Math.floor(m % 1440 / 60)}시간` : m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
 export class CoopScene extends Phaser.Scene {
   constructor() { super('Coop'); }

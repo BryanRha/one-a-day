@@ -1,22 +1,22 @@
-import { iso } from './Town.js?v=0.51.1';
+import { iso } from './Town.js?v=0.52.0';
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.51.1';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.51.1';
-import { audio } from '../audio.js?v=0.51.1';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.51.1';
-import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.51.1';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.51.1';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.51.1';
-import { taskCheck, coopBadge } from '../coop.js?v=0.51.1';
-import { spOpen, SP } from '../sparrow.js?v=0.51.1';
-import { wtOpen } from '../water.js?v=0.51.1';
-import { ptOpen } from '../patrol.js?v=0.51.1';
-import { pushBack } from '../oad.js?v=0.51.1';
-import { miniDone } from '../state.js?v=0.51.1';
-import { HEARTS, HEART_PTS } from '../data.js?v=0.51.1';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.51.1';
-import { FUP, TRAINS } from '../data.js?v=0.51.1';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.51.1';
+import { W, H } from '../config.js?v=0.52.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.52.0';
+import { audio } from '../audio.js?v=0.52.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.52.0';
+import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.52.0';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.52.0';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.52.0';
+import { taskCheck, coopBadge } from '../coop.js?v=0.52.0';
+import { spOpen, SP } from '../sparrow.js?v=0.52.0';
+import { wtOpen } from '../water.js?v=0.52.0';
+import { ptOpen } from '../patrol.js?v=0.52.0';
+import { pushBack } from '../oad.js?v=0.52.0';
+import { miniDone } from '../state.js?v=0.52.0';
+import { HEARTS, HEART_PTS } from '../data.js?v=0.52.0';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.52.0';
+import { FUP, TRAINS } from '../data.js?v=0.52.0';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.52.0';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -180,7 +180,7 @@ export class HudScene extends Phaser.Scene {
       if (G.soon) p.content.add(T(this, 310, y, '곧 열려요', 26, C.dim, { w: 900 })); else p.content.add(btn(this, 310, y, 170, 96, '하기', () => { if (miniLeft() <= 0) return toast(this, '오늘은 다 했어요 · 내일 또 해요'); p.close(); G.go(); }, { size: 30, style: 'green' })); });
   }
   // 마을의 화물칸을 눌러 바로 싣기 (1번 기차)
-  loadCarAt(k) { const t = trainN(0), c = t && t.cars[k]; if (!c) return; if (c.done) return toast(this, '이미 실었어요', H / 2); const r = loadCar(k, 0); if (!r) { this.itemInfo(c.it); return toast(this, `${ITEMS[c.it].n} ${c.n}개가 필요해요`, H * 0.3); }
+  loadCarAt(k, ti = 0) { const t = trainN(ti), c = t && t.cars[k]; if (!c) return; if (c.done) return toast(this, '이미 실었어요', H / 2); const r = loadCar(k, ti); if (!r) { this.itemInfo(c.it); return toast(this, `${ITEMS[c.it].n} ${c.n}개가 필요해요`, H * 0.3); }
     onTrainCar(); save(); audio.play('sfx_drop', { volume: 0.7 }); this.fly(this.town.screenTrain ? this.town.screenTrain() : [W / 2, H / 2], 'coin', rewardText(c.r)); this.refresh(); this.levelUps(r.ups); if (!r.left) this.town.drawStation(); else this.town.tick(); }
   // 컷씬 띠 (위아래 검은 띠 + 가운데 큰 글자)
   cutBars(on, msg) { if (this.cut) { this.cut.destroy(); this.cut = null; } if (!on) { this.spUi = null; return; } this.spUi = true; const c = this.cut = this.add.container(0, 0).setDepth(1400), t1 = this.add.rectangle(W / 2, -60, W, 160, 0x000000, 0.85), t2 = this.add.rectangle(W / 2, H + 60, W, 160, 0x000000, 0.85);
@@ -237,7 +237,7 @@ export class HudScene extends Phaser.Scene {
   placeOk2(k, moving) {
     const t = this.town; if (!t.ghostOk) return toast(this, '여기엔 놓을 수 없어요', H / 2); const gx = t.ghost.gx, gy = t.ghost.gy;
     if (moving) { moving.x = gx; moving.y = gy; moving.flip = t.ghostFlip || undefined; }
-    else { const why = canBuild(k); if (why) return toast(this, why); const B = BUILDS[k]; this.d.coins -= costOf(k); const o = { id: ++this.d.seq, b: k, x: gx, y: gy }; if (t.ghostFlip) o.flip = true; o.site = newSite(k); if (o.site) this.time.delayedCall(300, () => toast(this, '🏗 공사장이 생겼어요 · 눌러서 벽돌·유리·석판을 채우면 완성!', H / 2)); if (B.k === 'factory') { o.q = []; o.done = []; } if (B.k === 'animal') { o.s = [0, 0, 0]; o.ready = 0; } if (k === 'field') o.crop = null; this.d.objs.push(o); progress('build', k); gainXp(B.k === 'field' ? 1 : 5); audio.play('sfx_build', { volume: 0.7 }); }
+    else { const why = canBuild(k); if (why) return toast(this, why); const B = BUILDS[k]; this.d.coins -= costOf(k); if (B.lim) this.d.lim[k]--; const o = { id: ++this.d.seq, b: k, x: gx, y: gy }; if (t.ghostFlip) o.flip = true; o.site = newSite(k); if (o.site) this.time.delayedCall(300, () => toast(this, '🏗 공사장이 생겼어요 · 눌러서 벽돌·유리·석판을 채우면 완성!', H / 2)); if (B.k === 'factory') { o.q = []; o.done = []; } if (B.k === 'animal') { o.s = [0, 0, 0]; o.ready = 0; } if (k === 'field') o.crop = null; this.d.objs.push(o); progress('build', k); gainXp(B.k === 'field' ? 1 : 5); audio.play('sfx_build', { volume: 0.7 }); }
     save(); t.endPlace(); this.placeBar.destroy(); this.placeBar = null; this.zones = this.zones.filter(z => z !== this.pz); this.refresh();
     if (!moving && (k === 'field' || BUILDS[k].k === 'deco') && canBuild(k) === null) this.startBuild(k);   // 밭 · 장식은 이어서 여러 개   // 밭은 이어서 여러 칸
   }
@@ -262,7 +262,7 @@ export class HudScene extends Phaser.Scene {
     p.content.add(T(this, 0, -282, '칸마다 물건을 실어요 · 다 채우면 성으로 떠나요', 24, C.dim, { w: 900 }));
     t.cars.forEach((c, k) => { const x = (k - 1) * 310, y = -60, g = this.add.graphics(), hv = this.d.items[c.it] || 0, ok = !c.done && hv >= c.n; g.fillStyle(c.done ? 0xE3F5DA : 0xFFFBF2, 1).fillRoundedRect(x - 140, y - 190, 280, 380, 28).lineStyle(3, ok ? 0x5AAE3C : 0xD8C8B8, 1).strokeRoundedRect(x - 140, y - 190, 280, 380, 28); p.content.add(g);
       p.content.add(itemIc(this, x, y - 100, c.it, 110)); p.content.add(T(this, x, y - 20, `${ITEMS[c.it].n} ${c.n}개`, 24, C.ink, { w: 900 })); p.content.add(T(this, x, y + 16, c.done ? '실음 ✓' : `${hv}/${c.n}`, 22, c.done ? C.green : hv >= c.n ? C.green : C.red, { w: 900 })); p.content.add(T(this, x, y + 64, rewardText(c.r), 22, C.brown, { w: 800, wrap: 260 }));
-      if (!c.done) p.content.add(btn(this, x, y + 140, 220, 80, '싣기', () => { const r = loadCar(k, ti); if (!r) return toast(this, '물건이 모자라요'); const bmk = Object.keys(this.d.trains ? (this.d.trains[ti].cars[k].bm || {}) : {})[0]; if (bmk) this.time.delayedCall(350, () => this.fly([W / 2, H / 2], bmk, `+1 ${ITEMS[bmk].n}`)); onTrainCar(); save(); audio.play('sfx_drop', { volume: 0.7 }); p.close(); this.refresh(); this.levelUps(r.ups); if (ti !== 0 || !r.left) this.town.drawStation(); if (!r.left) this.trainPanel(ti); else if (ti !== 0) toast(this, '기차가 성으로 출발했어요! 🚂', H / 2); else this.town.tick(); }, { size: 26, style: ok ? 'green' : 'cream' })); });
+      if (!c.done) p.content.add(btn(this, x, y + 140, 220, 80, '싣기', () => { const r = loadCar(k, ti); if (!r) return toast(this, '물건이 모자라요'); const bmk = Object.keys(this.d.trains ? (this.d.trains[ti].cars[k].bm || {}) : {})[0]; if (bmk) this.time.delayedCall(350, () => this.fly([W / 2, H / 2], bmk, `+1 ${ITEMS[bmk].n}`)); onTrainCar(); save(); audio.play('sfx_drop', { volume: 0.7 }); p.close(); this.refresh(); this.levelUps(r.ups); if (!r.left) { this.town.drawStation(); this.trainPanel(ti); } else this.town.tick(); }, { size: 26, style: ok ? 'green' : 'cream' })); });
   }
   // ── 비행기 주문
   planePanel() {

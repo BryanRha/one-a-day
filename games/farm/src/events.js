@@ -1,6 +1,6 @@
 // 이벤트 묶음 (타운십 · K뷰티 레시피 틀): 7일 출석 · 주간 축제(티켓 사다리) · 이웃 농장 레이스(AI) · 스티커 앨범 · 시즌 패스 · 항구 무역
-import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.51.1';
-import { VOYAGES } from './data.js?v=0.51.1';
+import { load, give, dayNo, weekNo, has, take, add, countOf } from './state.js?v=0.52.0';
+import { VOYAGES } from './data.js?v=0.52.0';
 
 const now = () => Date.now();
 function ev() { const d = load(); if (!d.ev) d.ev = {}; return d.ev; }
@@ -55,9 +55,9 @@ export function passAdd(n) { pass().pts += n; }
 export function passClaim(i) { const p = pass(); if (p.pts < PASS_TIERS[i] || p.got.includes(i)) return null; p.got.push(i); return give(PASS_FREE[i]) || []; }
 
 // 활동 한 번 → 축제 · 레이스 · 패스 점수
-export function onOrder() { festAdd(3); raceAdd(2); passAdd(3); return albumOrder(); }
-export function onTrainCar() { load().stats.cars = (load().stats.cars || 0) + 1; festAdd(4); raceAdd(3); passAdd(4); }
-export function onHarvest(n) { festAdd(Math.floor(n / 4)); passAdd(Math.floor(n / 6)); }
+export function onOrder() { festAdd(3); raceAdd(2); passAdd(3); seasonAdd(3); return albumOrder(); }
+export function onTrainCar() { load().stats.cars = (load().stats.cars || 0) + 1; festAdd(4); raceAdd(3); passAdd(4); seasonAdd(4); }
+export function onHarvest(n) { festAdd(Math.floor(n / 4)); passAdd(Math.floor(n / 6)); seasonAdd(Math.floor(n / 4)); }
 
 // ── 항구 무역
 export function voyage() { const e = ev(); return e.voyage || null; }
@@ -69,5 +69,18 @@ export function voyageBack() { const e = ev(), v = e.voyage; if (!v || v.back > 
 export function evDots() { const e = ev(), l = login(), f = fest(), a = album(), ps = pass(), rs = raceState();
   const canJoin = !(e.race && !e.race.claimed && now() < e.race.end) && e.raceDay !== dayNo();
   return { login: !l.got, fest: FEST_TIERS.some((t, i) => f.pts >= t && !f.got.includes(i)), race: canJoin || !!(rs && rs.ended && !rs.claimed),
-    album: a.packs > 0 || STICKERS.some((S, i) => !a.done.includes(i) && S.s.every(k => a.have[k])) || (!a.all && a.done.length >= STICKERS.length), pass: PASS_TIERS.some((t, i) => ps.pts >= t && !ps.got.includes(i)) }; }
+    season: (() => { const se = season(); return se.S.items.some(([k, c]) => se.tok >= c); })(), album: a.packs > 0 || STICKERS.some((S, i) => !a.done.includes(i) && S.s.every(k => a.have[k])) || (!a.all && a.done.length >= STICKERS.length), pass: PASS_TIERS.some((t, i) => ps.pts >= t && !ps.got.includes(i)) }; }
 export const evBadge = () => Object.values(evDots()).filter(Boolean).length;
+
+// ── 계절 한정 이벤트: 달마다 계절 · 활동으로 계절 토큰 → 한정 장식 (그 계절에만 살 수 있음)
+export const SEASONS = [
+  { id: 'spring', n: '봄 벚꽃 축제', m: [2, 3, 4], ic: '🌸', items: [['cherry', 40], ['blossombench', 60], ['eggbasket', 80], ['tulipmodel', 110], ['magnolia', 150]] },
+  { id: 'summer', n: '여름 바캉스', m: [5, 6, 7], ic: '🏖', items: [['icecart', 40], ['lemonade', 60], ['rainbowbed', 80], ['balloonmodel', 110], ['hotspring', 150]] },
+  { id: 'autumn', n: '가을 수확제', m: [8, 9, 10], ic: '🎃', items: [['pumpkinpatch', 40], ['jackolantern', 60], ['crowscare', 80], ['spookycrow', 110], ['goldcow', 150]] },
+  { id: 'winter', n: '겨울 눈꽃 축제', m: [11, 0, 1], ic: '❄️', items: [['snowman', 40], ['giftpile', 60], ['gingerhouse', 80], ['reindeer', 110], ['xmastree', 150]] },
+];
+export const LIMITED = new Set(SEASONS.flatMap(S => S.items.map(i => i[0])));
+export const seasonNow = () => SEASONS.find(S => S.m.includes(new Date().getMonth()));
+export function season() { const e = ev(), S = seasonNow(), y = new Date().getFullYear(); if (!e.season || e.season.id !== S.id + y) e.season = { id: S.id + y, tok: 0, got: {} }; return { ...e.season, S, end: (() => { const d = new Date(), m = S.m[2], yy = d.getFullYear() + (m < d.getMonth() ? 1 : 0); return new Date(yy, m + 1, 1).getTime(); })() }; }
+export function seasonAdd(n) { season(); ev().season.tok += n; }
+export function seasonBuy(k) { const s = season(), it = s.S.items.find(i => i[0] === k); if (!it) return '이번 계절 장식이 아니에요'; if (s.tok < it[1]) return `토큰 ${it[1] - s.tok}개가 더 필요해요`; const e = ev().season; e.tok -= it[1]; e.got[k] = (e.got[k] || 0) + 1; const d = load(); d.lim = d.lim || {}; d.lim[k] = (d.lim[k] || 0) + 1; return null; }

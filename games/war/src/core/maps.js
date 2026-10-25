@@ -403,7 +403,7 @@ export const MAPS = [
 ];
 
 // 캠페인 적 지휘관은 이야기(story.js)에 맞춤
-import { FOES } from '../story.js?v=0.51.1';
+import { FOES } from '../story.js?v=0.52.0';
 for (const m of MAPS) if (FOES[m.id]) m.enemyCo = FOES[m.id];
 
 // 전쟁실: 점수 도전 지도 (속도 · 전력 · 기술 300점 · S~D 등급) — 적은 어려움, 핸디캡 없음

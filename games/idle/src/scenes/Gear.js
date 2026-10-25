@@ -1,10 +1,10 @@
 // 장비: 기사단 공용 6부위 · 지금 효과 합계 · 상자 등급
-import { W, H } from '../config.js?v=0.55.0';
-import { T, R, C, btn, rbox, toast } from '../ui.js?v=0.55.0';
-import { load } from '../save.js?v=0.55.0';
-import { SLOTS, EQ_GRADES, CHEST_ODDS } from '../data.js?v=0.55.0';
-import { itemIcon, itemName, itemDesc, gearBonus, fmt } from '../state.js?v=0.55.0';
-import { panelBg } from './Hud.js?v=0.55.0';
+import { W, H } from '../config.js?v=0.55.1';
+import { T, R, C, btn, rbox, toast } from '../ui.js?v=0.55.1';
+import { load } from '../save.js?v=0.55.1';
+import { SLOTS, EQ_GRADES, CHEST_ODDS } from '../data.js?v=0.55.1';
+import { itemIcon, itemName, itemDesc, gearBonus, fmt } from '../state.js?v=0.55.1';
+import { panelBg } from './Hud.js?v=0.55.1';
 
 export class GearScene extends Phaser.Scene {
   constructor() { super('Gear'); }

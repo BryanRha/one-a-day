@@ -1,10 +1,10 @@
 // 로딩: 영웅 원화 · 얼굴 · 지금 지역 배경 · 아이콘 · 이펙트 · 소리
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.55.0';
-import { SFX, BGM, audio } from '../audio.js?v=0.55.0';
-import { makeTextures } from '../ui.js?v=0.55.0';
-import { HEROES, SLOTS, REGIONS, PETS } from '../data.js?v=0.55.0';
-import { load } from '../save.js?v=0.55.0';
-import { regionOf } from '../state.js?v=0.55.0';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.55.1';
+import { SFX, BGM, audio } from '../audio.js?v=0.55.1';
+import { makeTextures } from '../ui.js?v=0.55.1';
+import { HEROES, SLOTS, REGIONS, PETS } from '../data.js?v=0.55.1';
+import { load } from '../save.js?v=0.55.1';
+import { regionOf } from '../state.js?v=0.55.1';
 
 export const SKILL_ICON = { strike: 31, aoe: 25, line: 2, heal: 104, shield: 13, buff: 20, taunt: 103 };
 export const SHOP_ICONS = [3, 4, 5, 6, 7, 16, 29, 30, 31, 38, 39, 40, 41, 114, 139, 278, 378, 379, 380, 381, 383, 384, 389];

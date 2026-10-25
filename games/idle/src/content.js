@@ -1,8 +1,8 @@
 // 던전 · 결투장 · 펫 · 토벌 의뢰 — 수치와 규칙 (화면과 분리)
-import { load, save } from './save.js?v=0.55.0';
-import { HEROES, GRADES, PETS } from './data.js?v=0.55.0';
+import { load, save } from './save.js?v=0.55.1';
+import { HEROES, GRADES, PETS } from './data.js?v=0.55.1';
 export { PETS };
-import { heroStats, mobHp, goldPerMob, teamPower, fmt, questAdd, petLv, petBonus } from './state.js?v=0.55.0';
+import { heroStats, mobHp, goldPerMob, teamPower, fmt, questAdd, petLv, petBonus } from './state.js?v=0.55.1';
 export { petLv, petBonus };
 
 export const today = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);   // 한국 날짜

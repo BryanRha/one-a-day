@@ -1,6 +1,6 @@
 // 협동조합 (타운십의 협동조합 · 레가타를 AI 팀원/AI 팀으로): 주간 팀 경주 과제 · 개인 보상 단계 · 팀원 도움 요청
-import { load, give, has, take, dayNo, weekNo, countOf } from './state.js?v=0.55.0';
-import { ITEMS, CROPS, RECIPES, BUILDS } from './data.js?v=0.55.0';
+import { load, give, has, take, dayNo, weekNo, countOf } from './state.js?v=0.55.1';
+import { ITEMS, CROPS, RECIPES, BUILDS } from './data.js?v=0.55.1';
 
 const now = () => Date.now();
 export const COOP_LV = 10, TASKS_DAY = 5, COOP_TIERS = [80, 200, 400, 700, 1100];

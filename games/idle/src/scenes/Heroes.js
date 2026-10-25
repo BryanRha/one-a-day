@@ -1,16 +1,16 @@
 // 영웅: 가진 영웅 목록(전투력 순) · 못 만난 영웅은 그림자 · 누르면 상세(레벨업 · 승급 · 팀 넣고 빼기)
-import { W, H } from '../config.js?v=0.55.0';
-import { T, R, C, TS, btn, sheet, rbox, toast } from '../ui.js?v=0.55.0';
-import { audio } from '../audio.js?v=0.55.0';
-import { load, save } from '../save.js?v=0.55.0';
-import { HEROES, GRADES, ROLES, SKILL_KIND, STAR_NEED, MAX_STAR, SUMMONABLE } from '../data.js?v=0.55.0';
-import { heroStats, heroPower, levelCost, levelUp, starUp, levelCap, autoTeam, fmt, potionUp, tokenShard, TOKEN_SHARD, petLv, petBonus } from '../state.js?v=0.55.0';
-import { PETS } from '../data.js?v=0.55.0';
-import { PET_STAT, petFood, petFeed, petBuy } from '../content.js?v=0.55.0';
-import { panelBg } from './Hud.js?v=0.55.0';
-import { TOP, NAV_H } from '../hud.js?v=0.55.0';
-import { SKILL_ICON } from './Boot.js?v=0.55.0';
-import { livePuppet } from '../puppet.js?v=0.55.0';
+import { W, H } from '../config.js?v=0.55.1';
+import { T, R, C, TS, btn, sheet, rbox, toast } from '../ui.js?v=0.55.1';
+import { audio } from '../audio.js?v=0.55.1';
+import { load, save } from '../save.js?v=0.55.1';
+import { HEROES, GRADES, ROLES, SKILL_KIND, STAR_NEED, MAX_STAR, SUMMONABLE } from '../data.js?v=0.55.1';
+import { heroStats, heroPower, levelCost, levelUp, starUp, levelCap, autoTeam, fmt, potionUp, tokenShard, TOKEN_SHARD, petLv, petBonus } from '../state.js?v=0.55.1';
+import { PETS } from '../data.js?v=0.55.1';
+import { PET_STAT, petFood, petFeed, petBuy } from '../content.js?v=0.55.1';
+import { panelBg } from './Hud.js?v=0.55.1';
+import { TOP, NAV_H } from '../hud.js?v=0.55.1';
+import { SKILL_ICON } from './Boot.js?v=0.55.1';
+import { livePuppet } from '../puppet.js?v=0.55.1';
 
 export class HeroesScene extends Phaser.Scene {
   constructor() { super('Heroes'); }

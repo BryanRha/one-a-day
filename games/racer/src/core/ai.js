@@ -1,5 +1,5 @@
 // 자동 운전 판단 (봇 밸런싱 · 브라우저 자동 테스트 공용)
-import { LANES, laneX, DODGE } from './race.js?v=0.49.2';
+import { LANES, laneX, DODGE } from './race.js?v=0.50.0';
 
 // 각 차로의 위험도: 그 차로로 계속 달리면 몇 초 뒤 앞차에 닿는지
 function laneThreat(race, lane) {

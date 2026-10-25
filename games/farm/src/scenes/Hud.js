@@ -1,21 +1,22 @@
-import { iso } from './Town.js?v=0.49.2';
+import { iso } from './Town.js?v=0.50.0';
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.49.2';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.49.2';
-import { audio } from '../audio.js?v=0.49.2';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.49.2';
-import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.49.2';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.49.2';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.49.2';
-import { taskCheck, coopBadge } from '../coop.js?v=0.49.2';
-import { spOpen, SP } from '../sparrow.js?v=0.49.2';
-import { wtOpen } from '../water.js?v=0.49.2';
-import { pushBack } from '../oad.js?v=0.49.2';
-import { miniDone } from '../state.js?v=0.49.2';
-import { HEARTS, HEART_PTS } from '../data.js?v=0.49.2';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.49.2';
-import { FUP, TRAINS } from '../data.js?v=0.49.2';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.49.2';
+import { W, H } from '../config.js?v=0.50.0';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.50.0';
+import { audio } from '../audio.js?v=0.50.0';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.50.0';
+import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.50.0';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.50.0';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.50.0';
+import { taskCheck, coopBadge } from '../coop.js?v=0.50.0';
+import { spOpen, SP } from '../sparrow.js?v=0.50.0';
+import { wtOpen } from '../water.js?v=0.50.0';
+import { ptOpen } from '../patrol.js?v=0.50.0';
+import { pushBack } from '../oad.js?v=0.50.0';
+import { miniDone } from '../state.js?v=0.50.0';
+import { HEARTS, HEART_PTS } from '../data.js?v=0.50.0';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.50.0';
+import { FUP, TRAINS } from '../data.js?v=0.50.0';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.50.0';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -172,7 +173,7 @@ export class HudScene extends Phaser.Scene {
   // 마을 놀이: 마을 화면 위에서 바로 (다른 화면으로 넘어가지 않음)
   miniPanel() { const p = popup(this, 900, 960, { full: '마을 놀이' }); p.content.add(T(this, 0, -344, `오늘 ${miniLeft()}번 남음 · 놀이마다 코인 · 경험치 · 호감도를 받아요`, 24, C.dim, { w: 900 }));
     const GAMES = [{ n: '샘의 참새 쫓기', who: 'sam', d: '내 밭에 내려앉는 참새를 눌러서 · 문질러서 쫓아요. 지킨 밭은 다음 수확이 1개 더!', go: () => this.spBegin() },
-      { n: '한스의 물길 잇기', who: 'hans', d: '물길 조각을 돌려 댐에서 밭까지 물을 이어요. 물 댄 밭은 빨리 자라요!', go: () => this.wtBegin() }, { n: '이안의 마을 순찰', who: 'ian', d: '마을 곳곳에 숨은 불량배와 잃어버린 물건을 찾아요', soon: true }];
+      { n: '한스의 물길 잇기', who: 'hans', d: '물길 조각을 돌려 댐에서 밭까지 물을 이어요. 물 댄 밭은 빨리 자라요!', go: () => this.wtBegin() }, { n: '이안의 마을 순찰', who: 'ian', d: '마을 곳곳에 숨은 불량배와 잃어버린 물건을 찾아요. 찾은 물건은 주인이 보답해요!', go: () => this.ptBegin() }];
     GAMES.forEach((G, i) => { const y = -190 + i * 230, g = this.add.graphics(); g.fillStyle(G.soon ? 0xF1EBE2 : 0xFFF6E0, 1).fillRoundedRect(-410, y - 100, 820, 200, 30).lineStyle(3, G.soon ? 0xDDD3C6 : 0xE8C27A, 1).strokeRoundedRect(-410, y - 100, 820, 200, 30); p.content.add(g);
       const f = this.add.image(-330, y + 6, G.who); f.setScale(184 / f.height); if (G.soon) f.setAlpha(0.55); p.content.add(f);
       p.content.add(T(this, -220, y - 40, G.n, 34, G.soon ? C.dim : C.ink, { ox: 0, w: 900 })); p.content.add(T(this, -220, y + 22, G.d, 21, C.dim, { ox: 0, w: 800, wrap: 400, align: 'left' }));
@@ -181,6 +182,18 @@ export class HudScene extends Phaser.Scene {
   // ── 샘의 참새 쫓기 화면 (마을 위)
   spBegin() { audio.play('sfx_tap'); this.spUi = true; this.spBack = pushBack(() => { if (this.spSt) this.spSt.end = 0; return true; }); this.spSt = spOpen(this, r => { this.spBack(); this.spSt = null; this.spResult(r); }); }
   spHideBottom() {}
+  // ── 이안의 마을 순찰
+  ptBegin() { audio.play('sfx_tap'); this.spUi = true; const back = pushBack(() => true); ptOpen(this, r => { back(); this.spUi = null; this.ptResult(r); }); }
+  ptResult(r) { const s = this.d; let ups = [], rw = null, love = 0;
+    if (r.win) { const x = miniDone(4 + r.stars * 4); rw = x.r; ups = x.ups; if (!s.spouse) { love = 10 + r.stars * 8; s.love.ian = Math.min(HEARTS * HEART_PTS, s.love.ian + love); } s.gems += r.lost.length; } else miniDone(Math.min(4, r.found));
+    save(); this.refresh();
+    const p = popup(this, 900, 900, { size: 'M' }); audio.play(r.win ? 'sfx_levelup' : 'sfx_error', { volume: 0.7 });
+    p.content.add(T(this, 0, -380, r.win ? '순찰 완료!' : '시간이 다 됐어요', 42, C.ink, { w: 900 })); [0, 1, 2].forEach(i => p.content.add(T(this, (i - 1) * 80, -300, '★', 64, i < r.stars ? C.gold : '#D8CFC2', { w: 900 })));
+    const ian = this.add.image(-260, -80, 'ian'); ian.setScale(300 / ian.height); p.content.add(ian);
+    p.content.add(T(this, 80, -150, `찾은 것 ${r.found}/${r.total}`, 32, C.ink, { w: 900 }));
+    if (r.win) { p.content.add(T(this, 80, -90, r.lost.length ? `물건 주인들이 고마워하며 💎${r.lost.length}를 줬어요` : '', 22, C.dim, { w: 900, wrap: 480 })); p.content.add(T(this, 80, 0, rewardText(rw) + (love ? `  ❤️+${love}` : ''), 30, C.brown, { w: 900, wrap: 480 })); }
+    p.content.add(T(this, 0, 180, r.win ? '"덕분에 마을이 평화로워졌습니다, 공주님."' : '"놓친 녀석들은 다음 순찰 때 꼭 잡겠습니다."', 26, C.dim, { w: 900 }));
+    p.content.add(btn(this, 0, 320, 360, 100, '좋아요', () => { p.close(); this.levelUps(ups); }, { size: 32, style: 'green' })); }
   // ── 한스의 물길 잇기
   wtBegin() { audio.play('sfx_tap'); const lv = (this.d.hansLv || 0) + 1; this.spUi = true; let st = null; const back = pushBack(() => { return true; });
     st = wtOpen(this, lv, r => { back(); this.spUi = null; this.wtResult(r); }); }

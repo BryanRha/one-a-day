@@ -1,8 +1,8 @@
 // 전체 화면 장면(사람들 · 이벤트 · 협동 · 광산 · 섬) 공통 틀: 위 재화 막대(마을과 같음) + 제목 막대(◀ 뒤로) + 위아래로 밀어 보기
-import { W, H } from './config.js?v=0.49.2';
-import { T, btn, TOPBAR } from './ui.js?v=0.49.2';
-import { load, matCount, popNow, popCap } from './state.js?v=0.49.2';
-import { XP_NEED } from './data.js?v=0.49.2';
+import { W, H } from './config.js?v=0.50.0';
+import { T, btn, TOPBAR } from './ui.js?v=0.50.0';
+import { load, matCount, popNow, popCap } from './state.js?v=0.50.0';
+import { XP_NEED } from './data.js?v=0.50.0';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 export const HEAD = 112, SHIFT = TOPBAR + HEAD - 140 + 44;   // 탭 줄이 제목 막대에 붙지 않게 여백 44   // 예전 화면은 y≈150부터 그렸음 → 그만큼 아래로 내림

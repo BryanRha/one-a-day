@@ -1,10 +1,10 @@
-import { BASE } from '../base.js?v=0.51.0';
+import { BASE } from '../base.js?v=0.51.1';
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.51.0';
-import { T, C } from '../ui.js?v=0.51.0';
-import { audio } from '../audio.js?v=0.51.0';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.51.0';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.51.0';
+import { W, H } from '../config.js?v=0.51.1';
+import { T, C } from '../ui.js?v=0.51.1';
+import { audio } from '../audio.js?v=0.51.1';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.51.1';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.51.1';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -197,7 +197,7 @@ export class TownScene extends Phaser.Scene {
   }
   // 기차 그리기: off = 선로를 따라 밀린 칸 수 (들어오고 나갈 때 움직임)
   buildTrain(t, off) { const tc = this.trainC; tc.removeAll(true); const head = MAP / 2 + 2.3 + off, STEP = 1.32, parts = [], bubbles = [];
-    const put = (key, gy, w) => { const [x, y] = this.trackPt(gy), im = this.add.image(x, y + 8, key).setFlipX(true).setOrigin(0.5, 0.78); im.setScale(TW * w / im.width); return im; };
+    const put = (key, gy, w) => { const [x, y] = this.trackPt(gy), im = this.add.image(x, y + 8, key).setOrigin(0.5, 0.78);   /* 선로 방향(오른쪽 위 ↔ 왼쪽 아래)으로 놓음 */ im.setScale(TW * w / im.width); return im; };
     const loco = put('loco', head, 1.3); parts.push([head, loco]); tc.loco = loco;
     t.cars.forEach((cr, k) => { const gy = head - STEP * (k + 1), w = put('wagon', gy, 1.12), [x, y] = this.trackPt(gy), g = this.add.container(x, y - 165), d = this.d.items[cr.it] || 0, ok = d >= cr.n;
       // 이음새 (앞 칸과 연결)

@@ -1,8 +1,8 @@
 // 한스의 물길 잇기 — 시안 ②: 위 왼쪽 물레방아 댐 → 물길 조각을 눌러 돌려서 → 아래 마른 밭까지 물을 이음
 //  마을 화면(Hud) 위에 바로 띄움 · 단계가 오를수록 밭이 1 → 2 → 3칸 · 판이 넓어짐
-import { W, H } from './config.js?v=0.51.0';
-import { T, C, btn } from './ui.js?v=0.51.0';
-import { audio } from './audio.js?v=0.51.0';
+import { W, H } from './config.js?v=0.51.1';
+import { T, C, btn } from './ui.js?v=0.51.1';
+import { audio } from './audio.js?v=0.51.1';
 
 const DIR = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // 위 · 오른쪽 · 아래 · 왼쪽
 const BASE = { s: [0, 2], c: [0, 1], t: [0, 1, 2], x: [0, 1, 2, 3] };

@@ -1,6 +1,6 @@
 // 저장 · 규칙: 헛간 · 경험치 · 밭 · 동물 · 공장 줄 · 주문 게시판 · 기차 · 퀘스트 · 월세 · 강아지
-import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.45.1';
-import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.45.1';
+import { FUP, TRAINS, ZOO_CAP_H, ISLE, MATS, ALL_MATS, BMATS, siteNeed, RELICS, RESEARCH, RES_MAX, resCost, resTime } from './data.js?v=0.45.2';
+import { ITEMS, CROPS, RECIPES, BUILDS, BASE_CAP, XP_NEED, LV_REWARD, BARN, MAP, ZONE, START_ZONES, ZONE_COST, QUESTS, RENT, MAX_LV, SUITORS, HEARTS, HEART_PTS, MINE } from './data.js?v=0.45.2';
 
 const KEY = 'thefarm_v1';
 let d = null;
@@ -90,7 +90,7 @@ export function feedOne(o, i) { tickAnimal(o); const it = productOf(o.b), R = RE
 export function feedAll(o) { tickAnimal(o); const it = productOf(o.b), R = RECIPES[it]; let n = 0; o.s.forEach((e, i) => { if (!e && o.ready + o.s.filter(Boolean).length < 3 && take(R.in)) { o.s[i] = now() + R.t * 1000 * (1 - 0.05 * rl('anim')); n++; } }); return n; }
 
 // ── 주문 게시판 (타운십의 헬리콥터 주문): 6장 · 완료 후 60초 뒤 새 주문
-const unlockedGoods = () => { const s = load(), out = Object.keys(CROPS).filter(k => CROPS[k].lv <= s.lv); for (const [k, R] of Object.entries(RECIPES)) if (countOf(R.b) && (R.lv || 1) <= s.lv) out.push(k); return out; };
+const unlockedGoods = () => { const s = load(), out = Object.keys(CROPS).filter(k => CROPS[k].lv <= (s.lv || 1)); if (!out.includes('wheat')) out.push('wheat'); for (const [k, R] of Object.entries(RECIPES)) if (countOf(R.b) && (R.lv || 1) <= s.lv) out.push(k); return out; };
 function makeOrder(brook) {
   const s = load(), g = unlockedGoods(), kinds = 1 + Math.floor(Math.random() * Math.min(3, 1 + s.lv / 4)), items = {};
   for (let k = 0; k < kinds; k++) { const it = g[Math.floor(Math.random() * g.length)]; const cheap = ITEMS[it].v <= 3; items[it] = (items[it] || 0) + (cheap ? 2 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 2)); }

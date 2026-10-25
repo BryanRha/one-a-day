@@ -1,13 +1,13 @@
-import { W, BASE_H, setH } from './config.js?v=0.45.1';
-import { audio } from './audio.js?v=0.45.1';
-import { WindFX } from './fx.js?v=0.45.1';
-import { BootScene } from './scenes/Boot.js?v=0.45.1';
-import { HomeScene } from './scenes/Home.js?v=0.45.1';
-import { AdventureScene } from './scenes/Adventure.js?v=0.45.1';
-import { CollectionScene } from './scenes/Collection.js?v=0.45.1';
-import { PlayScene } from './scenes/Play.js?v=0.45.1';
-import { ResultScene } from './scenes/Result.js?v=0.45.1';
-import { installBack } from './oad.js?v=0.45.1';
+import { W, BASE_H, setH } from './config.js?v=0.45.2';
+import { audio } from './audio.js?v=0.45.2';
+import { WindFX } from './fx.js?v=0.45.2';
+import { BootScene } from './scenes/Boot.js?v=0.45.2';
+import { HomeScene } from './scenes/Home.js?v=0.45.2';
+import { AdventureScene } from './scenes/Adventure.js?v=0.45.2';
+import { CollectionScene } from './scenes/Collection.js?v=0.45.2';
+import { PlayScene } from './scenes/Play.js?v=0.45.2';
+import { ResultScene } from './scenes/Result.js?v=0.45.2';
+import { installBack } from './oad.js?v=0.45.2';
 
 async function start() {
   try { await Promise.all(['700', '800', '900'].map(w => document.fonts.load(`${w} 48px Pretendard`))); } catch { /* 기본 폰트 */ }

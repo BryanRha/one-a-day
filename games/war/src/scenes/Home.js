@@ -1,12 +1,12 @@
 // 홈: 계급 · 캠페인 · 오늘의 작전 · 자유 대전 · 지휘관 · 오늘의 미션 · 연속 출석
-import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.50.2';
-import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.50.2';
-import { audio } from '../audio.js?v=0.50.2';
-import { load } from '../save.js?v=0.50.2';
-import * as M from '../meta.js?v=0.50.2';
-import { COS } from '../core/data.js?v=0.50.2';
-import { rankOn } from '../rank.js?v=0.50.2';
-import { rankPopup } from '../rankui.js?v=0.50.2';
+import { W, H, TITLE, TITLE_EN } from '../config.js?v=0.50.3';
+import { T, C, fmt, panel, btn, iconBtn, popup, toast } from '../pui.js?v=0.50.3';
+import { audio } from '../audio.js?v=0.50.3';
+import { load } from '../save.js?v=0.50.3';
+import * as M from '../meta.js?v=0.50.3';
+import { COS } from '../core/data.js?v=0.50.3';
+import { rankOn } from '../rank.js?v=0.50.3';
+import { rankPopup } from '../rankui.js?v=0.50.3';
 
 // 계급장: 이병~병장 갈매기 · 부사관 · 장교 다이아 · 장성 별
 export function insignia(scene, x, y, k, s = 1) {
@@ -115,7 +115,7 @@ export class HomeScene extends Phaser.Scene {
     p.content.add(T(this, 40, 36, co.sdesc, 22, C.text, { ox: 0, w: 800, wrap: 380 }));
     const st = M.STAGES.find(s => s.unlockCo === k);
     if (!own) p.content.add(T(this, 40, 130, st ? `캠페인 ${st.n}. ${st.name} 승리로 합류` : '', 26, C.sub, { ox: 0, w: 800, wrap: 380 }));
-    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.50.2').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
+    else p.content.add(btn(this, 0, 320, 440, 110, d.co === k ? '출전 중' : '이 지휘관으로 출전', () => { d.co = k; import('../save.js?v=0.50.3').then(m => m.save()); p.close(); this.scene.restart(); }, { style: d.co === k ? 'ghost' : 'gold', size: 32 }));
   }
   drawMissions() {
     if (this.mBox) this.mBox.destroy();
@@ -136,7 +136,7 @@ export class HomeScene extends Phaser.Scene {
   settings() {
     const d = load(), pop = popup(this, '설정', 760, 900);
     const row = (y, label, on, fn) => { pop.content.add(T(this, -260, y, label, 40, C.text, { ox: 0 })); const b = btn(this, 200, y, 220, 96, on ? '켜짐' : '꺼짐', () => { fn(); b.setLabel(b.label.text === '켜짐' ? '꺼짐' : '켜짐'); }, { style: on ? 'green' : 'ghost', size: 34 }); pop.content.add(b); };
-    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.50.2').then(m => m.save()); }); row(270, '지휘관 테마곡', d.coTheme !== false, () => { d.coTheme = d.coTheme === false; import('../save.js?v=0.50.2').then(m => m.save()); }); row(390, '전투 대사', d.talk !== false, () => { d.talk = d.talk === false; import('../save.js?v=0.50.2').then(m => m.save()); });
+    row(-90, '효과음', d.sfx, () => audio.toggleSfx()); row(30, '배경음악', d.music, () => audio.toggleMusic()); row(150, '전투 장면', d.cutscene !== false, () => { d.cutscene = d.cutscene === false; import('../save.js?v=0.50.3').then(m => m.save()); }); row(270, '지휘관 테마곡', d.coTheme !== false, () => { d.coTheme = d.coTheme === false; import('../save.js?v=0.50.3').then(m => m.save()); }); row(390, '전투 대사', d.talk !== false, () => { d.talk = d.talk === false; import('../save.js?v=0.50.3').then(m => m.save()); });
   }
   go(k, data) { audio.stopMusic(); this.cameras.main.fadeOut(220, 20, 22, 10); this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start(k, data)); }
 }

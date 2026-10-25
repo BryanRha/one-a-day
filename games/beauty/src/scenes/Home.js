@@ -1,15 +1,15 @@
 // 매장 (원작의 식당 꾸미기): 낡은 가게 → 할 일(코인)로 이야기 · 수리 · 디자인 3종 선택(언제든 무료 변경)
-import { W, H } from '../config.js?v=0.50.2';
-import { T, C, btn, popup, toast, firstTip } from '../ui.js?v=0.50.2';
-import { load as loadSave } from '../save.js?v=0.50.2';
-import { audio } from '../audio.js?v=0.50.2';
-import { load, save } from '../save.js?v=0.50.2';
-import { hud } from '../hud.js?v=0.50.2';
-import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.50.2';
-import { daily, season, chapter, curTask, canNextChapter, nextChapter, giveReward, rewardText } from '../state.js?v=0.50.2';
-import { packCount, claimable, albumClaimable, loginCheck, LOGIN } from '../album.js?v=0.50.2';
-import { bingo, spin, dig, DUO, duoState, duoJoin, duoClaim } from '../minigames.js?v=0.50.2';
-import { RACE, raceState, raceJoin, raceClaim, LADDER, theme, decoInfo, decoName, THEMES, ladder, ladderReady, ladderClaim, ladderEndsIn, VIP, vip, vipClaim, vipEndsIn, fmtLeft } from '../events.js?v=0.50.2';
+import { W, H } from '../config.js?v=0.50.3';
+import { T, C, btn, popup, toast, firstTip } from '../ui.js?v=0.50.3';
+import { load as loadSave } from '../save.js?v=0.50.3';
+import { audio } from '../audio.js?v=0.50.3';
+import { load, save } from '../save.js?v=0.50.3';
+import { hud } from '../hud.js?v=0.50.3';
+import { DESIGNS, ROOM, CHAPTERS } from '../data.js?v=0.50.3';
+import { daily, season, chapter, curTask, canNextChapter, nextChapter, giveReward, rewardText } from '../state.js?v=0.50.3';
+import { packCount, claimable, albumClaimable, loginCheck, LOGIN } from '../album.js?v=0.50.3';
+import { bingo, spin, dig, DUO, duoState, duoJoin, duoClaim } from '../minigames.js?v=0.50.3';
+import { RACE, raceState, raceJoin, raceClaim, LADDER, theme, decoInfo, decoName, THEMES, ladder, ladderReady, ladderClaim, ladderEndsIn, VIP, vip, vipClaim, vipEndsIn, fmtLeft } from '../events.js?v=0.50.3';
 
 export class HomeScene extends Phaser.Scene {
   constructor() { super('Home'); }

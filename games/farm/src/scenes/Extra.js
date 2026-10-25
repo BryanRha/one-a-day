@@ -1,11 +1,12 @@
-import { frame } from '../frame.js?v=0.49.0';
+import { frame } from '../frame.js?v=0.49.1';
+import { banner, iconTabs, rewards, card, doneStamp, lockIc, progressBar } from '../evui.js?v=0.49.1';
 // 따로 여는 화면: 뒷산 광산 · 미니게임 3종(댐 수리 · 참새 쫓기 · 불량배 쫓기) · 마을 사람들(호감도 · 선물 · 결혼)
-import { W, H } from '../config.js?v=0.49.0';
-import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.49.0';
-import { audio } from '../audio.js?v=0.49.0';
-import { goPrev } from '../nav.js?v=0.49.0';
-import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.49.0';
-import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.49.0';
+import { W, H } from '../config.js?v=0.49.1';
+import { T, C, btn, popup, toast, redDot } from '../ui.js?v=0.49.1';
+import { audio } from '../audio.js?v=0.49.1';
+import { goPrev } from '../nav.js?v=0.49.1';
+import { ITEMS, MINE, MINIS, SUITORS, HEARTS, HEART_PTS, CHARS, RELIC_N } from '../data.js?v=0.49.1';
+import { load, save, has, mine, mineHit, miniLeft, miniDone, giftTo, hearts, marry, countOf, rewardText, progress } from '../state.js?v=0.49.1';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 // 모든 전체 화면 공통 틀 (frame.js): 위 재화 막대 + 제목 막대 ◀ · 손가락으로 위아래 밀기
@@ -97,51 +98,63 @@ export class PeopleScene extends Phaser.Scene {
 }
 
 // ── 이벤트 화면: 출석 · 축제 · 레이스 · 스티커 · 패스 (위 탭)
-import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.49.0';
+import { evDots, LOGIN, login, loginClaim, FEST_TIERS, FEST_R, fest, festClaim, RACE, race, raceJoin, raceState, raceClaim, STICKERS, ALBUM_R, album, openPack, albumClaim, albumAll, PASS_TIERS, PASS_FREE, PASS_PREM, pass, passClaim } from '../events.js?v=0.49.1';
 const fmtL = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return h ? `${h}시간 ${m}분` : `${m}분`; };
 export class EventsScene extends Phaser.Scene {
   constructor() { super('Events'); }
   create(data) {
-    this.tab = (data && data.tab) || 'login'; this.add.rectangle(W / 2, H / 2, W, H, 0xFFF3E0); top(this, '이벤트'); this.y0 = 300;
-    const TABS = [['login', '출석'], ['fest', '축제'], ['race', '레이스'], ['album', '스티커'], ['pass', '패스']];
-    const dots = evDots(); TABS.forEach(([k, n], i) => { btn(this, 112 + i * 214, 190, 200, 84, n, () => { if (k !== this.tab) this.scene.restart({ tab: k }); }, { size: 28, style: k === this.tab ? 'gold' : 'cream' }); if (dots[k]) redDot(this, 112 + i * 214 + 88, 156).setDepth(5); });
+    this.tab = (data && data.tab) || 'login'; this.add.rectangle(W / 2, H / 2, W, H, 0xFFF3E0); top(this, '이벤트');
+    const TABS = [['login', '출석', 'calendar'], ['fest', '축제', 'ticket'], ['race', '레이스', 'trophy'], ['album', '스티커', 'cardpack'], ['pass', '패스', 'passmedal']];
+    iconTabs(this, 230, TABS, this.tab, evDots(), k => this.scene.restart({ tab: k })); this.y0 = 330;
     this[this.tab](); window.__events = this;
   }
   done(ups, msg) { save(); audio.play('sfx_levelup', { volume: 0.7 }); if (msg) toast(this, msg, H / 2); this.time.delayedCall(700, () => this.scene.restart({ tab: this.tab })); }
-  card(x, y, w, h, on, done) { const g = this.add.graphics(); g.fillStyle(done ? 0xE3F5DA : on ? 0xFFF1C9 : 0xFFFFFF, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, 24).lineStyle(on ? 5 : 2, on ? 0xF0B65A : 0xE0D0C0, 1).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 24); return g; }
-  login() { const l = login(), y0 = this.y0 + 60; T(this, W / 2, y0, '7일 출석 선물 · 매일 들어오면 커져요', 30, C.ink, { w: 900 });
-    LOGIN.forEach((r, i) => { const d = i + 1, big = d === 7, x = big ? W / 2 : 200 + (i % 3) * 340, y = big ? y0 + 820 : y0 + 200 + Math.floor(i / 3) * 300, past = d < l.day || d === l.day && l.got, now = d === l.day && !l.got;
-      this.card(x, y, big ? 960 : 310, 260, now, past); T(this, x, y - 90, `${d}일째`, 28, now ? '#E8507A' : C.dim, { w: 900 }); T(this, x, y + 10, past ? '받음 ✓' : rewardText(r), big ? 36 : 26, past ? C.green : C.ink, { w: 900, wrap: big ? 900 : 290 }); });
-    btn(this, W / 2, y0 + 1090, 440, 120, l.got ? '내일 또 만나요' : '받기', () => { const u = loginClaim(); if (u) this.done(u, `${rewardText(LOGIN[l.day - 1])} 받았어요!`); }, { size: 36, style: l.got ? 'cream' : 'green' }); }
-  fest() { const f = fest(), y0 = this.y0 + 40, g = this.add.graphics(); g.fillStyle(f.theme.c, 1).fillRoundedRect(40, y0 - 30, W - 80, 150, 30); T(this, W / 2, y0 + 20, f.theme.n, 44, '#FFFFFF', { w: 900 }).setStroke('#3E2A14', 8); T(this, W / 2, y0 + 80, `티켓 ${f.pts} · 수확 · 주문 · 기차로 모아요 · 주마다 새 축제`, 24, '#3E2A14', { w: 900 });
-    FEST_TIERS.forEach((need, i) => { const y = y0 + 220 + i * 118, ok = f.pts >= need, got = f.got.includes(i); this.card(W / 2, y, W - 100, 104, ok && !got, got); icon(this, 110, y, 'ticket', 60); T(this, 160, y, `${need}`, 30, C.ink, { ox: 0, w: 900 }); T(this, 300, y, rewardText(FEST_R[i]), 28, C.brown, { ox: 0, w: 900 });
-      if (got) T(this, W - 140, y, '받음 ✓', 26, C.green, { w: 900 }); else btn(this, W - 150, y, 180, 74, '받기', () => { const u = festClaim(i); if (!u) return toast(this, `티켓 ${need - f.pts}장 더 필요해요`); this.done(u); }, { size: 26, style: ok ? 'green' : 'cream' }); }); }
-  race() { const s = raceState(), y0 = this.y0 + 40;
-    if (!s || s.claimed) { T(this, W / 2, y0 + 40, '이웃 농장 레이스', 46, C.ink, { w: 900 }); T(this, W / 2, y0 + 110, `24시간 안에 ${RACE.goal}점 먼저! · 주문 2점 · 기차 칸 3점`, 26, C.dim, { w: 900 }); icon(this, W / 2, y0 + 360, 'trophy', 280);
-      RACE.rewards.slice(0, 3).forEach((r, i) => T(this, W / 2, y0 + 580 + i * 70, `${i + 1}등 · ${rewardText(r)}`, 30, C.brown, { w: 900 }));
-      btn(this, W / 2, y0 + 880, 440, 120, '참가하기', () => { if (!raceJoin()) return toast(this, '오늘 레이스는 이미 했어요 · 내일 다시'); save(); this.scene.restart({ tab: 'race' }); }, { size: 36, style: 'green' }); return; }
-    T(this, W / 2, y0 + 30, s.ended ? '레이스 끝!' : `남은 시간 ${fmtL(s.left)} · 목표 ${RACE.goal}점`, 32, s.ended ? '#E8507A' : C.ink, { w: 900 });
-    s.rows.forEach((r, i) => { const y = y0 + 160 + i * 160; this.card(W / 2, y, W - 100, 140, r.me, false); T(this, 110, y, `${i + 1}`, 48, i === 0 ? C.gold : C.dim, { w: 900 }); T(this, 180, y - 28, r.n, 30, C.ink, { ox: 0, w: 900 }); const g = this.add.graphics(); g.fillStyle(0xEEE6DC, 1).fillRoundedRect(180, y + 10, 640, 26, 13).fillStyle(r.me ? 0xE8507A : 0x5AAE3C, 1).fillRoundedRect(180, y + 10, Math.max(26, 640 * r.pts / RACE.goal), 26, 13); T(this, W - 120, y, `${r.pts}`, 38, r.me ? '#E8507A' : C.brown, { w: 900 }); });
-    if (s.ended) btn(this, W / 2, y0 + 1000, 460, 120, `${s.rank}등 보상 받기`, () => { const r = raceClaim(); if (r) this.done(r.ups, `${rewardText(r.r)} 받았어요!`); }, { size: 34, style: 'green' }); }
-  album() { const a = album(), y0 = this.y0 + 40; T(this, W / 2, y0, `스티커 앨범 · 팩 ${a.packs}개 · 주문 4번마다 팩 1개`, 28, C.ink, { w: 900 });
-    btn(this, W / 2, y0 + 80, 380, 96, `📦 팩 열기 (${a.packs})`, () => this.openP(), { size: 30, style: a.packs ? 'green' : 'cream' });
-    STICKERS.forEach((S, i) => { const y = y0 + 300 + i * 290, full = S.s.every(k => a.have[k]), got = a.done.includes(i); this.card(W / 2, y, W - 80, 270, full && !got, got); T(this, 80, y - 100, `${S.n}  ${S.s.filter(k => a.have[k]).length}/6`, 28, C.ink, { ox: 0, w: 900 }); T(this, W - 80, y - 100, got ? '완성 ✓' : rewardText(S.r), 24, got ? C.green : C.brown, { ox: 1, w: 900 });
-      S.s.forEach((k, j) => { const x = 140 + j * 160, im = icon(this, x, y + 20, k, 110); if (!a.have[k]) im.setTintFill(0xD8CCC0).setAlpha(0.5); });
-      if (full && !got) btn(this, W - 180, y + 100, 240, 70, '보상 받기', () => { const u = albumClaim(i); if (u) this.done(u, `${S.n} 완성!`); }, { size: 24, style: 'green' }); });
-    if (a.done.length === STICKERS.length && !a.all) btn(this, W / 2, H - 120, 520, 110, `앨범 완성 보상 · ${rewardText(ALBUM_R)}`, () => { const u = albumAll(); if (u) this.done(u); }, { size: 28, style: 'green' }); }
+  // 7일 출석: 날마다 선물 상자 카드 · 오늘은 빛남 · 지난 날은 도장 · 7일째는 큰 보물상자
+  login() { const l = login(); let y = banner(this, this.y0, 'ev_login', '7일 출석 선물', '매일 들어오면 선물이 점점 커져요', `${l.day}일째`) + 40;
+    LOGIN.forEach((r, i) => { const d = i + 1, big = d === 7, x = big ? W / 2 : 200 + (i % 3) * 340, yy = big ? y + 760 : y + 120 + Math.floor(i / 3) * 290, past = d < l.day || d === l.day && l.got, now = d === l.day && !l.got, w = big ? W - 100 : 310, h = big ? 250 : 260;
+      card(this, x, yy, w, h, past ? 'done' : now ? 'ready' : 'lock'); const rb = this.add.graphics(); rb.fillStyle(now ? 0xE8507A : past ? 0x5AAE3C : 0xB89878, 1).fillRoundedRect(x - 80, yy - h / 2 - 18, 160, 46, 23); T(this, x, yy - h / 2 + 5, now ? '오늘' : `${d}일째`, 26, '#FFFFFF', { w: 900 });
+      if (big) { const ch = this.add.image(x - 260, yy + 10, 'chest'); ch.setScale(180 / ch.height); rewards(this, x + 110, yy + 10, r, 74); } else { const gi = this.add.image(x, yy - 30, 'gift'); gi.setScale(100 / gi.height); if (!past && !now) gi.setAlpha(0.75); rewards(this, x, yy + 70, r, 52); }
+      if (past) doneStamp(this, x + w / 2 - 50, yy - h / 2 + 50); });
+    btn(this, W / 2, y + 1000, 480, 120, l.got ? '내일 또 만나요' : '🎁 오늘 선물 받기', () => { const u = loginClaim(); if (u) this.done(u, '선물을 받았어요!'); }, { size: 34, style: l.got ? 'cream' : 'green' }); }
+  // 주간 축제: 티켓 진행 막대 + 단계 카드 (받을 수 있음 · 받음 · 남은 티켓)
+  fest() { const f = fest(), nxt = FEST_TIERS.find(t => f.pts < t) || FEST_TIERS[FEST_TIERS.length - 1], prv = [...FEST_TIERS].reverse().find(t => f.pts >= t) || 0; let y = banner(this, this.y0, 'ev_fest', f.theme.n, '수확 · 주문 · 기차로 티켓을 모아요 · 주마다 새 축제', `🎟 ${f.pts}`) + 50;
+    progressBar(this, 60, y, W - 120, (f.pts - prv) / Math.max(1, nxt - prv), `다음 보상까지 티켓 ${Math.max(0, nxt - f.pts)}장`, 0xF2B632); y += 60;
+    FEST_TIERS.forEach((need, i) => { const yy = y + 70 + i * 140, ok = f.pts >= need, got = f.got.includes(i); card(this, W / 2, yy, W - 80, 124, got ? 'done' : ok ? 'ready' : 'lock');
+      const tk = this.add.image(110, yy, 'ticket'); tk.setScale(70 / tk.height); T(this, 110, yy + 38, `${need}`, 26, '#FFFFFF', { w: 900 }).setStroke('#3E2A14', 6); rewards(this, 300, yy, FEST_R[i], 58, 'l');
+      if (got) doneStamp(this, W - 130, yy, 0.8); else if (ok) btn(this, W - 150, yy, 200, 84, '받기', () => { const u = festClaim(i); if (u) this.done(u); }, { size: 30, style: 'green' }); else { lockIc(this, W - 190, yy); T(this, W - 120, yy, `${need - f.pts}장`, 24, C.dim, { w: 900 }); } }); }
+  // 이웃 농장 레이스: 참가 전 = 1~3등 시상대 · 참가 중 = 순위판(아바타 · 진행 막대)
+  race() { const s = raceState(); let y = banner(this, this.y0, 'ev_race', '이웃 농장 레이스', `24시간 안에 ${RACE.goal}점 먼저! · 주문 2점 · 기차 칸 3점`, s && !s.claimed ? (s.ended ? '끝!' : fmtL(s.left)) : null) + 50;
+    if (!s || s.claimed) { [[1, W / 2, 0], [2, W / 2 - 330, 60], [3, W / 2 + 330, 100]].forEach(([n, x, dy]) => { card(this, x, y + 230 + dy, 300, 400 - dy, n === 1 ? 'now' : 'lock'); T(this, x, y + 70 + dy, `${n}등`, 44, n === 1 ? C.gold : C.brown, { w: 900 }).setStroke('#FFFFFF', 6); const tr = this.add.image(x, y + 190 + dy, 'trophy'); tr.setScale((n === 1 ? 150 : 110) / tr.height); if (n > 1) tr.setTint(n === 2 ? 0xD8D8E8 : 0xE8B080); rewards(this, x, y + 330 + dy * 0.5, RACE.rewards[n - 1], 50); });
+      btn(this, W / 2, y + 560, 480, 120, '🏁 레이스 참가', () => { if (!raceJoin()) return toast(this, '오늘 레이스는 이미 했어요 · 내일 다시'); save(); this.scene.restart({ tab: 'race' }); }, { size: 34, style: 'green' }); return; }
+    s.rows.forEach((r, i) => { const yy = y + 80 + i * 170; card(this, W / 2, yy, W - 80, 150, r.me ? 'now' : 'lock'); T(this, 100, yy, `${i + 1}`, 54, i === 0 ? C.gold : C.brown, { w: 900 }).setStroke('#FFFFFF', 6);
+      const av = this.add.image(200, yy + 6, r.me ? 'princess' : `w${1 + (i % 5)}_f1`); av.setScale(120 / av.height); T(this, 270, yy - 34, r.n, 30, C.ink, { ox: 0, w: 900 }); progressBar(this, 270, yy + 24, 560, r.pts / RACE.goal, `${r.pts}/${RACE.goal}`, r.me ? 0xE8507A : 0x7FD35A); });
+    if (s.ended) btn(this, W / 2, y + 80 + s.rows.length * 170 + 40, 480, 120, `🏆 ${s.rank}등 보상 받기`, () => { const r = raceClaim(); if (r) this.done(r.ups, '레이스 보상을 받았어요!'); }, { size: 34, style: 'green' }); }
+  // 스티커 앨범: 팩 열기 + 세트마다 스티커 판
+  album() { const a = album(); let y = banner(this, this.y0, 'ev_album', '스티커 앨범', '주문 4번마다 팩 1개 · 세트를 채우면 보상', a.packs ? `📦 ${a.packs}` : null) + 40;
+    const pk = this.add.image(220, y + 80, 'cardpack'); pk.setScale(140 / pk.height); if (a.packs) this.tweens.add({ targets: pk, angle: { from: -6, to: 6 }, duration: 500, yoyo: true, repeat: -1 }); T(this, 340, y + 50, `가진 팩 ${a.packs}개`, 32, C.ink, { ox: 0, w: 900 }); T(this, 340, y + 100, '팩마다 스티커 3장', 22, C.dim, { ox: 0, w: 800 });
+    btn(this, W - 200, y + 80, 280, 100, '팩 열기', () => this.openP(), { size: 32, style: a.packs ? 'green' : 'cream' }); y += 200;
+    STICKERS.forEach((S, i) => { const yy = y + 150 + i * 320, have = S.s.filter(k => a.have[k]).length, full = have === 6, got = a.done.includes(i); card(this, W / 2, yy, W - 80, 290, got ? 'done' : full ? 'ready' : 'lock');
+      T(this, 80, yy - 110, S.n, 32, C.ink, { ox: 0, w: 900 }); progressBar(this, 330, yy - 110, 260, have / 6, `${have}/6`); rewards(this, W - 150, yy - 110, S.r, 48);
+      S.s.forEach((k, j) => { const x = 140 + j * 160, sg = this.add.graphics(); sg.fillStyle(0xFFFFFF, 1).fillRoundedRect(x - 66, yy - 46, 132, 132, 22).lineStyle(3, a.have[k] ? 0xF2B632 : 0xDDD0C0, 1).strokeRoundedRect(x - 66, yy - 46, 132, 132, 22); const im = icon(this, x, yy + 20, k, 100); if (!a.have[k]) im.setTintFill(0xD8CCC0).setAlpha(0.5); });
+      if (got) doneStamp(this, W - 110, yy + 30); else if (full) btn(this, W / 2, yy + 120, 280, 76, '세트 보상 받기', () => { const u = albumClaim(i); if (u) this.done(u, `${S.n} 완성!`); }, { size: 26, style: 'green' }); });
+    if (a.done.length === STICKERS.length && !a.all) btn(this, W / 2, y + 150 + STICKERS.length * 320, 560, 110, '📖 앨범 완성 보상', () => { const u = albumAll(); if (u) this.done(u); }, { size: 30, style: 'green' }); }
   openP() { const out = openPack(); if (!out) return toast(this, '팩이 없어요 · 주문을 끝내면 받아요', H / 2); save(); audio.play('sfx_box', { volume: 0.7 }); const p = popup(this, 900, 620, { closable: false }); p.content.add(T(this, 0, -230, '스티커 팩', 44, C.ink, { w: 900 }));
     out.forEach((o, i) => { const x = (i - 1) * 260, c = this.add.container(x, -20), g = this.add.graphics(); g.fillStyle(0xFFFFFF, 1).fillRoundedRect(-110, -130, 220, 260, 24).lineStyle(5, o.isNew ? 0xF0B65A : 0xE0D0C0, 1).strokeRoundedRect(-110, -130, 220, 260, 24); c.add([g, icon(this, 0, -20, o.it, 140), T(this, 0, 96, o.isNew ? 'NEW!' : '중복', 26, o.isNew ? '#E8507A' : C.dim, { w: 900 })]); c.scaleX = 0; p.content.add(c); this.tweens.add({ targets: c, scaleX: 1, duration: 200, delay: 200 + i * 220, onStart: () => audio.play('sfx_pick', { volume: 0.6 }) }); });
     p.content.add(btn(this, 0, 220, 320, 96, '좋아요', () => { p.close(); this.scene.restart({ tab: 'album' }); }, { size: 30 })); }
-  pass() { const ps = pass(), y0 = this.y0 + 40; T(this, W / 2, y0, `이달의 시즌 패스 · 점수 ${ps.pts}`, 32, C.ink, { w: 900 }); T(this, 280, y0 + 60, '무료', 26, C.brown, { w: 900 }); T(this, 800, y0 + 60, '프리미엄 · 곧 열려요', 24, '#C2408A', { w: 900 });
-    PASS_TIERS.forEach((need, i) => { const y = y0 + 150 + i * 122, ok = ps.pts >= need, got = ps.got.includes(i); const g = this.add.graphics(); g.fillStyle(ok ? 0xE8507A : 0xD8CCC0, 1).fillCircle(W / 2 + 0, y, 34); T(this, W / 2, y, `${need}`, 20, '#FFFFFF', { w: 900 });
-      this.card(280, y, 400, 104, ok && !got, got); T(this, 280, y, got ? '받음 ✓' : rewardText(PASS_FREE[i]), 24, got ? C.green : C.ink, { w: 900 }); this.add.zone(280, y, 400, 104).setInteractive().on('pointerup', () => { const u = passClaim(i); if (!u) return toast(this, got ? '이미 받았어요' : `패스 점수 ${need}에 받아요`); this.done(u); });
-      const g2 = this.add.graphics(); g2.fillStyle(0xF6E6EE, 1).fillRoundedRect(600, y - 52, 400, 104, 24); T(this, 800, y, rewardText(PASS_PREM[i]), 24, '#C9A2B8', { w: 900 }); }); }
+  // 시즌 패스: 가운데 진행 줄 · 왼쪽 무료 · 오른쪽 프리미엄(잠김)
+  pass() { const ps = pass(); let y = banner(this, this.y0, 'ev_pass', '이달의 시즌 패스', '모든 활동으로 패스 점수를 모아요', `⭐ ${ps.pts}`) + 50;
+    T(this, 270, y, '무료', 30, C.brown, { w: 900 }); T(this, 810, y, '프리미엄 · 곧 열려요', 26, '#B0607A', { w: 900 }); y += 40;
+    const line = this.add.graphics(), last = PASS_TIERS.length - 1; line.fillStyle(0xDDD0C0, 1).fillRoundedRect(W / 2 - 8, y + 70, 16, last * 150, 8); const reach = PASS_TIERS.filter(t => ps.pts >= t).length; if (reach) line.fillStyle(0xF2B632, 1).fillRoundedRect(W / 2 - 8, y + 70, 16, Math.max(0, reach - 1) * 150 + 20, 8);
+    PASS_TIERS.forEach((need, i) => { const yy = y + 70 + i * 150, ok = ps.pts >= need, got = ps.got.includes(i); const nd = this.add.graphics(); nd.fillStyle(ok ? 0xF2B632 : 0xC9B8A6, 1).fillCircle(W / 2, yy, 40).lineStyle(5, 0xFFFFFF, 1).strokeCircle(W / 2, yy, 40); T(this, W / 2, yy, `${need}`, 24, '#FFFFFF', { w: 900 }).setStroke('#3E2A14', 5);
+      card(this, 270, yy, 400, 130, got ? 'done' : ok ? 'ready' : 'lock'); rewards(this, 230, yy, PASS_FREE[i], 54);
+      if (got) doneStamp(this, 420, yy - 20, 0.7); else if (ok) { const z = this.add.zone(270, yy, 400, 130).setInteractive({ useHandCursor: true }); z.on('pointerup', () => { const u = passClaim(i); if (u) this.done(u); }); T(this, 420, yy + 40, '받기', 24, C.green, { w: 900 }); }
+      card(this, 810, yy, 400, 130, 'lock'); const pr = rewards(this, 780, yy, PASS_PREM[i], 54); pr.setAlpha(0.45); lockIc(this, 960, yy - 34); }); }
   onBack() { return goPrev(this); }
 }
 
 // ── 섬 원정: 덤불·덩굴·그루터기=도끼 · 모래·보물=삽 · 바위=곡괭이 → 칸을 열어 보물 찾기
-import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.49.0';
-import { ISLE } from '../data.js?v=0.49.0';
+import { isle, isleHit, isleTool, isleTheme, BOSS } from '../state.js?v=0.49.1';
+import { ISLE } from '../data.js?v=0.49.1';
 export class IslandScene extends Phaser.Scene {
   constructor() { super('Island'); }
   init() { this.noScroll = true; }
@@ -174,7 +187,7 @@ export class IslandScene extends Phaser.Scene {
 }
 
 // ── 협동조합: 레가타(주간 팀 경주) · 도움 요청
-import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.49.0';
+import { coopDots, coop, standings, weekLeft, takeTask, taskProg, dropTask, tierClaim, prevClaim, helpSend, COOP_TIERS, TIER_R, RANK_R, TASKS_DAY, COOP_LV } from '../coop.js?v=0.49.1';
 const fmtH = ms => { const m = Math.floor(ms / 6e4); return m >= 1440 ? `${Math.floor(m / 1440)}일 ${Math.floor(m % 1440 / 60)}시간` : m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
 export class CoopScene extends Phaser.Scene {
   constructor() { super('Coop'); }

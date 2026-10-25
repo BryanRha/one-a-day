@@ -1,9 +1,10 @@
 // 컷씬: 그림 위로 카메라가 천천히 움직이고(줌 · 이동), 인물이 미끄러져 들어오고, 대사가 한 글자씩
 //   누르면 다음 대사 · 위 '건너뛰기' · 끝나면 done() 호출. 모든 장면 위에 뜸.
-import { W, H } from '../config.js?v=0.54.0';
-import { T, C, btn } from '../ui.js?v=0.54.0';
-import { audio } from '../audio.js?v=0.54.0';
-import { pushBack } from '../oad.js?v=0.54.0';
+import { W, H } from '../config.js?v=0.54.1';
+import { T, C, btn } from '../ui.js?v=0.54.1';
+import { audio } from '../audio.js?v=0.54.1';
+import { pushBack } from '../oad.js?v=0.54.1';
+import { livePuppet } from '../puppet.js?v=0.54.1';
 
 export class CutsceneScene extends Phaser.Scene {
   constructor() { super('Cutscene'); }
@@ -34,8 +35,8 @@ export class CutsceneScene extends Phaser.Scene {
     this.tweens.add({ targets: im, scale: base * z1, y: yy(z1, y1), duration: 9000, ease: 'Sine.easeInOut' });
     // 인물: 옆에서 미끄러져 들어옴
     this.charL.list.slice().forEach(c => this.tweens.add({ targets: c, alpha: 0, duration: 250, onComplete: () => c.destroy() }));
-    if (sh.who && this.textures.exists(`hero_${sh.who}`)) { const l = sh.side === 'l', c = this.add.image(l ? 300 : W - 300, H - Math.round(H * 0.07) - 250, `hero_${sh.who}`).setOrigin(0.5, 1); c.setScale(Math.min(1.3, (H * 0.62) / c.height)).setAlpha(0); if (!l) c.setFlipX(false);
-      c.x += l ? -200 : 200; this.charL.add(c); this.tweens.add({ targets: c, x: l ? 300 : W - 300, alpha: 1, duration: 420, ease: 'Cubic.easeOut' }); }
+    if (sh.who && this.textures.exists(`hero_${sh.who}`)) { const l = sh.side === 'l', src = this.textures.get(`hero_${sh.who}`).getSourceImage(), pp = livePuppet(this, `hero_${sh.who}`, Math.min(src.height * 1.3, H * 0.62), { sway: 0.8 }), c = pp.rope;
+      c.setPosition((l ? 300 : W - 300) + (l ? -200 : 200), H - Math.round(H * 0.07) - 250).setAlpha(0); this.charL.add(c); this.tweens.add({ targets: c, x: l ? 300 : W - 300, alpha: 1, duration: 420, ease: 'Cubic.easeOut' }); }
     this.fx(sh.fx); this.nextLine();
   }
   fx(k) {

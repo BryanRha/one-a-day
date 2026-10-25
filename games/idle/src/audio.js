@@ -1,5 +1,5 @@
 // 효과음 · 배경음 (ElevenLabs 로 만든 여명기사단 전용 소리, idle/tools/gen_audio.sh)
-import { load, save } from './save.js?v=0.54.0';
+import { load, save } from './save.js?v=0.54.1';
 export const SFX = ['sfx_tap', 'sfx_hit', 'sfx_shot', 'sfx_crit', 'sfx_skill', 'sfx_heal', 'sfx_coin', 'sfx_chest', 'sfx_epic', 'sfx_levelup', 'sfx_boss', 'sfx_win', 'sfx_lose', 'sfx_summon', 'sfx_error', 'sfx_die'];
 export const BGM = ['bgm_field', 'bgm_boss', 'bgm_menu', 'bgm_story'];
 const BGM_VOL = { bgm_field: 0.3, bgm_boss: 0.34, bgm_menu: 0.32, bgm_story: 0.38 };

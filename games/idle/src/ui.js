@@ -1,8 +1,8 @@
 // 여명기사단 UI: 남색 밤하늘 패널 · 금빛 새벽 테두리 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.54.0';
-import { audio } from './audio.js?v=0.54.0';
-import { pushBack } from './oad.js?v=0.54.0';
-import { load as loadSave, save as saveSave } from './save.js?v=0.54.0';
+import { W, H } from './config.js?v=0.54.1';
+import { audio } from './audio.js?v=0.54.1';
+import { pushBack } from './oad.js?v=0.54.1';
+import { load as loadSave, save as saveSave } from './save.js?v=0.54.1';
 
 export const C = { ink: '#F5F0E6', text: '#FFFFFF', dim: '#9AA6CC', sub: '#7F8BB5', gold: '#F2C46B', gold2: '#C98A2E', moon: '#CFE0FF', red: '#FF6B6B', green: '#6BE39B', blue: '#7FA8FF', navy: '#121933', brown: '#E8D7B0', rose: '#FF8AA8' };
 export const FONT = 'Pretendard, sans-serif';
@@ -174,6 +174,7 @@ export function makeTextures(sc) {
   tex(sc, 'glow', 128, 128, g => { const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.4, 'rgba(255,255,255,0.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
   tex(sc, 'spark', 64, 64, g => { g.translate(32, 32); g.fillStyle = '#fff'; g.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, r = i % 2 ? 7 : 30; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); });
   tex(sc, 'star', 96, 96, g => { g.translate(48, 50); g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 19 : 42; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.lineJoin = 'round'; g.lineWidth = 7; g.strokeStyle = '#FFFFFF'; g.stroke(); const gr = g.createLinearGradient(0, -42, 0, 40); gr.addColorStop(0, '#FFE27A'); gr.addColorStop(1, '#F0A030'); g.fillStyle = gr; g.fill(); g.lineWidth = 2.5; g.strokeStyle = '#C97A18'; g.stroke(); });
+  tex(sc, 'slash', 200, 200, g => { g.translate(100, 100); const gr = g.createRadialGradient(0, 0, 40, 0, 0, 95); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.7, 'rgba(255,255,255,0.95)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 92, -1.2, 1.2); g.arc(-26, 0, 78, 1.05, -1.05, true); g.closePath(); g.fill(); });
   tex(sc, 'ring', 160, 160, g => { g.lineWidth = 10; g.strokeStyle = '#fff'; g.beginPath(); g.arc(80, 80, 72, 0, Math.PI * 2); g.stroke(); });
 }
 

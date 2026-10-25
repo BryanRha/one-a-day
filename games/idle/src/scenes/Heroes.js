@@ -1,15 +1,16 @@
 // 영웅: 가진 영웅 목록(전투력 순) · 못 만난 영웅은 그림자 · 누르면 상세(레벨업 · 승급 · 팀 넣고 빼기)
-import { W, H } from '../config.js?v=0.54.0';
-import { T, R, C, TS, btn, sheet, rbox, toast } from '../ui.js?v=0.54.0';
-import { audio } from '../audio.js?v=0.54.0';
-import { load, save } from '../save.js?v=0.54.0';
-import { HEROES, GRADES, ROLES, SKILL_KIND, STAR_NEED, MAX_STAR, SUMMONABLE } from '../data.js?v=0.54.0';
-import { heroStats, heroPower, levelCost, levelUp, starUp, levelCap, autoTeam, fmt, potionUp, tokenShard, TOKEN_SHARD, petLv, petBonus } from '../state.js?v=0.54.0';
-import { PETS } from '../data.js?v=0.54.0';
-import { PET_STAT, petFood, petFeed, petBuy } from '../content.js?v=0.54.0';
-import { panelBg } from './Hud.js?v=0.54.0';
-import { TOP, NAV_H } from '../hud.js?v=0.54.0';
-import { SKILL_ICON } from './Boot.js?v=0.54.0';
+import { W, H } from '../config.js?v=0.54.1';
+import { T, R, C, TS, btn, sheet, rbox, toast } from '../ui.js?v=0.54.1';
+import { audio } from '../audio.js?v=0.54.1';
+import { load, save } from '../save.js?v=0.54.1';
+import { HEROES, GRADES, ROLES, SKILL_KIND, STAR_NEED, MAX_STAR, SUMMONABLE } from '../data.js?v=0.54.1';
+import { heroStats, heroPower, levelCost, levelUp, starUp, levelCap, autoTeam, fmt, potionUp, tokenShard, TOKEN_SHARD, petLv, petBonus } from '../state.js?v=0.54.1';
+import { PETS } from '../data.js?v=0.54.1';
+import { PET_STAT, petFood, petFeed, petBuy } from '../content.js?v=0.54.1';
+import { panelBg } from './Hud.js?v=0.54.1';
+import { TOP, NAV_H } from '../hud.js?v=0.54.1';
+import { SKILL_ICON } from './Boot.js?v=0.54.1';
+import { livePuppet } from '../puppet.js?v=0.54.1';
 
 export class HeroesScene extends Phaser.Scene {
   constructor() { super('Heroes'); }
@@ -59,7 +60,7 @@ export class HeroesScene extends Phaser.Scene {
   detail(id) {
     const H0 = HEROES[id], h = this.d.heroes[id], gr = GRADES[H0.g], R0 = ROLES[H0.role];
     const p = sheet(this, { size: 'L', title: H0.n, sub: `${H0.en} · ${H0.t}` });
-    const art = this.add.image(-210, 420, `hero_${id}`).setOrigin(0.5, 1); art.setScale(480 / art.height); if (!h) art.setTintFill(0x2A3260); p.content.add(art);
+    let art; if (h) { art = livePuppet(this, `hero_${id}`, 480).rope; art.setPosition(-210, 420); } else { art = this.add.image(-210, 420, `hero_${id}`).setOrigin(0.5, 1); art.setScale(480 / art.height).setTintFill(0x2A3260); } p.content.add(art);
     p.content.add(rbox(this, 230, 20, 160, 44, { fill: gr.css, r: 12 })); p.content.add(T(this, 230, 20, `${gr.n} · ${R0.n}`, 22, '#14182E', { w: 900 }));
     const sk = this.add.image(90, 140, `sk${SKILL_ICON[H0.skill.kind]}`).setDisplaySize(96, 96); p.content.add(sk);
     p.content.add(T(this, 150, 112, H0.skill.n, 30, C.gold, { ox: 0, w: 900 })); p.content.add(T(this, 150, 150, SKILL_KIND[H0.skill.kind], 22, C.dim, { ox: 0, w: 800 }));

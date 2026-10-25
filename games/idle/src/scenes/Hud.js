@@ -1,13 +1,13 @@
 // 맨 위 장면: 위 막대 · 아래 메뉴 · 메뉴 화면 열고 닫기 (전투는 그 아래에서 계속 돎)
-import { W, H } from '../config.js?v=0.54.0';
-import { topBar, navBar, TOP, NAV_H } from '../hud.js?v=0.54.0';
-import { load } from '../save.js?v=0.54.0';
-import { quest } from '../state.js?v=0.54.0';
-import { audio } from '../audio.js?v=0.54.0';
-import { T, C, btn, sheet, rbox, toast } from '../ui.js?v=0.54.0';
-import { save } from '../save.js?v=0.54.0';
-import { CUTS, heraldCut } from '../story.js?v=0.54.0';
-import { REGIONS, HEROES } from '../data.js?v=0.54.0';
+import { W, H } from '../config.js?v=0.54.1';
+import { topBar, navBar, TOP, NAV_H } from '../hud.js?v=0.54.1';
+import { load } from '../save.js?v=0.54.1';
+import { quest } from '../state.js?v=0.54.1';
+import { audio } from '../audio.js?v=0.54.1';
+import { T, C, btn, sheet, rbox, toast } from '../ui.js?v=0.54.1';
+import { save } from '../save.js?v=0.54.1';
+import { CUTS, heraldCut } from '../story.js?v=0.54.1';
+import { REGIONS, HEROES } from '../data.js?v=0.54.1';
 
 export const PANELS = ['Heroes', 'Gear', 'Summon', 'Dungeon'];
 export class HudScene extends Phaser.Scene {

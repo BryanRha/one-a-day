@@ -1,9 +1,9 @@
 // 이야기 장면: 작전 전·후 지휘관 대화 (얼굴 그림 · 이름표 · 글자 하나씩 · 누르면 다음 · 건너뛰기)
-import { W, H } from '../config.js?v=0.52.3';
-import { T, C, panel, btn } from '../pui.js?v=0.52.3';
-import { audio } from '../audio.js?v=0.52.3';
-import { pushBack } from '../oad.js?v=0.52.3';
-import { COS } from '../core/data.js?v=0.52.3';
+import { W, H } from '../config.js?v=0.52.4';
+import { T, C, panel, btn } from '../pui.js?v=0.52.4';
+import { audio } from '../audio.js?v=0.52.4';
+import { pushBack } from '../oad.js?v=0.52.4';
+import { COS } from '../core/data.js?v=0.52.4';
 
 export class StoryScene extends Phaser.Scene {
   constructor() { super('Story'); }

@@ -1,22 +1,22 @@
-import { iso } from './Town.js?v=0.52.3';
+import { iso } from './Town.js?v=0.52.4';
 // 화면 고정 UI: 위 막대 · 버튼 · 건물/밭 창 · 주문 게시판 · 기차 · 헛간 · 건설 · 땅 넓히기 · 퀘스트 · 대화
-import { W, H } from '../config.js?v=0.52.3';
-import { T, C, btn, popup, toast } from '../ui.js?v=0.52.3';
-import { audio } from '../audio.js?v=0.52.3';
-import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.52.3';
-import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.52.3';
-import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.52.3';
-import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.52.3';
-import { taskCheck, coopBadge } from '../coop.js?v=0.52.3';
-import { spOpen, SP } from '../sparrow.js?v=0.52.3';
-import { wtOpen } from '../water.js?v=0.52.3';
-import { ptOpen } from '../patrol.js?v=0.52.3';
-import { pushBack } from '../oad.js?v=0.52.3';
-import { miniDone } from '../state.js?v=0.52.3';
-import { HEARTS, HEART_PTS } from '../data.js?v=0.52.3';
-import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.52.3';
-import { FUP, TRAINS } from '../data.js?v=0.52.3';
-import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.52.3';
+import { W, H } from '../config.js?v=0.52.4';
+import { T, C, btn, popup, toast } from '../ui.js?v=0.52.4';
+import { audio } from '../audio.js?v=0.52.4';
+import { ITEMS, CROPS, RECIPES, BUILDS, XP_NEED, BARN, CHARS, ZONE, MAP, MINIS, seedCost, VOYAGES } from '../data.js?v=0.52.4';
+import { evBadge, onOrder, onTrainCar, onHarvest, login, loginClaim, LOGIN, fest, raceState, album, voyage, voyageSend, voyageBack } from '../events.js?v=0.52.4';
+import { trainN, trainCount, upgradeFactory, plane, loadCrate, PLANE_BONUS, zooCoins, zooCollect, matCount, payCost, missing, gemFill, matDrop, lastMats, newSite, finishSite, relic, relicClaim, market, marketBuy, speedCost, speedField, speedFactory, lab, rl, labStart, labSpeed, bonusCrop } from '../state.js?v=0.52.4';
+import { RESEARCH, RES_MAX, resCost, resTime } from '../data.js?v=0.52.4';
+import { taskCheck, coopBadge } from '../coop.js?v=0.52.4';
+import { spOpen, SP } from '../sparrow.js?v=0.52.4';
+import { wtOpen } from '../water.js?v=0.52.4';
+import { ptOpen } from '../patrol.js?v=0.52.4';
+import { pushBack } from '../oad.js?v=0.52.4';
+import { miniDone } from '../state.js?v=0.52.4';
+import { HEARTS, HEART_PTS } from '../data.js?v=0.52.4';
+import { RELICS, RELIC_N, siteNeed } from '../data.js?v=0.52.4';
+import { FUP, TRAINS } from '../data.js?v=0.52.4';
+import { load, save, costOf, cropTime, joy, joyBonus, miniLeft, barnCap, barnUsed, has, add, canFit, gainXp, give, pop, popNow, popCap, countOf, canBuild, cropReady, tickFactory, queueJob, tickAnimal, feedAll, feedOne, iga, productOf, fillOrders, doOrder, dropOrder, train, loadCar, quest, questDone, questProg, claimQuest, progress, rent, payRent, digUp, zoneOf, zoneNext, zoneCost, rewardText } from '../state.js?v=0.52.4';
 
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}시간 ${Math.floor(s % 3600 / 60)}분` : s >= 60 ? `${Math.floor(s / 60)}분 ${Math.floor(s % 60)}초` : `${Math.ceil(s)}초`;
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
@@ -42,8 +42,8 @@ export class HudScene extends Phaser.Scene {
     this.qBanner = this.add.container(W / 2, 200); this.zone(W / 2 - 300, 160, 600, 80, () => this.questPanel());
     this.placeBar = null; this.refresh(); window.__hud = this;
     this.time.delayedCall(700, () => this.storyCheck());
-    if (window.__placeNext) { const k = window.__placeNext; window.__placeNext = null; this.time.delayedCall(500, () => { if (!canBuild(k)) { this.startBuild(k); toast(this, `${BUILDS[k].n}을(를) 놓을 자리를 골라요`, H * 0.3); } }); }   /* 이벤트에서 받은 한정 장식 바로 놓기 */
-    { const l = login(); if (!window.__placeNext && this.d.quest >= 3 && !l.got && l.shown !== l.last) { l.shown = l.last; save(); this.time.delayedCall(1400, () => this.go('Events', { tab: 'login' })); } }   // 하루 첫 방문에만 출석 화면
+    this.placing0 = window.__placeNext; if (window.__placeNext) { const k = window.__placeNext; window.__placeNext = null; this.time.delayedCall(500, () => { if (!canBuild(k)) { this.startBuild(k); toast(this, `${BUILDS[k].n}을(를) 놓을 자리를 골라요`, H * 0.3); } }); }   /* 이벤트에서 받은 한정 장식 바로 놓기 */
+    { const l = login(); if (!this.placing0 && this.d.quest >= 3 && !l.got && l.shown !== l.last) { l.shown = l.last; save(); this.time.delayedCall(1400, () => this.go('Events', { tab: 'login' })); } }   // 하루 첫 방문에만 출석 화면
   }
   zone(x, y, w, h, fn) { this.zones.push({ x, y, w, h }); if (fn) this.add.zone(x + w / 2, y + h / 2, w, h).setInteractive().on('pointerup', fn); }
   blocking(p) { if (this.spUi) return true; if (this.children.list.some(o => o.depth >= 1000)) return true; return this.zones.some(z => p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h); }

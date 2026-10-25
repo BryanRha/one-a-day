@@ -1,11 +1,11 @@
-import { W, BASE_H, setH, VERSION } from './config.js?v=0.45.2';
-import { audio } from './audio.js?v=0.45.2';
-import { BootScene } from './scenes/Boot.js?v=0.45.2';
-import { TownScene } from './scenes/Town.js?v=0.45.2';
-import { HudScene } from './scenes/Hud.js?v=0.45.2';
-import { MineScene, MiniScene, PeopleScene, EventsScene, IslandScene, CoopScene } from './scenes/Extra.js?v=0.45.2';
-import { installBack } from './oad.js?v=0.45.2';
-import { installNav } from './nav.js?v=0.45.2';
+import { W, BASE_H, setH, VERSION } from './config.js?v=0.45.3';
+import { audio } from './audio.js?v=0.45.3';
+import { BootScene } from './scenes/Boot.js?v=0.45.3';
+import { TownScene } from './scenes/Town.js?v=0.45.3';
+import { HudScene } from './scenes/Hud.js?v=0.45.3';
+import { MineScene, MiniScene, PeopleScene, EventsScene, IslandScene, CoopScene } from './scenes/Extra.js?v=0.45.3';
+import { installBack } from './oad.js?v=0.45.3';
+import { installNav } from './nav.js?v=0.45.3';
 
 // 오류 알림: 같은 오류는 한 번만 · 최근 5개는 저장 (thefarm_err)
 const seen = new Set();
@@ -25,6 +25,10 @@ async function start() {
     render: { antialias: true, powerPreference: 'high-performance' }, input: { activePointers: 3 }, fps: { target: 60 },
     scene: [BootScene, TownScene, HudScene, MineScene, MiniScene, PeopleScene, EventsScene, IslandScene, CoopScene],
   });
+  // 근본 대책: 그림이 지워질 때 그 그림에 걸린 애니메이션(tween)도 함께 지움
+  //   (지워진 그림을 애니메이션이 계속 고치려다 매 프레임 오류 → 화면 멈춤 · v0.9.1 꾹 누르기 원에서 실제로 남)
+  const goDestroy = Phaser.GameObjects.GameObject.prototype.destroy;
+  Phaser.GameObjects.GameObject.prototype.destroy = function (fromScene) { try { const tw = this.scene && this.scene.sys && this.scene.sys.tweens; if (tw && !fromScene) tw.killTweensOf(this); } catch { /* */ } return goDestroy.call(this, fromScene); };
   // 오류가 나도 멈추지 않게: 장면마다 따로 막아서(한 장면 오류가 화면 그리기까지 막지 않게) · 오류는 화면 위에 보여 주고 저장
   const sysStep = Phaser.Scenes.Systems.prototype.step;
   Phaser.Scenes.Systems.prototype.step = function (t, d) { try { sysStep.call(this, t, d); } catch (err) { report(err, this.settings && this.settings.key); } };

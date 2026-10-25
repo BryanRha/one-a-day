@@ -1,9 +1,9 @@
 // 마을 화면 (쿼터뷰): 땅 · 밭 · 건물 · 기차역 · 강아지 · 끌어서 이동 · 두 손가락/휠 확대 · 누르기 · 건물 놓기
-import { W, H } from '../config.js?v=0.45.2';
-import { T, C } from '../ui.js?v=0.45.2';
-import { audio } from '../audio.js?v=0.45.2';
-import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.45.2';
-import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.45.2';
+import { W, H } from '../config.js?v=0.45.3';
+import { T, C } from '../ui.js?v=0.45.3';
+import { audio } from '../audio.js?v=0.45.3';
+import { BUILDS, CROPS, MAP, ZONE, RECIPES } from '../data.js?v=0.45.3';
+import { load, save, open, objAt, freeRect, cropReady, tickFactory, tickAnimal, digSpot, productOf, train, zooCoins, pop } from '../state.js?v=0.45.3';
 
 export const TW = 180, TH = 90, OX = MAP * TW / 2 + 260, OY = 260;
 export const iso = (gx, gy) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2];
@@ -174,7 +174,7 @@ export class TownScene extends Phaser.Scene {
     if (this.mode) { const w = this.cameras.main.getWorldPoint(p.x, p.y), [gx, gy] = grid(w.x, w.y); this.moveGhost(gx - Math.floor(this.ghost.sz / 2), gy - Math.floor(this.ghost.sz / 2)); return; }
     const z = this.cameras.main.zoom; this.cameras.main.setScroll(pr.sx - dx / z, pr.sy - dy / z);
   }
-  up(p) { const pr = this.press; this.press = null; this.dragGhost = false; if (pr && pr.ring && pr.ring.active) pr.ring.destroy(); if (!pr || pr.moved || pr.plant || pr.long) return; const w = this.cameras.main.getWorldPoint(p.x, p.y); this.tap(w.x, w.y); }
+  up(p) { const pr = this.press; this.press = null; this.dragGhost = false; if (pr && pr.ring && pr.ring.active) { this.tweens.killTweensOf(pr.ring); pr.ring.destroy(); } if (!pr || pr.moved || pr.plant || pr.long) return; const w = this.cameras.main.getWorldPoint(p.x, p.y); this.tap(w.x, w.y); }
   // 누른 자리의 물건 (건물 지붕이 뒤 칸을 덮으므로 앞쪽 2칸 건물을 먼저)
   hitAt(wx, wy) { const [gx, gy] = grid(wx, wy); let hit = null; for (let k = 2; k >= 1 && !hit; k--) { const o = objAt(gx + k, gy + k); if (o && o.b !== 'field') hit = o; } return hit || objAt(gx, gy); }
   tap(wx, wy) {

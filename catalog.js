@@ -72,6 +72,12 @@ export const GAMES = {
     desc: '재의 저주가 내려앉은 숲, 용병 카일이 대검을 든다. 공격 버튼을 누르고 있으면 이어지는 4연타, 대지 가르기·회오리 베기 같은 스킬, 공격 직전에 피하는 완벽한 회피와 분노 해방까지. 몰려오는 코볼트를 쓸어 버리고 거대한 보스를 쓰러뜨려 장비를 강화해요. 1장 10스테이지 · 무한의 탑 · 황금 동굴 · 자동 전투.',
     path: 'games/blade/', logo: true, cover: 'covers/blade.png', icon: 'covers/blade_icon.png', time: '5~10분',
   },
+  bagel: {
+    title: '마루미 베이글 하우스', en: 'Marumi Bagel House', genre: '가게 경영', color: '#F28C38',
+    tagline: '굽고, 바르고, 나르고, 팔고! 내 베이글 가게 키우기',
+    desc: '마루미베이글 매장을 직접 운영해요. 오븐에서 갓 구운 베이글을 쌓아 들고 계산대에 진열하면 손님이 줄을 서요. 번 돈으로 크림치즈 바·커피 머신·테이블·드라이브스루를 열고, 직원을 뽑아 가게가 저절로 돌아가게 만들어요. 오늘 베이글 100개를 팔면 매장 쿠폰까지!',
+    path: 'games/bagel/', cover: 'covers/bagel.png', icon: 'covers/bagel_icon.png', time: '5~15분',
+  },
   idle: {
     title: '여명기사단 키우기', en: 'Knights of Dawn: Idle', genre: '방치형 RPG', color: '#2A3A8A',
     tagline: '해가 사라진 대륙에 새벽을 되찾는 기사단',
@@ -87,6 +93,6 @@ export const GAMES = {
   },
 };
 // 별빛 궁수(archer)는 2026-10-22 사용자 요청으로 목록에서 내림 (CATALOG 항목·게임 소스는 남겨 둠)
-export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'farm', 'blade'];
+export const ORDER = ['witch', 'ocean', 'racer', 'blocks', 'dice', 'war', 'seek', 'beauty', 'farm', 'blade', 'bagel'];
 // 여명기사단 키우기(idle)는 2026-10-25 사용자 요청으로 목록에서 내림 — 보류 중 (CATALOG 항목·소스·idle/PROJECT_STATUS.md 남겨 둠)
 // K-다이스 투어(tour)는 2026-10-24 사용자 요청으로 목록에서 내림 — 대전 네트워크(서버)가 붙으면 다시 올림 (CATALOG 항목·소스는 남겨 둠)

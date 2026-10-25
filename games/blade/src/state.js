@@ -1,5 +1,5 @@
 // 저장 · 성장 · 재화 · 장비 · 행동력 · 일일 미션 · 출석 (localStorage 'ashblade_v1')
-import { HERO, SLOTS, RARITY, ITEM_NAMES, STAGES, expNeed, MAX_LV, STAMINA, enhCost, enhRate, MAX_ENH, skillCost, MAX_SKILL, SKILL_SLOTS } from './data.js?v=0.56.1';
+import { HERO, SLOTS, RARITY, ITEM_NAMES, STAGES, expNeed, MAX_LV, STAMINA, enhCost, enhRate, MAX_ENH, skillCost, MAX_SKILL, SKILL_SLOTS } from './data.js?v=0.57.0';
 
 const KEY = 'ashblade_v1';
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };

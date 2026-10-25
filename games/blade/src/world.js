@@ -1,9 +1,9 @@
 // 스테이지 배경 만들기: 바닥 · 길 · 소품(같은 재질끼리 합쳐 한 번에 그림) · 빛 · 안개 · 떠다니는 재
 import * as THREE from 'three';
-import { mergeGeometries } from '../lib/BufferGeometryUtils.js?v=0.56.1';
-import { loadProp, propMeta } from './props.js?v=0.56.1';
-import { pathMask, discMask, skyTex } from './fxtex.js?v=0.56.1';
-import { FX } from './fx.js?v=0.56.1';
+import { mergeGeometries } from '../lib/BufferGeometryUtils.js?v=0.57.0';
+import { loadProp, propMeta } from './props.js?v=0.57.0';
+import { pathMask, discMask, skyTex } from './fxtex.js?v=0.57.0';
+import { FX } from './fx.js?v=0.57.0';
 
 export const AREA = 1500, HALF = 380;   // 무리 한 구역 길이 · 걸을 수 있는 반폭
 const THEMES = {

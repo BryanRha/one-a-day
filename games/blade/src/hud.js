@@ -1,14 +1,15 @@
 // 전투 화면 정보 (DOM): 체력·분노 · 스테이지/웨이브 · 보스 체력 · 콤보 · 데미지 숫자 · 조이스틱 · 공격/스킬/회피 버튼 · 알림 글자
-import { IN, joystick, holdButton } from './input.js?v=0.56.1';
-import { SKILLS, SKILL_SLOTS } from './data.js?v=0.56.1';
-import { toScreen } from './engine.js?v=0.56.1';
-import { icons } from './icons.js?v=0.56.1';
+import { IN, joystick, holdButton } from './input.js?v=0.57.0';
+import { SKILLS, SKILL_SLOTS } from './data.js?v=0.57.0';
+import { toScreen } from './engine.js?v=0.57.0';
+import { icons } from './icons.js?v=0.57.0';
 
-const $ = (s, r = document) => r.querySelector(s);
+/* 화면 요소 찾기: 같은 것은 한 번만 찾아 기억 (매 프레임 다시 찾지 않게 — REA 실행 분석으로 찾은 낭비) */
+let Q = {}; const $ = (s, r) => r ? r.querySelector(s) : (Q[s] && Q[s].isConnected ? Q[s] : (Q[s] = document.querySelector(s)));
 export const H = { el: null, nums: [], numI: 0 };
 const fmt = n => Math.round(n).toLocaleString('en-US');
 export function buildHud(o) {
-  const el = $('#hud'); el.innerHTML = `
+  Q = {}; const el = $('#hud'); el.innerHTML = `
   <div class="h-top"><div class="h-face" style="background-image:url(${icons.face || ''})"></div><div class="h-bars"><div class="h-lv"><b id="hLv">Lv.1</b> <span id="hName">카일</span><span class="h-cp" id="hCp"></span></div>
     <div class="bar hp"><i id="hHpL"></i><i id="hHp"></i><span id="hHpT"></span></div><div class="bar rage"><i id="hRage"></i></div></div>
     <div class="h-tr"><button class="h-btn" id="hPause">${PAUSE}</button><button class="h-auto" id="hAuto">AUTO</button></div></div>
@@ -42,7 +43,7 @@ export function hudPlayer(p) {
   const r = p.hp / p.maxHp; $('#hHp').style.width = (r * 100) + '%'; const l = $('#hHpL'); if (parseFloat(l.style.width || 100) < r * 100) l.style.width = (r * 100) + '%'; else l.style.width = (r * 100) + '%';
   $('#hHpT').textContent = fmt(Math.max(0, p.hp)) + ' / ' + fmt(p.maxHp); $('#hRage').style.width = p.rage + '%'; $('#bUlt').classList.toggle('ready', p.rage >= 100);
   $('#hLow').classList.toggle('on', r < 0.3);
-  SKILL_SLOTS.forEach((k, i) => { const b = $('#bSk' + i), cd = p.cd[k] || 0, max = SKILLS[k].cd; b.querySelector('s').style.setProperty('--c', (cd > 0 ? cd / max * 100 : 0) + '%'); b.querySelector('em').textContent = cd > 0 ? Math.ceil(cd) : ''; b.classList.toggle('cool', cd > 0); });
+  SKILL_SLOTS.forEach((k, i) => { const b = $('#bSk' + i), cd = p.cd[k] || 0, max = SKILLS[k].cd; (b._s ||= b.querySelector('s')).style.setProperty('--c', (cd > 0 ? cd / max * 100 : 0) + '%'); (b._e ||= b.querySelector('em')).textContent = cd > 0 ? Math.ceil(cd) : ''; b.classList.toggle('cool', cd > 0); });
   const ev = $('#bEv'); ev.classList.toggle('cool', p.evCd > 0);
 }
 export function hudInfo(stage, wave, time, lv, cp) {

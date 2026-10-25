@@ -1,15 +1,15 @@
-import { W, BASE_H, setH } from './config.js?v=0.50.1';
-import { audio } from './audio.js?v=0.50.1';
-import { BootScene } from './scenes/Boot.js?v=0.50.1';
-import { HomeScene } from './scenes/Home.js?v=0.50.1';
-import { BoardScene } from './scenes/Board.js?v=0.50.1';
-import { StoryScene } from './scenes/Story.js?v=0.50.1';
-import { SeasonScene } from './scenes/Season.js?v=0.50.1';
-import { ShopScene } from './scenes/Shop.js?v=0.50.1';
-import { AlbumScene } from './scenes/Album.js?v=0.50.1';
-import { MiniScene } from './scenes/Mini.js?v=0.50.1';
-import { installBack } from './oad.js?v=0.50.1';
-import { installNav } from './nav.js?v=0.50.1';
+import { W, BASE_H, setH } from './config.js?v=0.50.2';
+import { audio } from './audio.js?v=0.50.2';
+import { BootScene } from './scenes/Boot.js?v=0.50.2';
+import { HomeScene } from './scenes/Home.js?v=0.50.2';
+import { BoardScene } from './scenes/Board.js?v=0.50.2';
+import { StoryScene } from './scenes/Story.js?v=0.50.2';
+import { SeasonScene } from './scenes/Season.js?v=0.50.2';
+import { ShopScene } from './scenes/Shop.js?v=0.50.2';
+import { AlbumScene } from './scenes/Album.js?v=0.50.2';
+import { MiniScene } from './scenes/Mini.js?v=0.50.2';
+import { installBack } from './oad.js?v=0.50.2';
+import { installNav } from './nav.js?v=0.50.2';
 
 async function start() {
   installNav();

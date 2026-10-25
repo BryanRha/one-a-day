@@ -1,6 +1,6 @@
 // 진행·재방문: 룬 해금(최고 웨이브) · 수정으로 영구 등급업(확정, 뽑기 없음) · 연속 출석 · 오늘의 미션 · 오늘의 도전
-import { load, save } from './save.js?v=0.50.1';
-import { RUNE_ORDER, RARITY } from './core/sim.js?v=0.50.1';
+import { load, save } from './save.js?v=0.50.2';
+import { RUNE_ORDER, RARITY } from './core/sim.js?v=0.50.2';
 
 
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

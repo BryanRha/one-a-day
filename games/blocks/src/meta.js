@@ -1,6 +1,6 @@
 // 진행·재방문 장치: 연속 출석 · 오늘의 미션 · 어드벤처 시즌(주간 96레벨 그림) · 블록 스킨 · 기록
-import { load, save } from './save.js?v=0.59.1';
-import { seasonInfo, SEASON_LEVELS } from './core/levels.js?v=0.59.1';
+import { load, save } from './save.js?v=0.59.2';
+import { seasonInfo, SEASON_LEVELS } from './core/levels.js?v=0.59.2';
 
 export const PICS = 10;   // 주간 그림 수 (assets season_0~9, 주마다 돌아감)
 export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

@@ -1,12 +1,12 @@
 // 카드 앨범 화면 (원작의 카드 앨범): 팩 열기 · 세트 9개 · 세트 보기(조커로 채우기) · 별 금고 · 세트/앨범 완성 보상
-import { W, H } from '../config.js?v=0.59.1';
-import { T, R, C, TS, btn, sheet, rbox, chips, toast, firstTip } from '../ui.js?v=0.59.1';
-import { audio } from '../audio.js?v=0.59.1';
-import { save } from '../save.js?v=0.59.1';
-import { goPrev } from '../nav.js?v=0.59.1';
-import { screen } from '../hud.js?v=0.59.1';
-import { giveReward } from '../state.js?v=0.59.1';
-import { SETS, PACKS, VAULT, ALBUM_DONE, album, seasonLeft, scaled, owned, setCount, totalCount, openPack, useJoker, vaultBuy, claimable, albumClaimable, cardOf } from '../album.js?v=0.59.1';
+import { W, H } from '../config.js?v=0.59.2';
+import { T, R, C, TS, btn, sheet, rbox, chips, toast, firstTip } from '../ui.js?v=0.59.2';
+import { audio } from '../audio.js?v=0.59.2';
+import { save } from '../save.js?v=0.59.2';
+import { goPrev } from '../nav.js?v=0.59.2';
+import { screen } from '../hud.js?v=0.59.2';
+import { giveReward } from '../state.js?v=0.59.2';
+import { SETS, PACKS, VAULT, ALBUM_DONE, album, seasonLeft, scaled, owned, setCount, totalCount, openPack, useJoker, vaultBuy, claimable, albumClaimable, cardOf } from '../album.js?v=0.59.2';
 
 const RCOL = [0, 0xC9B8B0, 0x7CC6A8, 0x6FA8E8, 0xB57BE0, 0xF0B65A];   // 별 수별 테두리 색
 

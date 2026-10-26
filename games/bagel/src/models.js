@@ -1,6 +1,6 @@
 // 모델을 코드로 직접 만듦: 낮은 다각형 + 만화풍 3단 음영 (사람 · 베이글 · 커피 · 설비 · 가게)
 import * as THREE from 'three';
-import { BRAND } from './data.js?v=0.59.1';
+import { BRAND } from './data.js?v=0.59.2';
 
 const gm = (() => { const d = new Uint8Array([95, 190, 255]); const t = new THREE.DataTexture(d, 3, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; })();
 const mats = {};

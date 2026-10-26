@@ -1,7 +1,7 @@
 // 배경 소품: assets/props/<id>.glb + props.json(재질 → 텍스처) · 같은 소품은 모양·재질을 함께 씀
 import * as THREE from 'three';
-import { GLTFLoader } from '../lib/GLTFLoader.js?v=0.59.1';
-import { MeshoptDecoder } from '../lib/meshopt_decoder.module.js?v=0.59.1';
+import { GLTFLoader } from '../lib/GLTFLoader.js?v=0.59.2';
+import { MeshoptDecoder } from '../lib/meshopt_decoder.module.js?v=0.59.2';
 
 const gl = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder), tl = new THREE.TextureLoader();
 const ALPHA = /grass|bush|creeper|BB_|flower|shrub|vine|leaf|ivy|net|Root|Tree_add_Bao_001A|StumpAL|20100819/i;

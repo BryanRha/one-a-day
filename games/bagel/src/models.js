@@ -1,6 +1,6 @@
 // 모델을 코드로 직접 만듦: 낮은 다각형 + 만화풍 3단 음영 (사람 · 베이글 · 커피 · 설비 · 가게)
 import * as THREE from 'three';
-import { BRAND } from './data.js?v=0.60.0';
+import { BRAND } from './data.js?v=0.61.0';
 
 const gm = (() => { const d = new Uint8Array([95, 190, 255]); const t = new THREE.DataTexture(d, 3, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; })();
 const mats = {};
@@ -28,7 +28,7 @@ export function item(kind) {
   else if (kind === 'dough') { sph(14, 0xFFF4E2, 0, 9, 0, g, 12, 8).scale.set(1, 0.65, 1); }
   else if (kind === 'boiled') { mesh(torus(), new THREE.MeshToonMaterial({ color: 0xE8C08A, gradientMap: gm, emissive: 0x3A2208 }), 0, 7.5, 0, g); }
   else if (kind === 'prem') { mesh(torus(), new THREE.MeshToonMaterial({ color: 0xB86A20, gradientMap: gm, emissive: 0x3A1A00 }), 0, 7.5, 0, g); sph(3, 0xFFFFFF, 8, 15, -6, g, 6, 4); }
-  else if (kind === 'trash') { cyl(14, 14, 3, 0xFFFFFF, 0, 0, 0, g, 12); box(14, 8, 10, 0xD8C8B0, 0, 3, 0, g); }
+  else if (kind === 'trash') { box(30, 3, 22, 0x6A4A3A, 0, 0, 0, g); sph(7, 0xB8B8B8, -6, 8, 0, g, 6, 4); sph(6, 0xA8A8A8, 6, 7, 3, g, 6, 4); cyl(4, 3, 10, 0xD84A3A, 8, 3, -6, g, 6); }   /* 쟁반 + 구겨진 종이 (음식과 구분) */
   return g;
 }
 // ── 사람: 동그란 몸 · 머리 · 모자 · 팔다리 (걸을 때 흔듦)
@@ -78,7 +78,7 @@ export const STATION = {
   table(p) { cyl(70, 70, 10, 0xFFFFFF, 0, 78, 0, p, 24); cyl(10, 16, 78, 0x9A643A, 0, 0, 0, p, 10);
     for (const a of [0, Math.PI]) { const c = new THREE.Group(); c.position.set(Math.cos(a) * 95, 0, Math.sin(a) * 95); p.add(c); cyl(30, 30, 10, BRAND.accentHex, 0, 40, 0, c); cyl(6, 6, 40, 0x9A643A, 0, 0, 0, c, 8); } },
   bin(p) { cyl(34, 30, 80, 0x5A8A5A, 0, 0, 0, p); cyl(36, 36, 8, 0x3A6A3A, 0, 80, 0, p); },
-  drive(p) { box(30, 230, 260, 0xEFD9BC, 0, 0, 0, p); box(10, 110, 150, 0xBFE3F2, 18, 80, 0, p); box(120, 14, 170, 0x9A643A, 70, 95, 0, p); box(16, 95, 16, 0x7A4A2A, 120, 0, -70, p); box(16, 95, 16, 0x7A4A2A, 120, 0, 70, p); },
+  drive(p) { box(30, 230, 320, 0xEFD9BC, 0, 0, 0, p); box(10, 110, 280, 0xBFE3F2, 18, 80, 0, p); box(110, 14, 300, 0x9A643A, 70, 95, 0, p); for (const z of [-140, 140]) box(16, 95, 16, 0x7A4A2A, 115, 0, z, p); for (const z of [-70, 0, 70]) box(100, 3, 4, 0xFFFFFF, 70, 109, z, p); },   /* 창구 + 메뉴별 4줄 판매대 */
   espresso(p) { box(130, 95, 100, 0x5A3A22, 0, 0, 0, p); box(140, 12, 110, 0x9A643A, 0, 95, 0, p); box(90, 70, 70, 0xC8CED4, 0, 107, -10, p); box(60, 14, 20, 0x2A2A30, 0, 140, 30, p); cyl(6, 6, 18, 0x2A2A30, -18, 120, 32, p, 8); cyl(6, 6, 18, 0x2A2A30, 18, 120, 32, p, 8); },   /* 커피 머신 */
   mixer(p) { box(110, 60, 90, 0x9AA4AC, 0, 0, 0, p); cyl(14, 14, 90, 0x9AA4AC, -30, 60, -20, p, 10); box(110, 26, 40, 0x9AA4AC, -10, 140, -20, p); cyl(44, 36, 54, 0xD8DEE2, 10, 60, 10, p, 18); sph(36, 0xFFF6E6, 10, 112, 10, p, 14, 10).scale.set(1, 0.55, 1); cyl(4, 4, 50, 0x7A848C, 10, 96, 10, p, 6); },   /* 반죽기 */
   kettle(p) { box(130, 80, 110, 0x6A707A, 0, 0, 0, p); cyl(52, 48, 50, 0xC8CED4, 0, 80, 0, p, 20); cyl(46, 46, 4, 0x9ACFE8, 0, 124, 0, p, 20); for (let i = 0; i < 4; i++) mesh(geo('torus', () => new THREE.TorusGeometry(15, 7.5, 8, 18).rotateX(Math.PI / 2)), M(0xE8C08A), -18 + (i % 2) * 36, 128, -14 + Math.floor(i / 2) * 28, p); },   /* 데치기 솥 */

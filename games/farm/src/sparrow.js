@@ -2,9 +2,9 @@
 //  마을 화면(Hud) 위에 바로 띄움 (장면 전환 · 로딩 없음)
 //  · 30초 · 참새를 눌러서, 여러 마리는 문질러서 쫓음 · 3.5초 동안 쪼면 그 밭은 망침
 //  · 허수아비 초록 원 안의 밭엔 참새가 못 옴 · 지킨 밭만큼 밀·옥수수를 거둠
-import { W, H } from './config.js?v=0.60.0';
-import { T, C, btn } from './ui.js?v=0.60.0';
-import { audio } from './audio.js?v=0.60.0';
+import { W, H } from './config.js?v=0.61.0';
+import { T, C, btn } from './ui.js?v=0.61.0';
+import { audio } from './audio.js?v=0.61.0';
 
 export const SP = { secs: 30, peck: 3500, maxBirds: 9 };
 // 배경 그림(1024×1536) 속 밭 13칸의 가운데 (w: 밀 · c: 옥수수)

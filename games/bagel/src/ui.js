@@ -1,9 +1,9 @@
 // 화면 정보와 창: 돈 · 지점 진행 · 쿠폰 · 광고 ×2 · 미션 · 지점 지도 · 설정 · 열기 칸 글자 · +돈 글자 · 조이스틱
 import * as THREE from 'three';
-import { BRAND, GAME, BRANCHES, COUPON, MENU, UPGRADES, UP_MAX, upCost, BRANCH_INFO, FINISHED_RATE, STAFF, STAFF_UP } from './data.js?v=0.60.0';
-import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.60.0';
-import { sfx, setAudio } from './audio.js?v=0.60.0';
-import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.60.0';
+import { BRAND, GAME, BRANCHES, COUPON, MENU, UPGRADES, UP_MAX, upCost, BRANCH_INFO, FINISHED_RATE, STAFF, STAFF_UP } from './data.js?v=0.61.0';
+import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.61.0';
+import { sfx, setAudio } from './audio.js?v=0.61.0';
+import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.61.0';
 
 const $ = s => document.querySelector(s), fmt = n => Math.round(n).toLocaleString('en-US');
 export const IN = { x: 0, y: 0 };
@@ -43,6 +43,13 @@ export class UI {
     for (const d of [...this.floats.children]) { d._t += 1 / 60; d._p.y += 1.6; v.copy(d._p).project(cam); d.style.transform = `translate(${(v.x + 1) / 2 * W}px,${(1 - v.y) / 2 * H}px) translate(-50%,-50%)`; d.style.opacity = Math.max(0, 1 - d._t / 1.1); if (d._t > 1.1) d.remove(); }
     for (const c of g.cust) { if (!c.tag) continue; const o = c.order[0], left = o.n - o.got, show = (c.state === 'queue' || c.state === 'walkQ') && c.qi < 4; c.tag.style.display = show ? '' : 'none'; if (!show) continue;
       v.set(c.pos.x, 215, c.pos.z).project(cam); c.tag.style.transform = `translate(${(v.x + 1) / 2 * W}px,${(1 - v.y) / 2 * H}px) translate(-50%,-100%)`; const html = `<b>${ICON[o.k]}</b><span>${SHORT[o.k]}</span><em>×${left}</em>`; if (c.tag._h !== html) { c.tag.innerHTML = html; c.tag._h = html; } c.tag.classList.toggle('front', c.qi === 0); }
+    for (const cr of g.cars || []) { if (!cr.tag) continue; const show = cr.state === 'wait' || cr.state === 'in'; cr.tag.style.display = show ? '' : 'none'; if (!show) continue; v.set(cr.g.position.x, 190, cr.g.position.z).project(cam);
+      cr.tag.style.transform = `translate(${(v.x + 1) / 2 * W}px,${(1 - v.y) / 2 * H}px) translate(-50%,-100%)`; const html = Object.entries(cr.order).map(([k, n]) => `<b>${ICON[k]}</b><em>${n - (cr.got[k] || 0)}</em>`).join(' '); if (cr.tag._h !== html) { cr.tag.innerHTML = '🚗 ' + html; cr.tag._h = html; } }
+    /* 손에 든 것 표시 (머리 위): 아이콘 · 이름 · 개수 · 가득 차면 MAX */
+    const pl = g.pl, hl = (this._held ||= Object.assign(document.createElement('div'), { className: 'held' })); if (!hl.isConnected) this.tags.append(hl);
+    if (pl.stack.length) { const k = pl.kind, nb = pl.stack.filter(x => x.m.userData.b).length, nm = k === 'trash' ? '쓰레기' : k === 'dough' ? (nb === pl.stack.length ? '데친 반죽' : '반죽') : k === 'bagel' && pl.stack.some(x => x.m.userData.prem) ? '쫄깃 베이글' : MENU[k]?.short || k;
+      const ic = k === 'trash' ? '🗑' : k === 'dough' ? '⚪' : ICON[k] || ''; const full = pl.stack.length >= pl.cap; const html = `${ic} ${nm} <em>${full ? 'MAX' : pl.stack.length}</em>`; if (hl._h !== html) { hl.innerHTML = html; hl._h = html; hl.classList.toggle('trash', k === 'trash'); hl.classList.toggle('max', full); }
+      v.set(pl.pos.x, 230 + pl.stack.length * 15, pl.pos.z).project(cam); hl.style.transform = `translate(${(v.x + 1) / 2 * W}px,${(1 - v.y) / 2 * H}px) translate(-50%,-100%)`; hl.style.display = ''; } else hl.style.display = 'none';
     const b = this.boostUntil - Date.now(); $('#adT').textContent = b > 0 ? `${Math.floor(b / 60000)}:${String(Math.floor(b / 1000) % 60).padStart(2, '0')}` : '광고 보고'; $('#bAd').classList.toggle('on', b > 0);
   }
   progress() {

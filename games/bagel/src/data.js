@@ -41,7 +41,8 @@ const B1 = {
     { id: 'kettle', type: 'kettle', x: -420, z: -590, cost: 900, label: '데치기 솥 · 쫄깃 베이글' },
     { id: 't4', type: 'table', x: -40, z: 640, cost: 900 },
     { id: 'cleaner', type: 'hire', staff: 'cleaner', x: -400, z: 90, cost: 1100, label: '청소 직원 뽑기' },
-    { id: 'drive', type: 'drive', x: 740, z: -200, px: 620, cost: 1600, label: '드라이브스루' },
+    { id: 'drive', type: 'drive', x: 740, z: -200, px: 560, pz: 60, cost: 1600, label: '드라이브스루' },
+    { id: 'driver', type: 'hire', staff: 'driver', x: 560, z: 230, cost: 1400, label: '드라이브스루 직원 뽑기' },
     { id: 'speed', type: 'up', up: 'speed', x: 330, z: 450, cost: 1300, label: '빨리 걷기' },
     { id: 'next', type: 'next', x: 330, z: 640, cost: 3500, label: '2호점 열기' },
   ],
@@ -79,6 +80,7 @@ export const STAFF = {
   topper: { name: '토핑 직원', body: 0xE2A020, speed: 290, carry: 3, hello: '토핑 직원이 특별 베이글을 만들어요!', up: '걷기 속도 · 들기', cap: 0xFF6720 },
   fridge: { name: '음료·크림치즈 직원', body: 0x8AC8E8, speed: 290, carry: 3, hello: '크림치즈와 커피를 계산대에 채워요!', up: '걷기 속도 · 들기' },
   dougher: { name: '반죽 직원', body: 0xF4F0E8, speed: 280, carry: 3, hello: '반죽 직원이 반죽을 데치고 오븐에 넣어요!', up: '걷기 속도 · 들기', cap: 0xA98259 },
+  driver: { name: '드라이브스루 직원', body: 0xE86A8A, speed: 300, carry: 4, hello: '드라이브스루 주문을 맡아요!', up: '걷기 속도 · 들기', cap: 0xFF6720 },
   cleaner: { name: '청소 직원', body: 0x6AB07A, speed: 320, carry: 4, hello: '청소 직원이 테이블을 치워요!', up: '걷기 속도 · 들기' },
 };
 export const STAFF_UP = { base: 150, max: 10 };   /* 직원 단계 비용 = base × 1.6^단계 × 지점 배수 */

@@ -1,11 +1,13 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.61.1';
-import * as R from './rules.js?v=0.61.1';
-import * as I from './install.js?v=0.61.1';
+import { PLANNED } from './catalog.js?v=0.62.0';
+import * as R from './rules.js?v=0.62.0';
+import * as I from './install.js?v=0.62.0';
+// 오늘의 운세: 엔진(330KB)은 처음 볼 때만 불러옴
+let FT = null; const ft = () => FT ? Promise.resolve(FT) : import('./fortune/fortune.js?v=0.62.0').then(m => (FT = m));
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.61.1';
+const VERSION = '0.62.0';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -47,6 +49,7 @@ function renderToday() {
     ${header()}
     <div class="date">${fmtDate(R.now())} · ${day}일째</div>
     ${installBanner()}
+    <div id="fortuneCard">${fortuneCardStatic()}</div>
     <div class="hero">
       <div class="ribbon">오늘의 게임</div>
       <div class="cover" role="img" aria-label="${g.title}" style="background-image:url('${g.cover}')"></div>
@@ -67,6 +70,52 @@ function renderToday() {
     <div class="box" style="color:#DDD5FA">매일 자정, 모든 플레이어에게 <b class="jua" style="color:var(--gold)">같은 게임 하나</b>가 열려요. 플레이한 게임은 라이브러리에 모이고, 다른 날 다시 하려면 광고로 열 수 있어요.</div>
   </div>`;
 }
+// ── 오늘의 운세 ─────────────────────────────────────
+const CITIES = [['서울', 126.98], ['인천', 126.7], ['경기', 127.0], ['강원', 128.2], ['대전·충청', 127.4], ['대구·경북', 128.6], ['부산·울산·경남', 129.1], ['광주·전라', 126.9], ['제주', 126.5], ['해외·모름', 0]];
+function fortuneCardStatic() {
+  let me = null; try { me = JSON.parse(localStorage.getItem('oad_fortune_me') || 'null'); } catch { /* */ }
+  if (!me) return `<div class="fcard empty" data-fortune-edit><div class="fl"><b>🔮 오늘의 운세</b><span>생년월일·태어난 시로 보는 내 사주 운세 · 매일 무료</span></div><span class="fgo">30초 입력 ›</span></div>`;
+  ft().then(m => { const el = $('#fortuneCard'); if (!el) return; const f = m.fortune(me, R.now()); el.innerHTML = fortuneCard(me, f); });
+  return `<div class="fcard"><div class="fl"><b>🔮 ${me.name}님의 오늘</b><span>운세를 읽는 중…</span></div></div>`;
+}
+const ring = v => `<div class="fring" style="--p:${v}"><b>${v}</b><small>점</small></div>`;
+function fortuneCard(me, f) {
+  return `<div class="fcard" data-fortune><div class="fl"><b>🔮 ${me.name}님의 오늘 · ${f.today.ko}일</b><span>${f.line}</span><div class="fchips"><i style="background:${f.color.hex}"></i>${f.color.name} · ${f.numbers.join(', ')} · ${f.dir}</div></div>${ring(f.total)}</div>`;
+}
+const bar = (k, v) => `<div class="fbar"><span>${k}</span><div><s style="width:${v}%"></s></div><b>${v}</b></div>`;
+async function fortuneDetail() {
+  const m = await ft(), me = m.loadMe(); if (!me) return fortuneForm(); const f = m.fortune(me, R.now()), S = f.chart;
+  const pil = (p, n) => p ? `<div class="pil"><small>${n}</small><b class="e-${p.stemElement}">${p.stem}</b><b class="e-${p.branchElement}">${p.branch}</b><em>${p.ko}</em></div>` : `<div class="pil none"><small>${n}</small><b>?</b><b>?</b><em>시간 모름</em></div>`;
+  const EL = ['wood', 'fire', 'earth', 'metal', 'water'], EN = { wood: '목', fire: '화', earth: '토', metal: '금', water: '수' };
+  const lg = R.ORDER[f.seed % R.ORDER.length], lucky = G(lg);
+  openSheet(`<div class="fortune"><h2>🔮 ${me.name}님의 오늘</h2><div class="fsub">${fmtDate(R.now())} · 오늘의 일진 <b>${f.today.ko}</b> · 오늘의 키워드 <b>${f.key}</b></div>
+    <div class="ftop">${ring(f.total)}<p>${f.line}</p></div>
+    ${Object.entries(f.scores).map(([k, v]) => bar(k, v)).join('')}
+    <div class="fbox"><b>💰 금전</b><p>${f.money}</p><b>💗 연애</b><p>${f.love}</p><b>📚 일·공부</b><p>${f.work}</p>${f.notes.length ? `<b>🧭 오늘의 기운</b><p>${f.notes.join(' ')}</p>` : ''}</div>
+    <div class="fluck"><div><small>행운의 색</small><b><i style="background:${f.color.hex}"></i>${f.color.name}</b></div><div><small>행운의 숫자</small><b>${f.numbers.join(' · ')}</b></div><div><small>행운의 방향</small><b>${f.dir}</b></div></div>
+    <div class="item" data-play="${lg}" style="margin-top:10px"><img src="${lucky.icon}" alt=""><div><div class="t">🍀 오늘의 행운 게임</div><div class="s">${lucky.title} · 눌러서 플레이</div></div></div>
+    <h3 style="margin:18px 0 8px">내 사주 여덟 글자</h3><div class="pils">${pil(S.hour, '시')}${pil(S.day, '일')}${pil(S.month, '월')}${pil(S.year, '년')}</div>
+    <div class="fel">${EL.map(e => `<div><b class="e-${e}">${EN[e]}</b><s style="height:${S.elementCount[e] * 14 + 4}px" class="b-${e}"></s><small>${S.elementCount[e]}</small></div>`).join('')}</div>
+    <h3 style="margin:18px 0 8px">더 깊은 풀이 <span class="soon">곧 열려요</span></h3>
+    <div class="plist">${[['💘', '연애운 상세', '이번 달 인연이 들어오는 날 · 고백 타이밍'], ['💑', '궁합', '상대 생년월일로 보는 우리 사이'], ['🕵️', '바람기·외도 신호', '관계에서 조심할 시기와 패턴'], ['📅', '올해·이번 달 흐름', '월별 운의 높낮이']].map(([i, t, d]) => `<div class="pitem"><i>${i}</i><div><b>${t}</b><small>${d}</small></div><span>🔒</span></div>`).join('')}</div>
+    <p class="fnote">명리학(사주팔자) 규칙으로 계산한 전통 풀이예요. 재미로 참고해 주세요. 입력한 정보는 이 기기에만 저장돼요.</p>
+    <div class="stack"><button class="btn ghost small" data-fortune-edit>내 정보 고치기</button><button class="btn small" data-close>닫기</button></div></div>`);
+}
+function fortuneForm() {
+  let me = null; try { me = JSON.parse(localStorage.getItem('oad_fortune_me') || 'null'); } catch { /* */ } me ||= { name: '', y: 1995, m: 1, d: 1, cal: 'solar', sex: 'f', h: null, mi: 0, lon: 126.98 };
+  const opt = (a, b, v) => Array.from({ length: b - a + 1 }, (_, i) => a + i).map(n => `<option ${n === v ? 'selected' : ''}>${n}</option>`).join('');
+  openSheet(`<form class="fform" id="fForm"><h2>🔮 내 사주 정보</h2><p class="fsub">태어난 시까지 넣으면 더 정확해요. 정보는 이 기기에만 저장돼요.</p>
+    <label>이름<input name="name" maxlength="10" placeholder="이름 또는 별명" value="${me.name}" required></label>
+    <div class="seg"><label><input type="radio" name="cal" value="solar" ${me.cal !== 'lunar' ? 'checked' : ''}>양력</label><label><input type="radio" name="cal" value="lunar" ${me.cal === 'lunar' ? 'checked' : ''}>음력</label><label class="lp"><input type="checkbox" name="leap" ${me.leap ? 'checked' : ''}>윤달</label></div>
+    <div class="row3"><label>년<select name="y">${opt(1930, R.now().getFullYear(), me.y)}</select></label><label>월<select name="m">${opt(1, 12, me.m)}</select></label><label>일<select name="d">${opt(1, 31, me.d)}</select></label></div>
+    <div class="row3"><label>태어난 시<select name="h"><option value="">모름</option>${opt(0, 23, me.h)}</select></label><label>분<select name="mi">${opt(0, 59, me.mi)}</select></label><label>태어난 곳<select name="lon">${CITIES.map(([n, l]) => `<option value="${l}" ${l === me.lon ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
+    <div class="seg"><label><input type="radio" name="sex" value="f" ${me.sex !== 'm' ? 'checked' : ''}>여성</label><label><input type="radio" name="sex" value="m" ${me.sex === 'm' ? 'checked' : ''}>남성</label></div>
+    <div class="stack"><button class="btn" type="submit">오늘의 운세 보기</button>${localStorage.getItem('oad_fortune_me') ? '<button class="btn ghost small" type="button" data-fortune-del>내 정보 지우기</button>' : ''}</div></form>`);
+  $('#fForm').onsubmit = async e => { e.preventDefault(); const fd = new FormData(e.target), n = k => fd.get(k) === '' || fd.get(k) == null ? null : Number(fd.get(k));
+    const v = { name: String(fd.get('name')).trim().slice(0, 10) || '나', y: n('y'), m: n('m'), d: n('d'), h: n('h'), mi: n('h') == null ? 0 : n('mi'), cal: fd.get('cal'), leap: !!fd.get('leap'), lon: n('lon') || null, sex: fd.get('sex') };
+    try { const m = await ft(); m.myChart(v); m.saveMe(v); } catch { toast('날짜를 다시 확인해 주세요'); return; } closeSheet(); go('today'); setTimeout(fortuneDetail, 200); };
+}
+
 // 홈 화면 추가 배너 (설치 전 · 오늘 닫지 않았을 때)
 function installBanner() {
   if (I.installed() || localStorage.getItem('oad_hide_install') === R.keyOf(R.now())) return '';
@@ -239,10 +288,13 @@ addEventListener('message', e => {
 
 // ── 공통 클릭 처리 ─────────────────────────────────
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-play],[data-open],[data-ad],[data-close],[data-exit],[data-intro],[data-day],[data-reset],[data-tab-go],[data-install],[data-ext],[data-copy],[data-hide-install]');
+  const t = e.target.closest('[data-fortune],[data-fortune-edit],[data-fortune-del],[data-play],[data-open],[data-ad],[data-close],[data-exit],[data-intro],[data-day],[data-reset],[data-tab-go],[data-install],[data-ext],[data-copy],[data-hide-install]');
   if (!t) return;
   const d = t.dataset;
-  if (d.play) play(d.play);
+  if ('fortune' in d) fortuneDetail();
+  else if ('fortuneEdit' in d) fortuneForm();
+  else if ('fortuneDel' in d) { localStorage.removeItem('oad_fortune_me'); closeSheet(); go('today'); toast('사주 정보를 지웠어요'); }
+  else if (d.play) play(d.play);
   else if (d.open) detail(d.open);
   else if (d.ad) watchAd(d.ad);
   else if ('close' in d) closeSheet();

@@ -1,13 +1,13 @@
 // 시작: 엔진 · 아이콘 · 저장 불러오기 → 타이틀 (시험: ?test=1-1 바로 전투, &auto=1 자동)
-import { initEngine, E } from './engine.js?v=0.61.1';
-import { bindKeys } from './input.js?v=0.61.1';
-import { makeIcons } from './icons.js?v=0.61.1';
-import { load } from './assets.js?v=0.61.1';
-import { STAGES, CHAPTERS } from './data.js?v=0.61.1';
-import { Battle } from './battle.js?v=0.61.1';
-import { preloadSfx } from './audio.js?v=0.61.1';
-import { G, heroStats } from './state.js?v=0.61.1';
-import { startUI } from './ui.js?v=0.61.1';
+import { initEngine, E } from './engine.js?v=0.62.0';
+import { bindKeys } from './input.js?v=0.62.0';
+import { makeIcons } from './icons.js?v=0.62.0';
+import { load } from './assets.js?v=0.62.0';
+import { STAGES, CHAPTERS } from './data.js?v=0.62.0';
+import { Battle } from './battle.js?v=0.62.0';
+import { preloadSfx } from './audio.js?v=0.62.0';
+import { G, heroStats } from './state.js?v=0.62.0';
+import { startUI } from './ui.js?v=0.62.0';
 
 const q = new URLSearchParams(location.search);
 const bar = document.getElementById('bootbar'), boot = document.getElementById('boot');

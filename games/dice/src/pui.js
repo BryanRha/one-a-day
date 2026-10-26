@@ -1,7 +1,7 @@
 // 프리미엄 UI 키트: 깔끔한 글자 · 유리 패널 · 그라데이션 버튼 · 선 아이콘 (모두 코드로 그림 — 선명하고 가벼움)
-import { W, H, FONT } from './config.js?v=0.61.1';
-import { audio } from './audio.js?v=0.61.1';
-import { pushBack } from './oad.js?v=0.61.1';
+import { W, H, FONT } from './config.js?v=0.62.0';
+import { audio } from './audio.js?v=0.62.0';
+import { pushBack } from './oad.js?v=0.62.0';
 
 export const C = {
   ink: '#0B1026', text: '#F4F6FF', sub: '#9AA3D6', dim: '#5E679A', gold: '#F5C451', cyan: '#5EE3FF', pink: '#FF6FAE', green: '#5BE39A',

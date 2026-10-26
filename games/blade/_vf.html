@@ -1,0 +1,4 @@
+<!doctype html><body style="margin:0;background:#000"><video id="v" src="_m/bug.mp4" muted playsinline style="display:block;max-height:100vh"></video><script>
+const v=document.getElementById('v'); v.onloadedmetadata=()=>{ window.info={d:v.duration,w:v.videoWidth,h:v.videoHeight}; window.done=1; };
+window.seek=t=>new Promise(r=>{ v.onseeked=()=>r(); v.currentTime=t; });
+</script></body>

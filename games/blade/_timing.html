@@ -1,0 +1,16 @@
+<!doctype html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"./lib/three.module.min.js"}}</script></head><body><script type="module">
+// 타격 타이밍 분석: 클립마다 무기 끝(없으면 가장 빠른 뼈) 속도를 0.05초 간격으로 → 봉우리 = 휘두르는 순간
+import * as THREE from 'three'; import { load, spawn } from './src/assets.js';
+const q = new URLSearchParams(location.search), id = q.get('id'); await load(id); const c = spawn(id); c.root.updateMatrixWorld(true);
+let wm = null; c.root.traverse(o => { if (q.get('bones') == null && o.isSkinnedMesh && /weapon|bat$|Sphere03/i.test(o.name) && o.visible && !wm) wm = o; }); if (q.get('w')) c.root.traverse(o => { if (o.name === q.get('w')) wm = o; });
+let tipV = null, bone = null; if (wm) { const pos = wm.geometry.attributes.position, si = wm.geometry.attributes.skinIndex; bone = wm.skeleton.bones[si.getX(0)]; const inv = wm.skeleton.boneInverses[si.getX(0)], bm = wm.bindMatrix; let best = -1;
+  for (let i = 0; i < pos.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(bm).applyMatrix4(inv); if (v.length() > best) { best = v.length(); tipV = v; } } }
+const bones = []; c.root.traverse(o => { if (o.isBone) bones.push(o); });
+const mx = new THREE.AnimationMixer(c.root), out = {}; const dt = 0.05;
+for (const [k, cl] of Object.entries(c.clips)) { if (q.get('clips') && !q.get('clips').split(',').includes(k)) continue; mx.stopAllAction(); const a = mx.clipAction(cl); a.reset().play(); let prev = null, prevB = null; const sp = [];
+  for (let t = 0; t <= cl.duration + 1e-6; t += dt) { mx.setTime(t); c.root.updateMatrixWorld(true); let p;
+    if (bone) p = tipV.clone().applyMatrix4(bone.matrixWorld); const bp = bones.map(b => new THREE.Vector3().setFromMatrixPosition(b.matrixWorld));
+    let s = 0; if (bone) s = prev ? p.distanceTo(prev) / dt : 0; else if (prevB) s = Math.max(...bp.map((v, i) => v.distanceTo(prevB[i]) / dt)); sp.push(Math.round(s / 100)); prev = p; prevB = bp; }
+  out[k] = { d: +cl.duration.toFixed(2), sp }; }
+window.info = { weapon: wm && wm.name, out }; window.done = 1;
+</script></body>

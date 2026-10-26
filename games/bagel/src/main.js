@@ -1,13 +1,13 @@
 // 시작: 렌더러 · 직각 투영 카메라(쿼터뷰) · 저장 불러오기 · 쉬는 동안 번 돈 · 루프
 import * as THREE from 'three';
-import { Game } from './game.js?v=0.63.0';
-import { UI, IN } from './ui.js?v=0.63.0';
-import { S, loadSave, save } from './state.js?v=0.63.0';
-import { BRANCHES, MENU } from './data.js?v=0.63.0';
-import { music, setAudio, preloadSfx } from './audio.js?v=0.63.0';
-import { installBack } from './oad.js?v=0.63.0';
+import { Game } from './game.js?v=0.63.1';
+import { UI, IN } from './ui.js?v=0.63.1';
+import { S, loadSave, save } from './state.js?v=0.63.1';
+import { BRANCHES, MENU } from './data.js?v=0.63.1';
+import { music, setAudio, preloadSfx } from './audio.js?v=0.63.1';
+import { installBack } from './oad.js?v=0.63.1';
 
-const app = {}; window.__app = app; import("./state.js?v=0.63.0").then(m => { window.__S = () => m.S; });
+const app = {}; window.__app = app; import("./state.js?v=0.63.1").then(m => { window.__S = () => m.S; });
 const canvas = document.getElementById('view');
 const r = new THREE.WebGLRenderer({ canvas, antialias: true }); r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.outputColorSpace = THREE.SRGBColorSpace; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
 const sc = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 6000);
@@ -23,7 +23,15 @@ installBack({ back: () => { if (document.querySelector('#modal').firstChild) { a
 music(S.bi % 2 ? 'shop2' : 'shop');
 let last = performance.now();
 const q = new URLSearchParams(location.search), SPEED = +(q.get('speed') || 1); if (q.get('fresh')) { localStorage.removeItem('marumi_v1'); q.delete('fresh'); location.replace(location.pathname + '?' + q.toString()); }
-if (q.get('bot')) import('./bot.js?v=0.63.0').then(m => m.startBot(app));
-const loop = now => { requestAnimationFrame(loop); const dt = Math.min(0.05, (now - last) / 1000); last = now; for (let i = 0; i < SPEED; i++) app.game.update(dt, IN); r.render(sc, cam); };
+if (q.get('bot')) import('./bot.js?v=0.63.1').then(m => m.startBot(app));
+/* 한 프레임의 오류가 화면 전체를 멈추지 않게: 오류는 기록하고 그리기는 계속 · 위치가 깨지면 되돌림 */
+const errSeen = new Set(); window.__errs = [];
+const report = e => { const k = String(e && e.stack || e).split('\n').slice(0, 2).join(' '); if (errSeen.has(k)) return; errSeen.add(k); window.__errs.push(k); console.error('[game]', e); if (localStorage.getItem('__test_env') !== null || location.pathname.includes('-test')) app.ui.toast('오류: ' + String(e && e.message || e).slice(0, 60)); };
+addEventListener('error', e => report(e.error || e.message)); addEventListener('unhandledrejection', e => report(e.reason));
+const loop = now => { requestAnimationFrame(loop); const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
+  try { for (let i = 0; i < SPEED; i++) app.game.update(dt, IN); } catch (e) { report(e); }
+  const P = app.game.pl && app.game.pl.pos; if (P && !Number.isFinite(P.x + P.z)) { P.set(-380, 0, -330); app.game.camT.copy(P); report(new Error('player position reset')); }
+  try { r.render(sc, cam); } catch (e) { report(e); } };
+canvas.addEventListener('webglcontextlost', e => e.preventDefault()); canvas.addEventListener('webglcontextrestored', () => app.game.build(S.bi));   /* 폰이 그래픽을 회수했다 돌려줄 때 다시 그림 */
 requestAnimationFrame(loop); setInterval(() => save(), 5000); addEventListener('pagehide', () => save(true));   /* 슬롯 불러오기·초기화 때는 __noSave 로 덮어쓰기 막음 */
 setTimeout(() => document.getElementById('boot').classList.add('off'), q.get('bot') ? 0 : 1600); window.done = 1;

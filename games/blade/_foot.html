@@ -1,0 +1,8 @@
+<!doctype html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"./lib/three.module.min.js"}}</script></head><body><script type="module">
+// 발 보폭: 걷기/달리기 동안 발뼈의 앞뒤(z) 범위 → 맞는 이동 속도 = 보폭×2/주기
+import * as THREE from 'three'; import { load, spawn } from './src/assets.js';
+const q = new URLSearchParams(location.search), id = q.get('id'), clip = q.get('clip') || 'run'; await load(id); const c = spawn(id); const mx = new THREE.AnimationMixer(c.root); const cl = c.clips[clip]; mx.clipAction(cl).play();
+const feet = []; c.root.traverse(b => { if (b.isBone && /foot$/i.test(b.name)) feet.push(b); }); const res = {};
+for (const f of feet) { let sum = 0, prev = null, n = 0; for (let t = 0; t <= cl.duration; t += 0.01) { mx.setTime(t); c.root.updateMatrixWorld(true); const p = new THREE.Vector3().setFromMatrixPosition(f.matrixWorld); if (prev) { sum += Math.abs(p.z - prev.z); n++; } prev = p; } res[f.name] = Math.round(sum / (n * 0.01)); }
+const v = Object.values(res); window.info = { dur: +cl.duration.toFixed(2), feet: res, speed: Math.round(v.reduce((a, b) => a + b, 0) / v.length) }; window.done = 1;
+</script></body>

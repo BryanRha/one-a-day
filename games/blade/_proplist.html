@@ -1,0 +1,12 @@
+<!doctype html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"./lib/three.module.min.js"}}</script></head><body style="margin:0;background:#334"><script type="module">
+// 소품 전체 보기: 칸마다 한 개 · 크기에 맞춰 카메라
+import * as THREE from 'three'; import { propMeta, loadProp } from './src/props.js';
+const meta = await propMeta(), ids = (new URLSearchParams(location.search).get('ids') || Object.keys(meta).join(',')).split(','), cols = 8, CW = 200, CH = 200, rows = Math.ceil(ids.length / cols);
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW * cols, CH * rows); r.outputColorSpace = THREE.SRGBColorSpace; r.setScissorTest(true); document.body.append(r.domElement);
+const Ps = await Promise.all(ids.map(loadProp)); await new Promise(f => setTimeout(f, 2500));
+for (let i = 0; i < ids.length; i++) { const P = Ps[i]; const sc = new THREE.Scene(); sc.background = new THREE.Color(i % 2 ? 0x2a3040 : 0x3a4458); sc.add(P.scene, new THREE.HemisphereLight(0xffffff, 0x556677, 2.2)); const dl = new THREE.DirectionalLight(0xffffff, 1.6); dl.position.set(1, 2, 1.5); sc.add(dl);
+  const c = P.box.getCenter(new THREE.Vector3()), R = P.size.length() * 0.62; const cam = new THREE.PerspectiveCamera(40, 1, 1, 100000); cam.position.set(c.x + R * 0.9, c.y + R * 0.6, c.z + R * 1.4); cam.lookAt(c);
+  const x = (i % cols) * CW, y = (rows - 1 - Math.floor(i / cols)) * CH; r.setViewport(x, y, CW, CH); r.setScissor(x, y, CW, CH); r.render(sc, cam);
+  const d = document.createElement('div'); d.textContent = ids[i] + ' ' + P.size.toArray().map(Math.round).join('x'); d.style.cssText = `position:absolute;left:${x + 4}px;top:${(Math.floor(i / cols)) * CH + 2}px;color:#fff;font:11px sans-serif`; document.body.append(d); }
+window.done = 1;
+</script></body>

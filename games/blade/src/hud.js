@@ -1,8 +1,8 @@
 // 전투 화면 정보 (DOM): 체력·분노 · 스테이지/웨이브 · 보스 체력 · 콤보 · 데미지 숫자 · 조이스틱 · 공격/스킬/회피 버튼 · 알림 글자
-import { IN, joystick, holdButton } from './input.js?v=0.63.0';
-import { SKILLS, SKILL_SLOTS } from './data.js?v=0.63.0';
-import { toScreen } from './engine.js?v=0.63.0';
-import { icons } from './icons.js?v=0.63.0';
+import { IN, joystick, holdButton } from './input.js?v=0.63.1';
+import { SKILLS, SKILL_SLOTS } from './data.js?v=0.63.1';
+import { toScreen } from './engine.js?v=0.63.1';
+import { icons } from './icons.js?v=0.63.1';
 
 /* 화면 요소 찾기: 같은 것은 한 번만 찾아 기억 (매 프레임 다시 찾지 않게 — REA 실행 분석으로 찾은 낭비) */
 let Q = {}; const $ = (s, r) => r ? r.querySelector(s) : (Q[s] && Q[s].isConnected ? Q[s] : (Q[s] = document.querySelector(s)));

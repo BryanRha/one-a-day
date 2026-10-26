@@ -1,0 +1,14 @@
+<!doctype html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"./lib/three.module.min.js"}}</script></head><body style="margin:0;background:#334"><script type="module">
+// 애니메이션 확인용 낱장: ?id=warrior&clip=a1&n=8&yaw=0.6&from=0&to=
+import * as THREE from 'three'; import { load, spawn } from './src/assets.js';
+const q = new URLSearchParams(location.search), id = q.get('id'), clipL = (q.get('clip') || 'idle').split(','), n = +(q.get('n') || 8), yaw = +(q.get('yaw') ?? 0.6), cols = clipL.length > 1 ? n : Math.min(n, 4), rows = clipL.length > 1 ? clipL.length : Math.ceil(n / cols), CW = +(q.get('cw') || 300), CH = Math.round(CW * 1.13);
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(CW * cols, CH * rows); r.outputColorSpace = THREE.SRGBColorSpace; r.setScissorTest(true); document.body.append(r.domElement);
+await load(id); const c = spawn(id, { hide: (q.get('hide') || '').split(',') }); const sc = new THREE.Scene(); sc.add(c.root, new THREE.HemisphereLight(0xffffff, 0x445566, 2.2)); const dl = new THREE.DirectionalLight(0xffffff, 1.5); dl.position.set(1, 2, 2); sc.add(dl);
+const grid = new THREE.GridHelper(600, 12, 0x8899aa, 0x556677); sc.add(grid); const ax = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 2, 0), 120, 0xff4444); sc.add(ax);
+const mx = new THREE.AnimationMixer(c.root);
+const h = Math.max(c.meta.size[1], 150) * (+q.get('zoom') || 1), cam = new THREE.PerspectiveCamera(35, CW / CH, 1, 10000); const d = h * 2.1; cam.position.set(Math.sin(yaw) * d, h * 0.75, Math.cos(yaw) * d); cam.lookAt(0, h * 0.42, 0);
+const lbl = [];
+for (let i = 0; i < n * (clipL.length > 1 ? clipL.length : 1); i++) { const clip = clipL[clipL.length > 1 ? Math.floor(i / n) : 0], cl = c.clips[clip]; mx.stopAllAction(); const a = mx.clipAction(cl); a.reset().play(); const from = +(q.get('from') || 0), to = Math.min(+(q.get('to') || 99), cl.duration), t = from + (to - from) * (i % n) / Math.max(1, n - 1); mx.setTime(t); const x = (i % cols) * CW, y = (rows - 1 - Math.floor(i / cols)) * CH; r.setViewport(x, y, CW, CH); r.setScissor(x, y, CW, CH); sc.background = new THREE.Color(i % 2 ? 0x2a3040 : 0x30384a); r.render(sc, cam); lbl.push([i % cols * CW, Math.floor(i / cols) * CH, clip + ' ' + t.toFixed(2)]); }
+for (const [x, y, t] of lbl) { const d = document.createElement('div'); d.textContent = t + 's'; d.style.cssText = `position:absolute;left:${x + 6}px;top:${y + 4}px;color:#fff;font:14px sans-serif`; document.body.append(d); }
+window.info = { clips: Object.keys(c.clips), dur: clipL.map(k => k + ':' + c.clips[k].duration.toFixed(2)).join(' '), size: c.meta.size }; window.done = 1;
+</script></body>

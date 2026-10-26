@@ -1,0 +1,27 @@
+<!doctype html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"./lib/three.module.min.js"}}</script>
+<style>@font-face{font-family:P;src:url(fonts/Pretendard-Black.woff2);font-weight:900}body{margin:0;background:#000;overflow:hidden}#w{position:relative;width:1200px;height:630px}canvas{display:block}
+.logo{position:absolute;left:64px;top:150px;font-family:P;font-weight:900}.logo b{display:block;font-size:104px;letter-spacing:10px;line-height:1;background:linear-gradient(#FFF6DA,#E8C26A 50%,#8A5A1A);-webkit-background-clip:text;color:transparent;filter:drop-shadow(0 6px 18px #000)}
+.logo span{display:block;color:#F4EEDF;font-size:34px;letter-spacing:22px;margin-top:14px;text-shadow:0 3px 10px #000}.logo em{display:block;font-style:normal;color:#E8C26A;font-size:20px;letter-spacing:8px;margin-top:20px;text-shadow:0 2px 8px #000}
+.icon .logo{display:none}</style></head><body><div id="w"></div><script type="module">
+// 원어데이 표지(1200×630) · ?icon=1 아이콘(192)
+import * as THREE from 'three'; import { load } from './src/assets.js'; import { Actor } from './src/actor.js'; import { place, loadProp } from './src/props.js'; import { skyTex } from './src/fxtex.js';
+const icon = new URLSearchParams(location.search).get('icon'), W = icon ? 192 : 1200, H = icon ? 192 : 630; if (icon) document.body.classList.add('icon');
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.setPixelRatio(icon ? 2 : 1); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; document.getElementById('w').prepend(r.domElement);
+document.getElementById('w').insertAdjacentHTML('beforeend', '<div class="logo"><b>ASH BLADE</b><span>애쉬 블레이드</span><em>잿빛 숲을 가르는 3D 액션 RPG</em></div>');
+const sc = new THREE.Scene(); sc.background = skyTex('#1a1410', '#5a4030'); sc.fog = new THREE.Fog(0x3a2a20, 900, 3200);
+await Promise.all([load('warrior'), load('spider')]);
+const tl = new THREE.TextureLoader(), gt = tl.load('assets/env/L10_d.jpg'); gt.colorSpace = THREE.SRGBColorSpace; gt.wrapS = gt.wrapT = THREE.RepeatWrapping; gt.repeat.set(8, 8);
+const g = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshLambertMaterial({ map: gt, color: 0x9a8a7a })); g.rotation.x = -Math.PI / 2; sc.add(g);
+for (const [id, x, z, s, ry] of [['stump5', -900, -900, 1, 0], ['tree_big1', 1300, -1300, 0.8, 1], ['stump3', 1100, -500, 0.8, 2], ['root1', -500, -300, 0.7, 1], ['bush3', -100, 300, 1, 0], ['tree_bb1', -200, -2200, 0.8, 0]]) { await loadProp(id); await place(sc, id, x, z, { s, ry }); }
+sc.add(new THREE.HemisphereLight(0xffd8b0, 0x302018, 1.4)); const key = new THREE.DirectionalLight(0xffc080, 3); key.position.set(500, 700, 600); const rim = new THREE.DirectionalLight(0x80a8ff, 2.6); rim.position.set(-600, 400, -700); sc.add(key, rim);
+const fire = new THREE.PointLight(0xff7030, 30, 1400, 1.2); fire.position.set(200, 200, 100); sc.add(fire);
+const pose = (a, c, t) => { const ac = a.mixer.clipAction(a.clips[c]); ac.play(); a.mixer.setTime(t); };
+const sp = new Actor('spider', { scale: 0.85 }); sp.pos.set(1080, 0, -560); sp.root.rotation.y = -1.1; pose(sp, 'atk', 0.6); sc.add(sp.root);
+const w = new Actor('warrior'); w.pos.set(icon ? 0 : 520, 0, 200); w.root.rotation.y = icon ? 0.5 : 1.3; pose(w, 's5', 1.0); sc.add(w.root);
+const cam = new THREE.PerspectiveCamera(icon ? 34 : 38, W / H, 10, 10000);
+if (icon) { cam.position.set(260, 220, 380); cam.lookAt(0, 130, 120); } else { cam.position.set(120, 300, 1000); cam.lookAt(520, 210, -140); }
+// 불티
+const pg = new THREE.BufferGeometry(), N = 260, pa = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pa[i * 3] = (Math.random() - 0.3) * 1800; pa[i * 3 + 1] = Math.random() * 900; pa[i * 3 + 2] = (Math.random() - 0.6) * 1500; }
+pg.setAttribute('position', new THREE.BufferAttribute(pa, 3)); sc.add(new THREE.Points(pg, new THREE.PointsMaterial({ color: 0xffa040, size: icon ? 6 : 7, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending })));
+await new Promise(f => setTimeout(f, 2500)); r.render(sc, cam); window.done = 1;
+</script></body>

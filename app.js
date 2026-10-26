@@ -1,13 +1,13 @@
 // One a Day 앱 화면: 오늘 · 라이브러리 · 컬렉션 · 설정 + 게임 실행(iframe) + 잠금 해제(테스트 광고)
-import { PLANNED } from './catalog.js?v=0.63.0';
-import * as R from './rules.js?v=0.63.0';
-import * as I from './install.js?v=0.63.0';
+import { PLANNED } from './catalog.js?v=0.63.1';
+import * as R from './rules.js?v=0.63.1';
+import * as I from './install.js?v=0.63.1';
 // 오늘의 운세: 엔진(330KB)은 처음 볼 때만 불러옴
-let FT = null; const ft = () => FT ? Promise.resolve(FT) : import('./fortune/fortune.js?v=0.63.0').then(m => (FT = m));
+let FT = null; const ft = () => FT ? Promise.resolve(FT) : import('./fortune/fortune.js?v=0.63.1').then(m => (FT = m));
 
 const $ = s => document.querySelector(s);
 const view = $('#view');
-const VERSION = '0.63.0';
+const VERSION = '0.63.1';
 let tab = 'today', timer = null;
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];

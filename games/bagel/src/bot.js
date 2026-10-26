@@ -1,6 +1,6 @@
 // 시험용 자동 플레이 (?bot=1): 굽기 → 진열 → 계산 → 돈 줍기 → 열기 칸 · 크림치즈 · 커피 · 쓰레기
-import { IN } from './ui.js?v=0.57.0';
-import { S } from './state.js?v=0.57.0';
+import { IN } from './ui.js?v=0.57.1';
+import { S } from './state.js?v=0.57.1';
 export function startBot(app) {
   let goal = null, wait = 0, log = [], lastP = null, stuck = 0, side = 0;
   const go = (x, z) => { const g = app.game, p = g.pl.pos, c = g.st.counter;
@@ -18,12 +18,12 @@ export function startBot(app) {
     const pad = g.pads.find(p => S.coins >= Math.min(p.s.cost - p.paid, 30)); const pile = g.piles.find(p => p.v > 0);
     let t;
     if (pl.kind === 'trash') t = [g.st.bin.x, g.st.bin.z + 80];
-    else if (pl.stack.length) t = pl.kind === 'bagel' && g.st.cc && c.shelf.cream.length < 2 && g.st.cc.inStack.length < 4 ? [g.st.cc.x, g.st.cc.z + 135] : pl.kind === 'bagel' && g.st.drive && g.st.drive.stack.length < 4 && c.shelf.bagel.length > 6 ? [g.st.drive.x - 110, g.st.drive.z] : [c.x + ({ bagel: -115, cream: -40, coffee: 35 })[pl.kind], c.z - 100];
+    else if (pl.stack.length) t = pl.kind === 'bagel' && g.st.cc && c.shelf.cream.length < 2 && g.st.cc.inStack.length < 4 ? [g.st.cc.x, g.st.cc.z + 135] : pl.kind === 'bagel' && g.st.drive && g.st.drive.stack.length < 4 && c.shelf.bagel.length > 6 ? [g.st.drive.x - 110, g.st.drive.z] : [c.Z[pl.kind].x, c.Z[pl.kind].z];
     else if (pile && pile.v > 60 * (g.B.mult)) t = [pile.x, pile.z + 20];
     else if (pad && S.coins > 0) t = [pad.s.x, pad.s.z];
     else { const tt = Object.values(g.st).find(o => o.type === 'table' && o.trash.length >= 3); const need = g.cust.find(x => x.state === 'queue' && x.qi === 0)?.order.find(o => o.got < o.n);
       if (tt && !g.staff.some(w => w.k === 'cleaner')) t = [tt.x, tt.z + 175];
-      else if (need && c.shelf[need.k].length) t = g.staff.some(w => w.k === 'cashier') ? (pile ? [pile.x, pile.z + 20] : [ov.x, ov.z + 130]) : [c.x + 110, c.z - 100];
+      else if (need && c.shelf[need.k].length) t = g.staff.some(w => w.k === 'cashier') ? (pile ? [pile.x, pile.z + 20] : [ov.x, ov.z + 130]) : [c.Z.cash.x, c.Z.cash.z];
       else if (need && need.k === 'cream' && g.st.cc) t = g.st.cc.stack.length ? [g.st.cc.x, g.st.cc.z + 135] : [ov.x, ov.z + 130];
       else if (need && need.k === 'coffee' && g.st.coffee) t = [g.st.coffee.x, g.st.coffee.z + 125];
       else if (pile) t = [pile.x, pile.z + 20];

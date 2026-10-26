@@ -1,7 +1,7 @@
 // 카드 앨범 (원작의 카드 수집): 9세트 × 9장 · 별 1~5 · 카드 팩 3종 · 중복 카드 → 별 금고 · 조커 카드 · 세트 완성 보상
 //   + 7일 출석 · 저금통(결제가 열리면 깰 수 있음)
-import { load, save } from './save.js?v=0.57.0';
-import { today } from './state.js?v=0.57.0';
+import { load, save } from './save.js?v=0.57.1';
+import { today } from './state.js?v=0.57.1';
 
 const RARITY = [1, 1, 1, 2, 2, 3, 3, 4, 5];   // 세트 안 카드 순서별 별 (마지막 카드가 가장 귀함)
 const def = (id, n, names, reward) => ({ id, n, reward, cards: names.map((cn, i) => ({ key: `${id}${i + 1}`, n: cn, r: RARITY[i] })) });

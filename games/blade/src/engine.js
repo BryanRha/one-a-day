@@ -1,11 +1,11 @@
 // 렌더러 · 장면 · 카메라 · 루프 (멈춤 프레임(hitstop) · 느린 화면(slow) · 카메라 흔들림)
 import * as THREE from 'three';
-import { EffectComposer } from '../lib/jsm/postprocessing/EffectComposer.js?v=0.59.2';
-import { RenderPass } from '../lib/jsm/postprocessing/RenderPass.js?v=0.59.2';
-import { UnrealBloomPass } from '../lib/jsm/postprocessing/UnrealBloomPass.js?v=0.59.2';
-import { ShaderPass } from '../lib/jsm/postprocessing/ShaderPass.js?v=0.59.2';
-import { OutputPass } from '../lib/jsm/postprocessing/OutputPass.js?v=0.59.2';
-import { RoomEnvironment } from '../lib/jsm/environments/RoomEnvironment.js?v=0.59.2';
+import { EffectComposer } from '../lib/jsm/postprocessing/EffectComposer.js?v=0.60.0';
+import { RenderPass } from '../lib/jsm/postprocessing/RenderPass.js?v=0.60.0';
+import { UnrealBloomPass } from '../lib/jsm/postprocessing/UnrealBloomPass.js?v=0.60.0';
+import { ShaderPass } from '../lib/jsm/postprocessing/ShaderPass.js?v=0.60.0';
+import { OutputPass } from '../lib/jsm/postprocessing/OutputPass.js?v=0.60.0';
+import { RoomEnvironment } from '../lib/jsm/environments/RoomEnvironment.js?v=0.60.0';
 // 마지막 화면 효과: 강한 타격 때 색 번짐 + 방사형 흐림 · 가장자리 어둡게
 const FinalShader = { uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, vig: { value: 0.4 } }, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `uniform sampler2D tDiffuse; uniform float amt; uniform float vig; varying vec2 vUv;

@@ -1,13 +1,13 @@
 // 시작: 렌더러 · 직각 투영 카메라(쿼터뷰) · 저장 불러오기 · 쉬는 동안 번 돈 · 루프
 import * as THREE from 'three';
-import { Game } from './game.js?v=0.59.2';
-import { UI, IN } from './ui.js?v=0.59.2';
-import { S, loadSave, save } from './state.js?v=0.59.2';
-import { BRANCHES, MENU } from './data.js?v=0.59.2';
-import { music, setAudio, preloadSfx } from './audio.js?v=0.59.2';
-import { installBack } from './oad.js?v=0.59.2';
+import { Game } from './game.js?v=0.60.0';
+import { UI, IN } from './ui.js?v=0.60.0';
+import { S, loadSave, save } from './state.js?v=0.60.0';
+import { BRANCHES, MENU } from './data.js?v=0.60.0';
+import { music, setAudio, preloadSfx } from './audio.js?v=0.60.0';
+import { installBack } from './oad.js?v=0.60.0';
 
-const app = {}; window.__app = app; import("./state.js?v=0.59.2").then(m => { window.__S = () => m.S; });
+const app = {}; window.__app = app; import("./state.js?v=0.60.0").then(m => { window.__S = () => m.S; });
 const canvas = document.getElementById('view');
 const r = new THREE.WebGLRenderer({ canvas, antialias: true }); r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.outputColorSpace = THREE.SRGBColorSpace; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
 const sc = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 6000);
@@ -23,7 +23,7 @@ installBack({ back: () => { if (document.querySelector('#modal').firstChild) { a
 music(S.bi % 2 ? 'shop2' : 'shop');
 let last = performance.now();
 const q = new URLSearchParams(location.search), SPEED = +(q.get('speed') || 1); if (q.get('fresh')) { localStorage.removeItem('marumi_v1'); q.delete('fresh'); location.replace(location.pathname + '?' + q.toString()); }
-if (q.get('bot')) import('./bot.js?v=0.59.2').then(m => m.startBot(app));
+if (q.get('bot')) import('./bot.js?v=0.60.0').then(m => m.startBot(app));
 const loop = now => { requestAnimationFrame(loop); const dt = Math.min(0.05, (now - last) / 1000); last = now; for (let i = 0; i < SPEED; i++) app.game.update(dt, IN); r.render(sc, cam); };
 requestAnimationFrame(loop); setInterval(() => save(), 5000); addEventListener('pagehide', () => save(true));   /* 슬롯 불러오기·초기화 때는 __noSave 로 덮어쓰기 막음 */
 setTimeout(() => document.getElementById('boot').classList.add('off'), q.get('bot') ? 0 : 1600); window.done = 1;

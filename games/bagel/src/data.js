@@ -7,7 +7,7 @@ export const GAME = { title: '마루미 베이글 하우스', en: 'Marumi Bagel 
 //   실제 메뉴 (잠실리센츠점 · 2026-10-26 사용자 제공): 플레인 1,900 · 솔트버터 3,500 · 올리브치즈 2,900 · 치즈시금치 3,500 · 크랜베리호두 3,500 · 크림치즈 컵 각 2,000
 //   게임 가격 = 실제 가격 비율 (플레인 1,900원 → 5)
 //   물건 칸 이름은 그대로 두고(bagel·cream·coffee) 지점마다 무엇인지 바꿈: bagel=오븐 플레인 · cream=토핑 바 특별 베이글 · coffee=크림치즈 냉장고 컵
-export const MENU = { bagel: { name: '플레인 베이글', short: '플레인', price: 5, icon: '🥯' }, cream: { name: '솔트버터 베이글', short: '솔트버터', price: 9, icon: '🥯', look: 'salt' }, coffee: { name: '플레인 크림치즈', short: '크림치즈', price: 5, icon: '🥣', look: 'cup_plain' } };
+export const MENU = { drink: { name: '아메리카노', short: '아메리카노', price: 6, icon: '☕' }, bagel: { name: '플레인 베이글', short: '플레인', price: 5, icon: '🥯' }, cream: { name: '솔트버터 베이글', short: '솔트버터', price: 9, icon: '🥯', look: 'salt' }, coffee: { name: '플레인 크림치즈', short: '크림치즈', price: 5, icon: '🥣', look: 'cup_plain' } };
 export const BRANCH_MENU = [
   { cream: { name: '솔트버터 베이글', short: '솔트버터', price: 9, look: 'salt', bar: '솔트버터 바' }, coffee: { name: '플레인 크림치즈', short: '플레인 크림', price: 5, look: 'cup_plain' } },
   { cream: { name: '올리브치즈 베이글', short: '올리브치즈', price: 8, look: 'olive', bar: '올리브치즈 바' }, coffee: { name: '블루베리 크림치즈', short: '블루베리 크림', price: 5, look: 'cup_blue' } },
@@ -26,24 +26,24 @@ const B1 = {
     { id: 'oven', type: 'oven', x: -170, z: -580, free: true },
     { id: 'counter', type: 'counter', x: 150, z: 80, free: true },
     { id: 'bin', type: 'bin', x: -600, z: -110, free: true },
-    { id: 'plant2', type: 'plant', x: 640, z: -640, free: true },
     { id: 't1', type: 'table', x: -440, z: 340, cost: 30 },
-    { id: 'cashier', type: 'hire', staff: 'cashier', x: 470, z: -120, cost: 90, label: '계산원 뽑기' },
-    { id: 'dougher', type: 'hire', staff: 'dougher', x: -520, z: -330, cost: 140, label: '반죽 직원 뽑기' },
+    { id: 'cashier', type: 'hire', staff: 'cashier', x: 460, z: -130, cost: 90, label: '계산원 뽑기' },
+    { id: 'dougher', type: 'hire', staff: 'dougher', x: -580, z: -300, cost: 140, label: '반죽 직원 뽑기' },
     { id: 'cc', type: 'ccbar', x: 130, z: -580, cost: 160, label: '토핑 바' },
     { id: 't2', type: 'table', x: -40, z: 340, cost: 200 },
-    { id: 'baker', type: 'hire', staff: 'baker', x: 470, z: 40, cost: 300, label: '진열 직원 뽑기' },
+    { id: 'espresso', type: 'espresso', x: 640, z: -570, cost: 340, label: '커피 머신' },
+    { id: 'baker', type: 'hire', staff: 'baker', x: -200, z: -300, cost: 300, label: '진열 직원 뽑기' },
     { id: 'coffee', type: 'coffee', x: 430, z: -580, cost: 420, label: '크림치즈 냉장고' },
-    { id: 'topper', type: 'hire', staff: 'topper', x: 150, z: -330, cost: 520, label: '토핑 직원 뽑기' },
+    { id: 'topper', type: 'hire', staff: 'topper', x: 130, z: -300, cost: 520, label: '토핑 직원 뽑기' },
     { id: 't3', type: 'table', x: -440, z: 640, cost: 560 },
-    { id: 'carry', type: 'up', up: 'carry', x: 470, z: 200, cost: 640, label: '더 많이 들기' },
-    { id: 'fridge', type: 'hire', staff: 'fridge', x: 470, z: -330, cost: 760, label: '냉장고 직원 뽑기' },
+    { id: 'carry', type: 'up', up: 'carry', x: 330, z: 260, cost: 640, label: '더 많이 들기' },
+    { id: 'fridge', type: 'hire', staff: 'fridge', x: 430, z: -315, cost: 760, label: '음료·크림치즈 직원 뽑기' },
     { id: 'kettle', type: 'kettle', x: -420, z: -590, cost: 900, label: '데치기 솥 · 쫄깃 베이글' },
     { id: 't4', type: 'table', x: -40, z: 640, cost: 900 },
-    { id: 'cleaner', type: 'hire', staff: 'cleaner', x: 470, z: 360, cost: 1100, label: '청소 직원 뽑기' },
-    { id: 'drive', type: 'drive', x: 740, z: -200, cost: 1600, label: '드라이브스루' },
-    { id: 'speed', type: 'up', up: 'speed', x: 470, z: 520, cost: 1300, label: '빨리 걷기' },
-    { id: 'next', type: 'next', x: 150, z: 600, cost: 3500, label: '2호점 열기' },
+    { id: 'cleaner', type: 'hire', staff: 'cleaner', x: -400, z: 90, cost: 1100, label: '청소 직원 뽑기' },
+    { id: 'drive', type: 'drive', x: 740, z: -200, px: 620, cost: 1600, label: '드라이브스루' },
+    { id: 'speed', type: 'up', up: 'speed', x: 330, z: 450, cost: 1300, label: '빨리 걷기' },
+    { id: 'next', type: 'next', x: 330, z: 640, cost: 3500, label: '2호점 열기' },
   ],
 };
 const scale = (b, k, theme, name) => ({ ...b, name, mult: k, theme: { ...b.theme, ...theme }, slots: b.slots.map(s => ({ ...s, cost: s.cost && Math.round(s.cost * k * 1.6 / 10) * 10, label: s.id === 'next' ? s.labelNext || s.label : s.label })) });
@@ -63,6 +63,7 @@ export const UPGRADES = [
   { id: 'kettle', name: '쫄깃함 연구', desc: '쫄깃 베이글 값이 더 올라요', icon: '♨️', base: 200, need: 'kettle' },
   { id: 'bar', name: '토핑 바 손 빠르게', desc: '특별 베이글이 빨리 만들어져요', icon: '🧂', base: 150, need: 'cc' },
   { id: 'fridge', name: '크림치즈 냉장고 확장', desc: '크림치즈가 더 빨리 채워져요', icon: '🧊', base: 200, need: 'coffee' },
+  { id: 'espresso', name: '커피 머신 속도', desc: '커피가 더 빨리 나와요', icon: '☕', base: 160, need: 'espresso' },
   { id: 'price', name: '메뉴 가격 올리기', desc: '모든 메뉴 +8%', icon: '💰', base: 180 },
   { id: 'ads', name: 'SNS 홍보', desc: '손님이 더 자주 와요', icon: '📣', base: 160 },
   { id: 'tip', name: '친절 서비스', desc: '손님이 팁을 줄 때가 있어요', icon: '😊', base: 220 },
@@ -76,7 +77,7 @@ export const STAFF = {
   cashier: { name: '계산원', body: 0x5A8AE0, serve: 0.55, hello: '계산원이 계산을 맡아요!', up: '계산 속도' },
   baker: { name: '진열 직원', body: 0x7A4A2A, speed: 300, carry: 4, hello: '진열 직원이 베이글을 계산대로 날라요!', up: '걷기 속도 · 들기' },
   topper: { name: '토핑 직원', body: 0xE2A020, speed: 290, carry: 3, hello: '토핑 직원이 특별 베이글을 만들어요!', up: '걷기 속도 · 들기', cap: 0xFF6720 },
-  fridge: { name: '냉장고 직원', body: 0x8AC8E8, speed: 290, carry: 3, hello: '냉장고 직원이 크림치즈를 채워요!', up: '걷기 속도 · 들기' },
+  fridge: { name: '음료·크림치즈 직원', body: 0x8AC8E8, speed: 290, carry: 3, hello: '크림치즈와 커피를 계산대에 채워요!', up: '걷기 속도 · 들기' },
   dougher: { name: '반죽 직원', body: 0xF4F0E8, speed: 280, carry: 3, hello: '반죽 직원이 반죽을 데치고 오븐에 넣어요!', up: '걷기 속도 · 들기', cap: 0xA98259 },
   cleaner: { name: '청소 직원', body: 0x6AB07A, speed: 320, carry: 4, hello: '청소 직원이 테이블을 치워요!', up: '걷기 속도 · 들기' },
 };

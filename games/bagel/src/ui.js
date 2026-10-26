@@ -1,9 +1,9 @@
 // 화면 정보와 창: 돈 · 지점 진행 · 쿠폰 · 광고 ×2 · 미션 · 지점 지도 · 설정 · 열기 칸 글자 · +돈 글자 · 조이스틱
 import * as THREE from 'three';
-import { BRAND, GAME, BRANCHES, COUPON, MENU } from './data.js?v=0.57.2';
-import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.57.2';
-import { sfx, setAudio } from './audio.js?v=0.57.2';
-import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.57.2';
+import { BRAND, GAME, BRANCHES, COUPON, MENU } from './data.js?v=0.57.3';
+import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.57.3';
+import { sfx, setAudio } from './audio.js?v=0.57.3';
+import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.57.3';
 
 const $ = s => document.querySelector(s), fmt = n => Math.round(n).toLocaleString('en-US');
 export const IN = { x: 0, y: 0 };

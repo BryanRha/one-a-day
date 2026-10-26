@@ -1,9 +1,9 @@
 // 가게 놀이: 끌어서 이동 · 굽기/바르기/내리기 · 진열 · 손님 줄 · 계산 · 돈 줍기 · 열기 칸 · 직원 · 테이블 치우기 · 드라이브스루
 import * as THREE from 'three';
-import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND } from './data.js?v=0.57.2';
-import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H } from './models.js?v=0.57.2';
-import { S, save, addSold, mission } from './state.js?v=0.57.2';
-import { sfx } from './audio.js?v=0.57.2';
+import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND } from './data.js?v=0.57.3';
+import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H } from './models.js?v=0.57.3';
+import { S, save, addSold, mission } from './state.js?v=0.57.3';
+import { sfx } from './audio.js?v=0.57.3';
 
 const V = THREE.Vector3, R = 85, rnd = (a, b) => a + Math.random() * (b - a);
 const RIGHT = new V(1, 0, -1).normalize(), DOWN = new V(1, 0, 1).normalize();
@@ -107,7 +107,7 @@ export class Game {
   collide(p, r) {
     const B = this.B; p.x = Math.max(-B.W / 2 + 40 + r, Math.min(B.W / 2 - 20 - r, p.x)); p.z = Math.max(-B.D / 2 + 40 + r, Math.min(B.D / 2 - 20, p.z));
     for (const o of Object.values(this.st)) { const [hw, hd] = SIZE[o.type] || [0, 0]; if (!hw) continue;
-      if (o.type === 'table' || o.type === 'bin' || o.type === 'plant') { const d = Math.hypot(p.x - o.x, p.z - o.z), m = hw + r; if (d < m && d > 0.1) { p.x = o.x + (p.x - o.x) / d * m; p.z = o.z + (p.z - o.z) / d * m; } continue; }
+      if (o.type === 'bin' || o.type === 'plant') { const d = Math.hypot(p.x - o.x, p.z - o.z), m = hw + r; if (d < m && d > 0.1) { p.x = o.x + (p.x - o.x) / d * m; p.z = o.z + (p.z - o.z) / d * m; } continue; }
       const dx = p.x - o.x, dz = p.z - o.z, ox = hw + r - Math.abs(dx), oz = hd + r - Math.abs(dz); if (ox > 0 && oz > 0) { if (ox < oz) p.x += Math.sign(dx) * ox; else p.z += Math.sign(dz) * oz; } }
   }
   near(w, x, z, r = R) { return Math.hypot(w.pos.x - x, w.pos.z - z) < r; }
@@ -174,10 +174,10 @@ export class Game {
   custAI(c, dt) {
     const moveTo = (sp = 230) => { const d = new V().subVectors(c.target, c.pos); d.y = 0; const l = d.length(); if (l < 6) return true; d.normalize();
       /* 테이블 피하기: 가는 길에 테이블이 있으면 옆으로 돌아감 (앉을 테이블은 제외) */ const own = (c.seat && c.seat.t) || (c.state === 'leave' && c.leftT && Math.hypot(c.pos.x - c.leftT.x, c.pos.z - c.leftT.z) < 130 ? c.leftT : null);
-      for (const t of Object.values(this.st)) { if (t.type !== 'table' || t === own) continue; const tx = t.x - c.pos.x, tz = t.z - c.pos.z, dist = Math.hypot(tx, tz); if (dist > 260) continue;
-        const ahead = tx * d.x + tz * d.z; if (ahead <= 0) continue; const side = tx * d.z - tz * d.x; if (Math.abs(side) < 150) { const k = (150 - Math.abs(side)) / 150 * 1.4, sg = side > 0 ? -1 : 1, px = d.z, pz = -d.x; d.x += px * sg * k; d.z += pz * sg * k; d.normalize(); } }   /* 테이블 반대쪽으로 비켜감 */
+      for (const t of Object.values(this.st)) { if (t.type !== 'table' || t === own) continue; const tx = t.x - c.pos.x, tz = t.z - c.pos.z, dist = Math.hypot(tx, tz); if (dist > 320) continue;
+        const ahead = tx * d.x + tz * d.z; if (ahead <= 0) continue; const side = tx * d.z - tz * d.x; if (Math.abs(side) < 190) { const k = (190 - Math.abs(side)) / 190 * 1.4, sg = side > 0 ? -1 : 1, px = d.z, pz = -d.x; d.x += px * sg * k; d.z += pz * sg * k; d.normalize(); } }   /* 테이블 반대쪽으로 비켜감 */
       c.pos.addScaledVector(d, Math.min(l, sp * dt));
-      for (const t of Object.values(this.st)) { if (t.type !== 'table' || t === own) continue; const dx = c.pos.x - t.x, dz = c.pos.z - t.z, dd = Math.hypot(dx, dz); if (dd < 125 && dd > 0.1) { c.pos.x = t.x + dx / dd * 125; c.pos.z = t.z + dz / dd * 125; } }
+      for (const t of Object.values(this.st)) { if (t.type !== 'table' || t === own) continue; const dx = c.pos.x - t.x, dz = c.pos.z - t.z, dd = Math.hypot(dx, dz); const ox = 150 - Math.abs(dx), oz = 70 - Math.abs(dz); if (ox > 0 && oz > 0) { if (ox < oz) c.pos.x += Math.sign(dx) * ox; else c.pos.z += Math.sign(dz) * oz; } }
       c.P.g.rotation.y = Math.atan2(d.x, d.z); c.P.anim(dt, true); return false; };
     if (c.state === 'walkQ') { if (moveTo()) c.state = 'queue'; }
     else if (c.state === 'queue') { if (!moveTo(180)) {} else { c.P.anim(dt, false); c.P.g.rotation.y = Math.PI; } }
@@ -235,9 +235,9 @@ export class Game {
 const ZONES = {
   oven: [['out', 0, 135, 180, 100, 0xF2A23A]], ccbar: [['io', 0, 140, 180, 100, 0xF6D6A0]], coffee: [['out', 0, 130, 140, 100, 0x9A643A]],
   counter: [['bagel', -115, -118, 70, 96, 0xD98A3A], ['cream', -40, -118, 70, 96, 0xF2D2A0], ['coffee', 35, -118, 70, 96, 0x9A643A], ['cash', 140, -118, 120, 96, 0x4FBF6A]],
-  bin: [['drop', 0, 95, 120, 80, 0x5A8A5A]], table: [['trash', 0, 178, 170, 70, 0xB8B0A8]], drive: [['drop', -105, 0, 90, 200, 0xD98A3A]],
+  bin: [['drop', 0, 95, 120, 80, 0x5A8A5A]], table: [['trash', 0, 130, 170, 70, 0xB8B0A8]], drive: [['drop', -105, 0, 90, 200, 0xD98A3A]],
 };
 const WHITE = new THREE.Color(0xFFFFFF);
-const SIZE = { oven: [105, 80], counter: [168, 62], ccbar: [118, 62], coffee: [72, 58], table: [125], bin: [40], plant: [40], drive: [20, 135] };
+const SIZE = { oven: [105, 80], counter: [168, 62], ccbar: [118, 62], coffee: [72, 58], table: [158, 72], bin: [40], plant: [40], drive: [20, 135] };   /* 테이블: 의자 포함 직사각형 */
 const NAMES = { table: '테이블', ccbar: '크림치즈 바', coffee: '커피 머신', drive: '드라이브스루' };
 export const fmt = n => Math.round(n).toLocaleString('en-US');

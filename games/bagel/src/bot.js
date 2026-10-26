@@ -1,6 +1,6 @@
 // 시험용 자동 플레이 (?bot=1): 굽기 → 진열 → 계산 → 돈 줍기 → 열기 칸 · 크림치즈 · 커피 · 쓰레기
-import { IN } from './ui.js?v=0.57.2';
-import { S } from './state.js?v=0.57.2';
+import { IN } from './ui.js?v=0.57.3';
+import { S } from './state.js?v=0.57.3';
 export function startBot(app) {
   let goal = null, wait = 0, log = [], lastP = null, stuck = 0, side = 0;
   const go = (x, z) => { const g = app.game, p = g.pl.pos, c = g.st.counter;

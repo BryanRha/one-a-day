@@ -1,11 +1,11 @@
 // 시작: 렌더러 · 직각 투영 카메라(쿼터뷰) · 저장 불러오기 · 쉬는 동안 번 돈 · 루프
 import * as THREE from 'three';
-import { Game } from './game.js?v=0.57.1';
-import { UI, IN } from './ui.js?v=0.57.1';
-import { S, loadSave, save } from './state.js?v=0.57.1';
-import { BRANCHES, MENU } from './data.js?v=0.57.1';
-import { music, setAudio, preloadSfx } from './audio.js?v=0.57.1';
-import { installBack } from './oad.js?v=0.57.1';
+import { Game } from './game.js?v=0.57.2';
+import { UI, IN } from './ui.js?v=0.57.2';
+import { S, loadSave, save } from './state.js?v=0.57.2';
+import { BRANCHES, MENU } from './data.js?v=0.57.2';
+import { music, setAudio, preloadSfx } from './audio.js?v=0.57.2';
+import { installBack } from './oad.js?v=0.57.2';
 
 const app = {}; window.__app = app;
 const canvas = document.getElementById('view');
@@ -22,8 +22,8 @@ if (st.includes('cashier') && st.includes('baker') && away > 120) { const v = Ma
 installBack({ back: () => { if (document.querySelector('#modal').firstChild) { app.ui.close(); return true; } return false; } });
 music(S.bi % 2 ? 'shop2' : 'shop');
 let last = performance.now();
-const q = new URLSearchParams(location.search), SPEED = +(q.get('speed') || 1); if (q.get('fresh')) { localStorage.removeItem('marumi_v1'); location.replace(location.pathname + location.search.replace(/[?&]fresh=1/, '')); }
-if (q.get('bot')) import('./bot.js?v=0.57.1').then(m => m.startBot(app));
+const q = new URLSearchParams(location.search), SPEED = +(q.get('speed') || 1); if (q.get('fresh')) { localStorage.removeItem('marumi_v1'); q.delete('fresh'); location.replace(location.pathname + '?' + q.toString()); }
+if (q.get('bot')) import('./bot.js?v=0.57.2').then(m => m.startBot(app));
 const loop = now => { requestAnimationFrame(loop); const dt = Math.min(0.05, (now - last) / 1000); last = now; for (let i = 0; i < SPEED; i++) app.game.update(dt, IN); r.render(sc, cam); };
 requestAnimationFrame(loop); setInterval(() => save(), 5000); addEventListener('pagehide', () => save(true));
 document.getElementById('boot').classList.add('off'); window.done = 1;

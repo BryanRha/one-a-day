@@ -42,3 +42,7 @@ button { font-family: inherit; font-weight: 900; border: 0; cursor: pointer; col
 .tg { display: flex; gap: 8px; margin: 8px 0; } .tg button { flex: 1; height: 46px; border-radius: 14px; background: #fff; color: #B09070; box-shadow: 0 3px 0 var(--sh); } .tg button.on { background: #FFE9C8; color: var(--br); }
 #boot { position: absolute; inset: 0; background: var(--cr); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; z-index: 50; transition: opacity .5s; } #boot.off { opacity: 0; pointer-events: none; }
 #boot b { font-size: 34px; font-weight: 900; color: var(--br); letter-spacing: 3px; } #boot span { font-size: 15px; color: #B08060; }
+
+.bub { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 3px; background: #fff; border-radius: 14px; padding: 3px 8px 3px 5px; box-shadow: 0 3px 0 var(--sh); font-size: 11px; font-weight: 900; color: var(--br); white-space: nowrap; }
+.bub::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: #fff; border-bottom: 0; }
+.bub b { font-size: 16px; } .bub em { font-style: normal; color: #E2702A; font-size: 13px; } .bub.front { transform-origin: 50% 100%; outline: 3px solid #4FBF6A; }

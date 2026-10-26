@@ -1,13 +1,13 @@
 // 하루 목표 3개 → 시즌 점수 → 월간 시즌 보상 (무료 줄 · 프리미엄 줄은 결제가 열리면)
-import { W, H } from '../config.js?v=0.57.1';
-import { T, R, C, TS, btn, toast, sheet, rbox, chips, stamp } from '../ui.js?v=0.57.1';
-import { audio } from '../audio.js?v=0.57.1';
-import { load, save } from '../save.js?v=0.57.1';
-import { goPrev } from '../nav.js?v=0.57.1';
-import { screen } from '../hud.js?v=0.57.1';
-import { daily, season, claimGoal, giveReward, SEASON } from '../state.js?v=0.57.1';
-import { storeOpen } from '../store.js?v=0.57.1';
-import { ACHIEVE, REWARD, tierOf, achClaim, achReady, title } from '../achieve.js?v=0.57.1';
+import { W, H } from '../config.js?v=0.57.2';
+import { T, R, C, TS, btn, toast, sheet, rbox, chips, stamp } from '../ui.js?v=0.57.2';
+import { audio } from '../audio.js?v=0.57.2';
+import { load, save } from '../save.js?v=0.57.2';
+import { goPrev } from '../nav.js?v=0.57.2';
+import { screen } from '../hud.js?v=0.57.2';
+import { daily, season, claimGoal, giveReward, SEASON } from '../state.js?v=0.57.2';
+import { storeOpen } from '../store.js?v=0.57.2';
+import { ACHIEVE, REWARD, tierOf, achClaim, achReady, title } from '../achieve.js?v=0.57.2';
 
 export class SeasonScene extends Phaser.Scene {
   constructor() { super('Season'); }

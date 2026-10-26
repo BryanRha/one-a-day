@@ -1,12 +1,13 @@
 // 화면 정보와 창: 돈 · 지점 진행 · 쿠폰 · 광고 ×2 · 미션 · 지점 지도 · 설정 · 열기 칸 글자 · +돈 글자 · 조이스틱
 import * as THREE from 'three';
-import { BRAND, GAME, BRANCHES, COUPON, MENU } from './data.js?v=0.57.1';
-import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.57.1';
-import { sfx, setAudio } from './audio.js?v=0.57.1';
-import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.57.1';
+import { BRAND, GAME, BRANCHES, COUPON, MENU } from './data.js?v=0.57.2';
+import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.57.2';
+import { sfx, setAudio } from './audio.js?v=0.57.2';
+import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.57.2';
 
 const $ = s => document.querySelector(s), fmt = n => Math.round(n).toLocaleString('en-US');
 export const IN = { x: 0, y: 0 };
+const ICON = { bagel: '🥯', cream: '🥯', coffee: '☕' }, SHORT = { bagel: '플레인', cream: '크림치즈', coffee: '커피' };
 export class UI {
   constructor(app) {
     this.app = app; this.boostUntil = 0; const h = $('#hud');
@@ -29,6 +30,7 @@ export class UI {
     const keys = new Set(); addEventListener('keydown', e => { keys.add(e.code); kb(); }); addEventListener('keyup', e => { keys.delete(e.code); kb(); });
     const kb = () => { if (id !== null) return; let x = 0, y = 0; if (keys.has('KeyA') || keys.has('ArrowLeft')) x--; if (keys.has('KeyD') || keys.has('ArrowRight')) x++; if (keys.has('KeyW') || keys.has('ArrowUp')) y--; if (keys.has('KeyS') || keys.has('ArrowDown')) y++; const l = Math.hypot(x, y) || 1; IN.x = x / l; IN.y = y / l; };
   }
+  bubble() { const d = document.createElement('div'); d.className = 'bub'; this.tags.append(d); return d; }
   tag() { const d = document.createElement('div'); d.className = 'tag lock'; this.tags.append(d); return d; }
   float(t, pos, cls) { const d = document.createElement('div'); d.className = 'float ' + cls; d.textContent = t; d._p = pos.clone(); d._t = 0; this.floats.append(d); }
   boost() { return Date.now() < this.boostUntil; }
@@ -37,6 +39,8 @@ export class UI {
     $('#cn').textContent = fmt(S.coins); const cam = g.cam, W = innerWidth, H = innerHeight, v = new THREE.Vector3();
     for (const p of g.padList()) { v.set(p.s.x, 30, p.s.z).project(cam); p.tag.style.transform = `translate(${(v.x + 1) / 2 * W}px,${(1 - v.y) / 2 * H}px) translate(-50%,-50%)`; p.tag.classList.toggle('can', S.coins > 0); }
     for (const d of [...this.floats.children]) { d._t += 1 / 60; d._p.y += 1.6; v.copy(d._p).project(cam); d.style.transform = `translate(${(v.x + 1) / 2 * W}px,${(1 - v.y) / 2 * H}px) translate(-50%,-50%)`; d.style.opacity = Math.max(0, 1 - d._t / 1.1); if (d._t > 1.1) d.remove(); }
+    for (const c of g.cust) { if (!c.tag) continue; const o = c.order[0], left = o.n - o.got, show = (c.state === 'queue' || c.state === 'walkQ') && c.qi < 4; c.tag.style.display = show ? '' : 'none'; if (!show) continue;
+      v.set(c.pos.x, 215, c.pos.z).project(cam); c.tag.style.transform = `translate(${(v.x + 1) / 2 * W}px,${(1 - v.y) / 2 * H}px) translate(-50%,-100%)`; const html = `<b>${ICON[o.k]}</b><span>${SHORT[o.k]}</span><em>×${left}</em>`; if (c.tag._h !== html) { c.tag.innerHTML = html; c.tag._h = html; } c.tag.classList.toggle('front', c.qi === 0); }
     const b = this.boostUntil - Date.now(); $('#adT').textContent = b > 0 ? `${Math.floor(b / 60000)}:${String(Math.floor(b / 1000) % 60).padStart(2, '0')}` : '광고 보고'; $('#bAd').classList.toggle('on', b > 0);
   }
   progress() {

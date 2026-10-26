@@ -1,9 +1,9 @@
 // 캐릭터 불러오기: assets/chars/<id>.glb(뼈대·애니메이션) + <id>.json(클립 길이·루트 이동) + tex/<id>/*.jpg
 //   load(id) 한 번 → spawn(id) 로 몇 개든 복제 (뼈대 복제 · 재질은 개체마다 따로: 맞을 때 번쩍임)
 import * as THREE from 'three';
-import { GLTFLoader } from '../lib/GLTFLoader.js?v=0.57.4';
-import { clone } from '../lib/SkeletonUtils.js?v=0.57.4';
-import { MeshoptDecoder } from '../lib/meshopt_decoder.module.js?v=0.57.4';
+import { GLTFLoader } from '../lib/GLTFLoader.js?v=0.57.5';
+import { clone } from '../lib/SkeletonUtils.js?v=0.57.5';
+import { MeshoptDecoder } from '../lib/meshopt_decoder.module.js?v=0.57.5';
 
 const gl = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder), tl = new THREE.TextureLoader(), cache = {}, ready = {};
 export function load(id, alt) {

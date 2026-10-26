@@ -1,14 +1,14 @@
 // 화면: 타이틀 · 로비 · 모험(스테이지) · 영웅(장비) · 스킬 · 상점 · 무한의 탑 · 황금 동굴 · 미션 · 출석 · 설정 · 결과 · 일시정지 · 부활
-import { E, setQuality } from './engine.js?v=0.57.4';
-import { icons } from './icons.js?v=0.57.4';
-import { buildLobby, leaveLobby, setView, heroPose, L } from './lobby.js?v=0.57.4';
-import { Battle } from './battle.js?v=0.57.4';
-import { sfx, music, setAudio } from './audio.js?v=0.57.4';
-import { STAGES, CHAPTERS, SKILLS, SKILL_SLOTS, SLOTS, RARITY, STAT_NAME, STAMINA, MAX_ENH, MAX_SKILL, enhCost, enhRate, skillCost, expNeed, towerFloor, DAILY, dailyStage, MOBS, HERO } from './data.js?v=0.57.4';
+import { E, setQuality } from './engine.js?v=0.57.5';
+import { icons } from './icons.js?v=0.57.5';
+import { buildLobby, leaveLobby, setView, heroPose, L } from './lobby.js?v=0.57.5';
+import { Battle } from './battle.js?v=0.57.5';
+import { sfx, music, setAudio } from './audio.js?v=0.57.5';
+import { STAGES, CHAPTERS, SKILLS, SKILL_SLOTS, SLOTS, RARITY, STAT_NAME, STAMINA, MAX_ENH, MAX_SKILL, enhCost, enhRate, skillCost, expNeed, towerFloor, DAILY, dailyStage, MOBS, HERO } from './data.js?v=0.57.5';
 import { G, loadSave, save, tick, staminaNext, useStamina, heroStats, power, itemStat, itemName, itemScore, rollItem, addItem, equip, sell, salvage, enhance, skillUp, stageOpen, totalStars, addExp,
-  MISSIONS, mission, missionReady, claimMission, ATTEND, attendReady, claimAttend, resetSave } from './state.js?v=0.57.4';
-import { STORY } from './story.js?v=0.57.4';
-import { inOAD, exitToOAD, pushBack, installBack } from './oad.js?v=0.57.4';
+  MISSIONS, mission, missionReady, claimMission, ATTEND, attendReady, claimAttend, resetSave } from './state.js?v=0.57.5';
+import { STORY } from './story.js?v=0.57.5';
+import { inOAD, exitToOAD, pushBack, installBack } from './oad.js?v=0.57.5';
 
 const ui = document.getElementById('ui'), md = document.getElementById('modal'), bootEl = document.getElementById('boot'), bar = document.getElementById('bootbar');
 const fmt = n => Math.round(n).toLocaleString('en-US'), K = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'K' : fmt(n);

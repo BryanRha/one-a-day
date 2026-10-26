@@ -1,12 +1,14 @@
 // 화면 정보와 창: 돈 · 지점 진행 · 쿠폰 · 광고 ×2 · 미션 · 지점 지도 · 설정 · 열기 칸 글자 · +돈 글자 · 조이스틱
 import * as THREE from 'three';
-import { BRAND, GAME, BRANCHES, COUPON, MENU, UPGRADES, UP_MAX, upCost, BRANCH_INFO, FINISHED_RATE, STAFF, STAFF_UP } from './data.js?v=0.59.0';
-import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.59.0';
-import { sfx, setAudio } from './audio.js?v=0.59.0';
-import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.59.0';
+import { BRAND, GAME, BRANCHES, COUPON, MENU, UPGRADES, UP_MAX, upCost, BRANCH_INFO, FINISHED_RATE, STAFF, STAFF_UP } from './data.js?v=0.59.1';
+import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.59.1';
+import { sfx, setAudio } from './audio.js?v=0.59.1';
+import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.59.1';
 
 const $ = s => document.querySelector(s), fmt = n => Math.round(n).toLocaleString('en-US');
 export const IN = { x: 0, y: 0 };
+const SLOT = 'marumi_slot_';
+const slotInfo = n => { try { const v = JSON.parse(localStorage.getItem(SLOT + n) || 'null'); if (!v) return ''; const d = JSON.parse(v.d), t = new Date(v.at); return `${['1호점', '2호점', '3호점', '4호점'][d.bi || 0]} · 돈 ${fmt(d.coins || 0)} · ${t.getMonth() + 1}/${t.getDate()} ${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}`; } catch { return ''; } };
 const ICON = { bagel: '🥯', cream: '🥯', coffee: '🥣' }, SHORT = new Proxy({}, { get: (_, k) => MENU[k]?.short || '' });
 export class UI {
   constructor(app) {
@@ -50,7 +52,8 @@ export class UI {
     $('#cp').classList.toggle('ready', couponReady()); $('#msDot').style.display = missionReady() ? 'block' : 'none'; $('#upDot').style.display = this.cheapUp() ? 'block' : 'none'; $('#mapDot') && ($('#mapDot').style.display = this.idleTotal() > 0 ? 'block' : 'none');
   }
   toast(t) { let el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(this._tt); this._tt = setTimeout(() => el.classList.remove('on'), 1800); }
-  modal(html, onClose) { const m = $('#modal'); m.innerHTML = `<div class="mback"><div class="modal">${html}</div></div>`; m.firstChild.onclick = e => { if (e.target === m.firstChild) this.close(); }; this._oc = onClose; this._ub = pushBack(() => { this.close(); return true; }); sfx('tap', { vol: 0.4 }); return m; }
+  modal(html, onClose) { const m = $('#modal'), cur = m.querySelector('.modal'); if (cur && this._ub) { cur.innerHTML = html; this._oc = onClose; return m; }   /* 이미 열린 창은 내용만 바꿈 (깜빡임 없음) */
+    m.innerHTML = `<div class="mback"><div class="modal">${html}</div></div>`; m.firstChild.onclick = e => { if (e.target === m.firstChild) this.close(); }; this._oc = onClose; this._ub = pushBack(() => { this.close(); return true; }); sfx('tap', { vol: 0.4 }); return m; }
   close() { $('#modal').innerHTML = ''; this._ub && this._ub(); this._ub = null; const f = this._oc; this._oc = null; f && f(); }
   // ── 쿠폰
   coupon() {
@@ -104,6 +107,12 @@ export class UI {
   nextBranch(i) { S.maxBi = Math.max(S.maxBi || 0, i); save(true); sfx('levelup'); this.modal(`<h3>🎉 ${BRANCHES[i - 1].name} 완성!</h3><p>모든 설비를 열었어요.<br><b>${BRANCHES[i].name}</b>이(가) 문을 열어요.</p><button class="btn" id="mOk">새 지점으로</button>`); $('#mOk').onclick = () => { this.close(); this.app.goBranch(i); }; }
   offline(v) { this.modal(`<h3>☕ 쉬는 동안</h3><p>직원들이 <b>${fmt(v)}</b>을 벌어 놨어요!</p><div class="btns"><button class="btn ghost" id="o1">받기</button><button class="btn" id="o2">📺 2배 받기</button></div>`);
     $('#o1').onclick = () => { S.coins += v; save(); this.close(); sfx('coin'); }; $('#o2').onclick = () => { this.close(); this.ad('offline', () => { S.coins += v * 2; save(); this.toast(`+${fmt(v * 2)}`); }); }; }
-  settings() { const m = this.modal(`<h3>⚙ 설정</h3><div class="tg"><button data-k="sfx" class="${S.set.sfx ? 'on' : ''}">효과음</button><button data-k="bgm" class="${S.set.bgm ? 'on' : ''}">배경음</button></div><p class="sm">${GAME.title} · ${BRAND.name} 공식 게임<br>“${BRAND.slogan}”<br>메뉴·매장·사진 ${BRAND.name} 제공</p><a class="btn ghost" href="${BRAND.insta}" target="_blank" rel="noopener">📷 인스타그램 보기</a><button class="btn ghost" id="mOk">닫기</button>`);
-    m.querySelectorAll('.tg button').forEach(b => b.onclick = () => { S.set[b.dataset.k] = !S.set[b.dataset.k]; setAudio(S.set); save(); b.classList.toggle('on'); }); $('#mOk').onclick = () => this.close(); }
+  settings() { const m = this.modal(`<h3>⚙ 설정</h3><div class="tg"><button data-k="sfx" class="${S.set.sfx ? 'on' : ''}">효과음</button><button data-k="bgm" class="${S.set.bgm ? 'on' : ''}">배경음</button></div><p class="sm">${GAME.title} · ${BRAND.name} 공식 게임<br>“${BRAND.slogan}”<br>메뉴·매장·사진 ${BRAND.name} 제공</p><a class="btn ghost" href="${BRAND.insta}" target="_blank" rel="noopener">📷 인스타그램 보기</a>
+      <div class="dev"><b>🧪 테스트 도구 (출시 전에만)</b>${[1, 2, 3].map(n => { const v = slotInfo(n); return `<div class="slot"><span>슬롯 ${n}<small>${v || '비어 있음'}</small></span><button class="btn sm" data-sv="${n}">저장</button><button class="btn sm ${v ? '' : 'off'}" data-ld="${n}">불러오기</button></div>`; }).join('')}
+      <div class="btns"><button class="btn sm" id="dvMoney">돈 +10,000</button><button class="btn sm danger" id="dvReset">처음부터</button></div></div><button class="btn ghost" id="mOk">닫기</button>`);
+    m.querySelectorAll('.tg button').forEach(b => b.onclick = () => { S.set[b.dataset.k] = !S.set[b.dataset.k]; setAudio(S.set); save(); b.classList.toggle('on'); }); $('#mOk').onclick = () => this.close();
+    m.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { save(true); try { localStorage.setItem(SLOT + b.dataset.sv, JSON.stringify({ at: Date.now(), d: localStorage.getItem('marumi_v1') })); } catch { /* */ } this.toast(`슬롯 ${b.dataset.sv}에 저장했어요`); this.settings(); });
+    m.querySelectorAll('[data-ld]').forEach(b => b.onclick = () => { const v = JSON.parse(localStorage.getItem(SLOT + b.dataset.ld) || 'null'); if (!v) return; S.last = Date.now(); localStorage.setItem('marumi_v1', v.d); window.__noSave = true; location.reload(); });
+    $('#dvMoney').onclick = () => { S.coins += 10000 * BRANCHES[S.bi].mult; save(); this.toast('돈 +' + fmt(10000 * BRANCHES[S.bi].mult)); };
+    $('#dvReset').onclick = () => { if (!confirm('지금 진행이 모두 지워져요. 처음부터 할까요? (슬롯은 그대로)')) return; localStorage.removeItem('marumi_v1'); window.__noSave = true; location.reload(); }; }
 }

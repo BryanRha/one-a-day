@@ -1,10 +1,10 @@
 // 가게 놀이: 끌어서 이동 · 굽기/바르기/내리기 · 진열 · 손님 줄 · 계산 · 돈 줍기 · 열기 칸 · 직원 · 테이블 치우기 · 드라이브스루
 import * as THREE from 'three';
-import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND, BRANCH_MENU, setBranchMenu } from './data.js?v=0.59.0';
+import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND, BRANCH_MENU, setBranchMenu } from './data.js?v=0.59.1';
 export const L = id => (S.branch[S.bi]?.lv?.[id]) || 0;   /* 이 지점 업그레이드 단계 */
-import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H, LOOK } from './models.js?v=0.59.0';
-import { S, save, addSold, mission } from './state.js?v=0.59.0';
-import { sfx } from './audio.js?v=0.59.0';
+import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H, LOOK } from './models.js?v=0.59.1';
+import { S, save, addSold, mission } from './state.js?v=0.59.1';
+import { sfx } from './audio.js?v=0.59.1';
 
 const V = THREE.Vector3, R = 85, rnd = (a, b) => a + Math.random() * (b - a);
 const RIGHT = new V(1, 0, -1).normalize(), DOWN = new V(1, 0, 1).normalize();
@@ -18,6 +18,7 @@ export class Game {
     sc.add(new THREE.HemisphereLight(0xFFF6EA, 0xC9A882, 1.6)); const sun = new THREE.DirectionalLight(0xFFF1DC, 2.2); sun.position.set(-500, 1200, 700); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -1100, right: 1100, top: 1100, bottom: -1100, near: 10, far: 3200 }); sun.shadow.radius = 4; sun.shadow.bias = -0.0005; sc.add(sun, sun.target); this.sun = sun;
     shopShell(sc, B.W, B.D, B.theme);
+    for (const p of this.pads || []) p.tag.remove(); for (const c of this.cust || []) c.tag && c.tag.remove(); this.ui && this.ui.floats && (this.ui.floats.innerHTML = '');   /* 지점 바꿀 때 화면 글자 정리 */
     this.nexting = false; this.st = {}; this.zones = []; this.pads = []; this.cust = []; this.cars = []; this.staff = []; this.piles = [];
     this.unl = new Set(S.branch[bi]?.unl || []); B.slots.forEach(s => { if (s.free) this.unl.add(s.id); });
     for (const s of B.slots) if (this.unl.has(s.id)) this.place(s, false);
@@ -146,7 +147,7 @@ export class Game {
     const dv = this.st.drive; if (dv && w.kind === 'bagel' && this.in(w, dv.Z.drop) && dv.stack.length < 12) { const i = dv.stack.length; this.give(w, dv.stack, [dv.x + 50 + (i % 2) * 30, 109 + Math.floor(i / 2) * 15, dv.z - 30 + Math.floor(i / 6) * 40]); sfx('drop', { vol: 0.2 }); return step(); }
     // 쓰레기: 테이블에서 줍기 → 통에 버리기
     if (!full && (!w.kind || w.kind === 'trash')) for (const t of Object.values(this.st)) if (t.type === 'table' && t.trash.length && this.in(w, t.Z.trash)) { this.take(t.trash, w); sfx('pick', { vol: 0.2 }); return step(); }
-    const bin = this.st.bin; if (w.kind === 'trash' && this.in(w, bin.Z.drop)) { const it = w.stack.pop(); w.P.hand.remove(it.m); if (!w.stack.length) w.kind = null; sfx('drop', { vol: 0.2 }); mission('clean'); return step(); }
+    const bin = this.st.bin; if (w.kind && this.in(w, bin.Z.drop) && (w.kind === 'trash' || w.isPlayer)) {   /* 쓰레기통: 쓰레기 버리기 · 주인공은 손에 든 것 비우기 */ const it = w.stack.pop(); w.P.hand.remove(it.m); if (!w.stack.length) w.kind = null; sfx('drop', { vol: 0.2 }); if (it.kind === 'trash') mission('clean'); return step(); }
     if (!w.isPlayer) return;
     // 돈 줍기
     for (const p of this.piles) if (p.v > 0 && this.near(w, p.x, p.z + 20, 110)) { const v = Math.round(p.v); S.coins += v; S.earned += v; mission('coins', v); p.v = 0; const ms = p.meshes; p.meshes = [];

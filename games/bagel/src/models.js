@@ -1,6 +1,6 @@
 // 모델을 코드로 직접 만듦: 낮은 다각형 + 만화풍 3단 음영 (사람 · 베이글 · 커피 · 설비 · 가게)
 import * as THREE from 'three';
-import { BRAND } from './data.js?v=0.59.0';
+import { BRAND } from './data.js?v=0.59.1';
 
 const gm = (() => { const d = new Uint8Array([95, 190, 255]); const t = new THREE.DataTexture(d, 3, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; })();
 const mats = {};
@@ -61,12 +61,12 @@ export function shopShell(sc, W, D, theme) {
   /* 간판: 공식 로고 (assets/brand/logo.png, 흰 글씨) 를 브랜드 주황 판에 */
   const st = document.createElement('canvas'); st.width = 512; st.height = 160; const sx = st.getContext('2d'); sx.fillStyle = BRAND.accent; sx.beginPath(); sx.roundRect(4, 4, 504, 152, 40); sx.fill();
   const tx = new THREE.CanvasTexture(st); tx.colorSpace = THREE.SRGBColorSpace; const lg = new Image(); lg.onload = () => { sx.drawImage(lg, 46, 22, 420, 117); tx.needsUpdate = true; }; lg.src = 'assets/brand/logo.png';
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(380, 119), new THREE.MeshBasicMaterial({ map: tx, transparent: true })); sign.position.set(-W / 2 + 560, 175, -D / 2 + 17); sc.add(sign);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(380, 119), new THREE.MeshBasicMaterial({ map: tx, transparent: true })); sign.position.set(W / 2 - 600, 190, -D / 2 + 17);   /* 토핑 바 위 */ sc.add(sign);
   /* 벽 사진 액자: 공식 홈페이지 제조 과정 사진 */
   const tl = new THREE.TextureLoader(); const frame = (img, x, y, z, ry, w = 110, h = 130) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; sc.add(g);
     mesh(new THREE.BoxGeometry(w + 14, h + 14, 4), M(0x5A3A22), 0, 0, 0, g); const t = tl.load(`assets/brand/${img}.jpg`); t.colorSpace = THREE.SRGBColorSpace; const pic = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t })); pic.position.z = 2.5; g.add(pic); };
   frame('dough', -W / 2 + 17, 150, -D / 2 + 520, Math.PI / 2); frame('oven', -W / 2 + 17, 150, -D / 2 + 900, Math.PI / 2); frame('sandwich', -W / 2 + 17, 150, -D / 2 + 1260, Math.PI / 2);
-  frame('boil2', W / 2 - 330, 175, -D / 2 + 17, 0, 100, 100);
+  frame('boil2', -W / 2 + 360, 200, -D / 2 + 17, 0, 90, 90);   /* 데치기 솥 위 */
 }
 // ── 설비 (위치는 group 기준 · 받는 곳/내놓는 곳 좌표는 game.js 에서)
 export const STATION = {

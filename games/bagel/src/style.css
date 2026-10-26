@@ -57,3 +57,5 @@ button { font-family: inherit; font-weight: 900; border: 0; cursor: pointer; col
 #boot { background: #2A1A10; }
 .tabs { display: flex; gap: 6px; margin-bottom: 8px; } .tabs button { flex: 1; height: 38px; border-radius: 12px; background: #fff; color: #B09070; box-shadow: 0 3px 0 var(--sh); font-size: 13px; } .tabs button.on { background: #FFE2C8; color: var(--br); }
 .upr > i.sw { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; }
+.dev { margin-top: 14px; padding: 10px; border: 2px dashed #E2C9A6; border-radius: 14px; text-align: left; } .dev > b { font-size: 12px; color: #9A7A5C; } .dev .slot { display: flex; align-items: center; gap: 6px; margin-top: 6px; } .dev .slot span { flex: 1; font-size: 12px; } .dev .slot small { display: block; font-size: 10px; color: #B09070; }
+.dev .btn.sm { min-width: 60px; height: 34px; font-size: 12px; } .btn.danger { background: linear-gradient(#FF8A7A, #E2483A); box-shadow: 0 4px 0 #A02A1A; } .modal { max-height: 88vh; overflow-y: auto; }

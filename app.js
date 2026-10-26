@@ -72,49 +72,93 @@ function renderToday() {
 }
 // ── 오늘의 운세 ─────────────────────────────────────
 const CITIES = [['서울', 126.98], ['인천', 126.7], ['경기', 127.0], ['강원', 128.2], ['대전·충청', 127.4], ['대구·경북', 128.6], ['부산·울산·경남', 129.1], ['광주·전라', 126.9], ['제주', 126.5], ['해외·모름', 0]];
+const CH = ['heukryeon', 'geumdan', 'danjoe', 'hoegwi', 'tusim'];
+const won = n => n.toLocaleString('ko-KR') + '원';
 function fortuneCardStatic() {
   let me = null; try { me = JSON.parse(localStorage.getItem('oad_fortune_me') || 'null'); } catch { /* */ }
-  if (!me) return `<div class="fcard empty" data-fortune-edit><div class="fl"><b>🔮 오늘의 운세</b><span>생년월일·태어난 시로 보는 내 사주 운세 · 매일 무료</span></div><span class="fgo">30초 입력 ›</span></div>`;
-  ft().then(m => { const el = $('#fortuneCard'); if (!el) return; const f = m.fortune(me, R.now()); el.innerHTML = fortuneCard(me, f); });
-  return `<div class="fcard"><div class="fl"><b>🔮 ${me.name}님의 오늘</b><span>운세를 읽는 중…</span></div></div>`;
+  if (!me) return `<div class="sdcard" data-fortune-edit><img src="fortune/char/heukryeon.webp" alt=""><div class="sdin"><div class="sdtag">오늘의 신점 · 매일 무료</div><h2>듣기 좋은 말은<br><em>다른 데서</em> 들어라</h2><p>생년월일과 태어난 시로 오늘 너에게 일어날 일을 돌려 말하지 않고 읽어 준다.</p><span class="sdgo">내 사주 넣고 오늘 운세 보기 →</span></div><span class="seal">獨說</span></div>`;
+  ft().then(m => { const el = $('#fortuneCard'); if (!el) return; el.innerHTML = fortuneCard(me, m.fortune(me, R.now()), m); });
+  return `<div class="sdcard"><img src="fortune/char/heukryeon.webp" alt=""><div class="sdin"><div class="sdtag">오늘의 신점</div><h2>${me.name}, 잠깐 앉아 봐</h2><p>읽는 중…</p></div></div>`;
 }
-const ring = v => `<div class="fring" style="--p:${v}"><b>${v}</b><small>점</small></div>`;
-function fortuneCard(me, f) {
-  return `<div class="fcard" data-fortune><div class="fl"><b>🔮 ${me.name}님의 오늘 · ${f.today.ko}일</b><span>${f.line}</span><div class="fchips"><i style="background:${f.color.hex}"></i>${f.color.name} · ${f.numbers.join(', ')} · ${f.dir}</div></div>${ring(f.total)}</div>`;
+function fortuneCard(me, f, m) {
+  const c = m.CHARS[f.ch];
+  return `<div class="sdcard" data-fortune><img src="fortune/char/${f.ch}.webp" alt=""><div class="sdin"><div class="sdtag">${c.name}의 오늘의 신점 · ${f.today.ko}일</div>
+    <div class="sdscore"><b>${f.total}</b><small>점</small></div><h2>“${f.say}”</h2><p class="sdwarn">⚠ ${f.warn}</p><span class="sdgo">${me.name}의 오늘 전부 보기 →</span></div><span class="seal">${c.seal}</span></div>`;
 }
-const bar = (k, v) => `<div class="fbar"><span>${k}</span><div><s style="width:${v}%"></s></div><b>${v}</b></div>`;
+let sdOpen = false;
+function sdClose() { const el = $('#sd'); if (el) el.remove(); sdOpen = false; document.body.style.overflow = ''; }
+addEventListener('popstate', () => { if (sdOpen) sdClose(); });
 async function fortuneDetail() {
-  const m = await ft(), me = m.loadMe(); if (!me) return fortuneForm(); const f = m.fortune(me, R.now()), S = f.chart;
-  const pil = (p, n) => p ? `<div class="pil"><small>${n}</small><b class="e-${p.stemElement}">${p.stem}</b><b class="e-${p.branchElement}">${p.branch}</b><em>${p.ko}</em></div>` : `<div class="pil none"><small>${n}</small><b>?</b><b>?</b><em>시간 모름</em></div>`;
-  const EL = ['wood', 'fire', 'earth', 'metal', 'water'], EN = { wood: '목', fire: '화', earth: '토', metal: '금', water: '수' };
+  const m = await ft(), me = m.loadMe(); if (!me) return fortuneForm(); const f = m.fortune(me, R.now()), S = f.chart, c = m.CHARS[f.ch];
+  const pil = (p, n) => p ? `<div class="pil"><small>${n}주</small><b class="e-${p.stemElement}">${p.stem}</b><b class="e-${p.branchElement}">${p.branch}</b><em>${p.ko}</em></div>` : `<div class="pil none"><small>${n}주</small><b>?</b><b>?</b><em>시간 모름</em></div>`;
+  const EL = ['wood', 'fire', 'earth', 'metal', 'water'], EN = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' };
   const lg = R.ORDER[f.seed % R.ORDER.length], lucky = G(lg);
-  openSheet(`<div class="fortune"><h2>🔮 ${me.name}님의 오늘</h2><div class="fsub">${fmtDate(R.now())} · 오늘의 일진 <b>${f.today.ko}</b> · 오늘의 키워드 <b>${f.key}</b></div>
-    <div class="ftop">${ring(f.total)}<p>${f.line}</p></div>
-    ${Object.entries(f.scores).map(([k, v]) => bar(k, v)).join('')}
-    <div class="fbox"><b>💰 금전</b><p>${f.money}</p><b>💗 연애</b><p>${f.love}</p><b>📚 일·공부</b><p>${f.work}</p>${f.notes.length ? `<b>🧭 오늘의 기운</b><p>${f.notes.join(' ')}</p>` : ''}</div>
-    <div class="fluck"><div><small>행운의 색</small><b><i style="background:${f.color.hex}"></i>${f.color.name}</b></div><div><small>행운의 숫자</small><b>${f.numbers.join(' · ')}</b></div><div><small>행운의 방향</small><b>${f.dir}</b></div></div>
-    <div class="item" data-play="${lg}" style="margin-top:10px"><img src="${lucky.icon}" alt=""><div><div class="t">🍀 오늘의 행운 게임</div><div class="s">${lucky.title} · 눌러서 플레이</div></div></div>
-    <h3 style="margin:18px 0 8px">내 사주 여덟 글자</h3><div class="pils">${pil(S.hour, '시')}${pil(S.day, '일')}${pil(S.month, '월')}${pil(S.year, '년')}</div>
-    <div class="fel">${EL.map(e => `<div><b class="e-${e}">${EN[e]}</b><s style="height:${S.elementCount[e] * 14 + 4}px" class="b-${e}"></s><small>${S.elementCount[e]}</small></div>`).join('')}</div>
-    <h3 style="margin:18px 0 8px">더 깊은 풀이 <span class="soon">곧 열려요</span></h3>
-    <div class="plist">${[['💘', '연애운 상세', '이번 달 인연이 들어오는 날 · 고백 타이밍'], ['💑', '궁합', '상대 생년월일로 보는 우리 사이'], ['🕵️', '바람기·외도 신호', '관계에서 조심할 시기와 패턴'], ['📅', '올해·이번 달 흐름', '월별 운의 높낮이']].map(([i, t, d]) => `<div class="pitem"><i>${i}</i><div><b>${t}</b><small>${d}</small></div><span>🔒</span></div>`).join('')}</div>
-    <p class="fnote">명리학(사주팔자) 규칙으로 계산한 전통 풀이예요. 재미로 참고해 주세요. 입력한 정보는 이 기기에만 저장돼요.</p>
-    <div class="stack"><button class="btn ghost small" data-fortune-edit>내 정보 고치기</button><button class="btn small" data-close>닫기</button></div></div>`);
+  const bar = (k, v) => `<div class="sbar"><span>${k}</span><div><s style="width:${v}%"></s></div><b>${v}</b></div>`;
+  const paid = m.PAID.map(p => `<div class="sdp" data-paid="${p.id}"><img src="fortune/char/${p.ch}.webp" alt=""><div class="sdpi"><small>${m.CHARS[p.ch].name}</small><b>${p.title}</b><p>“${p.hook}”</p><ul>${p.tease.map(t => `<li>${t}</li>`).join('')}</ul><em>${p.id === 'cheating' ? `무료 미리보기 → 전체 ${won(p.price)}` : `${won(p.price)} · 곧 열려요`}</em></div><span class="seal sm">${m.CHARS[p.ch].seal}</span></div>`).join('');
+  const el = document.createElement('div'); el.id = 'sd'; el.innerHTML = `<div class="sdpage">
+    <button class="sdx" data-sd-close aria-label="닫기">✕</button>
+    <div class="sdhero"><img src="fortune/char/${f.ch}.webp" alt=""><div class="sdheroin"><div class="sdtag">${c.name} · ${fmtDate(R.now())} · ${f.today.ko}일</div><h1>${me.name},<br>오늘은 <em>${f.key}</em>의 날이다</h1><div class="sdscore big"><b>${f.total}</b><small>/100</small></div></div><span class="seal lg">${c.seal}</span></div>
+    <section><h3>오늘의 한마디</h3><blockquote>“${f.say}”</blockquote><p class="sdwarn">⚠ 오늘 조심할 것 — ${f.warn}</p></section>
+    <section><h3>분야별 운</h3>${Object.entries(f.scores).map(([k, v]) => bar(k, v)).join('')}</section>
+    <section class="sdlove"><h3>💔 연애 독설</h3><p class="big">${f.dokLove}</p><p>${f.love}</p></section>
+    <section><h3>돈 · 일</h3><p><b>돈</b> ${f.money}</p><p><b>일</b> ${f.work}</p>${f.notes.length ? `<p class="sdnote">${f.notes.join(' ')}</p>` : ''}</section>
+    <section><h3>행운</h3><div class="sluck"><div><small>색</small><b><i style="background:${f.color.hex}"></i>${f.color.name}</b></div><div><small>숫자</small><b>${f.numbers.join(' · ')}</b></div><div><small>방향</small><b>${f.dir}</b></div></div>
+      <div class="sdgame" data-play="${lg}"><img src="${lucky.icon}" alt=""><div><small>오늘의 행운 게임</small><b>${lucky.title}</b></div><span>플레이 →</span></div></section>
+    <section><h3>${me.name}의 사주 여덟 글자</h3><div class="pils">${pil(S.hour, '시')}${pil(S.day, '일')}${pil(S.month, '월')}${pil(S.year, '년')}</div>
+      <div class="fel">${EL.map(e => `<div><b class="e-${e}">${EN[e]}</b><s style="height:${S.elementCount[e] * 14 + 4}px" class="b-${e}"></s><small>${S.elementCount[e]}</small></div>`).join('')}</div></section>
+    <section><h3>여기서부터는 <em>진짜</em>다</h3><p class="sdsub">무료 풀이로는 안 보여 준다. 듣고 싶으면 각오하고 열어라.</p>${paid}</section>
+    <p class="sdfoot">명리학(사주팔자) 규칙으로 계산한 전통 풀이이며 재미로 참고해 주세요. 특정인을 단정하지 않아요. 입력 정보는 이 기기에만 저장돼요.</p>
+    <div class="sdbtns"><button class="sdbtn ghost" data-fortune-edit>내 정보 고치기</button><button class="sdbtn" data-sd-close>닫기</button></div></div>`;
+  document.body.append(el); document.body.style.overflow = 'hidden'; if (!sdOpen) { sdOpen = true; history.pushState({ sd: 1 }, ''); }
+}
+function birthFields(v, who) {
+  const opt = (a, b, x) => Array.from({ length: b - a + 1 }, (_, i) => a + i).map(n => `<option ${n === x ? 'selected' : ''}>${n}</option>`).join('');
+  return `<label>${who} 이름<input name="name" maxlength="10" value="${v.name || ''}" placeholder="이름 또는 별명" required></label>
+    <div class="seg"><label><input type="radio" name="cal" value="solar" ${v.cal !== 'lunar' ? 'checked' : ''}>양력</label><label><input type="radio" name="cal" value="lunar" ${v.cal === 'lunar' ? 'checked' : ''}>음력</label><label class="lp"><input type="checkbox" name="leap" ${v.leap ? 'checked' : ''}>윤달</label></div>
+    <div class="row3"><label>년<select name="y">${opt(1930, R.now().getFullYear(), v.y || 1993)}</select></label><label>월<select name="m">${opt(1, 12, v.m || 1)}</select></label><label>일<select name="d">${opt(1, 31, v.d || 1)}</select></label></div>
+    <div class="row3"><label>태어난 시<select name="h"><option value="">모름</option>${opt(0, 23, v.h)}</select></label><label>분<select name="mi">${opt(0, 59, v.mi || 0)}</select></label><label>태어난 곳<select name="lon">${CITIES.map(([n, l]) => `<option value="${l}" ${l === (v.lon ?? 126.98) ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
+    <div class="seg"><label><input type="radio" name="sex" value="f" ${v.sex === 'f' ? 'checked' : ''}>여성</label><label><input type="radio" name="sex" value="m" ${v.sex !== 'f' ? 'checked' : ''}>남성</label></div>`;
+}
+const readBirth = fd => { const n = k => fd.get(k) === '' || fd.get(k) == null ? null : Number(fd.get(k)); return { name: String(fd.get('name')).trim().slice(0, 10) || '그 사람', y: n('y'), m: n('m'), d: n('d'), h: n('h'), mi: n('h') == null ? 0 : n('mi'), cal: fd.get('cal'), leap: !!fd.get('leap'), lon: n('lon') || null, sex: fd.get('sex') }; };
+async function partnerForm() {
+  const m = await ft(); const p = m.loadPartner() || { sex: 'm' };
+  sdClose(); openSheet(`<form class="fform sdform" id="pForm"><h2>그 사람의 사주를 내놔라</h2><p class="fsub">애인·배우자·썸 상대의 생년월일. 시간까지 알면 더 정확하다. 이 기기에만 저장돼요.</p>${birthFields(p, '그 사람')}<div class="stack"><button class="sdbtn" type="submit">바람기 사주 무료 미리보기</button></div></form>`);
+  $('#sheet .panel').classList.add('sdpanel');
+  $('#pForm').onsubmit = async e => { e.preventDefault(); const v = readBirth(new FormData(e.target)); try { const me = m.loadMe(); await m.cheatingPreview(me, v); m.savePartner(v); } catch { toast('날짜를 다시 확인해 주세요'); return; } closeSheet(); cheatingPage(); };
+}
+async function cheatingPage() {
+  const m = await ft(), me = m.loadMe(), pt = m.loadPartner(); const rp = await m.cheatingPreview(me, pt), PR = m.PAID[0];
+  const lvlCol = ['#6EDC8A', '#F2C14E', '#FF8A3C', '#E02440'][rp.grade.level];
+  const sec = s => s.free ? `<section class="rsec"><small>${s.chapter}</small><h3>${s.title}</h3>${s.body.map(x => `<p>${x}</p>`).join('')}</section>`
+    : `<section class="rsec lock"><small>${s.chapter} · 🔒</small><h3>${s.title}</h3><p class="blur">${pt.name}의 사주 원국에서 이 부분은 가장 민감하게 드러난다. 특히 ██월과 ██월 사이에 흐름이 바뀌는데 그 이유는 일지와 ████이 부딪치기 때문이다. 이 시기에는 연락 패턴이 달라지고 ███한 핑계가 늘어난다.</p></section>`;
+  const el = document.createElement('div'); el.id = 'sd'; el.innerHTML = `<div class="sdpage">
+    <button class="sdx" data-sd-close aria-label="닫기">✕</button>
+    <div class="sdhero"><img src="fortune/char/heukryeon.webp" alt=""><div class="sdheroin"><div class="sdtag">흑련낭자의 바람기 사주 · 무료 미리보기</div><h1>${pt.name},<br><em>바람피울 사주</em>인가?</h1>
+      <div class="gauge"><div class="gv" style="--p:${rp.score};--c:${lvlCol}"><b>${rp.score}</b><small>바람기 지수</small></div><div class="gl" style="color:${lvlCol}">${rp.grade.label}</div></div></div><span class="seal lg">黑蓮</span></div>
+    <section><blockquote>“${rp.grade.summary}”</blockquote>${rp.factors.length ? `<div class="factors">${rp.factors.map(f => `<span>${f.label}</span>`).join('')}</div>` : ''}</section>
+    ${rp.sections.filter(s => s.free).map(sec).join('')}
+    <div class="paywall"><b>여기서부터 진짜다.</b><p>남은 ${rp.sections.filter(s => !s.free).length}개 풀이 — 지금 다른 사람이 있을 가능성 · 가장 위험한 시기 · 거짓말할 때 드러나는 신호 · 관계를 지키는 현실 전략</p>
+      <button class="sdbtn" data-buy="cheating">전체 풀이 열기 · ${won(PR.price)}</button><small>한 번 결제하면 이 두 사람 풀이는 계속 볼 수 있어요</small></div>
+    ${rp.sections.filter(s => !s.free).map(sec).join('')}
+    <div class="paywall"><button class="sdbtn" data-buy="cheating">🔓 ${won(PR.price)}에 전부 열기</button></div>
+    <p class="sdfoot">사주 원국의 경향을 풀이한 것으로 특정인의 실제 행동을 단정하지 않아요. 재미로 참고해 주세요. 두 사람 정보는 이 기기에만 저장돼요.</p>
+    <div class="sdbtns"><button class="sdbtn ghost" data-paid="cheating">그 사람 정보 고치기</button><button class="sdbtn" data-sd-close>닫기</button></div></div>`;
+  document.body.append(el); document.body.style.overflow = 'hidden'; if (!sdOpen) { sdOpen = true; history.pushState({ sd: 1 }, ''); }
 }
 function fortuneForm() {
   let me = null; try { me = JSON.parse(localStorage.getItem('oad_fortune_me') || 'null'); } catch { /* */ } me ||= { name: '', y: 1995, m: 1, d: 1, cal: 'solar', sex: 'f', h: null, mi: 0, lon: 126.98 };
   const opt = (a, b, v) => Array.from({ length: b - a + 1 }, (_, i) => a + i).map(n => `<option ${n === v ? 'selected' : ''}>${n}</option>`).join('');
-  openSheet(`<form class="fform" id="fForm"><h2>🔮 내 사주 정보</h2><p class="fsub">태어난 시까지 넣으면 더 정확해요. 정보는 이 기기에만 저장돼요.</p>
+  sdClose(); openSheet(`<form class="fform sdform" id="fForm"><h2>사주를 내놔라</h2><p class="fsub">태어난 시까지 넣어야 제대로 읽는다. 정보는 이 기기에만 저장돼요.</p>
     <label>이름<input name="name" maxlength="10" placeholder="이름 또는 별명" value="${me.name}" required></label>
     <div class="seg"><label><input type="radio" name="cal" value="solar" ${me.cal !== 'lunar' ? 'checked' : ''}>양력</label><label><input type="radio" name="cal" value="lunar" ${me.cal === 'lunar' ? 'checked' : ''}>음력</label><label class="lp"><input type="checkbox" name="leap" ${me.leap ? 'checked' : ''}>윤달</label></div>
     <div class="row3"><label>년<select name="y">${opt(1930, R.now().getFullYear(), me.y)}</select></label><label>월<select name="m">${opt(1, 12, me.m)}</select></label><label>일<select name="d">${opt(1, 31, me.d)}</select></label></div>
     <div class="row3"><label>태어난 시<select name="h"><option value="">모름</option>${opt(0, 23, me.h)}</select></label><label>분<select name="mi">${opt(0, 59, me.mi)}</select></label><label>태어난 곳<select name="lon">${CITIES.map(([n, l]) => `<option value="${l}" ${l === me.lon ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
     <div class="seg"><label><input type="radio" name="sex" value="f" ${me.sex !== 'm' ? 'checked' : ''}>여성</label><label><input type="radio" name="sex" value="m" ${me.sex === 'm' ? 'checked' : ''}>남성</label></div>
-    <div class="stack"><button class="btn" type="submit">오늘의 운세 보기</button>${localStorage.getItem('oad_fortune_me') ? '<button class="btn ghost small" type="button" data-fortune-del>내 정보 지우기</button>' : ''}</div></form>`);
+    <div class="stack"><button class="sdbtn" type="submit">오늘의 신점 보기</button>${localStorage.getItem('oad_fortune_me') ? '<button class="btn ghost small" type="button" data-fortune-del>내 정보 지우기</button>' : ''}</div></form>`);
   $('#fForm').onsubmit = async e => { e.preventDefault(); const fd = new FormData(e.target), n = k => fd.get(k) === '' || fd.get(k) == null ? null : Number(fd.get(k));
     const v = { name: String(fd.get('name')).trim().slice(0, 10) || '나', y: n('y'), m: n('m'), d: n('d'), h: n('h'), mi: n('h') == null ? 0 : n('mi'), cal: fd.get('cal'), leap: !!fd.get('leap'), lon: n('lon') || null, sex: fd.get('sex') };
     try { const m = await ft(); m.myChart(v); m.saveMe(v); } catch { toast('날짜를 다시 확인해 주세요'); return; } closeSheet(); go('today'); setTimeout(fortuneDetail, 200); };
-}
+  $('#sheet .panel').classList.add('sdpanel'); }
 
 // 홈 화면 추가 배너 (설치 전 · 오늘 닫지 않았을 때)
 function installBanner() {
@@ -188,7 +232,7 @@ function renderSettings() {
 
 // ── 시트(상세 · 광고 · 소개) ─────────────────────────
 const sheet = $('#sheet'), panel = $('#sheet .panel');
-function openSheet(html) { panel.innerHTML = `<div class="grab"></div>${html}`; sheet.hidden = false; }
+function openSheet(html) { panel.classList.remove('sdpanel'); panel.innerHTML = `<div class="grab"></div>${html}`; sheet.hidden = false; }
 function closeSheet() { sheet.hidden = true; }
 $('#sheet .dim').onclick = closeSheet;
 
@@ -288,13 +332,16 @@ addEventListener('message', e => {
 
 // ── 공통 클릭 처리 ─────────────────────────────────
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-fortune],[data-fortune-edit],[data-fortune-del],[data-play],[data-open],[data-ad],[data-close],[data-exit],[data-intro],[data-day],[data-reset],[data-tab-go],[data-install],[data-ext],[data-copy],[data-hide-install]');
+  const t = e.target.closest('[data-sd-close],[data-paid],[data-buy],[data-fortune],[data-fortune-edit],[data-fortune-del],[data-play],[data-open],[data-ad],[data-close],[data-exit],[data-intro],[data-day],[data-reset],[data-tab-go],[data-install],[data-ext],[data-copy],[data-hide-install]');
   if (!t) return;
   const d = t.dataset;
-  if ('fortune' in d) fortuneDetail();
+  if ('sdClose' in d) { if (sdOpen) history.back(); else sdClose(); }
+  else if (d.paid) d.paid === 'cheating' ? partnerForm() : toast('곧 열려요 · 지금은 바람기 사주만 미리보기 돼요');
+  else if ('buy' in d) toast('결제는 테스트 서버 연결 후 열려요');
+  else if ('fortune' in d) fortuneDetail();
   else if ('fortuneEdit' in d) fortuneForm();
   else if ('fortuneDel' in d) { localStorage.removeItem('oad_fortune_me'); closeSheet(); go('today'); toast('사주 정보를 지웠어요'); }
-  else if (d.play) play(d.play);
+  else if (d.play) { if (sdOpen) sdClose(); play(d.play); }
   else if (d.open) detail(d.open);
   else if (d.ad) watchAd(d.ad);
   else if ('close' in d) closeSheet();

@@ -1,6 +1,6 @@
 // 시험용 자동 플레이 (?bot=1): 굽기 → 진열 → 계산 → 돈 줍기 → 열기 칸 · 크림치즈 · 커피 · 쓰레기
-import { IN } from './ui.js?v=0.61.0';
-import { S } from './state.js?v=0.61.0';
+import { IN } from './ui.js?v=0.61.1';
+import { S } from './state.js?v=0.61.1';
 export function startBot(app) {
   let goal = null, wait = 0, log = [], lastP = null, stuck = 0, side = 0;
   const go = (x, z) => { const g = app.game, p = g.pl.pos, c = g.st.counter;
@@ -22,7 +22,7 @@ export function startBot(app) {
     else if (!pl.stack.length && mx && mx.stack.length >= 2 && ov.stack.length < 3 && (ov.feed || []).length < 4) t = [mx.Z.out.x, mx.Z.out.z];
     else if (pl.kind === 'trash') t = [g.st.bin.Z.drop.x, g.st.bin.Z.drop.z];
     else if (pl.stack.length && pl.kind && g.st.counter.shelf[pl.kind] && g.st.counter.shelf[pl.kind].length >= 12) t = pl.kind === 'bagel' && g.st.cc && g.st.cc.inStack.length < 8 ? [g.st.cc.Z.io.x, g.st.cc.Z.io.z] : [g.st.bin.Z.drop.x, g.st.bin.Z.drop.z];
-    else if (pl.stack.length) t = pl.kind === 'bagel' && g.st.cc && c.shelf.cream.length < 2 && g.st.cc.inStack.length < 4 ? [g.st.cc.x, g.st.cc.z + 135] : pl.kind === 'bagel' && g.st.drive && g.st.drive.lane.bagel.length < 4 && c.shelf.bagel.length > 6 ? [g.st.drive.Z.bagel.x, g.st.drive.Z.bagel.z] : [c.Z[pl.kind].x, c.Z[pl.kind].z];
+    else if (pl.stack.length) t = pl.kind === 'bagel' && g.st.cc && c.shelf.cream.length < 2 && g.st.cc.inStack.length < 4 ? [g.st.cc.x, g.st.cc.z + 135] : pl.kind === 'bagel' && g.st.drive && g.st.drive.lane.bagel.length < 4 && c.shelf.bagel.length > 6 ? [g.st.drive.Z.all.x, g.st.drive.Z.all.z] : [c.Z[pl.kind].x, c.Z[pl.kind].z];
     else if (pile && pile.v > 60 * (g.B.mult)) t = [pile.x, pile.z + 20];
     else if (pad && S.coins > 0) t = [pad.s.x, pad.s.z];
     else { const tt = Object.values(g.st).find(o => o.type === 'table' && o.trash.length >= 3); const need = g.cust.find(x => x.state === 'queue' && x.qi === 0)?.order.find(o => o.got < o.n);

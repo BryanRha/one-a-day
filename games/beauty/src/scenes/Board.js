@@ -1,16 +1,16 @@
 // 작업대 (원작의 주방 보드): 7×9 머지-2 · 생산기 · 잠긴 상자 · 비눗방울 · 창고 · 주문 3장 · 팔기
-import { W, H } from '../config.js?v=0.61.0';
-import { T, R, C, TS, btn, iconBtn, sheet, rbox, chips, toast } from '../ui.js?v=0.61.0';
-import { audio } from '../audio.js?v=0.61.0';
-import { load, save } from '../save.js?v=0.61.0';
-import { goPrev } from '../nav.js?v=0.61.0';
-import { hud } from '../hud.js?v=0.61.0';
-import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.61.0';
-import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.61.0';
-import { adsOpen, rewardAd } from '../store.js?v=0.61.0';
-import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.61.0';
-import { raceAdd, ladderAdd, vipAdd, VIP, theme } from '../events.js?v=0.61.0';
-import { bingoAdd, digAddOrder, digAdd, spinAdd, duoAdd } from '../minigames.js?v=0.61.0';
+import { W, H } from '../config.js?v=0.61.1';
+import { T, R, C, TS, btn, iconBtn, sheet, rbox, chips, toast } from '../ui.js?v=0.61.1';
+import { audio } from '../audio.js?v=0.61.1';
+import { load, save } from '../save.js?v=0.61.1';
+import { goPrev } from '../nav.js?v=0.61.1';
+import { hud } from '../hud.js?v=0.61.1';
+import { CHAINS, GENS, GEN_MAX, MAX_LV, SPECIAL, specialNext, itemKey, itemName, genImg, genName, ENERGY, STORAGE } from '../data.js?v=0.61.1';
+import { spendEnergy, tickEnergy, addXp, unlockedChains, storageSize, makeOrder, fillOrders, addGoal, discover, giveReward } from '../state.js?v=0.61.1';
+import { adsOpen, rewardAd } from '../store.js?v=0.61.1';
+import { album, addPack, ORDERS_PER_PACK, piggyAdd } from '../album.js?v=0.61.1';
+import { raceAdd, ladderAdd, vipAdd, VIP, theme } from '../events.js?v=0.61.1';
+import { bingoAdd, digAddOrder, digAdd, spinAdd, duoAdd } from '../minigames.js?v=0.61.1';
 
 const COLS = 7, ROWS = 9, CS = 142, X0 = (1080 - COLS * CS) / 2, Y0 = 440;
 const idx = (c, r) => r * COLS + c, colOf = i => i % COLS, rowOf = i => Math.floor(i / COLS);

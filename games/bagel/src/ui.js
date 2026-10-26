@@ -1,22 +1,22 @@
 // 화면 정보와 창: 돈 · 지점 진행 · 쿠폰 · 광고 ×2 · 미션 · 지점 지도 · 설정 · 열기 칸 글자 · +돈 글자 · 조이스틱
 import * as THREE from 'three';
-import { BRAND, GAME, BRANCHES, COUPON, MENU } from './data.js?v=0.57.5';
-import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.57.5';
-import { sfx, setAudio } from './audio.js?v=0.57.5';
-import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.57.5';
+import { BRAND, GAME, BRANCHES, COUPON, MENU, UPGRADES, UP_MAX, upCost, BRANCH_INFO, FINISHED_RATE } from './data.js?v=0.58.0';
+import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.58.0';
+import { sfx, setAudio } from './audio.js?v=0.58.0';
+import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.58.0';
 
 const $ = s => document.querySelector(s), fmt = n => Math.round(n).toLocaleString('en-US');
 export const IN = { x: 0, y: 0 };
-const ICON = { bagel: '🥯', cream: '🥯', coffee: '☕' }, SHORT = { bagel: '플레인', cream: '크림치즈', coffee: '커피' };
+const ICON = { bagel: '🥯', cream: '🥯', coffee: '🥣' }, SHORT = new Proxy({}, { get: (_, k) => MENU[k]?.short || '' });
 export class UI {
   constructor(app) {
     this.app = app; this.boostUntil = 0; const h = $('#hud');
     h.innerHTML = `<div class="top"><div class="coin"><i class="c"></i><b id="cn">0</b></div><div class="lvl"><b id="bn"></b><em id="bl"></em><div class="pb"><s id="bp"></s></div></div></div>
       <div class="cp" id="cp"><b>🎟 매장 쿠폰까지</b><div class="pb"><s id="cpb"></s></div><span id="cpt"></span></div>
-      <div class="side"><button class="sb ad" id="bAd"><b>×2</b><span id="adT">광고 보고</span></button><button class="sb" id="bMs"><b>📋</b>미션<i class="dot" id="msDot"></i></button><button class="sb" id="bMap"><b>🗺</b>지점</button><button class="sb" id="bSet"><b>⚙</b>설정</button>${inOAD ? '<button class="sb" id="bExit"><b>↩</b>원어데이</button>' : ''}</div>
+      <div class="side"><button class="sb ad" id="bAd"><b>×2</b><span id="adT">광고 보고</span></button><button class="sb up" id="bUp"><b>⬆</b>업그레이드<i class="dot" id="upDot"></i></button><button class="sb" id="bMs"><b>📋</b>미션<i class="dot" id="msDot"></i></button><button class="sb" id="bMap"><b>🗺</b>지점<i class="dot" id="mapDot"></i></button><button class="sb" id="bSet"><b>⚙</b>설정</button>${inOAD ? '<button class="sb" id="bExit"><b>↩</b>원어데이</button>' : ''}</div>
       <div class="joy" id="joy"><i id="knob"></i></div><div class="hint" id="hint">어디든 끌어서 움직여요</div>`;
     this.tags = $('#tags'); this.floats = $('#floats');
-    $('#bAd').onclick = () => this.ad('boost'); $('#bMs').onclick = () => this.missions(); $('#bMap').onclick = () => this.map(); $('#bSet').onclick = () => this.settings(); $('#cp').onclick = () => this.coupon();
+    $('#bAd').onclick = () => this.ad('boost'); $('#bUp').onclick = () => this.upgrades(); $('#bMs').onclick = () => this.missions(); $('#bMap').onclick = () => this.map(); $('#bSet').onclick = () => this.settings(); $('#cp').onclick = () => this.coupon();
     if ($('#bExit')) $('#bExit').onclick = () => exitToOAD();
     this.joy(); this.progress();
   }
@@ -47,7 +47,7 @@ export class UI {
     const g = this.app.game; if (!g || !g.unl) return; const B = BRANCHES[S.bi], all = B.slots.filter(s => !s.free).length, done = B.slots.filter(s => !s.free && g.unl.has(s.id)).length;
     $('#bn').textContent = B.name; $('#bl').textContent = `${done} / ${all}`; $('#bp').style.width = done / all * 100 + '%';
     const r = Math.min(1, S.sold / COUPON.goal); $('#cpb').style.width = r * 100 + '%'; $('#cpt').textContent = S.coupon ? '오늘 쿠폰 받았어요 · 눌러서 보기' : couponReady() ? '쿠폰 받기!' : `베이글 ${S.sold} / ${COUPON.goal}개 팔기`;
-    $('#cp').classList.toggle('ready', couponReady()); $('#msDot').style.display = missionReady() ? 'block' : 'none';
+    $('#cp').classList.toggle('ready', couponReady()); $('#msDot').style.display = missionReady() ? 'block' : 'none'; $('#upDot').style.display = this.cheapUp() ? 'block' : 'none'; $('#mapDot') && ($('#mapDot').style.display = this.idleTotal() > 0 ? 'block' : 'none');
   }
   toast(t) { let el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(this._tt); this._tt = setTimeout(() => el.classList.remove('on'), 1800); }
   modal(html, onClose) { const m = $('#modal'); m.innerHTML = `<div class="mback"><div class="modal">${html}</div></div>`; m.firstChild.onclick = e => { if (e.target === m.firstChild) this.close(); }; this._oc = onClose; this._ub = pushBack(() => { this.close(); return true; }); sfx('tap', { vol: 0.4 }); return m; }
@@ -72,14 +72,31 @@ export class UI {
     const m = this.modal(`<h3>📋 오늘의 미션</h3>${html}<button class="btn ghost" id="mOk">닫기</button>`); $('#mOk').onclick = () => this.close();
     m.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { const v = claimMission(b.dataset.m); if (v) { sfx('reward'); this.toast(`+${fmt(v)}`); this.progress(); this.missions(); } });
   }
+  // ── 업그레이드 (이 지점)
+  lv(id) { return S.branch[S.bi]?.lv?.[id] || 0; }
+  upList() { const g = this.app.game; return UPGRADES.filter(u => !u.need || g.unl.has(u.need) || (u.need === 'baker' && g.staff.some(w => w.k === 'baker'))); }
+  cheapUp() { const m = BRANCHES[S.bi].mult; return this.upList().some(u => this.lv(u.id) < UP_MAX && S.coins >= upCost(u, this.lv(u.id), m)); }
+  upgrades() {
+    const m = BRANCHES[S.bi].mult; const L = this.upList();
+    const html = L.map(u => { const lv = this.lv(u.id), max = lv >= UP_MAX, c = upCost(u, lv, m); return `<div class="upr"><i>${u.icon}</i><div><b>${u.name} <em>Lv.${lv}</em></b><span>${u.desc}</span><div class="pips">${'<s class="on"></s>'.repeat(lv)}${'<s></s>'.repeat(UP_MAX - lv)}</div></div>
+      <button class="btn sm ${max || S.coins < c ? 'off' : ''}" data-u="${u.id}">${max ? 'MAX' : `<i class="c"></i>${fmt(c)}`}</button></div>`; }).join('');
+    const md = this.modal(`<h3>⬆ ${BRANCHES[S.bi].name} 업그레이드</h3><div class="uplist">${html}</div><p class="sm">설비를 더 열면 업그레이드도 늘어나요</p><button class="btn ghost" id="mOk">닫기</button>`); $('#mOk').onclick = () => this.close();
+    md.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { const u = UPGRADES.find(x => x.id === b.dataset.u), lv = this.lv(u.id), c = upCost(u, lv, m); if (lv >= UP_MAX || S.coins < c) return; S.coins -= c;
+      const br = (S.branch[S.bi] ||= { unl: [], staff: [], paid: {} }); (br.lv ||= {})[u.id] = lv + 1; save(); sfx('unlock', { vol: 0.6 }); this.toast(`${u.name} Lv.${lv + 1}!`); this.progress(); this.upgrades(); }); }
+  // ── 다 연 지점: 직원들이 계속 장사 → 지점 지도에서 받기
+  finished(i) { const b = BRANCHES[i], br = S.branch[i]; return !!br && i !== S.bi && b.slots.filter(s => !s.free && s.id !== 'next').every(s => br.unl.includes(s.id)); }
+  idleOf(i) { if (!this.finished(i)) return 0; const br = S.branch[i], t = Math.min(4 * 3600, (Date.now() - (br.idleAt || Date.now())) / 1000); return Math.floor(t * FINISHED_RATE * BRANCHES[i].mult * (1 + (br.lv?.price || 0) / 10)); }
+  idleTotal() { let t = 0; for (let i = 0; i < BRANCHES.length; i++) t += this.idleOf(i); return t; }
   map() {
-    const html = BRANCHES.map((b, i) => { const open = i <= (S.maxBi || 0); return `<div class="br ${i === S.bi ? 'cur' : ''} ${open ? '' : 'lock'}" data-i="${i}"><b>${b.name}</b><span>${open ? (i === S.bi ? '지금 여기' : '가기') : '앞 지점을 다 열면'}</span></div>`; }).join('');
-    const m = this.modal(`<h3>🗺 ${BRAND.name} 지점</h3>${html}<p class="sm">게임 속 지점은 실제 ${BRAND.name} 매장이에요.</p><button class="btn ghost" id="mOk">닫기</button>`); $('#mOk').onclick = () => this.close();
+    const html = BRANCHES.map((b, i) => { const open = i <= (S.maxBi || 0), idle = this.idleOf(i); return `<div class="br ${i === S.bi ? 'cur' : ''} ${open ? '' : 'lock'}" data-i="${i}"><img src="assets/brand/${b.photo}.jpg"><div><b>${b.name}</b><small>${BRANCH_INFO[i]}</small>
+      <span>${!open ? '앞 지점을 다 열면 열려요' : i === S.bi ? '지금 여기' : this.finished(i) ? '직원들이 장사 중' : '가기 ›'}</span></div>${idle > 0 ? `<button class="btn sm col" data-c="${i}"><i class="c"></i>${fmt(idle)}</button>` : ''}</div>`; }).join('');
+    const m = this.modal(`<h3>🗺 ${BRAND.name} 지점</h3>${html}<p class="sm">게임 속 지점은 실제 ${BRAND.name} 매장이에요 · 다 연 지점은 직원들이 계속 장사해요 (최대 4시간)</p><button class="btn ghost" id="mOk">닫기</button>`); $('#mOk').onclick = () => this.close();
+    m.querySelectorAll('[data-c]').forEach(b => b.onclick = e => { e.stopPropagation(); const i = +b.dataset.c, v = this.idleOf(i); if (!v) return; S.coins += v; S.branch[i].idleAt = Date.now(); save(); sfx('coin'); this.toast(`${BRANCHES[i].name} 수익 +${fmt(v)}`); this.progress(); this.map(); });
     m.querySelectorAll('.br:not(.lock)').forEach(b => b.onclick = () => { const i = +b.dataset.i; if (i !== S.bi) { this.close(); this.app.goBranch(i); } });
   }
   nextBranch(i) { S.maxBi = Math.max(S.maxBi || 0, i); save(true); sfx('levelup'); this.modal(`<h3>🎉 ${BRANCHES[i - 1].name} 완성!</h3><p>모든 설비를 열었어요.<br><b>${BRANCHES[i].name}</b>이(가) 문을 열어요.</p><button class="btn" id="mOk">새 지점으로</button>`); $('#mOk').onclick = () => { this.close(); this.app.goBranch(i); }; }
   offline(v) { this.modal(`<h3>☕ 쉬는 동안</h3><p>직원들이 <b>${fmt(v)}</b>을 벌어 놨어요!</p><div class="btns"><button class="btn ghost" id="o1">받기</button><button class="btn" id="o2">📺 2배 받기</button></div>`);
     $('#o1').onclick = () => { S.coins += v; save(); this.close(); sfx('coin'); }; $('#o2').onclick = () => { this.close(); this.ad('offline', () => { S.coins += v * 2; save(); this.toast(`+${fmt(v * 2)}`); }); }; }
-  settings() { const m = this.modal(`<h3>⚙ 설정</h3><div class="tg"><button data-k="sfx" class="${S.set.sfx ? 'on' : ''}">효과음</button><button data-k="bgm" class="${S.set.bgm ? 'on' : ''}">배경음</button></div><p class="sm">${GAME.title} · ${BRAND.name} 공식 게임<br>메뉴·매장 정보는 ${BRAND.name} 제공</p><button class="btn ghost" id="mOk">닫기</button>`);
+  settings() { const m = this.modal(`<h3>⚙ 설정</h3><div class="tg"><button data-k="sfx" class="${S.set.sfx ? 'on' : ''}">효과음</button><button data-k="bgm" class="${S.set.bgm ? 'on' : ''}">배경음</button></div><p class="sm">${GAME.title} · ${BRAND.name} 공식 게임<br>“${BRAND.slogan}”<br>메뉴·매장·사진 ${BRAND.name} 제공</p><a class="btn ghost" href="${BRAND.insta}" target="_blank" rel="noopener">📷 인스타그램 보기</a><button class="btn ghost" id="mOk">닫기</button>`);
     m.querySelectorAll('.tg button').forEach(b => b.onclick = () => { S.set[b.dataset.k] = !S.set[b.dataset.k]; setAudio(S.set); save(); b.classList.toggle('on'); }); $('#mOk').onclick = () => this.close(); }
 }

@@ -1,8 +1,8 @@
 // 경제 · 진행 규칙: 에너지 회복 · 경험치/레벨 · 해금 계열 · 주문 만들기 · 하루 목표 · 월간 시즌
-import { load, save } from './save.js?v=0.57.5';
-import { album, addPack, PACKS } from './album.js?v=0.57.5';
-import { vipWants, decoName } from './events.js?v=0.57.5';
-import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.57.5';
+import { load, save } from './save.js?v=0.58.0';
+import { album, addPack, PACKS } from './album.js?v=0.58.0';
+import { vipWants, decoName } from './events.js?v=0.58.0';
+import { ENERGY, LEVELS, levelReward, CHAINS, CUSTOMERS, CHAPTERS, STORAGE, MAX_LV } from './data.js?v=0.58.0';
 
 export const today = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; };
 export const seasonId = () => { const t = new Date(); return `${t.getFullYear()}-${t.getMonth() + 1}`; };

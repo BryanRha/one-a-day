@@ -17,7 +17,8 @@ button { font-family: inherit; font-weight: 900; border: 0; cursor: pointer; col
 .cp.ready { animation: pulse 1s infinite; background: #FFF4E0; } @keyframes pulse { 50% { transform: scale(1.05); } }
 .side { position: absolute; right: 12px; top: calc(var(--st) + 66px); display: flex; flex-direction: column; gap: 10px; }
 .sb { position: relative; width: 58px; height: 58px; border-radius: 18px; background: #fff; box-shadow: 0 4px 0 var(--sh); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: var(--br); }
-.sb b { font-size: 21px; line-height: 1.05; } .sb.ad { background: linear-gradient(#FFB85C, #F28C28); color: #fff; box-shadow: 0 4px 0 #C86A12; } .sb.ad.on { background: linear-gradient(#7AD87A, #3AAA4A); box-shadow: 0 4px 0 #2A7A3A; }
+.sb b { font-size: 21px; line-height: 1.05; } .sb.ad { background: linear-gradient(#FFB85C, #F28C28); color: #fff; box-shadow: 0 4px 0 #C86A12; } .sb.up { background: linear-gradient(#FFE27A, #F2B533); color: #5A3A22; box-shadow: 0 4px 0 #C88A12; }
+.sb.ad.on { background: linear-gradient(#7AD87A, #3AAA4A); box-shadow: 0 4px 0 #2A7A3A; }
 .sb:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--sh); } .dot { display: none; position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: #FF4A3A; border: 2px solid #fff; }
 .joy { position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; background: #ffffff55; border: 3px solid #ffffffaa; opacity: 0; pointer-events: none; transition: opacity .12s; } .joy.on { opacity: 1; }
 .joy i { position: absolute; left: 29px; top: 29px; width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: 0 4px 0 var(--sh); }
@@ -37,7 +38,8 @@ button { font-family: inherit; font-weight: 900; border: 0; cursor: pointer; col
 .ticket .code { font-size: 26px; font-weight: 900; letter-spacing: 2px; background: var(--cr); border-radius: 12px; padding: 8px; margin: 8px 0; } .ticket span { font-size: 11.5px; color: #9A7A5C; }
 .adbox { height: 140px; border-radius: 16px; background: #2A2A30; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px; } .adbox span { font-size: 12px; opacity: .7; } .adbox em { font-style: normal; font-size: 40px; }
 .ms { display: flex; align-items: center; gap: 10px; text-align: left; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 6px; } .ms > div { flex: 1; } .ms b { font-size: 13px; } .ms em { font-style: normal; font-size: 11px; color: #9A7A5C; } .ms.done { opacity: .5; }
-.br { background: #fff; border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 3px 0 var(--sh); } .br b { font-size: 15px; } .br span { font-size: 12px; color: #9A7A5C; }
+.br { background: #fff; border-radius: 16px; padding: 8px; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; cursor: pointer; box-shadow: 0 3px 0 var(--sh); text-align: left; } .br img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; }
+.br > div { flex: 1; min-width: 0; } .br b { display: block; font-size: 14px; } .br small { display: block; font-size: 10px; color: #B09070; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .br span { font-size: 11.5px; color: #E2702A; } .br .col { flex: none; } .br.lock img { filter: grayscale(1); }
 .br.cur { background: #FFF0DC; border: 2px solid var(--ac); } .br.lock { opacity: .5; cursor: default; }
 .tg { display: flex; gap: 8px; margin: 8px 0; } .tg button { flex: 1; height: 46px; border-radius: 14px; background: #fff; color: #B09070; box-shadow: 0 3px 0 var(--sh); } .tg button.on { background: #FFE9C8; color: var(--br); }
 #boot { position: absolute; inset: 0; background: var(--cr); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; z-index: 50; transition: opacity .5s; } #boot.off { opacity: 0; pointer-events: none; }
@@ -46,3 +48,10 @@ button { font-family: inherit; font-weight: 900; border: 0; cursor: pointer; col
 .bub { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 3px; background: #fff; border-radius: 14px; padding: 3px 8px 3px 5px; box-shadow: 0 3px 0 var(--sh); font-size: 11px; font-weight: 900; color: var(--br); white-space: nowrap; }
 .bub::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: #fff; border-bottom: 0; }
 .bub b { font-size: 16px; } .bub em { font-style: normal; color: #E2702A; font-size: 13px; } .bub.front { transform-origin: 50% 100%; outline: 3px solid #4FBF6A; }
+
+.uplist { max-height: 56vh; overflow-y: auto; touch-action: pan-y; } .upr { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 14px; padding: 8px 10px; margin-bottom: 6px; text-align: left; }
+.upr > i { font-style: normal; font-size: 24px; width: 34px; text-align: center; } .upr > div { flex: 1; min-width: 0; } .upr b { font-size: 13px; } .upr b em { font-style: normal; color: #E2702A; font-size: 11px; } .upr span { display: block; font-size: 10.5px; color: #9A7A5C; }
+.pips { display: flex; gap: 2px; margin-top: 3px; } .pips s { flex: 1; height: 5px; border-radius: 3px; background: #F1E2CF; } .pips s.on { background: linear-gradient(90deg, #FF8A3C, #FFC96A); }
+.float.tip { color: #D04AA0; font-size: 16px; }
+#boot img.logo { width: 220px; filter: drop-shadow(0 3px 6px #0004); } #boot .bimg { position: absolute; inset: 0; background: center/cover; opacity: .35; } #boot > * { position: relative; } #boot em { font-style: normal; font-size: 13px; color: #fff; max-width: 280px; text-align: center; line-height: 1.6; text-shadow: 0 1px 4px #000; }
+#boot { background: #2A1A10; }

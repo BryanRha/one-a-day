@@ -1,11 +1,11 @@
 // K뷰티 레시피 UI: 크림 패널 · 장미색 버튼 · 금빛 포인트 (모두 코드로 그림)
-import { W, H } from './config.js?v=0.57.5';
-import { audio } from './audio.js?v=0.57.5';
-import { pushBack } from './oad.js?v=0.57.5';
-import { load as loadSave, save as saveSave } from './save.js?v=0.57.5';
-import { PACKS } from './album.js?v=0.57.5';
-import { SPECIAL } from './data.js?v=0.57.5';
-import { decoInfo, theme } from './events.js?v=0.57.5';
+import { W, H } from './config.js?v=0.58.0';
+import { audio } from './audio.js?v=0.58.0';
+import { pushBack } from './oad.js?v=0.58.0';
+import { load as loadSave, save as saveSave } from './save.js?v=0.58.0';
+import { PACKS } from './album.js?v=0.58.0';
+import { SPECIAL } from './data.js?v=0.58.0';
+import { decoInfo, theme } from './events.js?v=0.58.0';
 
 export const C = { ink: '#4A2C2A', text: '#FFFFFF', cream: '#FFF4EC', paper: '#FFFBF6', brown: '#8A5A44', sub: '#C99A86', dim: '#A08878', gold: '#E8A93A', rose: '#E86A8E', plum: '#5A3A34', red: '#D9573B', green: '#5FA65A', blue: '#4E86C6', mint: '#7CC6A8' };
 export const FONT = 'Pretendard, sans-serif';

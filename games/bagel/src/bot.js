@@ -1,6 +1,6 @@
 // 시험용 자동 플레이 (?bot=1): 굽기 → 진열 → 계산 → 돈 줍기 → 열기 칸 · 크림치즈 · 커피 · 쓰레기
-import { IN } from './ui.js?v=0.57.5';
-import { S } from './state.js?v=0.57.5';
+import { IN } from './ui.js?v=0.58.0';
+import { S } from './state.js?v=0.58.0';
 export function startBot(app) {
   let goal = null, wait = 0, log = [], lastP = null, stuck = 0, side = 0;
   const go = (x, z) => { const g = app.game, p = g.pl.pos, c = g.st.counter;
@@ -17,7 +17,7 @@ export function startBot(app) {
     if (document.querySelector('#modal').firstChild) { const b = document.querySelector('#modal .btn'); b && b.click(); return; }
     const pad = g.pads.find(p => S.coins >= Math.min(p.s.cost - p.paid, 30)); const pile = g.piles.find(p => p.v > 0);
     let t;
-    if (pl.kind === 'trash') t = [g.st.bin.x, g.st.bin.z + 80];
+    if (pl.kind === 'trash') t = [g.st.bin.Z.drop.x, g.st.bin.Z.drop.z];
     else if (pl.stack.length) t = pl.kind === 'bagel' && g.st.cc && c.shelf.cream.length < 2 && g.st.cc.inStack.length < 4 ? [g.st.cc.x, g.st.cc.z + 135] : pl.kind === 'bagel' && g.st.drive && g.st.drive.stack.length < 4 && c.shelf.bagel.length > 6 ? [g.st.drive.x - 110, g.st.drive.z] : [c.Z[pl.kind].x, c.Z[pl.kind].z];
     else if (pile && pile.v > 60 * (g.B.mult)) t = [pile.x, pile.z + 20];
     else if (pad && S.coins > 0) t = [pad.s.x, pad.s.z];

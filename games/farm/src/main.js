@@ -1,11 +1,11 @@
-import { W, BASE_H, setH, VERSION } from './config.js?v=0.57.5';
-import { audio } from './audio.js?v=0.57.5';
-import { BootScene } from './scenes/Boot.js?v=0.57.5';
-import { TownScene } from './scenes/Town.js?v=0.57.5';
-import { HudScene } from './scenes/Hud.js?v=0.57.5';
-import { MineScene, MiniScene, PeopleScene, EventsScene, IslandScene, CoopScene } from './scenes/Extra.js?v=0.57.5';
-import { installBack } from './oad.js?v=0.57.5';
-import { installNav } from './nav.js?v=0.57.5';
+import { W, BASE_H, setH, VERSION } from './config.js?v=0.58.0';
+import { audio } from './audio.js?v=0.58.0';
+import { BootScene } from './scenes/Boot.js?v=0.58.0';
+import { TownScene } from './scenes/Town.js?v=0.58.0';
+import { HudScene } from './scenes/Hud.js?v=0.58.0';
+import { MineScene, MiniScene, PeopleScene, EventsScene, IslandScene, CoopScene } from './scenes/Extra.js?v=0.58.0';
+import { installBack } from './oad.js?v=0.58.0';
+import { installNav } from './nav.js?v=0.58.0';
 
 // 오류 알림: 같은 오류는 한 번만 · 최근 5개는 저장 (thefarm_err)
 const seen = new Set();

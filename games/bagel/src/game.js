@@ -1,9 +1,10 @@
 // 가게 놀이: 끌어서 이동 · 굽기/바르기/내리기 · 진열 · 손님 줄 · 계산 · 돈 줍기 · 열기 칸 · 직원 · 테이블 치우기 · 드라이브스루
 import * as THREE from 'three';
-import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND } from './data.js?v=0.57.5';
-import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H } from './models.js?v=0.57.5';
-import { S, save, addSold, mission } from './state.js?v=0.57.5';
-import { sfx } from './audio.js?v=0.57.5';
+import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND, BRANCH_MENU, setBranchMenu } from './data.js?v=0.58.0';
+export const L = id => (S.branch[S.bi]?.lv?.[id]) || 0;   /* 이 지점 업그레이드 단계 */
+import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H, LOOK } from './models.js?v=0.58.0';
+import { S, save, addSold, mission } from './state.js?v=0.58.0';
+import { sfx } from './audio.js?v=0.58.0';
 
 const V = THREE.Vector3, R = 85, rnd = (a, b) => a + Math.random() * (b - a);
 const RIGHT = new V(1, 0, -1).normalize(), DOWN = new V(1, 0, 1).normalize();
@@ -12,7 +13,7 @@ const SHELF = { bagel: -115, cream: -40, coffee: 35 };
 export class Game {
   constructor(sc, cam, ui) { this.sc = sc; this.cam = cam; this.ui = ui; this.t = 0; this.fly = []; this.fx = []; }
   build(bi) {
-    const sc = this.sc; sc.clear(); this.B = BRANCHES[bi]; const B = this.B; this.bi = bi;
+    const sc = this.sc; sc.clear(); this.B = BRANCHES[bi]; const B = this.B; this.bi = bi; setBranchMenu(bi); LOOK.cream = MENU.cream.look; LOOK.coffee = MENU.coffee.look;
     sc.background = new THREE.Color(BRAND.cream);
     sc.add(new THREE.HemisphereLight(0xFFF6EA, 0xC9A882, 1.6)); const sun = new THREE.DirectionalLight(0xFFF1DC, 2.2); sun.position.set(-500, 1200, 700); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -1100, right: 1100, top: 1100, bottom: -1100, near: 10, far: 3200 }); sun.shadow.radius = 4; sun.shadow.bias = -0.0005; sc.add(sun, sun.target); this.sun = sun;
@@ -64,7 +65,7 @@ export class Game {
     sfx('unlock', { vol: 0.8 }); mission('unlock');
     if (s.type === 'hire') this.hire(s.staff); else if (s.type === 'up') { S.up[s.up] = 1; if (s.up === 'carry') this.pl.cap = PLAYER.carryUp; this.ui.toast(s.up === 'carry' ? '한 번에 10개까지 들 수 있어요!' : '더 빨리 걸어요!'); this.confetti(s.x, 80, s.z); }
     else if (s.type === 'next') { /* 한 번만: 칸을 지우고 다음 지점 창 */ for (const q of this.pads) { this.sc.remove(q.g); q.tag.remove(); } this.pads = []; this.nexting = true; save(true); this.ui.nextBranch(this.bi + 1); return; }
-    else this.place(s, true);
+    else { this.place(s, true); if (s.type === 'mixer') this.ui.toast('반죽기 덕분에 오븐이 2배 빨라졌어요!'); if (s.type === 'kettle') this.ui.toast('데쳐서 쫄깃! 모든 메뉴 값 +20%'); }
     save(); this.refreshPads(); this.ui.progress();
   }
   hire(k, silent) {
@@ -84,12 +85,13 @@ export class Game {
     // 직원
     for (const w of this.staff) this.staffAI(w, dt);
     // 오븐 · 크림치즈 · 커피 생산
-    const ov = this.st.oven; ov.t += dt; if (ov.t > 1.1 && ov.stack.length < 10) { ov.t = 0; this.put(ov.stack, item('bagel'), ov.x - 60 + (ov.stack.length % 5) * 30, 12 + Math.floor(ov.stack.length / 5) * 16, ov.z + 100, 'bagel'); }
-    const cc = this.st.cc; if (cc) { cc.t += dt; if (cc.inStack.length && cc.t > 0.9 && cc.stack.length < 8) { cc.t = 0; const m = cc.inStack.pop(); this.sc.remove(m.m); this.put(cc.stack, item('cream'), cc.x + 40 + (cc.stack.length % 2) * 36, 107 + Math.floor(cc.stack.length / 2) * 18, cc.z + 30, 'cream'); } }
-    const cf = this.st.coffee; if (cf) { cf.t += dt; if (cf.t > 1.6 && cf.stack.length < 8) { cf.t = 0; this.put(cf.stack, item('coffee'), cf.x - 30 + (cf.stack.length % 3) * 30, 164 + Math.floor(cf.stack.length / 3) * 30, cf.z + 10, 'coffee'); } }
+    const ov = this.st.oven; ov.t += dt * (this.st.mixer ? 2 : 1); const ovCap = 10 + L('ovenCap') * 2; if (ov.t > 1.1 / (1 + L('oven') * 0.15) && ov.stack.length < ovCap) { ov.t = 0; this.put(ov.stack, item('bagel'), ov.x - 60 + (ov.stack.length % 5) * 30, 12 + Math.floor(ov.stack.length / 5) * 16, ov.z + 100, 'bagel'); }
+    if (this.st.kettle) { this.st.kettle.t += dt; if (this.st.kettle.t > 0.25) { this.st.kettle.t = 0; this.steam(this.st.kettle.x, 135, this.st.kettle.z); } }
+    const cc = this.st.cc; if (cc) { cc.t += dt; if (cc.inStack.length && cc.t > 0.9 / (1 + L('bar') * 0.15) && cc.stack.length < 8) { cc.t = 0; const m = cc.inStack.pop(); this.sc.remove(m.m); this.put(cc.stack, item('cream'), cc.x + 40 + (cc.stack.length % 2) * 36, 107 + Math.floor(cc.stack.length / 2) * 18, cc.z + 30, 'cream'); } }
+    const cf = this.st.coffee; if (cf) { cf.t += dt; if (cf.t > 1.6 / (1 + L('fridge') * 0.15) && cf.stack.length < 8) { cf.t = 0; this.put(cf.stack, item('coffee'), cf.x - 30 + (cf.stack.length % 3) * 30, 164 + Math.floor(cf.stack.length / 3) * 30, cf.z + 10, 'coffee'); } }
     // 손님
     this.spawnT -= dt; const qMax = 6; const inQ = this.cust.filter(c => c.state === 'queue' || c.state === 'walkQ').length;
-    if (this.spawnT <= 0 && inQ < qMax) { this.spawnT = Math.max(1.6, 5 - this.unl.size * 0.22) * rnd(0.8, 1.2); this.spawnCustomer(); }
+    if (this.spawnT <= 0 && inQ < qMax) { this.spawnT = Math.max(1.2, 5 - this.unl.size * 0.22) / (1 + L('ads') * 0.1) * rnd(0.8, 1.2); this.spawnCustomer(); }
     this.serve(dt, mult); for (const c of this.cust) this.custAI(c, dt);
     this.cust = this.cust.filter(c => { if (c.gone) { this.sc.remove(c.P.g); c.tag && c.tag.remove(); return false; } return true; });
     // 드라이브스루
@@ -155,9 +157,9 @@ export class Game {
     const f = this.cust.find(x => x.state === 'queue' && x.qi === 0); if (!f || !cashier) return;
     const need = f.order.find(o => o.got < o.n); if (!need) return;
     const sh = c.shelf[need.k]; if (!sh.length) return;
-    c.t = cashier.isPlayer ? 0.32 : STAFF.cashier.serve; const it = sh.pop(); const wp = it.m.position.clone();
+    c.t = cashier.isPlayer ? 0.32 : STAFF.cashier.serve / (1 + L('staff') * 0.08); const it = sh.pop(); const wp = it.m.position.clone();
     this.fly.push({ m: it.m, from: wp, to: () => f.pos.clone().setY(100), t: 0, d: 0.2, done: () => { this.sc.remove(it.m); } }); need.got++; sfx('blip', { vol: 0.3, rate: 1.2 });
-    if (f.order.every(o => o.got >= o.n)) { const v = Math.round(f.order.reduce((a, o) => a + MENU[o.k].price * o.n, 0) * mult); this.addCash(c.cash, v); this.ui.float('+' + fmt(v), new V(c.x + 110, 120, c.z), 'pay'); sfx('order', { vol: 0.4 });
+    if (f.order.every(o => o.got >= o.n)) { let v = Math.round(f.order.reduce((a, o) => a + MENU[o.k].price * o.n, 0) * mult * this.priceK()); if (Math.random() < L('tip') * 0.05) { const tip = Math.max(1, Math.round(v * 0.5)); v += tip; setTimeout(() => this.ui.float('팁 +' + fmt(tip), new V(c.x + 110, 170, c.z), 'tip'), 250); } this.addCash(c.cash, v); this.ui.float('+' + fmt(v), new V(c.x + 110, 120, c.z), 'pay'); sfx('order', { vol: 0.4 });
       addSold(f.order.reduce((a, o) => a + o.n, 0)); mission('serve'); this.ui.progress(); this.checkout(f); }
   }
   checkout(f) {
@@ -194,13 +196,13 @@ export class Game {
     const mv = (x, z, sp) => { const d = new V(x - w.pos.x, 0, z - w.pos.z), l = d.length(); if (l < 12) { w.P.anim(dt, false); return true; } d.normalize(); if (l > 140) this.steer(w.pos, d, x, z); w.pos.addScaledVector(d, Math.min(l, sp * dt)); w.P.g.rotation.y = Math.atan2(d.x, d.z); w.P.anim(dt, true); return false; };
     w.P.carry = w.stack.length > 0;
     if (w.k === 'cashier') { const c = this.st.counter; mv(c.Z.cash.x, c.Z.cash.z, 200); w.P.g.rotation.y = 0; return; }
-    if (w.k === 'baker') { const c = this.st.counter, cc = this.st.cc, cf = this.st.coffee, dv = this.st.drive, sp = STAFF.baker.speed * (S.up.speed ? 1.2 : 1);
+    if (w.k === 'baker') { const c = this.st.counter, cc = this.st.cc, cf = this.st.coffee, dv = this.st.drive, sp = STAFF.baker.speed * (S.up.speed ? 1.2 : 1) * (1 + L('staff') * 0.08);
       if (!w.stack.length) { if (!w.src) { const pick = []; if (cc && cc.stack.length >= 1 && c.shelf.cream.length < 8) pick.push('cc'); if (cf && cf.stack.length >= 1 && c.shelf.coffee.length < 6) pick.push('cf'); pick.push('ov'); w.src = pick[0]; }
         const zc = Z => [Z.x, Z.z]; const s = w.src === 'cc' ? zc(cc.Z.io) : w.src === 'cf' ? zc(cf.Z.out) : zc(this.st.oven.Z.out); if (mv(s[0], s[1], sp)) { this.interact(w, dt); if (w.stack.length >= w.cap || (w.stack.length && this.srcEmpty(w.src))) w.src = null; } }
       else { w.src = null; let dst; if (w.kind === 'bagel') { dst = cc && cc.inStack.length < 6 && c.shelf.cream.length + cc.stack.length < 6 && c.shelf.bagel.length >= 3 ? [cc.Z.io.x, cc.Z.io.z] : dv && dv.stack.length < 6 && c.shelf.bagel.length > 6 ? [dv.Z.drop.x, dv.Z.drop.z] : [c.Z.bagel.x, c.Z.bagel.z]; } else dst = [c.Z[w.kind].x, c.Z[w.kind].z];
         if (mv(dst[0], dst[1], sp)) { const n = w.stack.length; this.interact(w, dt); if (w.stack.length === n && w.tick <= 0) { w.idle = (w.idle || 0) + dt; if (w.idle > 2) { w.stack.forEach(it => w.P.hand.remove(it.m)); w.stack = []; w.kind = null; w.idle = 0; } } } }
       this.collide(w.pos, 30); return; }
-    if (w.k === 'cleaner') { const sp = STAFF.cleaner.speed; if (w.kind === 'trash' && (w.stack.length >= w.cap || !Object.values(this.st).some(t => t.type === 'table' && t.trash.length))) { const b = this.st.bin; if (mv(b.Z.drop.x, b.Z.drop.z, sp)) this.interact(w, dt); }
+    if (w.k === 'cleaner') { const sp = STAFF.cleaner.speed * (1 + L('staff') * 0.08); if (w.kind === 'trash' && (w.stack.length >= w.cap || !Object.values(this.st).some(t => t.type === 'table' && t.trash.length))) { const b = this.st.bin; if (mv(b.Z.drop.x, b.Z.drop.z, sp)) this.interact(w, dt); }
       else { const t = Object.values(this.st).find(t => t.type === 'table' && t.trash.length); if (t) { const sd = w.pos.z < t.z ? -125 : 125; if (mv(t.x, t.z + sd, sp)) this.interact(w, dt); } else mv(-300, 100, sp * 0.5); } this.collide(w.pos, 30); }
   }
   guide() {
@@ -208,8 +210,8 @@ export class Game {
     /* 맨 앞 손님이 없는 메뉴를 기다리면 그 메뉴 만드는 곳을 가리킴 */ const f = this.cust.find(x => x.state === 'queue' && x.qi === 0), need = f && f.order.find(o => o.got < o.n);
     if (need && !c.shelf[need.k].length) { this.blockT = (this.blockT || 0) + 1 / 60; if (this.blockT > 2.5) { const nm = MENU[need.k].name;
       if (pl.kind === need.k) return [c.Z[need.k].x, c.Z[need.k].z, `${nm}을(를) 같은 색 칸에 내려놔요`];
-      if (need.k === 'cream') return pl.kind === 'bagel' ? [this.st.cc.Z.io.x, this.st.cc.Z.io.z, '크림치즈 바에 베이글을 넣어요'] : this.st.cc.stack.length ? [this.st.cc.Z.io.x, this.st.cc.Z.io.z, '크림치즈 베이글을 집어요'] : [ov.Z.out.x, ov.Z.out.z, '손님이 크림치즈 베이글을 기다려요 · 먼저 베이글을 집어요'];
-      if (need.k === 'coffee') return [this.st.coffee.Z.out.x, this.st.coffee.Z.out.z, '손님이 커피를 기다려요 · 커피를 집어요'];
+      if (need.k === 'cream') { const bar = BRANCH_MENU[this.bi]?.cream.bar || '토핑 바'; return pl.kind === 'bagel' ? [this.st.cc.Z.io.x, this.st.cc.Z.io.z, `${bar}에 플레인 베이글을 넣어요`] : this.st.cc.stack.length ? [this.st.cc.Z.io.x, this.st.cc.Z.io.z, `${nm}을(를) 집어요`] : [ov.Z.out.x, ov.Z.out.z, `손님이 ${nm}을(를) 기다려요 · 먼저 플레인을 집어요`]; }
+      if (need.k === 'coffee') return [this.st.coffee.Z.out.x, this.st.coffee.Z.out.z, `손님이 ${nm}을(를) 기다려요 · 냉장고에서 집어요`];
       return [ov.Z.out.x, ov.Z.out.z, '손님이 베이글을 기다려요 · 오븐에서 집어요']; } } else this.blockT = 0;
     if (this.unl.size > 9) return null;
     if (pad && S.coins >= pad.s.cost - pad.paid) return [pad.s.x, pad.s.z, '돈을 들고 바닥 칸에 서 있으면 열려요'];
@@ -223,13 +225,15 @@ export class Game {
   steer(pos, d, gx, gz) { for (const o of Object.values(this.st)) { const sz = SIZE[o.type]; if (!sz) continue; const R0 = Math.max(sz[0], sz[1] || sz[0]) + 50; if (Math.hypot(o.x - gx, o.z - gz) < R0 + 90) continue;   /* 목적지 설비는 피하지 않음 */
       const tx = o.x - pos.x, tz = o.z - pos.z; if (Math.hypot(tx, tz) > R0 + 200) continue; const ahead = tx * d.x + tz * d.z; if (ahead <= 0) continue; const side = tx * d.z - tz * d.x;
       if (Math.abs(side) < R0) { const k = (R0 - Math.abs(side)) / R0 * 1.4, sg = side > 0 ? -1 : 1, px = d.z, pz = -d.x; d.x += px * sg * k; d.z += pz * sg * k; d.normalize(); } } return d; }
+  priceK() { return (1 + L('price') * 0.08) * (this.st.kettle ? 1.2 : 1); }
+  steam(x, y, z) { const m = new THREE.Mesh(STEAM_G, new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.6 })); m.position.set(x + rnd(-30, 30), y, z + rnd(-30, 30)); this.sc.add(m); this.fx.push({ t: 0, d: 1.2, f: u => { m.position.y = y + u * 120; m.scale.setScalar(1 + u * 2); m.material.opacity = 0.6 * (1 - u); if (u >= 1) this.sc.remove(m); } }); }
   srcEmpty(s) { return s === 'cc' ? !this.st.cc.stack.length : s === 'cf' ? !this.st.coffee.stack.length : !this.st.oven.stack.length; }
   // ── 드라이브스루: 차가 와서 베이글 여러 개를 사 감 (창구 진열대에서 자동)
   driveUpdate(dt, mult) {
     const dv = this.st.drive; this.carT -= dt; if (this.carT <= 0 && this.cars.length < 3) { this.carT = rnd(8, 12); const g = car([0xE86A6A, 0x6A9AE8, 0xF2C14E, 0x9ACF6A][Math.floor(Math.random() * 4)]); g.position.set(dv.x + 330, 0, dv.z + 1200); g.rotation.y = Math.PI / 2; this.sc.add(g); this.cars.push({ g, want: 2 + Math.floor(Math.random() * 4), got: 0, state: 'in' }); }
     this.cars.forEach((cr, i) => { const tz = dv.z + i * 260; if (cr.state === 'in') { cr.g.position.z = Math.max(tz, cr.g.position.z - 300 * dt); if (i === 0 && Math.abs(cr.g.position.z - tz) < 2) cr.state = 'wait'; }
       else if (cr.state === 'wait') { dv.t -= dt; if (dv.t <= 0 && dv.stack.length && cr.got < cr.want) { dv.t = 0.45; const it = dv.stack.pop(); this.fly.push({ m: it.m, from: it.m.position.clone(), to: cr.g.position.clone().setY(90), t: 0, d: 0.25, done: () => this.sc.remove(it.m) }); cr.got++; sfx('blip', { vol: 0.25 }); }
-        if (cr.got >= cr.want) { const v = Math.round(cr.want * MENU.bagel.price * 1.5 * mult); this.addCash(dv.cash, v); this.ui.float('+' + fmt(v), new V(dv.x, 140, dv.z), 'pay'); addSold(cr.want); sfx('order', { vol: 0.4 }); cr.state = 'out'; } }
+        if (cr.got >= cr.want) { const v = Math.round(cr.want * MENU.bagel.price * 1.5 * mult * this.priceK()); this.addCash(dv.cash, v); this.ui.float('+' + fmt(v), new V(dv.x, 140, dv.z), 'pay'); addSold(cr.want); sfx('order', { vol: 0.4 }); cr.state = 'out'; } }
       else { cr.g.position.z -= 320 * dt; } });
     this.cars = this.cars.filter(cr => { if (cr.g.position.z < dv.z - 1600) { this.sc.remove(cr.g); return false; } return true; });
   }
@@ -244,7 +248,7 @@ const ZONES = {
   counter: [['bagel', -115, -118, 70, 96, 0xD98A3A], ['cream', -40, -118, 70, 96, 0xF2D2A0], ['coffee', 35, -118, 70, 96, 0x9A643A], ['cash', 140, -118, 120, 96, 0x4FBF6A]],
   bin: [['drop', 0, 95, 120, 80, 0x5A8A5A]], table: [['trash', 0, 0, 420, 310, 0xB8B0A8, 1]], drive: [['drop', -105, 0, 90, 200, 0xD98A3A]],
 };
-const WHITE = new THREE.Color(0xFFFFFF);
-const SIZE = { oven: [105, 80], counter: [168, 62], ccbar: [118, 62], coffee: [72, 58], table: [128, 72], bin: [40], plant: [40], drive: [20, 135] };   /* 테이블: 의자 포함 직사각형 */
-const NAMES = { table: '테이블', ccbar: '크림치즈 바', coffee: '커피 머신', drive: '드라이브스루' };
+const WHITE = new THREE.Color(0xFFFFFF), STEAM_G = new THREE.SphereGeometry(10, 8, 6);
+const SIZE = { mixer: [60, 50], kettle: [68, 58], oven: [105, 80], counter: [168, 62], ccbar: [118, 62], coffee: [72, 58], table: [128, 72], bin: [40], plant: [40], drive: [20, 135] };   /* 테이블: 의자 포함 직사각형 */
+const NAMES = { mixer: '반죽기', kettle: '데치기 솥', table: '테이블', ccbar: '토핑 바', coffee: '크림치즈 냉장고', drive: '드라이브스루' };
 export const fmt = n => Math.round(n).toLocaleString('en-US');

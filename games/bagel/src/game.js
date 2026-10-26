@@ -1,9 +1,9 @@
 // 가게 놀이: 끌어서 이동 · 굽기/바르기/내리기 · 진열 · 손님 줄 · 계산 · 돈 줍기 · 열기 칸 · 직원 · 테이블 치우기 · 드라이브스루
 import * as THREE from 'three';
-import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND } from './data.js?v=0.57.3';
-import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H } from './models.js?v=0.57.3';
-import { S, save, addSold, mission } from './state.js?v=0.57.3';
-import { sfx } from './audio.js?v=0.57.3';
+import { BRANCHES, MENU, PLAYER, STAFF, CUST_COLORS, BRAND } from './data.js?v=0.57.4';
+import { M, box, cyl, item, person, shopShell, STATION, car, ITEM_H } from './models.js?v=0.57.4';
+import { S, save, addSold, mission } from './state.js?v=0.57.4';
+import { sfx } from './audio.js?v=0.57.4';
 
 const V = THREE.Vector3, R = 85, rnd = (a, b) => a + Math.random() * (b - a);
 const RIGHT = new V(1, 0, -1).normalize(), DOWN = new V(1, 0, 1).normalize();
@@ -35,11 +35,13 @@ export class Game {
     if (s.type === 'table') { o.seats = [-95, 95].map(dx => ({ x: s.x + dx, z: s.z, who: null })); o.trash = []; }
     if (s.type === 'counter') { o.shelf = { bagel: [], cream: [], coffee: [] }; o.cash = this.pile(s.x + 230, s.z + 10); }
     if (s.type === 'drive') o.cash = this.pile(s.x - 140, s.z + 170);
-    this.st[s.id] = o; o.Z = {}; for (const [k, dx, dz, w, d, col] of ZONES[s.type] || []) o.Z[k] = this.zone(s.x + dx, s.z + dz, w, d, col); this.zoneVis();
+    this.st[s.id] = o; o.Z = {}; for (const [k, dx, dz, w, d, col, ring] of ZONES[s.type] || []) o.Z[k] = this.zone(s.x + dx, s.z + dz, w, d, col, ring); this.zoneVis();
     if (anim) { g.scale.setScalar(0.01); this.fx.push({ t: 0, d: 0.5, f: u => g.scale.setScalar(u < 0.7 ? u / 0.7 * 1.15 : 1.15 - (u - 0.7) / 0.3 * 0.15) }); this.confetti(s.x, 120, s.z); }
   }
   // 동작 칸: 바닥에 그린 칸 = 실제로 동작하는 범위 (들어서면 밝아짐)
-  zone(x, z, w, d, col) { const g = new THREE.Group(); g.position.set(x, 0, z); this.sc.add(g);
+  zone(x, z, w, d, col, ring) { const g = new THREE.Group(); g.position.set(x, 0, z); this.sc.add(g);
+    if (ring) { /* 테이블 둘레 테두리: 어느 쪽에서 다가가도 됨 */ const mt = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.75 }); for (const [sx, sz, sw, sd] of [[0, -d / 2, w, 16], [0, d / 2, w, 16], [-w / 2, 0, 16, d], [w / 2, 0, 16, d]]) { const e = new THREE.Mesh(new THREE.BoxGeometry(sw, 3, sd), mt); e.position.set(sx, 1.5, sz); g.add(e); }
+      const Z = { x, z, w, d, g, inner: { material: mt }, col: new THREE.Color(col), ring: true }; (this.zones ||= []).push(Z); return Z; }
     const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 3, d), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9 })); edge.position.y = 1.5; g.add(edge);
     const inner = new THREE.Mesh(new THREE.BoxGeometry(w - 14, 4, d - 14), new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.6 })); inner.position.y = 2; g.add(inner);
     const Z = { x, z, w, d, g, inner, col: new THREE.Color(col) }; (this.zones ||= []).push(Z); return Z; }
@@ -96,7 +98,7 @@ export class Game {
     for (let i = this.fly.length - 1; i >= 0; i--) { const f = this.fly[i]; f.t += dt / f.d; const u = Math.min(1, f.t); const to = typeof f.to === 'function' ? f.to() : f.to;
       f.m.position.lerpVectors(f.from, to, u); f.m.position.y += Math.sin(u * Math.PI) * 70; if (u >= 1) { this.fly.splice(i, 1); f.done && f.done(); } }
     for (let i = this.fx.length - 1; i >= 0; i--) { const f = this.fx[i]; f.t += dt / f.d; f.f(Math.min(1, f.t)); if (f.t >= 1) this.fx.splice(i, 1); }
-    for (const Z of this.zones) { const on = this.in(pl, Z); Z.inner.material.color.copy(on ? Z.col : WHITE); Z.inner.material.opacity = on ? 0.85 : 0.55; }
+    for (const Z of this.zones) { const on = this.in(pl, Z); if (Z.ring) { Z.inner.material.opacity = on ? 1 : 0.6; continue; } Z.inner.material.color.copy(on ? Z.col : WHITE); Z.inner.material.opacity = on ? 0.85 : 0.55; }
     // 안내: 다음에 할 일 (설비 3개 열 때까지)
     const gd = this.guide(); this.arrow.visible = !!gd; if (gd) { this.arrow.position.set(gd[0], 150 + Math.sin(this.t * 6) * 14, gd[1]); this.arrow.rotation.y += dt * 2; } this.ui.hint(gd && gd[2]);
     // 카메라 · 그림자 따라감
@@ -177,7 +179,7 @@ export class Game {
       for (const t of Object.values(this.st)) { if (t.type !== 'table' || t === own) continue; const tx = t.x - c.pos.x, tz = t.z - c.pos.z, dist = Math.hypot(tx, tz); if (dist > 320) continue;
         const ahead = tx * d.x + tz * d.z; if (ahead <= 0) continue; const side = tx * d.z - tz * d.x; if (Math.abs(side) < 190) { const k = (190 - Math.abs(side)) / 190 * 1.4, sg = side > 0 ? -1 : 1, px = d.z, pz = -d.x; d.x += px * sg * k; d.z += pz * sg * k; d.normalize(); } }   /* 테이블 반대쪽으로 비켜감 */
       c.pos.addScaledVector(d, Math.min(l, sp * dt));
-      for (const t of Object.values(this.st)) { if (t.type !== 'table' || t === own) continue; const dx = c.pos.x - t.x, dz = c.pos.z - t.z, dd = Math.hypot(dx, dz); const ox = 150 - Math.abs(dx), oz = 70 - Math.abs(dz); if (ox > 0 && oz > 0) { if (ox < oz) c.pos.x += Math.sign(dx) * ox; else c.pos.z += Math.sign(dz) * oz; } }
+      for (const t of Object.values(this.st)) { if (t.type !== 'table' || t === own) continue; const dx = c.pos.x - t.x, dz = c.pos.z - t.z, dd = Math.hypot(dx, dz); const ox = 125 - Math.abs(dx), oz = 70 - Math.abs(dz); if (ox > 0 && oz > 0) { if (ox < oz) c.pos.x += Math.sign(dx) * ox; else c.pos.z += Math.sign(dz) * oz; } }
       c.P.g.rotation.y = Math.atan2(d.x, d.z); c.P.anim(dt, true); return false; };
     if (c.state === 'walkQ') { if (moveTo()) c.state = 'queue'; }
     else if (c.state === 'queue') { if (!moveTo(180)) {} else { c.P.anim(dt, false); c.P.g.rotation.y = Math.PI; } }
@@ -188,7 +190,7 @@ export class Game {
   }
   // ── 직원 AI
   staffAI(w, dt) {
-    const mv = (x, z, sp) => { const d = new V(x - w.pos.x, 0, z - w.pos.z), l = d.length(); if (l < 12) { w.P.anim(dt, false); return true; } d.normalize(); w.pos.addScaledVector(d, Math.min(l, sp * dt)); w.P.g.rotation.y = Math.atan2(d.x, d.z); w.P.anim(dt, true); return false; };
+    const mv = (x, z, sp) => { const d = new V(x - w.pos.x, 0, z - w.pos.z), l = d.length(); if (l < 12) { w.P.anim(dt, false); return true; } d.normalize(); if (l > 140) this.steer(w.pos, d, x, z); w.pos.addScaledVector(d, Math.min(l, sp * dt)); w.P.g.rotation.y = Math.atan2(d.x, d.z); w.P.anim(dt, true); return false; };
     w.P.carry = w.stack.length > 0;
     if (w.k === 'cashier') { const c = this.st.counter; mv(c.Z.cash.x, c.Z.cash.z, 200); w.P.g.rotation.y = 0; return; }
     if (w.k === 'baker') { const c = this.st.counter, cc = this.st.cc, cf = this.st.coffee, dv = this.st.drive, sp = STAFF.baker.speed * (S.up.speed ? 1.2 : 1);
@@ -198,7 +200,7 @@ export class Game {
         if (mv(dst[0], dst[1], sp)) { const n = w.stack.length; this.interact(w, dt); if (w.stack.length === n && w.tick <= 0) { w.idle = (w.idle || 0) + dt; if (w.idle > 2) { w.stack.forEach(it => w.P.hand.remove(it.m)); w.stack = []; w.kind = null; w.idle = 0; } } } }
       this.collide(w.pos, 30); return; }
     if (w.k === 'cleaner') { const sp = STAFF.cleaner.speed; if (w.kind === 'trash' && (w.stack.length >= w.cap || !Object.values(this.st).some(t => t.type === 'table' && t.trash.length))) { const b = this.st.bin; if (mv(b.Z.drop.x, b.Z.drop.z, sp)) this.interact(w, dt); }
-      else { const t = Object.values(this.st).find(t => t.type === 'table' && t.trash.length); if (t) { if (mv(t.Z.trash.x, t.Z.trash.z, sp)) this.interact(w, dt); } else mv(-300, 100, sp * 0.5); } this.collide(w.pos, 30); }
+      else { const t = Object.values(this.st).find(t => t.type === 'table' && t.trash.length); if (t) { const sd = w.pos.z < t.z ? -125 : 125; if (mv(t.x, t.z + sd, sp)) this.interact(w, dt); } else mv(-300, 100, sp * 0.5); } this.collide(w.pos, 30); }
   }
   guide() {
     const pl = this.pl, c = this.st.counter, ov = this.st.oven, pile = this.piles.find(p => p.v > 0), pad = this.pads[0];
@@ -216,6 +218,10 @@ export class Game {
     if (c.shelf.bagel.length >= 2 && this.cust.some(x => x.state === 'queue') && !this.staff.some(w => w.k === 'cashier')) return [c.Z.cash.x, c.Z.cash.z, '초록 칸에 서 있으면 손님을 받아요'];
     return [ov.Z.out.x, ov.Z.out.z, '오븐 앞 칸에 서면 베이글을 집어요'];
   }
+  // 장애물 피하기 (테이블·계산대·설비): 가는 방향 d 를 옆으로 꺾음
+  steer(pos, d, gx, gz) { for (const o of Object.values(this.st)) { const sz = SIZE[o.type]; if (!sz) continue; const R0 = Math.max(sz[0], sz[1] || sz[0]) + 50; if (Math.hypot(o.x - gx, o.z - gz) < R0 + 90) continue;   /* 목적지 설비는 피하지 않음 */
+      const tx = o.x - pos.x, tz = o.z - pos.z; if (Math.hypot(tx, tz) > R0 + 200) continue; const ahead = tx * d.x + tz * d.z; if (ahead <= 0) continue; const side = tx * d.z - tz * d.x;
+      if (Math.abs(side) < R0) { const k = (R0 - Math.abs(side)) / R0 * 1.4, sg = side > 0 ? -1 : 1, px = d.z, pz = -d.x; d.x += px * sg * k; d.z += pz * sg * k; d.normalize(); } } return d; }
   srcEmpty(s) { return s === 'cc' ? !this.st.cc.stack.length : s === 'cf' ? !this.st.coffee.stack.length : !this.st.oven.stack.length; }
   // ── 드라이브스루: 차가 와서 베이글 여러 개를 사 감 (창구 진열대에서 자동)
   driveUpdate(dt, mult) {
@@ -235,9 +241,9 @@ export class Game {
 const ZONES = {
   oven: [['out', 0, 135, 180, 100, 0xF2A23A]], ccbar: [['io', 0, 140, 180, 100, 0xF6D6A0]], coffee: [['out', 0, 130, 140, 100, 0x9A643A]],
   counter: [['bagel', -115, -118, 70, 96, 0xD98A3A], ['cream', -40, -118, 70, 96, 0xF2D2A0], ['coffee', 35, -118, 70, 96, 0x9A643A], ['cash', 140, -118, 120, 96, 0x4FBF6A]],
-  bin: [['drop', 0, 95, 120, 80, 0x5A8A5A]], table: [['trash', 0, 130, 170, 70, 0xB8B0A8]], drive: [['drop', -105, 0, 90, 200, 0xD98A3A]],
+  bin: [['drop', 0, 95, 120, 80, 0x5A8A5A]], table: [['trash', 0, 0, 420, 310, 0xB8B0A8, 1]], drive: [['drop', -105, 0, 90, 200, 0xD98A3A]],
 };
 const WHITE = new THREE.Color(0xFFFFFF);
-const SIZE = { oven: [105, 80], counter: [168, 62], ccbar: [118, 62], coffee: [72, 58], table: [158, 72], bin: [40], plant: [40], drive: [20, 135] };   /* 테이블: 의자 포함 직사각형 */
+const SIZE = { oven: [105, 80], counter: [168, 62], ccbar: [118, 62], coffee: [72, 58], table: [128, 72], bin: [40], plant: [40], drive: [20, 135] };   /* 테이블: 의자 포함 직사각형 */
 const NAMES = { table: '테이블', ccbar: '크림치즈 바', coffee: '커피 머신', drive: '드라이브스루' };
 export const fmt = n => Math.round(n).toLocaleString('en-US');

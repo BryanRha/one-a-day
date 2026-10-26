@@ -1,14 +1,14 @@
 // 놀이: 설화 빙고 · 행운 룰렛 · 공방 보물 찾기
 //   화면마다 같은 틀 — 위: 하는 법 + 내 재료(몇 개 · 어디서 얻나) / 가운데: 판(보상이 그림으로 보임) / 아래: 큰 버튼
-import { W, H } from '../config.js?v=0.57.3';
-import { T, C, TS, btn, iconBtn, sheet, toast, firstTip, rewardIcons, chips } from '../ui.js?v=0.57.3';
-import { audio } from '../audio.js?v=0.57.3';
-import { goPrev } from '../nav.js?v=0.57.3';
-import { hud } from '../hud.js?v=0.57.3';
-import { giveReward } from '../state.js?v=0.57.3';
-import { PACKS } from '../album.js?v=0.57.3';
-import { SPECIAL } from '../data.js?v=0.57.3';
-import { LINE_R, BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.57.3';
+import { W, H } from '../config.js?v=0.57.4';
+import { T, C, TS, btn, iconBtn, sheet, toast, firstTip, rewardIcons, chips } from '../ui.js?v=0.57.4';
+import { audio } from '../audio.js?v=0.57.4';
+import { goPrev } from '../nav.js?v=0.57.4';
+import { hud } from '../hud.js?v=0.57.4';
+import { giveReward } from '../state.js?v=0.57.4';
+import { PACKS } from '../album.js?v=0.57.4';
+import { SPECIAL } from '../data.js?v=0.57.4';
+import { LINE_R, BINGO, bingo, bingoDraw, bingoLines, WHEEL, spin, spinRoll, DIG, dig, digOpen, digNext, ORDERS_PER_SHOVEL } from '../minigames.js?v=0.57.4';
 
 const chip = (sc, x, y, r, o = {}) => chips(sc, x, y, r, o);
 // 받은 보상 창 (그림으로 크게)

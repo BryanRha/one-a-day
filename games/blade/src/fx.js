@@ -1,7 +1,7 @@
 // 효과: 입자(한 번에 그리는 사각형 묶음) · 무기 궤적 · 충격파 고리 · 바닥 경고 · 번쩍이는 빛
 import * as THREE from 'three';
-import { E } from './engine.js?v=0.57.3';
-import { glowTex, sparkTex, ringTex, smokeTex, slashTex, decalTex } from './fxtex.js?v=0.57.3';
+import { E } from './engine.js?v=0.57.4';
+import { glowTex, sparkTex, ringTex, smokeTex, slashTex, decalTex } from './fxtex.js?v=0.57.4';
 
 const VS = `attribute vec3 iOff; attribute vec2 iScale; attribute float iRot; attribute vec4 iCol; varying vec2 vUv; varying vec4 vCol;
 void main(){ vUv = uv; vCol = iCol; vec4 mv = modelViewMatrix * vec4(iOff, 1.0); float c = cos(iRot), s = sin(iRot); vec2 p = position.xy * iScale; mv.xy += vec2(c * p.x - s * p.y, s * p.x + c * p.y); gl_Position = projectionMatrix * mv; }`;

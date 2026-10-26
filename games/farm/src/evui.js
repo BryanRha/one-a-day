@@ -1,7 +1,7 @@
 // 이벤트 화면 공통 그림 부품: 배너 · 아이콘 탭 · 보상 아이콘 묶음 · 상태 카드(받을 수 있음 · 받음 · 잠김)
-import { W } from './config.js?v=0.57.3';
-import { T, C, btn } from './ui.js?v=0.57.3';
-import { ITEMS } from './data.js?v=0.57.3';
+import { W } from './config.js?v=0.57.4';
+import { T, C, btn } from './ui.js?v=0.57.4';
+import { ITEMS } from './data.js?v=0.57.4';
 
 const icon = (sc, x, y, k, s) => { const im = sc.add.image(x, y, k); im.setScale(s / Math.max(im.width, im.height)); return im; };
 // 대표 그림 배너 (둥근 모서리 · 아래 어두운 띠 위에 제목 · 부제 · 오른쪽 위 남은 시간)

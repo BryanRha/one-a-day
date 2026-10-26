@@ -1,9 +1,9 @@
 // 보상 길: 원정마다 명성이 쌓이고 단계마다 보상 (10단계마다 전설 확정권) — 끌어서 위아래로 보기
-import { W, H } from '../config.js?v=0.57.3';
-import { T, C, fmt, btn, iconBtn, toast } from '../pui.js?v=0.57.3';
-import { audio } from '../audio.js?v=0.57.3';
-import { load } from '../save.js?v=0.57.3';
-import * as M from '../meta.js?v=0.57.3';
+import { W, H } from '../config.js?v=0.57.4';
+import { T, C, fmt, btn, iconBtn, toast } from '../pui.js?v=0.57.4';
+import { audio } from '../audio.js?v=0.57.4';
+import { load } from '../save.js?v=0.57.4';
+import * as M from '../meta.js?v=0.57.4';
 
 const ROW = 150;
 

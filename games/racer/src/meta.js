@@ -1,5 +1,5 @@
 // 차고: 드라이버 · 자동차 · 부품 강화 (One a Day 원칙대로 가볍게)
-import { load, save } from './save.js?v=0.57.3';
+import { load, save } from './save.js?v=0.57.4';
 
 export const DRIVER_INFO = {
   raccoon: { name: '구리', animal: '너구리', desc: '코인 +10%', cost: 0 },

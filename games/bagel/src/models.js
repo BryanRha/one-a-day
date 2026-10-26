@@ -1,6 +1,6 @@
 // 모델을 코드로 직접 만듦: 낮은 다각형 + 만화풍 3단 음영 (사람 · 베이글 · 커피 · 설비 · 가게)
 import * as THREE from 'three';
-import { BRAND } from './data.js?v=0.58.0';
+import { BRAND } from './data.js?v=0.59.0';
 
 const gm = (() => { const d = new Uint8Array([95, 190, 255]); const t = new THREE.DataTexture(d, 3, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; })();
 const mats = {};
@@ -11,7 +11,7 @@ export const box = (w, h, d, c, x, y, z, p) => mesh(geo(`b${w},${h},${d}`, () =>
 export const cyl = (rt, rb, h, c, x, y, z, p, s = 16) => mesh(geo(`c${rt},${rb},${h},${s}`, () => new THREE.CylinderGeometry(rt, rb, h, s)), M(c), x, y + h / 2, z, p);
 export const sph = (r, c, x, y, z, p, ws = 14, hs = 10) => mesh(geo(`s${r},${ws}`, () => new THREE.SphereGeometry(r, ws, hs)), M(c), x, y, z, p);
 // ── 물건: 베이글 · 크림치즈 베이글 · 커피 · 쓰레기
-export const ITEM_H = { bagel: 15, cream: 16, coffee: 27, trash: 12, box: 30 };
+export const ITEM_H = { bagel: 15, cream: 16, coffee: 27, trash: 12, box: 30, dough: 14, boiled: 15 };
 export const LOOK = { cream: 'salt', coffee: 'cup_plain' };
 export function item(kind) {
   const g = new THREE.Group(), torus = () => geo('torus', () => new THREE.TorusGeometry(15, 7.5, 8, 18).rotateX(Math.PI / 2));
@@ -24,6 +24,9 @@ export function item(kind) {
   else if (look === 'cranberry') { mesh(torus(), M(0xC0844A), 0, 7.5, 0, g); dots(8, 0xA0202A, 2.2); }
   else if (look.startsWith('cup')) { cyl(12, 10, 18, 0xEEF4F6, 0, 0, 0, g, 12); const top = { cup_plain: 0xFFFBF2, cup_blue: 0xB49AD8, cup_scallion: 0xFFF8EE, cup_fig: 0xF2E2D6 }[look] || 0xFFFBF2; if (look === 'cup_fig') dots(5, 0x7A3A2A, 2, 24);
     sph(12.5, top, 0, 19, 0, g, 12, 8).scale.set(1, 0.7, 1); if (look === 'cup_blue') dots(6, 0x3A2A6A, 1.8, 24); if (look === 'cup_scallion') { dots(5, 0x4AA04A, 1.8, 24); dots(3, 0xC04A3A, 1.6, 23); } }
+  else if (kind === 'dough') { sph(14, 0xFFF4E2, 0, 9, 0, g, 12, 8).scale.set(1, 0.65, 1); }
+  else if (kind === 'boiled') { mesh(torus(), new THREE.MeshToonMaterial({ color: 0xE8C08A, gradientMap: gm, emissive: 0x3A2208 }), 0, 7.5, 0, g); }
+  else if (kind === 'prem') { mesh(torus(), new THREE.MeshToonMaterial({ color: 0xB86A20, gradientMap: gm, emissive: 0x3A1A00 }), 0, 7.5, 0, g); sph(3, 0xFFFFFF, 8, 15, -6, g, 6, 4); }
   else if (kind === 'trash') { cyl(14, 14, 3, 0xFFFFFF, 0, 0, 0, g, 12); box(14, 8, 10, 0xD8C8B0, 0, 3, 0, g); }
   return g;
 }

@@ -55,3 +55,5 @@ button { font-family: inherit; font-weight: 900; border: 0; cursor: pointer; col
 .float.tip { color: #D04AA0; font-size: 16px; }
 #boot img.logo { width: 220px; filter: drop-shadow(0 3px 6px #0004); } #boot .bimg { position: absolute; inset: 0; background: center/cover; opacity: .35; } #boot > * { position: relative; } #boot em { font-style: normal; font-size: 13px; color: #fff; max-width: 280px; text-align: center; line-height: 1.6; text-shadow: 0 1px 4px #000; }
 #boot { background: #2A1A10; }
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; } .tabs button { flex: 1; height: 38px; border-radius: 12px; background: #fff; color: #B09070; box-shadow: 0 3px 0 var(--sh); font-size: 13px; } .tabs button.on { background: #FFE2C8; color: var(--br); }
+.upr > i.sw { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; }

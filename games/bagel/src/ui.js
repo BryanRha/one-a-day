@@ -1,9 +1,9 @@
 // 화면 정보와 창: 돈 · 지점 진행 · 쿠폰 · 광고 ×2 · 미션 · 지점 지도 · 설정 · 열기 칸 글자 · +돈 글자 · 조이스틱
 import * as THREE from 'three';
-import { BRAND, GAME, BRANCHES, COUPON, MENU, UPGRADES, UP_MAX, upCost, BRANCH_INFO, FINISHED_RATE } from './data.js?v=0.58.0';
-import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.58.0';
-import { sfx, setAudio } from './audio.js?v=0.58.0';
-import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.58.0';
+import { BRAND, GAME, BRANCHES, COUPON, MENU, UPGRADES, UP_MAX, upCost, BRANCH_INFO, FINISHED_RATE, STAFF, STAFF_UP } from './data.js?v=0.59.0';
+import { S, save, couponReady, claimCoupon, MISSIONS, missionReady, claimMission, mult } from './state.js?v=0.59.0';
+import { sfx, setAudio } from './audio.js?v=0.59.0';
+import { pushBack, inOAD, exitToOAD } from './oad.js?v=0.59.0';
 
 const $ = s => document.querySelector(s), fmt = n => Math.round(n).toLocaleString('en-US');
 export const IN = { x: 0, y: 0 };
@@ -75,14 +75,21 @@ export class UI {
   // ── 업그레이드 (이 지점)
   lv(id) { return S.branch[S.bi]?.lv?.[id] || 0; }
   upList() { const g = this.app.game; return UPGRADES.filter(u => !u.need || g.unl.has(u.need) || (u.need === 'baker' && g.staff.some(w => w.k === 'baker'))); }
-  cheapUp() { const m = BRANCHES[S.bi].mult; return this.upList().some(u => this.lv(u.id) < UP_MAX && S.coins >= upCost(u, this.lv(u.id), m)); }
+  sCost(k) { return Math.round(STAFF_UP.base * Math.pow(1.6, this.slv(k)) * BRANCHES[S.bi].mult / 5) * 5; }
+  slv(k) { return S.branch[S.bi]?.slv?.[k] || 0; }
+  cheapUp() { const m = BRANCHES[S.bi].mult; return this.upList().some(u => this.lv(u.id) < UP_MAX && S.coins >= upCost(u, this.lv(u.id), m)) || this.app.game.staff.some(w => this.slv(w.k) < STAFF_UP.max && S.coins >= this.sCost(w.k)); }
   upgrades() {
     const m = BRANCHES[S.bi].mult; const L = this.upList();
     const html = L.map(u => { const lv = this.lv(u.id), max = lv >= UP_MAX, c = upCost(u, lv, m); return `<div class="upr"><i>${u.icon}</i><div><b>${u.name} <em>Lv.${lv}</em></b><span>${u.desc}</span><div class="pips">${'<s class="on"></s>'.repeat(lv)}${'<s></s>'.repeat(UP_MAX - lv)}</div></div>
       <button class="btn sm ${max || S.coins < c ? 'off' : ''}" data-u="${u.id}">${max ? 'MAX' : `<i class="c"></i>${fmt(c)}`}</button></div>`; }).join('');
-    const md = this.modal(`<h3>⬆ ${BRANCHES[S.bi].name} 업그레이드</h3><div class="uplist">${html}</div><p class="sm">설비를 더 열면 업그레이드도 늘어나요</p><button class="btn ghost" id="mOk">닫기</button>`); $('#mOk').onclick = () => this.close();
+    const tab = this._tab || 'shop', staff = this.app.game.staff;
+    const sh = staff.map(w => { const d = STAFF[w.k], lv = this.slv(w.k), max = lv >= STAFF_UP.max, c = this.sCost(w.k); return `<div class="upr"><i class="sw" style="background:#${d.body.toString(16).padStart(6, '0')}">👤</i><div><b>${d.name} <em>Lv.${lv}</em></b><span>${d.up} 올리기</span><div class="pips">${'<s class="on"></s>'.repeat(lv)}${'<s></s>'.repeat(STAFF_UP.max - lv)}</div></div>
+      <button class="btn sm ${max || S.coins < c ? 'off' : ''}" data-s="${w.k}">${max ? 'MAX' : `<i class="c"></i>${fmt(c)}`}</button></div>`; }).join('') || '<p class="sm">바닥의 「직원 뽑기」 칸을 열면 직원이 생겨요</p>';
+    const md = this.modal(`<h3>⬆ ${BRANCHES[S.bi].name} 업그레이드</h3><div class="tabs"><button class="${tab === 'shop' ? 'on' : ''}" data-t="shop">가게 · 설비</button><button class="${tab === 'staff' ? 'on' : ''}" data-t="staff">직원 ${staff.length}</button></div><div class="uplist">${tab === 'shop' ? html : sh}</div><p class="sm">설비를 더 열면 업그레이드도 늘어나요</p><button class="btn ghost" id="mOk">닫기</button>`); $('#mOk').onclick = () => this.close();
     md.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { const u = UPGRADES.find(x => x.id === b.dataset.u), lv = this.lv(u.id), c = upCost(u, lv, m); if (lv >= UP_MAX || S.coins < c) return; S.coins -= c;
-      const br = (S.branch[S.bi] ||= { unl: [], staff: [], paid: {} }); (br.lv ||= {})[u.id] = lv + 1; save(); sfx('unlock', { vol: 0.6 }); this.toast(`${u.name} Lv.${lv + 1}!`); this.progress(); this.upgrades(); }); }
+      const br = (S.branch[S.bi] ||= { unl: [], staff: [], paid: {} }); (br.lv ||= {})[u.id] = lv + 1; save(); sfx('unlock', { vol: 0.6 }); this.toast(`${u.name} Lv.${lv + 1}!`); this.progress(); this.upgrades(); });
+    md.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { this._tab = b.dataset.t; this.upgrades(); });
+    md.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { const k = b.dataset.s, lv = this.slv(k), c = this.sCost(k); if (lv >= STAFF_UP.max || S.coins < c) return; S.coins -= c; const br = S.branch[S.bi]; (br.slv ||= {})[k] = lv + 1; save(); sfx('unlock', { vol: 0.6 }); this.toast(`${STAFF[k].name} Lv.${lv + 1}!`); this.progress(); this.upgrades(); }); }
   // ── 다 연 지점: 직원들이 계속 장사 → 지점 지도에서 받기
   finished(i) { const b = BRANCHES[i], br = S.branch[i]; return !!br && i !== S.bi && b.slots.filter(s => !s.free && s.id !== 'next').every(s => br.unl.includes(s.id)); }
   idleOf(i) { if (!this.finished(i)) return 0; const br = S.branch[i], t = Math.min(4 * 3600, (Date.now() - (br.idleAt || Date.now())) / 1000); return Math.floor(t * FINISHED_RATE * BRANCHES[i].mult * (1 + (br.lv?.price || 0) / 10)); }

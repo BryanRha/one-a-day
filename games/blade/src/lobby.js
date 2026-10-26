@@ -1,13 +1,13 @@
 // 로비 장면: 밤의 야영지 · 모닥불 · 주인공이 서 있고 카메라가 천천히 돎 (화면마다 카메라 위치가 바뀜)
 import * as THREE from 'three';
-import { E } from './engine.js?v=0.58.0';
-import { load } from './assets.js?v=0.58.0';
-import { place, loadProp } from './props.js?v=0.58.0';
-import { Actor } from './actor.js?v=0.58.0';
-import { FX, initFX, clearFX, updateFX } from './fx.js?v=0.58.0';
-import { skyTex, discMask } from './fxtex.js?v=0.58.0';
-import { RIM } from './assets.js?v=0.58.0';
-import { setVignette } from './engine.js?v=0.58.0';
+import { E } from './engine.js?v=0.59.0';
+import { load } from './assets.js?v=0.59.0';
+import { place, loadProp } from './props.js?v=0.59.0';
+import { Actor } from './actor.js?v=0.59.0';
+import { FX, initFX, clearFX, updateFX } from './fx.js?v=0.59.0';
+import { skyTex, discMask } from './fxtex.js?v=0.59.0';
+import { RIM } from './assets.js?v=0.59.0';
+import { setVignette } from './engine.js?v=0.59.0';
 
 export const L = { on: false, hero: null, t: 0, view: 'home', fire: new THREE.Vector3(-170, 40, -60) };
 const VIEWS = { home: { r: 820, h: 330, look: [20, 130, -40], sway: 0.22, a0: 0.12 }, hero: { r: 600, h: 230, look: [100, 40, 40], sway: 0.05, a0: 0.18 }, title: { r: 1050, h: 430, look: [-20, 160, -80], sway: 0.18, a0: -0.05 } };

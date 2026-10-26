@@ -27,20 +27,23 @@ const B1 = {
     { id: 'bin', type: 'bin', x: -600, z: -110, free: true },
     { id: 'plant2', type: 'plant', x: 640, z: -640, free: true },
     { id: 't1', type: 'table', x: -440, z: 340, cost: 30 },
-    { id: 'cc', type: 'ccbar', x: 120, z: -580, cost: 120, label: '토핑 바' },
-    { id: 'mixer', type: 'mixer', x: -210, z: -600, cost: 220, label: '반죽기 · 오븐 2배' },
-    { id: 't2', type: 'table', x: -40, z: 340, cost: 160 },
-    { id: 'cashier', type: 'hire', staff: 'cashier', x: 470, z: -120, cost: 260, label: '계산원 뽑기' },
+    { id: 'cashier', type: 'hire', staff: 'cashier', x: 470, z: -120, cost: 90, label: '계산원 뽑기' },
+    { id: 'cc', type: 'ccbar', x: 120, z: -580, cost: 160, label: '토핑 바' },
+    { id: 't2', type: 'table', x: -40, z: 340, cost: 200 },
+    { id: 'baker', type: 'hire', staff: 'baker', x: 470, z: 40, cost: 300, label: '진열 직원 뽑기' },
     { id: 'coffee', type: 'coffee', x: 440, z: -580, cost: 420, label: '크림치즈 냉장고' },
-    { id: 't3', type: 'table', x: -440, z: 640, cost: 380 },
-    { id: 'baker', type: 'hire', staff: 'baker', x: 470, z: 40, cost: 650, label: '제빵사 뽑기' },
-    { id: 'carry', type: 'up', up: 'carry', x: 470, z: 200, cost: 520, label: '더 많이 들기' },
-    { id: 'kettle', type: 'kettle', x: -640, z: -330, cost: 760, label: '데치기 솥 · 값 +20%' },
-    { id: 't4', type: 'table', x: -40, z: 640, cost: 640 },
-    { id: 'cleaner', type: 'hire', staff: 'cleaner', x: 470, z: 360, cost: 860, label: '청소 직원 뽑기' },
-    { id: 'drive', type: 'drive', x: 740, z: -200, cost: 1500, label: '드라이브스루' },
-    { id: 'speed', type: 'up', up: 'speed', x: 470, z: 520, cost: 1100, label: '빨리 걷기' },
-    { id: 'next', type: 'next', x: 150, z: 600, cost: 3000, label: '2호점 열기' },
+    { id: 'topper', type: 'hire', staff: 'topper', x: 300, z: -330, cost: 520, label: '토핑 직원 뽑기' },
+    { id: 'mixer', type: 'mixer', x: -210, z: -600, cost: 600, label: '반죽기' },
+    { id: 't3', type: 'table', x: -440, z: 640, cost: 560 },
+    { id: 'carry', type: 'up', up: 'carry', x: 470, z: 200, cost: 640, label: '더 많이 들기' },
+    { id: 'fridge', type: 'hire', staff: 'fridge', x: 470, z: -330, cost: 760, label: '냉장고 직원 뽑기' },
+    { id: 'kettle', type: 'kettle', x: -640, z: -330, cost: 900, label: '데치기 솥' },
+    { id: 'dougher', type: 'hire', staff: 'dougher', x: -350, z: -330, cost: 1000, label: '반죽 직원 뽑기' },
+    { id: 't4', type: 'table', x: -40, z: 640, cost: 900 },
+    { id: 'cleaner', type: 'hire', staff: 'cleaner', x: 470, z: 360, cost: 1100, label: '청소 직원 뽑기' },
+    { id: 'drive', type: 'drive', x: 740, z: -200, cost: 1600, label: '드라이브스루' },
+    { id: 'speed', type: 'up', up: 'speed', x: 470, z: 520, cost: 1300, label: '빨리 걷기' },
+    { id: 'next', type: 'next', x: 150, z: 600, cost: 3500, label: '2호점 열기' },
   ],
 };
 const scale = (b, k, theme, name) => ({ ...b, name, mult: k, theme: { ...b.theme, ...theme }, slots: b.slots.map(s => ({ ...s, cost: s.cost && Math.round(s.cost * k * 1.6 / 10) * 10, label: s.id === 'next' ? s.labelNext || s.label : s.label })) });
@@ -56,11 +59,12 @@ export const BRANCH_INFO = ['서울 송파구 올림픽로 145 리센츠상가 1
 export const UPGRADES = [
   { id: 'oven', name: '오븐 성능', desc: '베이글이 더 빨리 구워져요', icon: '🔥', base: 80, need: 'oven' },
   { id: 'ovenCap', name: '오븐 판 늘리기', desc: '오븐에 더 많이 쌓여요', icon: '🧺', base: 120, need: 'oven' },
+  { id: 'mixer', name: '반죽기 속도', desc: '반죽이 더 빨리 나와요', icon: '🥣', base: 140, need: 'mixer' },
+  { id: 'kettle', name: '쫄깃함 연구', desc: '쫄깃 베이글 값이 더 올라요', icon: '♨️', base: 200, need: 'kettle' },
   { id: 'bar', name: '토핑 바 손 빠르게', desc: '특별 베이글이 빨리 만들어져요', icon: '🧂', base: 150, need: 'cc' },
-  { id: 'fridge', name: '크림치즈 냉장고 확장', desc: '크림치즈가 더 빨리 채워져요', icon: '🥣', base: 200, need: 'coffee' },
+  { id: 'fridge', name: '크림치즈 냉장고 확장', desc: '크림치즈가 더 빨리 채워져요', icon: '🧊', base: 200, need: 'coffee' },
   { id: 'price', name: '메뉴 가격 올리기', desc: '모든 메뉴 +8%', icon: '💰', base: 180 },
   { id: 'ads', name: 'SNS 홍보', desc: '손님이 더 자주 와요', icon: '📣', base: 160 },
-  { id: 'staff', name: '직원 교육', desc: '직원이 더 빨리 일해요', icon: '🧑‍🍳', base: 260, need: 'baker' },
   { id: 'tip', name: '친절 서비스', desc: '손님이 팁을 줄 때가 있어요', icon: '😊', base: 220 },
 ];
 export const UP_MAX = 10;
@@ -68,6 +72,14 @@ export const upCost = (u, lv, mult) => Math.round(u.base * Math.pow(1.55, lv) * 
 export const FINISHED_RATE = 0.9;   /* 다 연 지점 자동 수익 (초당, × 지점 배수 × (1 + 가격 단계/10)) */
 // 사람 · 직원 · 손님 · 쿠폰
 export const PLAYER = { speed: 430, carry: 6, carryUp: 10, speedUp: 1.3 };
-export const STAFF = { cashier: { body: 0x5A8AE0, serve: 0.55 }, baker: { body: 0x7A4A2A, speed: 300, carry: 4 }, cleaner: { body: 0x6AB07A, speed: 320 } };
+export const STAFF = {
+  cashier: { name: '계산원', body: 0x5A8AE0, serve: 0.55, hello: '계산원이 계산을 맡아요!', up: '계산 속도' },
+  baker: { name: '진열 직원', body: 0x7A4A2A, speed: 300, carry: 4, hello: '진열 직원이 베이글을 계산대로 날라요!', up: '걷기 속도 · 들기' },
+  topper: { name: '토핑 직원', body: 0xE2A020, speed: 290, carry: 3, hello: '토핑 직원이 특별 베이글을 만들어요!', up: '걷기 속도 · 들기', cap: 0xFF6720 },
+  fridge: { name: '냉장고 직원', body: 0x8AC8E8, speed: 290, carry: 3, hello: '냉장고 직원이 크림치즈를 채워요!', up: '걷기 속도 · 들기' },
+  dougher: { name: '반죽 직원', body: 0xF4F0E8, speed: 280, carry: 3, hello: '반죽 직원이 반죽을 데치고 오븐에 넣어요!', up: '걷기 속도 · 들기', cap: 0xA98259 },
+  cleaner: { name: '청소 직원', body: 0x6AB07A, speed: 320, carry: 4, hello: '청소 직원이 테이블을 치워요!', up: '걷기 속도 · 들기' },
+};
+export const STAFF_UP = { base: 150, max: 10 };   /* 직원 단계 비용 = base × 1.6^단계 × 지점 배수 */
 export const CUST_COLORS = [0x6A9AE8, 0xE86A8A, 0x9ACF6A, 0xF2C14E, 0xC08AE0, 0x5AC0B0, 0xE8A06A, 0x8AA0B8];
 export const COUPON = { goal: 100, text: '크림치즈 1개 무료 (베이글 구매 시) · 시험용', valid: '시험 기간에는 매장에서 쓸 수 없어요' };   /* 쿠폰 내용은 트렌차이즈와 정함 */
